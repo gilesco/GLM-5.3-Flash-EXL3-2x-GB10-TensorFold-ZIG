@@ -229,7 +229,11 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       tool-eval, never cross-compared. Owed: production's current-bench prodqual.
       The bpw4sweep (the 4bpw local packs, one per window): **Mia-AiLab 4bpw
       94/104** (production's own family, the best) · **Focus 93** · **AZ 90**
-      (glm-topk4b applies on v1.2.1; the perf leader) · TR3 next.
+      (glm-topk4b applies on v1.2.1; the perf leader) · TR3 **94** (the sweep complete: TR3 94 · MIA 94 · Focus 93 · AZ 90;
+TR3 posts the best top-8 decode — tg128 46.0/46.2/45.2 — and dominates the
+Focus on both axes; the scorecards:
+docs/bpw4-sweep-cards.svg from docs/bpw4-sweep.tsv, generated). The
+served-default swap (Focus -> TR3) is asked of the user with the cards.
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 

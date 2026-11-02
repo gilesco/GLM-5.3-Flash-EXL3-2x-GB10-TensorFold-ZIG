@@ -1,0 +1,12 @@
+# docs/bpw4-sweep.tsv — the 4bpw local-pack sweep's scorecard data (round 132).
+# The receipts: results/bpw4sweep/ on the head (the hardmode batteries' bench
+# logs + the perf tables) and campaign-20261102-095700's dense4fp8 cell for the
+# Focus. Instrument: hardmode-inclusive battery (104 scenarios, bench v3.0.1) +
+# llama-benchy pp2048/tg128 at the standing config (dense4fp8, fp8 KV, 512K x4,
+# vision, TF v1.2.1). Rendered by scripts/render-sweep-cards.sh into
+# docs/bpw4-sweep-cards.svg — the SVG is generated, never hand-edited.
+# Columns: pack|hardmode|pp_d0|tg_d0|tg_d4096|tg_d8192|tg_c4_d8192|note
+Focus (the served default)|93|1036|40.6|46.0|40.7|12.9|local/GLM-5.3-Flash-AZ-Focus-EXL3
+Mia-AiLab 4bpw|94|1031|39.2|45.3|41.5|13.1|production's own pack family
+TR3-4bpw|94|1039|46.0|46.2|45.2|13.1|best decode at top-8 quality
+AZ top-4|90|1184|57.7|52.5|61.4|15.1|the perf leader (glm-topk4b.patch)
