@@ -274,7 +274,7 @@ bench_cell() {     # the fixed matrix bench options against the running server
   # --hardmode (user, round 132): hardmode is THE quality instrument and it INCLUDES
   # the standard batch — the plain 69-scenario run is retired; scores never cross-compare
   PYTHONUNBUFFERED=1 "$BENCH" run \
-    --base-url "http://127.0.0.1:$PORT/v1" \
+    --base-url "${BENCH_BASE_URL:-http://127.0.0.1:$PORT/v1}" \
     --model "$SERVED_NAME" \
     --format openai \
     --tokenizer "$MODEL_ID" \
@@ -297,7 +297,7 @@ bench_perf() {     # $1 label, $2 dest, $3 client parallel (default 4) — the m
   local label="$1" dest="$2" clients="${3:-4}" report rc=0
   mkdir -p "$dest"
   PYTHONUNBUFFERED=1 "$BENCH" run \
-    --base-url "http://127.0.0.1:$PORT/v1" \
+    --base-url "${BENCH_BASE_URL:-http://127.0.0.1:$PORT/v1}" \
     --model "$SERVED_NAME" \
     --format openai \
     --tokenizer "$MODEL_ID" \
@@ -542,6 +542,8 @@ EOF
     fi
     # the same-harness benches (the head-to-head numbers)
     log "prodqual: tool-eval on production (~25 min of client load)"
+    # the load arms default to the testing port; prodqual aims them at production
+    BENCH_BASE_URL="http://127.0.0.1:$PROD_PORT/v1"
     SERVED_NAME="$PROD_MODEL" bench_cell prod-reference "$OUT/prod-reference" >> "$P"
     python3 - "$OUT/prod-reference/result.json" >> "$P" <<'EOF'
 import json, sys
@@ -556,6 +558,7 @@ EOF
     log "prodqual: perf table on production (~10 min of client load)"
     SERVED_NAME="$PROD_MODEL" bench_perf prod-perf "$OUT/prod-perf" 4 >> "$P"
     SERVED_NAME="$SAVED_SERVED"   # bash persists VAR=x func assignments — restore it
+    unset BENCH_BASE_URL          # ...and this one — the default (the testing port) applies everywhere else
     touch "$OUT/.prodqual.done"
     # hand the GPUs over if restart phases are selected
     if [[ "$NEEDS_GPU" == 1 ]] && prod_running; then
@@ -3467,7 +3470,7 @@ if want cardrun && ! phase_done cardrun; then
       echo "- target: production as-is (read-only), served model: $BENCH_MODEL" >> "$P"
       mkdir -p "$OUT/card-prod"
       PYTHONUNBUFFERED=1 "$BENCH" run \
-        --base-url "http://127.0.0.1:$PORT/v1" \
+        --base-url "${BENCH_BASE_URL:-http://127.0.0.1:$PORT/v1}" \
         --model "$BENCH_MODEL" \
         --format openai \
         --tokenizer "$MODEL_ID" \
@@ -3489,7 +3492,7 @@ if want cardrun && ! phase_done cardrun; then
       echo "- target: the testing stack (the standing Focus default), served model: $BENCH_MODEL" >> "$P"
       mkdir -p "$OUT/card-test"
       PYTHONUNBUFFERED=1 "$BENCH" run \
-        --base-url "http://127.0.0.1:$PORT/v1" \
+        --base-url "${BENCH_BASE_URL:-http://127.0.0.1:$PORT/v1}" \
         --model "$BENCH_MODEL" \
         --format openai \
         --tokenizer "$MODEL_ID" \
