@@ -66,7 +66,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate bpw4sweep kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1063,6 +1063,64 @@ if want rung && ! phase_done rung; then
     < <(python3 -c 'import json,sys; print("\n".join(a for _,a in json.load(open(sys.argv[1]))))' "$OUT/depth-8000-facts.json")
   echo "- 8k-depth probe at the rung: $HITS/3 facts retrieved" >> "$P"
   touch "$OUT/.rung.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: bpw4sweep (SESSION-SPECIFIC; the 4bpw local-pack re-comparison on
+# v1.2.1 — retires with the arc's verdict (user, round 132: the 4bpw local
+# sweep first, then the 3bpw track)). ONE pack per window (the pause
+# discipline): the first pack without a persistent .done marker is staged to
+# both hosts (the worker -> the head over 192.168.2.x when the head lacks
+# it), served at the standing config (dense4fp8, vision, 512K x4), gated
+# (g1 determinism; the config gates g3/g4 are engine properties already
+# receipted on v1.2.1), hardmode-batteried (bench_cell), and perf-probed
+# (bench_perf). Relaunching the same PHASES advances to the next pack; the
+# receipts live in results/bpw4sweep/ (persistent across windows).
+# ---------------------------------------------------------------------------
+BPW4_PACK_AZ="local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
+BPW4_PACK_MIA="Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main PATCHES="
+BPW4_PACK_TR3="Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main PATCHES="
+if want bpw4sweep && ! phase_done bpw4sweep; then
+  log "=== bpw4sweep"
+  P="$OUT/bpw4sweep.md"; : > "$P"
+  echo "# bpw4sweep (the 4bpw local packs on v1.2.1; one pack per window)" >> "$P"
+  SWEEP_DIR="results/bpw4sweep"; mkdir -p "$SWEEP_DIR"
+  PACK=""; ENVPAIRS=""; TAG=""
+  for spec in "AZ:$BPW4_PACK_AZ" "MIA:$BPW4_PACK_MIA" "TR3:$BPW4_PACK_TR3"; do
+    t="${spec%%:*}"; e="${spec#*:}"
+    if [ ! -f "$SWEEP_DIR/$t.done" ]; then TAG="$t"; PACK="${e%% *}"; ENVPAIRS="$e"; break; fi
+  done
+  if [ -z "$PACK" ]; then
+    echo "- all packs receipted — the sweep is complete:" >> "$P"
+    for f in "$SWEEP_DIR"/*.md; do echo "  - $f" >> "$P"; done
+    touch "$OUT/.bpw4sweep.done"
+  else
+    echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
+    HUBDIR="models--${PACK//\//-}"
+    W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
+    if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots" ]; then
+      echo "- staging $HUBDIR from the worker (the head lacks it)" >> "$P"
+      rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+      echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+    fi
+    # shellcheck disable=SC2086
+    if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+      echo "- FAIL: the server refused the pack" >> "$P"
+      touch "$SWEEP_DIR/$TAG.done"; touch "$OUT/.bpw4sweep.done"; exit 1
+    fi
+    echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
+    RP="$SWEEP_DIR/$TAG-req.json"; req_file "$RP" "$REF_PROMPT"
+    chat "$RP" > "$SWEEP_DIR/$TAG-1a.json"; chat "$RP" > "$SWEEP_DIR/$TAG-1b.json"
+    if [[ "$(content_sha "$SWEEP_DIR/$TAG-1a.json")" == "$(content_sha "$SWEEP_DIR/$TAG-1b.json")" ]]; then
+      echo "- PASS g1 determinism (content)" >> "$P"
+    else echo "- FAIL g1 determinism" >> "$P"; fi
+    bench_cell "$TAG" "$SWEEP_DIR/$TAG-battery" >> "$P" 2>&1
+    grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" >> "$P" || true
+    bench_perf "$TAG-perf" "$SWEEP_DIR/$TAG-perf" 4 >> "$P" 2>&1
+    touch "$SWEEP_DIR/$TAG.done"
+    echo "- pack $TAG receipted: $SWEEP_DIR/$TAG.md" >> "$P"
+  fi
+  touch "$OUT/.bpw4sweep.done"
 fi
 
 # ---------------------------------------------------------------------------
