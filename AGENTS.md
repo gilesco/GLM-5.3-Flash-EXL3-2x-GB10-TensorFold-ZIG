@@ -26,6 +26,11 @@ Hard boundaries, never crossed:
   testing stack always serves 8001 — opencode never connects to testing.
 - This line is **EXL3 only** (the NVFP4 route has its own repo) and the context goal is
   **524,288 tokens — nothing above**.
+- **Every quality/perf metric runs on the clean testing port 8001** — never
+  tool-eval-bench or any load against production's live 8000 (user, round 132: it
+  negates the testing environment; any such result is invalid). Production-vs-us
+  comparisons use production started FOR TESTING on 8001 (the duel's pattern — the
+  intent-keyed port).
 - **Nothing is posted upstream** (no issues/PRs to ashhart/TensorFold or other repos).
   Findings for upstream are written into `docs/ECOSYSTEM.md` as data.
 - Site identity (hostnames, IPs, ssh targets, rail devices, HCA names) lives only in

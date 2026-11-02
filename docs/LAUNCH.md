@@ -4663,3 +4663,29 @@ local work — the packs are one download away.
 Next per the plan: the owed production anchor (a solo prodqual window on the
 current bench version), then the two GLM knobs (TF_GLM_CHUNK_SOLO,
 TF_GLM_VISION_HOST).
+
+## (round 132, cont. 17) THE METRICS-PORT RULE (user) — the 8000 runs invalidated, the lock installed (2026-11-02)
+
+**(user)**: "We should never run tool-eval-bench against port 8000, it negates the
+testing environment. Any results in this thread of tool-eval-bench on port 8000
+are invalid." And: "If we want quality or performance metrics we need to run them
+on a clean unused port (8001)."
+
+Executed: the against-8000 bench KILLED mid-run; **both campaign receipts from
+this thread's 8000-targeted runs deleted** (campaign-20261102-191715 /
+-191940 — invalid, never to be cited); the BENCH_BASE_URL override plumbing
+REVERTED (the load arms point at the testing port unconditionally); **the
+metrics-port lock installed** at run-qualification.sh's start (`PORT != 8001`
+refuses to run — one guard covering every load arm and probe); **the prodqual
+phase retired** (its probes measured against the live 8000 — the same
+violation; the production-vs-us instrument is the DUEL: production started FOR
+TESTING on 8001, both engines on the clean port); the flow's prodqual-aware
+ordering references cleaned; **AGENTS.md carries the rule as a hard boundary**.
+The state verified clean before proceeding: no bench processes, production
+back on 8000 (the crash-net restored it), no stale window flags, the invalid
+receipts gone.
+
+The next tests per the plan, prepared under the criteria: the duel window
+(re-pairs the anchors on the served TR3 default — production-for-testing on
+8001, both engines clean), then the two GLM knobs (TF_GLM_CHUNK_SOLO /
+TF_GLM_VISION_HOST) on 8001.

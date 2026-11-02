@@ -10,9 +10,9 @@
 #   preflight  guards (production untouched), marker, RoCE, CPU clocks, disk
 #   reference  one greedy probe captured from production 0.6.6 if it is still up
 #              (read-only, a single request) — the cross-engine output reference
-#   prodqual   validate production 0.6.6 with the same instruments while it is up:
-#              determinism / repeat / concurrent / seeded probes (read-only — the
-#              server is never restarted or modified) + the same-harness tool-eval
+#              (the prodqual phase retired round 132 (user): metrics on the clean
+#              testing port 8001 only — the duel's production arm on 8001 is the
+#              production-vs-us instrument) + the same-harness tool-eval
 #              and perf runs, giving the native engine's 92 its like-for-like
 #              production baseline. Prompts to stop production only if GPU phases
 #              are also selected.
@@ -50,6 +50,10 @@
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 source ./config.sh
+# THE METRICS PORT LOCK (user, round 132): every quality/perf instrument runs on the
+# clean testing port 8001 — never against the live production on 8000. One guard here
+# covers every load arm and probe the script contains.
+[[ "$PORT" == "8001" ]] || { echo " !! metrics run on the testing port 8001 only (user, round 132); PORT is '$PORT' — refusing"; exit 1; }
 command -v docker >/dev/null || die "docker is required (run this on the head Spark)"
 command -v python3 >/dev/null || die "python3 is required"
 BENCH="$HOME/tool-eval-bench/.venv/bin/tool-eval-bench"
@@ -61,7 +65,7 @@ LOG="$OUT/campaign.log"
 log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$LOG"; }
 phase_done() { [[ -f "$OUT/.$1.done" ]] && [[ "${FORCE:-0}" != 1 ]]; }
 
-PHASES="${PHASES:-preflight reference prodqual parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung summary}"
+PHASES="${PHASES:-preflight reference parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung summary}"
 want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
@@ -388,18 +392,17 @@ EOF
 if want preflight && ! phase_done preflight; then
   log "=== preflight"
   P="$OUT/00-preflight.md"; : > "$P"
-  # prodqual (if selected) runs against production first and does its own handover
-  # prompt — preflight only demands the stop when no production pass is selected
-  if prod_running && [[ "$NEEDS_GPU" == 1 ]] && ! want prodqual; then
+  # preflight demands the stop only when GPU phases are selected
+  if prod_running && [[ "$NEEDS_GPU" == 1 ]]; then
     # the autonomous lifecycle (round 129, user): stop production for the GPU work;
     # the window flow / the crash-net restores it on every exit path
     log "PRODUCTION IS RUNNING — stopping it for the GPU phases (restored on every exit path)"
     "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
     prod_running && die "production still running after the autonomous stop — the GPU phases will not start"
   elif prod_running; then
-    log "production is up — read-only phases only (reference/prodqual); no restarts selected"
+    log "production is up — read-only phases only (reference); no restarts selected"
   fi
-  prod_running && [[ "$NEEDS_GPU" == 1 ]] && ! want prodqual && die "production still running — this script will not continue"
+  prod_running && [[ "$NEEDS_GPU" == 1 ]] && die "production still running — this script will not continue"
   {
     echo "# preflight $RUN_ID"
     echo "- prepared marker: $(cat "$STATE_DIR/prepared" 2>/dev/null || echo MISSING)"
@@ -441,133 +444,11 @@ if want reference && ! phase_done reference; then
   touch "$OUT/.reference.done"
 fi
 
-# ---------------------------------------------------------------------------
-# phase: prodqual — validate production 0.6.6 with the same instruments, read-only.
-# Runs while production is UP, before any testing-stack restart. The server is probed
-# and never restarted or modified: gates-style probes (determinism, same-conversation
-# repeat, concurrent-vs-solo, seeded sampling — drafted=plain has no arm here since
-# production's server flags are fixed) plus the same-harness tool-eval and perf runs,
-# so 92 on the native engine gets its like-for-like production baseline.
-# ---------------------------------------------------------------------------
-if want prodqual && ! phase_done prodqual; then
-  log "=== prodqual"
-  P="$OUT/02b-prodqual.md"; : > "$P"
-  if ! prod_running; then
-    echo "# prodqual: production not running — skipped" >> "$P"
-    touch "$OUT/.prodqual.done"
-  else
-    PROD_MODEL=$(curl -s -m 10 "http://127.0.0.1:$PROD_PORT/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")') || PROD_MODEL=""
-    PROD_MODEL="${PROD_MODEL:-$SERVED_NAME}"
-    SAVED_SERVED="$SERVED_NAME"
-    {
-      echo "# prodqual (production 0.6.6 Python engine — probed read-only, never restarted or modified)"
-      echo "- production model id: $PROD_MODEL"
-      echo "- NOTE: this is client load on a live server; benches share it with real traffic"
-    } >> "$P"
-    # pg1 determinism: production is documented byte-stable — verify with our own probe
-    SERVED_NAME="$PROD_MODEL" req_file "$OUT/prod-g1-req.json" "$REF_PROMPT"
-    for r in a b; do
-      curl -s -m 120 "http://127.0.0.1:$PROD_PORT/v1/chat/completions" \
-        -H 'Content-Type: application/json' --data @"$OUT/prod-g1-req.json" \
-        > "$OUT/prod-g1-$r.json" || true
-    done
-    if [[ "$(sha_msg "$OUT/prod-g1-a.json")" == "$(sha_msg "$OUT/prod-g1-b.json")" ]]; then
-      echo "- PASS pg1 determinism: production greedy runs BYTE-identical (the 0.6.x property the native engine lacks — this is the control)" >> "$P"
-    elif [[ "$(content_sha "$OUT/prod-g1-a.json")" == "$(content_sha "$OUT/prod-g1-b.json")" ]]; then
-      echo "- NOTE pg1 determinism: production greedy content-identical, raw bytes differ (unexpected for 0.6.6 — worth a look)" >> "$P"
-    else
-      echo "- FAIL pg1 determinism: production greedy CONTENT differs across two runs" >> "$P"
-    fi
-    # pg3 same-conversation repeat (the prompt-cache path, read-only form)
-    T1="Remember these three codes: alpha-7391, bravo-2250, charlie-8118. Reply with exactly: codes noted."
-    T2="What were the three codes? Answer with just the three codes, comma separated."
-    SERVED_NAME="$PROD_MODEL" T1="$T1" python3 - "$OUT" <<'EOF'
-import json, os, sys
-json.dump({"model": os.environ["SERVED_NAME"],
-           "messages": [{"role": "user", "content": os.environ["T1"]}],
-           "temperature": 0, "max_tokens": 1024}, open(f"{sys.argv[1]}/prod-g3-turn1.json", "w"))
-EOF
-    curl -s -m 300 "http://127.0.0.1:$PROD_PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      --data @"$OUT/prod-g3-turn1.json" > "$OUT/prod-g3-turn1-resp.json" || true
-    R1=$(content_of "$OUT/prod-g3-turn1-resp.json")
-    SERVED_NAME="$PROD_MODEL" T1="$T1" T2="$T2" R1="$R1" python3 - "$OUT" <<'EOF'
-import json, os, sys
-msgs = [{"role": "user", "content": os.environ["T1"]},
-        {"role": "assistant", "content": os.environ["R1"]},
-        {"role": "user", "content": os.environ["T2"]}]
-json.dump({"model": os.environ["SERVED_NAME"], "messages": msgs,
-           "temperature": 0, "max_tokens": 1024}, open(f"{sys.argv[1]}/prod-g3-conv.json", "w"))
-EOF
-    for r in x y; do
-      curl -s -m 300 "http://127.0.0.1:$PROD_PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-        --data @"$OUT/prod-g3-conv.json" > "$OUT/prod-g3-$r.json" || true
-    done
-    A=$(content_of "$OUT/prod-g3-x.json"); B=$(content_of "$OUT/prod-g3-y.json")
-    if [[ "$A" == "$B" && -n "$A" ]]; then
-      echo "- PASS pg3 same-conversation repeat: identical content on both sends (answer: $(echo "$A" | head -c 60))" >> "$P"
-    else
-      echo "- FAIL pg3 same-conversation repeat: '$A' vs '$B'" >> "$P"
-    fi
-    # pg4 concurrent = solo (read-only form)
-    curl -s -m 120 "http://127.0.0.1:$PROD_PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      --data @"$OUT/prod-g1-req.json" > "$OUT/prod-g4-solo.json" || true
-    for i in 1 2 3 4; do { curl -s -m 120 "http://127.0.0.1:$PROD_PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      --data @"$OUT/prod-g1-req.json" > "$OUT/prod-g4-c$i.json" || true; } & done; wait
-    S=$(content_sha "$OUT/prod-g4-solo.json"); OK=1
-    for i in 1 2 3 4; do [[ "$(content_sha "$OUT/prod-g4-c$i.json")" == "$S" ]] || OK=0; done
-    if [[ "$OK" == 1 ]]; then
-      echo "- PASS pg4 concurrent=solo (content): 4 concurrent outputs identical in content to solo" >> "$P"
-    else
-      echo "- FAIL pg4 concurrent=solo: a concurrent output differs in content from solo" >> "$P"
-    fi
-    # pg5 seeded sampling twice
-    SERVED_NAME="$PROD_MODEL" python3 - "$OUT" <<'EOF'
-import json, os, sys
-json.dump({"model": os.environ["SERVED_NAME"],
-           "messages": [{"role": "user", "content": "List the first eight prime numbers in order, comma separated, then state the sum."}],
-           "temperature": 0.7, "top_p": 0.95, "seed": 42, "max_tokens": 512},
-          open(f"{sys.argv[1]}/prod-g5-req.json", "w"))
-EOF
-    for r in a b; do
-      curl -s -m 120 "http://127.0.0.1:$PROD_PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-        --data @"$OUT/prod-g5-req.json" > "$OUT/prod-g5-$r.json" || true
-    done
-    if [[ "$(content_sha "$OUT/prod-g5-a.json")" == "$(content_sha "$OUT/prod-g5-b.json")" ]]; then
-      echo "- PASS pg5 sampled determinism: seeded samples content-identical across two runs" >> "$P"
-    else
-      echo "- NOTE pg5 sampled determinism: seeded samples differ on production" >> "$P"
-    fi
-    # the same-harness benches (the head-to-head numbers)
-    log "prodqual: tool-eval on production (~25 min of client load)"
-    # the load arms default to the testing port; prodqual aims them at production
-    BENCH_BASE_URL="http://127.0.0.1:$PROD_PORT/v1"
-    SERVED_NAME="$PROD_MODEL" bench_cell prod-reference "$OUT/prod-reference" >> "$P"
-    python3 - "$OUT/prod-reference/result.json" >> "$P" <<'EOF'
-import json, sys
-try:
-    d = json.load(open(sys.argv[1]))
-    print("- production tool-eval final_score: %s (%s), %s points of %s" % (
-        d.get("final_score"), d.get("rating", ""), d.get("scores", {}).get("total_points"),
-        d.get("scores", {}).get("max_points")))
-except Exception as e:
-    print("- prod tool-eval result parse failed: %s" % e)
-EOF
-    log "prodqual: perf table on production (~10 min of client load)"
-    SERVED_NAME="$PROD_MODEL" bench_perf prod-perf "$OUT/prod-perf" 4 >> "$P"
-    SERVED_NAME="$SAVED_SERVED"   # bash persists VAR=x func assignments — restore it
-    unset BENCH_BASE_URL          # ...and this one — the default (the testing port) applies everywhere else
-    touch "$OUT/.prodqual.done"
-    # hand the GPUs over if restart phases are selected
-    if [[ "$NEEDS_GPU" == 1 ]] && prod_running; then
-      log "production probes complete — stopping it for the GPU phases (restored on every exit path)"
-      "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
-      prod_running && die "production still running after the autonomous stop — the GPU phases will not start"
-    fi
-  fi
-fi
+# (the prodqual phase RETIRED round 132 (user): ALL quality/perf metrics run on the
+# clean testing port 8001 — never against the live production on 8000 (it negates the
+# testing environment), so there is nothing this phase can measure in place. The
+# production-vs-us instrument is the DUEL: production started FOR TESTING on 8001
+# (the intent-keyed port), the five direct instruments, both engines on 8001.)
 
 # ---------------------------------------------------------------------------
 # phase: parity + candidate (the bench cells; restart with admission fallback)
@@ -1090,7 +971,7 @@ fi
 #   5. c2/c4 aggregate decode (the honest concurrency instrument, measured —
 #      not derived — on both engines).
 # Production arm skipped with a note when production is down; the handover
-# prompt follows prodqual's pattern when it is up.
+# prompt follows the duel's production-arm pattern when it is up.
 # ---------------------------------------------------------------------------
 if want duel && ! phase_done duel; then
   log "=== duel (the sharp head-to-head: production first, then ours)"
