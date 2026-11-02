@@ -16,7 +16,11 @@ upstream-gated**:
   and closes 1 of the 2 points to production's old-bench 94; production's
   current-bench hardmode anchor is owed (a solo prodqual window). The
   checkpoint-lever idea this bullet gestured at is now DONE — the sweep ran it
-  (docs/bpw4-sweep-cards.svg); the 3bpw track is the next checkpoint lever.
+  (docs/bpw4-sweep-cards.svg); the 3bpw track CLOSED round 132: the engine gates it — the CUDA family reads
+  4-bit EXL3 experts (all three community packs refused, UnsupportedQuant; the
+  androidli pack is TensorFold-native mcg and still gated — it served on the
+  python-era 0.6.0 only). Sub-4bpw on this line waits on upstream (the CUDA
+  family's reader), not on quantizers.
 - **Concurrency (Front 2)**: fully decomposed (rounds 114-123). The hc fusion:
   built, bit-safe, NOT adopted (the occupancy trade — round 116). The depth census:
   the attention path is ~1% of the decode token cost (round 122) — no depth

@@ -66,7 +66,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate bpw4sweep bpw3sweep kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1065,156 +1065,11 @@ if want rung && ! phase_done rung; then
   touch "$OUT/.rung.done"
 fi
 
-# ---------------------------------------------------------------------------
-# phase: bpw4sweep (SESSION-SPECIFIC; the 4bpw local-pack re-comparison on
-# v1.2.1 — retires with the arc's verdict (user, round 132: the 4bpw local
-# sweep first, then the 3bpw track)). ONE pack per window (the pause
-# discipline): the first pack without a persistent .done marker is staged to
-# both hosts (the worker -> the head over 192.168.2.x; snapshots/main is
-# normalized by symlink when a copy is hash-keyed only), served at the
-# standing config (dense4fp8, vision, 512K x4), gated (g1 determinism),
-# hardmode-batteried (bench_cell), and perf-probed (bench_perf). Relaunching
-# the same PHASES advances to the next pack; receipts and per-pack summaries
-# live in results/bpw4sweep/ (persistent across windows). A refusal records +
-# retries (two = skipped with receipt) and MUST NOT fall through into the
-# probes — the post-restart steps run only when the server is up.
-# ---------------------------------------------------------------------------
-BPW4_PACK_AZ="MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
-BPW4_PACK_MIA="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main PATCHES="
-BPW4_PACK_TR3="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main PATCHES="
-sweep_pack() {      # $1 tag, $2 model id, $3 env pairs, $4 receipt path — one pack, start to receipt
-  local TAG="$1" PACK="$2" ENVPAIRS="$3" P="$4"
-  echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
-  local HUBDIR="models--${PACK//\//--}"   # pattern=escaped-slash, separator=/, replacement=--
-  local W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
-  local REV="main"
-  [[ "$ENVPAIRS" =~ MODEL_REVISION=([^ ]+) ]] && REV="${BASH_REMATCH[1]}"
-  # the HF cache keys snapshots by COMMIT; refs/$REV names it — normalize the path
-  if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ] && [ -f "$HF_CACHE/hub/$HUBDIR/refs/$REV" ]; then
-    local H; H=$(cat "$HF_CACHE/hub/$HUBDIR/refs/$REV")
-    ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/$REV"
-    echo "- normalized: snapshots/$REV -> $H (the cache keys snapshots by commit)" >> "$P"
-  fi
-  if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ]; then
-    echo "- staging $HUBDIR from the worker (the head lacks snapshots/$REV; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' '))" >> "$P"
-    if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
-      rsync -aL "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-      echo "- staged: $(du -shL "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
-    elif ssh -o BatchMode=yes "$W" "test -f .cache/huggingface/hub/$HUBDIR/refs/$REV" 2>/dev/null; then
-      rsync -aL "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-      local H; H=$(cat "$HF_CACHE/hub/$HUBDIR/refs/$REV")
-      [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" && echo "- staged (refs/$REV -> $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
-    else
-      echo "- FAIL: neither host has $HUBDIR — recorded" >> "$P"
-      local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
-      echo "$N" > "$SWEEP_DIR/$TAG.refusals"
-      [ "$N" -ge 2 ] && { echo "- missing twice — the pack is skipped with this receipt" >> "$P"; touch "$SWEEP_DIR/$TAG.done"; }
-      return 0
-    fi
-  fi
-  # the head-side downloads (the 3bpw packs) must reach the worker — prepare
-  # checks both hosts, and sweep_pack's original staging ran worker->head only
-  if [ -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ] && ! ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
-    echo "- staging $HUBDIR @ $REV to the worker (the head has it; the worker lacks it)" >> "$P"
-    ssh -o BatchMode=yes "$W" "mkdir -p .cache/huggingface/hub/$HUBDIR"
-    # -L: the hf_xet cache materializes snapshot files as SYMLINK CHAINS (snapshot ->
-    # blob -> the xet store) - plain -a copies the dangling links (the worker got 632K
-    # of stubs; campaign-20261102-175307). Dereference: copy the data.
-    rsync -aL "$HF_CACHE/hub/$HUBDIR/" "$W:.cache/huggingface/hub/$HUBDIR/"
-    echo "- staged to the worker: $(ssh -o BatchMode=yes "$W" "du -shL .cache/huggingface/hub/$HUBDIR" 2>/dev/null | cut -f1)" >> "$P"
-  fi
-  # prepare demands snapshots/$REV on BOTH hosts; normalize the worker too
-  # (the TR3 window's refusal was exactly this: the head staged, the worker
-  # hash-keyed only — campaign-20261102-151912)
-  if ! ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
-    if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
-      ssh -o BatchMode=yes "$W" "C=.cache/huggingface/hub/$HUBDIR; H=\$(cat \$C/refs/$REV); [ -n \"\$H\" ] && ln -s \"\$H\" \"\$C/snapshots/$REV\" && echo worker-$REV-normalized" >> "$P"
-    else
-      echo "- FAIL: the worker lacks $HUBDIR entirely — recorded" >> "$P"
-      local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
-      echo "$N" > "$SWEEP_DIR/$TAG.refusals"
-      [ "$N" -ge 2 ] && { echo "- missing twice — the pack is skipped with this receipt" >> "$P"; touch "$SWEEP_DIR/$TAG.done"; }
-      return 0
-    fi
-  fi
-  # shellcheck disable=SC2086
-  if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
-    echo "- FAIL: the server refused the pack" >> "$P"
-    local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
-    echo "$N" > "$SWEEP_DIR/$TAG.refusals"
-    if [ "$N" -ge 2 ]; then
-      echo "- refused twice — the pack is skipped with this receipt (retry: clear $SWEEP_DIR/$TAG.done)" >> "$P"
-      touch "$SWEEP_DIR/$TAG.done"
-    else
-      echo "- recorded; the next window retries this pack" >> "$P"
-    fi
-    return 0
-  fi
-  echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
-  local RP="$SWEEP_DIR/$TAG-req.json"; req_file "$RP" "$REF_PROMPT"
-  chat "$RP" > "$SWEEP_DIR/$TAG-1a.json"; chat "$RP" > "$SWEEP_DIR/$TAG-1b.json"
-  if [[ "$(content_sha "$SWEEP_DIR/$TAG-1a.json")" == "$(content_sha "$SWEEP_DIR/$TAG-1b.json")" ]]; then
-    echo "- PASS g1 determinism (content)" >> "$P"
-  else echo "- FAIL g1 determinism" >> "$P"; fi
-  bench_cell "$TAG" "$SWEEP_DIR/$TAG-battery" >> "$P" 2>&1
-  bench_perf "$TAG-perf" "$SWEEP_DIR/$TAG-perf" 4 >> "$P" 2>&1
-  grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" > "$SWEEP_DIR/$TAG.summary" 2>/dev/null || echo "no score" > "$SWEEP_DIR/$TAG.summary"
-  touch "$SWEEP_DIR/$TAG.done"
-  echo "- pack $TAG receipted (score: $(cat "$SWEEP_DIR/$TAG.summary"))" >> "$P"
-}
-if want bpw4sweep && ! phase_done bpw4sweep; then
-  log "=== bpw4sweep"
-  P="$OUT/bpw4sweep.md"; : > "$P"
-  echo "# bpw4sweep (the 4bpw local packs on v1.2.1; one pack per window)" >> "$P"
-  SWEEP_DIR="results/bpw4sweep"; mkdir -p "$SWEEP_DIR"
-  PACK=""; ENVPAIRS=""; TAG=""
-  for spec in "AZ:$BPW4_PACK_AZ" "MIA:$BPW4_PACK_MIA" "TR3:$BPW4_PACK_TR3"; do
-    t="${spec%%:*}"; e="${spec#*:}"
-    if [ ! -f "$SWEEP_DIR/$t.done" ]; then TAG="$t"; PACK="${e%% *}"; PACK="${PACK#MODEL_ID=}"; ENVPAIRS="$e"; break; fi
-  done
-  if [ -z "$PACK" ]; then
-    echo "- all packs receipted — the sweep is complete:" >> "$P"
-    for f in "$SWEEP_DIR"/*.summary; do echo "  - $(basename "$f"): $(cat "$f")" >> "$P"; done
-    touch "$OUT/.bpw4sweep.done"
-  else
-    sweep_pack "$TAG" "$PACK" "$ENVPAIRS" "$P"
-    touch "$OUT/.bpw4sweep.done"
-  fi
-fi
-
-# ---------------------------------------------------------------------------
-# phase: bpw3sweep (SESSION-SPECIFIC; the 3bpw track — the requant's goal via
-# community packs, (user) round 132; retires with the arc's verdict). The
-# same one-pack-per-window pattern as bpw4sweep, sweep_pack shared, revisions
-# honored (the turboderp quants are BRANCHES of one repo). The packs:
-# turboderp's plain 3.05bpw and self-calibrated sc_3.10bpw (the zai-org base)
-# and androidli's 3.0bpw-mcg TensorFold pack (the uncensored base — the
-# content caveat the user accepted). A codebook the engine refuses is a
-# receipt, not a failure.
-# ---------------------------------------------------------------------------
-BPW3_PACK_TB305="MODEL_ID=turboderp/GLM-5.3-Flash-exl3 MODEL_REVISION=3.05bpw PATCHES="
-BPW3_PACK_TB310="MODEL_ID=turboderp/GLM-5.3-Flash-exl3 MODEL_REVISION=sc_3.10bpw PATCHES="
-BPW3_PACK_ANDROID="MODEL_ID=androidli/GLM-5.3-Flash-Uncensored-EXL3-3.0bpw-mcg-TensorFold MODEL_REVISION=main PATCHES="
-if want bpw3sweep && ! phase_done bpw3sweep; then
-  log "=== bpw3sweep"
-  P="$OUT/bpw3sweep.md"; : > "$P"
-  echo "# bpw3sweep (the 3bpw packs on v1.2.1; one pack per window)" >> "$P"
-  SWEEP_DIR="results/bpw4sweep"; mkdir -p "$SWEEP_DIR"
-  PACK=""; ENVPAIRS=""; TAG=""
-  for spec in "TB305:$BPW3_PACK_TB305" "TB310:$BPW3_PACK_TB310" "ANDROID:$BPW3_PACK_ANDROID"; do
-    t="${spec%%:*}"; e="${spec#*:}"
-    if [ ! -f "$SWEEP_DIR/$t.done" ]; then TAG="$t"; PACK="${e%% *}"; PACK="${PACK#MODEL_ID=}"; ENVPAIRS="$e"; break; fi
-  done
-  if [ -z "$PACK" ]; then
-    echo "- all packs receipted — the 3bpw track is complete:" >> "$P"
-    for f in "$SWEEP_DIR"/TB305.summary "$SWEEP_DIR"/TB310.summary "$SWEEP_DIR"/ANDROID.summary; do [ -f "$f" ] && echo "  - $(basename "$f"): $(cat "$f")" >> "$P"; done
-    touch "$OUT/.bpw3sweep.done"
-  else
-    sweep_pack "$TAG" "$PACK" "$ENVPAIRS" "$P"
-    touch "$OUT/.bpw3sweep.done"
-  fi
-fi
-
+# (the bpw4sweep/bpw3sweep session phases RETIRED round 132 — the 4bpw sweep
+# receipted (TR3 94 / MIA 94 / Focus 93 / AZ 90 — docs/bpw4-sweep-cards.svg, the
+# receipts in results/bpw4sweep/) and the 3bpw track CLOSED on the engine's 4-bit
+# expert floor: the CUDA family reads 4-bit EXL3 experts — all three community
+# packs refused (UnsupportedQuant). Re-run patterns: git history.
 
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production

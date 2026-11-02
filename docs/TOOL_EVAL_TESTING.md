@@ -232,6 +232,12 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       The bpw4sweep (the 4bpw local packs, one per window): **Mia-AiLab 4bpw
       94/104** (production's own family, the best) · **Focus 93** · **AZ 90**
       (glm-topk4b applies on v1.2.1; the perf leader) · TR3 **94** (the sweep complete: TR3 94 · MIA 94 · Focus 93 · AZ 90;
+      **the 3bpw track CLOSED on the engine's 4-bit expert floor** — the CUDA
+      family reads 4-bit EXL3 experts: turboderp 3.05bpw refused (campaign-
+      20261102-180405), sc_3.10 skipped as pack-generic, androidli's
+      TensorFold-native mcg refused too (campaign-20261102-184142; it served on
+      the python-era 0.6.0 only) — sub-4bpw on the native line is upstream-
+      gated on the family's reader;
 TR3 posts the best top-8 decode — tg128 46.0/46.2/45.2 — and dominates the
 Focus on both axes; the scorecards:
 docs/bpw4-sweep-cards.svg from docs/bpw4-sweep.tsv, generated). The

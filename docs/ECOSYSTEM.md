@@ -589,7 +589,11 @@ The user's spec: GLM-5.3-Flash (the architecture name IS glm5_next), vision,
   verified; KV pool 3.89M tokens (vs 1.86M at 4bpw); forward latency -8/-16/
   -17.5% vs 4bpw; EvalPlus 86.3% (4bpw: 86.5%). THE COMMUNITY'S 3bpw PACK —
   a ready-made sub-4bpw serve — no local quantization (requants are out of
-  scope, user round 132). CAVEATS: the base is dealignai's
+  scope, user round 132). ROUND-132 RECEIPT: the native CUDA engine REFUSES it
+  — "EXL3 at 3 bits: the CUDA family reads 4-bit EXL3 experts"
+  (UnsupportedQuant); its 0.6.0 verification was the python-engine era. The
+  sub-4bpw goal on the native line is upstream-gated on the family's reader.
+  CAVEATS: the base is dealignai's
   UNCENSORED derivative (not zai-org — content policy is the user's call),
   its receipts are EvalPlus not hardmode, and the verification era is 0.6.0.
 - **JANGQ-AI/GLM-5.3-Flash-EXL3** (4.0bpw): vision 16-bit, MTP in, mul1,

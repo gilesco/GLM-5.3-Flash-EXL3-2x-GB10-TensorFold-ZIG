@@ -4637,3 +4637,29 @@ the sweep artifacts' row. The docs alignment pass completed: DELTAS' header
 and Engine row on v1.2.1 with the era-labeled quality numbers, VALIDATION
 and the CONTEXT plan carry the v1.2.1 re-qualification notes (the CONTEXT
 plan's queued depth re-run: DONE, 12/12 twice).
+
+## (round 132, cont. 15) THE 3BPW TRACK CLOSES — the engine gate is total (2026-11-02)
+
+The androidli window (campaign-20261102-184142): the TensorFold-native mcg
+pack staged (426G with the -L materialization), served — and REFUSED:
+`EXL3 at 3 bits: the CUDA family reads 4-bit EXL3 experts (UnsupportedQuant)`.
+The same floor as the turboderp packs, on a pack whose layout is exactly what
+our engine reads at 4bpw. **The sub-4bpw goal on the native line is
+engine-gated, full stop**: the packs exist, the quantizers did their work,
+the family's reader admits 4-bit experts only. The androidli pack served on
+TensorFold 0.6.0 — the python-engine era (production's line).
+
+**Closed**: the androidli + turboderp dirs pruned on both hosts (the worker's
+-426G/-589G copies reclaimed; the head ~1130G, the worker ~1887G free), the
+ANDROID/TB305/TB310 skip receipts in results/bpw4sweep/, and **both sweep
+phases retired** from run-qualification.sh (the receipts + the re-run patterns
+live in results/bpw4sweep/ and git history). The 4bpw sweep's verdict stands
+as the arc's product: **TR3-4bpw is the served default at 94/104**.
+
+The upstream watch item (ECOSYSTEM.md): the CUDA family's GLM reader gaining
+sub-4-bit expert support would reopen the sub-4bpw serving track with zero
+local work — the packs are one download away.
+
+Next per the plan: the owed production anchor (a solo prodqual window on the
+current bench version), then the two GLM knobs (TF_GLM_CHUNK_SOLO,
+TF_GLM_VISION_HOST).
