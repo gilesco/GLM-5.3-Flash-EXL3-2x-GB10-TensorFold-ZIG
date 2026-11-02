@@ -13,8 +13,9 @@ upstream-gated**:
 
 - **Quality (Front 1)**: UPDATED round 132 — the 4bpw sweep moved the ceiling:
   **TR3-4bpw 94/104** (the served default, the (user) swap) ties the MIA pack
-  and closes 1 of the 2 points to production's old-bench 94; production's
-  current-bench hardmode anchor is owed (a solo prodqual window). The
+  and ties **production's current-bench anchor: 94/104** (the prodbench receipt,
+  cont. 22 — production FOR TESTING on the clean 8001, the same bench_cell
+  instrument; campaign-20261102-213954) — the quality bar is met AT the number. The
   checkpoint-lever idea this bullet gestured at is now DONE — the sweep ran it
   (docs/bpw4-sweep-cards.svg); the 3bpw track CLOSED round 132: the engine gates it — the CUDA family reads
   4-bit EXL3 experts (all three community packs refused, UnsupportedQuant; the

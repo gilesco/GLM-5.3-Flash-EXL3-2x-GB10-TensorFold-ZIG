@@ -4784,3 +4784,22 @@ present in the load functions despite cont. 17's revert note — is now removed
 at all 4 sites; the testing port is unconditional and the script-start port
 lock is the one guard. The phase retires when the anchor lands in the
 scoreboard. Window launched: PHASES="prodbench".
+
+## (round 132, cont. 22) THE OWED QUALITY ANCHOR LANDS: production's current-bench hardmode 94/104 — the served TR3 TIES it (2026-11-02)
+
+**prodbench ran clean** (campaign-20261102-213954): production FOR TESTING on
+8001 (the duel's choreography — our stack yielded the port, the intent-keyed
+start, the stop after, our stack restored), the bench's hardmode battery
+(v3.0.1, --hardmode, seed 42, --parallel 2 — the same bench_cell instrument as
+ours) as read-only client load. **Final score: 94/104.** The served TR3's
+sweep receipt: **94/104 — a tie at the bar** ("beat production's run-level 94
+or come close" — met AT the number). The battery's own saturation warning
+(--parallel 2 can record timeouts as FAILs) applies to both sides alike —
+same instrument, same seed, same parallelism. README/DELTAS/PERF_PLAN/ledger
+carry the closure; **the prodbench phase retired** (its receipt stands; the
+re-run pattern in git history). The last owed item on the plan is now closed.
+
+Next per the plan: the user's CS call (presented with options this sitting);
+beyond it the one open perf front is the warm full-hit skip (production 0.21 s
+vs our 1.42 s resume — the upstream host-cache trio #1736/#1795 is the named
+pattern), upstream-gated pending the watch.

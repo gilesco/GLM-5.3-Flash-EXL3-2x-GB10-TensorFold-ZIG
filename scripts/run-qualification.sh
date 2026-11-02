@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs knobsv121 prodbench duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs knobsv121 duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1015,45 +1015,11 @@ PYEOF
   touch "$OUT/.knobsv121.done"
 fi
 
-# ---------------------------------------------------------------------------
-# phase: prodbench (SESSION-SPECIFIC; closes the OWED production hardmode
-# anchor — the (user) metrics-port rule retired prodqual, so production's
-# current-bench quality score comes from production FOR TESTING on 8001: the
-# duel's choreography (our stack yields the port; the intent-keyed start; the
-# stop after) with the bench's hardmode battery as the client load. The serve
-# is read-only — production's code/config is never touched beyond the port.)
-# Our side's same-bench receipt: TR3 94/104 (the sweep, v3.0.1). Retires when
-# the anchor lands in the scoreboard.
-# ---------------------------------------------------------------------------
-if want prodbench && ! phase_done prodbench; then
-  log "=== prodbench (production FOR TESTING on 8001: the hardmode battery)"
-  P="$OUT/prodbench.md"; : > "$P"
-  echo "# prodbench (production 0.6.6's hardmode battery on the clean 8001)" >> "$P"
-  ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-  log "prodbench: starting production FOR TESTING on 8001"
-  PORT=8001 "$HOME/$PROD_TIP/start.sh" </dev/null >>"$LOG" 2>&1 || true
-  if prod_running; then
-    PROD_MODEL=$(curl -s -m 10 "http://127.0.0.1:8001/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")') || PROD_MODEL=""
-    PROD_MODEL="${PROD_MODEL:-$SERVED_NAME}"
-    echo "- production model: $PROD_MODEL (read-only; the intent-keyed 8001 start)" >> "$P"
-    log "prodbench: hardmode battery on production (~25 min of client load)"
-    SERVED_NAME_SAVE="$SERVED_NAME"
-    SERVED_NAME="$PROD_MODEL" bench_cell prod-hardmode "$OUT/prod-hardmode" >> "$P"
-    SERVED_NAME="$SERVED_NAME_SAVE"   # bash persists VAR=x func assignments — restore it
-    log "production battery complete — stopping it, restoring our stack"
-    "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
-    prod_running && die "production-for-testing still running after the stop"
-  else
-    echo "- production-for-testing did not come up on 8001 (its refusal is the receipt)" >> "$P"
-  fi
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "- our stack restored on 8001 (the standing config)" >> "$P"
-  touch "$OUT/.prodbench.done"
-fi
-
+# (the prodbench phase RETIRED round 132 (cont. 22) — its purpose is served:
+# production's current-bench hardmode anchor landed at 94/104 (campaign-
+# 20261102-213954, production FOR TESTING on the clean 8001, the same
+# bench_cell instrument as ours) — the served TR3 TIES it at 94. Re-run
+# pattern: git history.)
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one

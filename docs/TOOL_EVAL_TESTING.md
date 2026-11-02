@@ -205,7 +205,11 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
 - [x] ~~Phase 2/3 quality on **dense4fp8**~~ CLOSED (round 132): the hardmode
       battery ran on the cell twice (campaign-20261102-095700: 93; the sweep's
       per-pack windows), the scenario receipts carry the failing-TC detail; the
-      production-side comparison is the owed prodqual anchor.
+      production-side comparison: CLOSED (cont. 22) — production's current-bench
+      hardmode anchor landed via prodbench (production FOR TESTING on 8001, the
+      same bench_cell instrument): **94/104** (campaign-20261102-213954) — the
+      served TR3 TIES it at 94; the battery's saturation warning (--parallel 2)
+      recorded on both sides alike.
 - [ ] Small hygiene: worker clock probe reads 0 via ssh (acpi_cppc path?); consider
       pinning the upstream ref in prepare so receipts stop drifting with HEAD.
 - [x] **One-command campaign** (`scripts/run-qualification.sh`, 2026-10-23): preflight →
@@ -229,6 +233,10 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       effort-tail-era 93); dense8+fp8 88/104 (TC-99 partial + TC-101/104).
       Standard tool-eval 95 (dense8 cell, the morning campaign) — recorded as
       tool-eval, never cross-compared. Owed: production's current-bench prodqual.
+      → CLOSED (cont. 22): **prodbench** — production's current-bench hardmode
+      anchor on the clean 8001 (production FOR TESTING, the duel's choreography,
+      the same bench_cell instrument): **94/104** (campaign-20261102-213954) —
+      the served TR3 TIES it; the phase retired, its receipt stands.
       The bpw4sweep (the 4bpw local packs, one per window): **Mia-AiLab 4bpw
       94/104** (production's own family, the best) · **Focus 93** · **AZ 90**
       (glm-topk4b applies on v1.2.1; the perf leader) · TR3 **94** (the sweep complete: TR3 94 · MIA 94 · Focus 93 · AZ 90;

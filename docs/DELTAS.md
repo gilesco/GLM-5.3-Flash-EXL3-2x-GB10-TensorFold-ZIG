@@ -13,7 +13,8 @@ PASS). The served default is now the **TR3-4bpw checkpoint** (the round-132
 (user) swap after the 4bpw sweep: 94/104 hardmode, the best top-8 decode —
 docs/bpw4-sweep-cards.svg; the AZ-Focus stays receipted at 93) — the **(user) call: hardmode is THE quality
 measure, target = beat production's run-level 94 or come close**. On the CURRENT instrument (the 104-scenario hardmode battery, v1.2.1): the served
-**TR3 94**, the Focus **93**, the AZ top-4 **90** (docs/bpw4-sweep-cards.svg). On the
+**TR3 94**, the Focus **93**, the AZ top-4 **90** (docs/bpw4-sweep-cards.svg) — and **production's current-bench anchor: 94/104** (the prodbench
+receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served TR3 TIES production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
 or bench versions). **The served TR3 cell's scoreboard (the round-132 duel, 2026-11-02 —
