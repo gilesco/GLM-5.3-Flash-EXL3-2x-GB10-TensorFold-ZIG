@@ -49,7 +49,7 @@ its tracker.
 | Exactness | All §2 gates **PASS** (content form): drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable — [docs/VALIDATION.md](docs/VALIDATION.md) §2 |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder 12/12 at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
 | Quality | **Hardmode 94** (TR3, the sweep's best — the served default; production's tool-eval 96 — the gap is checkpoint-inherent). The sweep's scorecards: [docs/bpw4-sweep-cards.svg](docs/bpw4-sweep-cards.svg) — [docs/DELTAS.md](docs/DELTAS.md) |
-| Speed | **Loading TAKEN** (95 s vs production's 93.7); solo **93%** (54.9 vs 58.9), c2 **80%**, c4 **75%**, ITL **102% — crossed**, TTFT overhead **93%**, **the cold depth cost CROSSED (309%)** — ours 5.6 s vs production's 17.1 s at d8192 cold (its slope 2.03 ms/tok, slowing with depth; ours 0.656 flat); the open front is the **warm full-hit skip** (production 0.21 s vs our 1.42 s resume). The scoreboard: [docs/DELTAS.md](docs/DELTAS.md); the chart: [docs/perf-vs-production.svg](docs/perf-vs-production.svg) |
+| Speed | **Loading TAKEN** (95 s vs production's 93.7); solo **93.9%** (55.4 vs 59.0), c2 **83.1%**, c4 **92.4%\***, ITL **102% — crossed**, TTFT overhead **92.0%**, **the cold depth cost CROSSED (309%)** — ours 5.6 s vs production's 17.1 s at d8192 cold (its slope 2.03 ms/tok, slowing with depth; ours 0.656 flat); the open front is the **warm full-hit skip** (production 0.21 s vs our 1.42 s resume). The scoreboard: [docs/DELTAS.md](docs/DELTAS.md); the chart: [docs/perf-vs-production.svg](docs/perf-vs-production.svg) |
 | Vision | **Enabled as the standing default** at the 524,288 window; verified production-equivalent perception — [docs/DELTAS.md](docs/DELTAS.md) |
 | The bars | **(user)** quality — hardmode: beat production's run-level or come close; perf — surpass production on loading, generation tok/s, and prefill. Loading is taken; the perf fronts' states: [docs/PERF_PLAN.md](docs/PERF_PLAN.md) |
 
@@ -67,10 +67,10 @@ round-108 definitive-run cards as history (the current numbers live in
 - Two GB10 hosts (head + worker): docker + nvidia runtime, key-based ssh head → worker,
   ~200 GB free disk each (the served checkpoints are ~164 GB; the Mia line's cells
   are ~176 GB).
-- The checkpoints **on both** hosts: the Focus default is local files
-  (`local/GLM-5.3-Flash-AZ-Focus-EXL3` — see the revisions table below); the Mia line's
-  cells live in `~/.cache/huggingface` (`DOWNLOAD=1 scripts/prepare.sh` fetches a
-  missing one of those).
+- The checkpoints **on both** hosts: the served default (the TR3 pack) lives in
+  `~/.cache/huggingface` on both (staged by the sweep; `DOWNLOAD=1 scripts/prepare.sh`
+  fetches a missing one); the AZ-Focus is the local-files pack
+  (`local/GLM-5.3-Flash-AZ-Focus-EXL3` — see the revisions table below).
 - One CX7 cable per rail between the pair. `prepare.sh` **discovers the site** when
   `scripts/local.sh` is missing — the cabled rails, their addresses and the worker's
   ssh target — and writes it (`REDISCOVER=1 ./scripts/prepare.sh` re-detects an
@@ -120,7 +120,7 @@ header for the per-phase list.
 ## Versions: how the pin works
 
 The pin lives in `scripts/local.sh` (`TF_REF` or `TF_COMMIT`): the current pin is
-`TF_REF=v1.2.0`. At prepare time the ref is resolved and **recorded in the prepared
+`TF_COMMIT=1db3edb…` (**v1.2.1**). At prepare time the ref is resolved and **recorded in the prepared
 marker**, so a running pair never drifts and a restart does not silently upgrade.
 
 > **Pin in `scripts/local.sh`, not in your shell.** `start.sh` re-runs `prepare.sh`
@@ -141,7 +141,7 @@ The ones that matter:
 | `NCCL_SOCKET_IFNAME` / `NCCL_IB_HCA` | *(required)* | netdevs NCCL may use; the two cabled RoCE devices for the engine's gather and NCCL RDMA |
 | `TF_REF` / `TF_COMMIT` / `TF_REPO` | `v1.2.1` (via local.sh) / upstream | the TensorFold line to track; pin via `local.sh` (see above) |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint — the TR3 quant (the round-132 (user) swap; 94/104 hardmode, the best top-8 decode); present on both hosts (staged) |
-| `PATCHES` | `glm-tail-release.patch` | the load-ahead's tail-page release (the qualified default — [patches/README.md](patches/README.md)); the Focus's code is otherwise pristine upstream |
+| `PATCHES` | `glm-tail-release.patch` | the load-ahead's tail-page release (the qualified default — [patches/README.md](patches/README.md)); the served pack's weights are otherwise pristine upstream |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` and the snapshot is present (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` / `PARALLEL` | `524288` / `4` | window and streams — the qualified optimum |
 | `DRAFTS` | `1` | `0` → `--no-drafts` (the serial reference); `1` drafts with DFlash2 (else the MTP head) |
@@ -161,9 +161,10 @@ The ones that matter:
 | --- | --- |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` *(default; the round-132 (user) swap)* | Mia's TR3 4bpw (topk=8, mcg); real files on both hosts (staged) |
 | `local/GLM-5.3-Flash-AZ-Focus-EXL3` | AxonZeta's efficiency-track Focus (topk=8 by design, old-format mcg codebook, integer bits); real files on both hosts (the engine's readFileAlloc doesn't traverse snapshot symlinks) |
-| `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the site's top-4 variant of production's checkpoint (a byte-surgical config edit; the receipted perf leader — needs `PATCHES=glm-topk4b.patch`); the base snapshot stays in both caches |
+| `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the site's top-4 variant of production's checkpoint (a byte-surgical config edit; needs `PATCHES=glm-topk4b.patch`); the base snapshot stays in both caches |
+| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (`PATCHES=glm-topk4b.patch`) — **the sweep's perf leader** (pp 1,184 tok/s d0, solo tg 57.7) at 90/104 hardmode |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `078455ff…` | production's stock checkpoint; already in both hosts' HF caches |
-| `azampatti/GLM-5.3-Flash-AZ` | the retrained top-4 selector (auto-round int4); downloaded; the EXL3 requant is staged (`scripts/az-window.sh`) — the principled fix if the hardmode bar and the top-4 perf are both to hold |
+| ~~`azampatti/GLM-5.3-Flash-AZ`~~ | deleted (the round-58 cleanup; the double-quantization confound was never de-confounded) — the retrained-selector route closed at hardmode 89 (round 72) |
 | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter; already in both caches (non-commercial terms) |
 
 This line serves the EXL3 checkpoint only. The NVFP4 route has its own repo
@@ -209,9 +210,12 @@ production all serve from the same caches.
   [#593](https://github.com/ashhart/TensorFold/issues/593)); the EXL3 two-rank and DFlash2
   work is #855/#976 and #979, first released in v1.1.0. Apache-2.0; see LICENSE, NOTICE
   and upstream's THIRD_PARTY_NOTICES.
-- The served default checkpoint is **Mia-AiLab's TR3-4bpw EXL3** (the round-132 (user) swap; the AZ-Focus stays receipted at 93)
-  (`local/GLM-5.3-Flash-AZ-Focus-EXL3`) — its terms apply, and the stock/top4cfg cells
-  serve `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` (a byte-identical re-host of
-  `brandonmusic/GLM-5.3-Flash-tr3-4bpw`, ShapleyMCG License 1.0 — attribution asked); the
-  drafter is `incoai/GLM-5.3-Flash-DFlash2` (CC BY-NC-ND 4.0, non-commercial). Their
-  licenses and cards apply.
+- The served default checkpoint is **Mia-AiLab's TR3-4bpw EXL3** (the round-132 (user)
+  swap after the 4bpw sweep: 94/104 hardmode, the best top-8 decode; the AZ-Focus stays
+  receipted at 93) — the TR3 quant
+  (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`, a re-host of
+  `brandonmusic/GLM-5.3-Flash-tr3-4bpw`, ShapleyMCG License 1.0 — attribution asked),
+  on the GLM-5.3-Flash base (Z.ai's MIT); its terms apply. Production's stock
+  (`Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold`, Mia's own quant, Apache-2.0) and the
+  drafter (`incoai/GLM-5.3-Flash-DFlash2`, CC BY-NC-ND 4.0, non-commercial) carry their
+  own terms — each pack's license and card apply when served.
