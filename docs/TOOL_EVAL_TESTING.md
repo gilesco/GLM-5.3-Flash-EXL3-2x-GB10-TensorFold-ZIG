@@ -202,8 +202,10 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       lines), and the orchestration overhead (wall − engine).
 - [ ] Small hygiene: worker clock probe reads 0 via ssh (acpi_cppc path?); g3's
       `/metrics` cache-counter check (goshi's exporter maps `tensorfold_cached_tokens_total`).
-- [ ] Phase 2/3 quality on **dense4fp8** (the qualified winner): tools-mode + hardmode
-      TEB runs, and the failing-scenario comparison vs production (TC-68, TC-51).
+- [x] ~~Phase 2/3 quality on **dense4fp8**~~ CLOSED (round 132): the hardmode
+      battery ran on the cell twice (campaign-20261102-095700: 93; the sweep's
+      per-pack windows), the scenario receipts carry the failing-TC detail; the
+      production-side comparison is the owed prodqual anchor.
 - [ ] Small hygiene: worker clock probe reads 0 via ssh (acpi_cppc path?); consider
       pinning the upstream ref in prepare so receipts stop drifting with HEAD.
 - [x] **One-command campaign** (`scripts/run-qualification.sh`, 2026-10-23): preflight →

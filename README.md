@@ -11,8 +11,9 @@
 
 > ## ⚠️ Testing line — significantly different from the production recipe
 >
-> **This line is EXL3 only**: it serves the site's **AZ-Focus** EXL3 checkpoint
-> (topk=8 by design, the quality leader) with the DFlash2 drafter (`--drafter`) on
+> **This line is EXL3 only**: it serves the site's **TR3-4bpw** EXL3 checkpoint
+> (Mia-AiLab's TR3 quant — the round-132 (user) swap after the 4bpw sweep: 94/104
+> hardmode with the best top-8 decode) with the DFlash2 drafter (`--drafter`) on
 > TensorFold's native CUDA engine — the two-rank path upstream has measured since
 > v1.1.0. **The NVFP4 route has its own repo**
 > ([GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing](https://github.com/gilesco/GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing));
@@ -43,11 +44,11 @@ its tracker.
 
 | question | answer |
 | --- | --- |
-| Does it serve? | Yes — **v1.2.0** on both ranks, RoCE gather up (2 HCAs, RDMA writes, no fallback) |
+| Does it serve? | Yes — **v1.2.1** on both ranks, RoCE gather up (2 HCAs, RDMA writes, no fallback) |
 | Ports | **This line always serves the testing port 8001** — opencode never connects to it. Production serves opencode on 8000 and testing on 8001 (intent-keyed starts). [AGENTS.md](AGENTS.md) carries the lifecycle rules |
 | Exactness | All §2 gates **PASS** (content form): drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable — [docs/VALIDATION.md](docs/VALIDATION.md) §2 |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder 12/12 at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
-| Quality | **Hardmode 93** (the Focus's standing ceiling; production's tool-eval 96 — the gap is checkpoint-inherent) — [docs/DELTAS.md](docs/DELTAS.md) |
+| Quality | **Hardmode 94** (TR3, the sweep's best — the served default; production's tool-eval 96 — the gap is checkpoint-inherent). The sweep's scorecards: [docs/bpw4-sweep-cards.svg](docs/bpw4-sweep-cards.svg) — [docs/DELTAS.md](docs/DELTAS.md) |
 | Speed | **Loading TAKEN** (95 s vs production's 93.7); solo **93%** (54.9 vs 58.9), c2 **80%**, c4 **75%**, ITL **102% — crossed**, TTFT overhead **93%**, **the cold depth cost CROSSED (309%)** — ours 5.6 s vs production's 17.1 s at d8192 cold (its slope 2.03 ms/tok, slowing with depth; ours 0.656 flat); the open front is the **warm full-hit skip** (production 0.21 s vs our 1.42 s resume). The scoreboard: [docs/DELTAS.md](docs/DELTAS.md); the chart: [docs/perf-vs-production.svg](docs/perf-vs-production.svg) |
 | Vision | **Enabled as the standing default** at the 524,288 window; verified production-equivalent perception — [docs/DELTAS.md](docs/DELTAS.md) |
 | The bars | **(user)** quality — hardmode: beat production's run-level or come close; perf — surpass production on loading, generation tok/s, and prefill. Loading is taken; the perf fronts' states: [docs/PERF_PLAN.md](docs/PERF_PLAN.md) |
@@ -138,8 +139,8 @@ The ones that matter:
 | `WORKER` | *(required)* | rank 1's ssh target (key-based); set in `scripts/local.sh` |
 | `HEAD_FABRIC_ADDR` / `WORKER_FABRIC_ADDR` | *(required)* | the CX7 rails; NCCL bootstraps on the head's |
 | `NCCL_SOCKET_IFNAME` / `NCCL_IB_HCA` | *(required)* | netdevs NCCL may use; the two cabled RoCE devices for the engine's gather and NCCL RDMA |
-| `TF_REF` / `TF_COMMIT` / `TF_REPO` | `v1.2.0` (via local.sh) / upstream | the TensorFold line to track; pin via `local.sh` (see above) |
-| `MODEL_ID` / `MODEL_REVISION` | `local/GLM-5.3-Flash-AZ-Focus-EXL3` @ `main` | the checkpoint — the AZ-Focus variant (topk=8 by design; the quality leader); a local checkpoint present on both hosts |
+| `TF_REF` / `TF_COMMIT` / `TF_REPO` | `v1.2.1` (via local.sh) / upstream | the TensorFold line to track; pin via `local.sh` (see above) |
+| `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint — the TR3 quant (the round-132 (user) swap; 94/104 hardmode, the best top-8 decode); present on both hosts (staged) |
 | `PATCHES` | `glm-tail-release.patch` | the load-ahead's tail-page release (the qualified default — [patches/README.md](patches/README.md)); the Focus's code is otherwise pristine upstream |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` and the snapshot is present (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` / `PARALLEL` | `524288` / `4` | window and streams — the qualified optimum |
@@ -158,7 +159,8 @@ The ones that matter:
 
 | Revision | What it is |
 | --- | --- |
-| `local/GLM-5.3-Flash-AZ-Focus-EXL3` *(default)* | AxonZeta's efficiency-track Focus (topk=8 by design, old-format mcg codebook, integer bits); real files on both hosts (the engine's readFileAlloc doesn't traverse snapshot symlinks) |
+| `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` *(default; the round-132 (user) swap)* | Mia's TR3 4bpw (topk=8, mcg); real files on both hosts (staged) |
+| `local/GLM-5.3-Flash-AZ-Focus-EXL3` | AxonZeta's efficiency-track Focus (topk=8 by design, old-format mcg codebook, integer bits); real files on both hosts (the engine's readFileAlloc doesn't traverse snapshot symlinks) |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the site's top-4 variant of production's checkpoint (a byte-surgical config edit; the receipted perf leader — needs `PATCHES=glm-topk4b.patch`); the base snapshot stays in both caches |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `078455ff…` | production's stock checkpoint; already in both hosts' HF caches |
 | `azampatti/GLM-5.3-Flash-AZ` | the retrained top-4 selector (auto-round int4); downloaded; the EXL3 requant is staged (`scripts/az-window.sh`) — the principled fix if the hardmode bar and the top-4 perf are both to hold |

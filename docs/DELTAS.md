@@ -9,8 +9,9 @@ docs/LAUNCH.md and docs/TOOL_EVAL_TESTING.md; this repo's edits are AI-generated
 README. The engine is **v1.1.8** (`03d08f1e`, adopted on the receipts-equal battery: gates
 ALL PASS, hardmode 92 equal, perf within noise) with **`TF_GLM_INDEX_CUDA=1`** as the
 standing default (round 49: the depth ladder −2.6% at 131k → −5.5% at 393k, gates ALL
-PASS). The served default is now the **AZ-Focus checkpoint** (topk=8
-by design, pristine upstream, no patch) — the **(user) call: hardmode is THE quality
+PASS). The served default is now the **TR3-4bpw checkpoint** (the round-132
+(user) swap after the 4bpw sweep: 94/104 hardmode, the best top-8 decode —
+docs/bpw4-sweep-cards.svg; the AZ-Focus stays receipted at 93) — the **(user) call: hardmode is THE quality
 measure, target = beat production's run-level 94 or come close**. The Focus scores **92**
 (2 under; its whole gap is TC-38 + TC-80, both `wrong_args` — TC-92/TC-104 fail on
 production too); the prior default **top4cfg scored 89** (76% subset — the unretrained
@@ -42,7 +43,7 @@ gates PASS on both, including the modified checkpoint's battery.)*
 | | EXL3 recipe (production) | this repo |
 | --- | --- | --- |
 | Engine | TensorFold **Python 0.6.x** in a PyTorch-based image, plus a 122-patch recipe (Mia's series folded onto the python-0.6 tip, 2026-10-27) | TensorFold **native** (`tensorfold-native`, Zig, no Python) at a pinned commit — **v1.1.8 (`03d08f1e…`, adopted 2026-10-28 on the receipts-equal battery); paged KV mainline** |
-| Checkpoint | Mia-AiLab EXL3 4 bpw (~176 GB) stock + DFlash2 drafter | **the AZ-Focus EXL3 variant (the (user) default, 2026-10-27) + DFlash2** — a different checkpoint from production's, chosen on the hardmode bar; the stock and top4cfg Mia cells remain serveable (`MODEL_ID`/`MODEL_REVISION`/`PATCHES` per the README). This line is EXL3 only — the NVFP4 route (NVIDIA's checkpoint, MTP drafts, the v1.0.x receipts) has its own repo (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing) |
+| Checkpoint | Mia-AiLab EXL3 4 bpw (~176 GB) stock + DFlash2 drafter | **the TR3-4bpw checkpoint (the (user) default, 2026-11-02) + DFlash2** — a different checkpoint from production's, chosen on the hardmode bar; the stock and top4cfg Mia cells remain serveable (`MODEL_ID`/`MODEL_REVISION`/`PATCHES` per the README). This line is EXL3 only — the NVFP4 route (NVIDIA's checkpoint, MTP drafts, the v1.0.x receipts) has its own repo (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing) |
 | Code carried locally | a patch series against TensorFold's site-packages | **none** — upstream code, built at a pinned commit |
 | Upgrade path | rebase the patch series by hand (see the old repo's REBASE-NOTES) | bump `TF_REF` (or take the default `latest-v1`); prepare rebuilds the image |
 

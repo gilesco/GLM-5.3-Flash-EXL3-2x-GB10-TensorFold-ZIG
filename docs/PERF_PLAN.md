@@ -11,17 +11,19 @@
 Every named lever is now **adopted, measured out, parked with a price, or
 upstream-gated**:
 
-- **Quality (Front 1)**: the Focus checkpoint's 93 definitive is its ceiling — the
-  1-point gap to production's 94 is checkpoint+template-inherent (round 120's
-  per-scenario diff; the template lever declined as overfitting-adjacent). The
-  remaining lever is a checkpoint rev.
+- **Quality (Front 1)**: UPDATED round 132 — the 4bpw sweep moved the ceiling:
+  **TR3-4bpw 94/104** (the served default, the (user) swap) ties the MIA pack
+  and closes 1 of the 2 points to production's old-bench 94; production's
+  current-bench hardmode anchor is owed (a solo prodqual window). The
+  checkpoint-lever idea this bullet gestured at is now DONE — the sweep ran it
+  (docs/bpw4-sweep-cards.svg); the 3bpw track is the next checkpoint lever.
 - **Concurrency (Front 2)**: fully decomposed (rounds 114-123). The hc fusion:
   built, bit-safe, NOT adopted (the occupancy trade — round 116). The depth census:
   the attention path is ~1% of the decode token cost (round 122) — no depth
   pathology. The cache churn: no evictions at probe scale, but the concurrent
   resume SERIALIZES 4× (round 123). The remaining decode gap is the uniform
   per-token machinery — **upstream-gated** (the batched-launch pattern reaching
-  GLM, the pair-seam CUDA steps, a v1.2.0 tag — the watch continues each sitting).
+  GLM, the pair-seam CUDA steps — v1.2.1 LANDED (round 132: the GLM knobs #1823/#1760 are upstream, the #1868 page-cache fix, /v1/load; the re-qualification + the duel re-paired the decode fronts) — the watch continues each sitting).
   **Re-attributed (round 131, the azqual receipt)**: a large share of the
   decode gap is ROUTING DEPTH, not machinery — the AZ-EXL3 serve
   (num_experts_per_tok=4 vs the Focus's 8, quantization identical) decodes
