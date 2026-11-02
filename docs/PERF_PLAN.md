@@ -182,6 +182,13 @@ Prompt chunks are 90% router+routed (a 2,048-row chunk: router 910 + routed 793 
   **Loader verification (2026-10-23, source at our pin)**: the native loader is
   EXL3-only — no GPTQ/autoround path exists in `zig/src` (91 files reference exl3; the
   gptq hits are unrelated xpu files) — so AZ *as distributed* cannot serve natively.
+  **SCOPE (user, round 132): requants are OUT OF SCOPE for this repo until a safe,
+  efficient method exists** — no requant tasks or plans live in this doc; the requant
+  mentions below are the AZ pack's executed provenance only (its artifacts:
+  `local/GLM-5.3-Flash-AZ-EXL3`, receipted 90/104 in the 4bpw sweep). Sub-4bpw work
+  proceeds by SERVING community-built packs (the 3bpw track), never by local
+  quantization. The arc's design doc (docs/REQUANT.md) is deleted; its lessons live in
+  the append-only log and the agent-skill stores.
   But the glm config parser reads `num_experts_per_tok` from the checkpoint
   (`families/glm/config.zig:163`) and the routing kernels take topk as a runtime config
   field, which splits the lever into two experiments:
@@ -322,18 +329,13 @@ clean stack (97).**
   top4-on-our-own-checkpoint experiment (no download) and the full-AZ EXL3 requant
   (window-gated, hours).
 
-## Vision qualification (queued, post-requant — (user), 2026-10-24)
+## Vision qualification — DONE (the round-55 era; the section's queued framing retired round 132)
 
-After the AZ requant completes: validate and qualify vision on this model. Scoped at
-the pin: the serve flags exist (`--vision`, `--vision-image-tokens` — the CLI tests
-cover the budget parsing); the checkpoint carries the tower (347 `model.visual.*`
-tensors, bf16); rank 0 encodes, the others receive (the engine's comment). **Staged:
-`VISION` / `VISION_IMAGE_TOKENS` knobs in config.sh wired into serve_args (both ranks).**
-The qualification round: serve with VISION=1 → the §2 gates with the tower loaded →
-a vision receipt (a real image prompt: describe it, read text from it — content checks)
-→ the memory arithmetic (the tower's load cost in the serve line) → the AZ interplay
-(the requant runs `-vb 16`: the tower stays unquantized ✓ staged in az-window.sh).
-GPU window; ~20 min.
+Vision is the standing default: served with VISION=1 at the 524,288 window, the
+vision suite 8/8 on the adopted template, verified production-equivalent perception
+(docs/DELTAS.md). The tower rides BF16 in every served pack (the requant-era staging
+notes are history in LAUNCH.md). Requants themselves are OUT OF SCOPE (user, round
+132) — see the scope note at the top of this file.
 
 - 2026-10-24 (later): **the two-box conversion pattern (user asked)** — today's convert
   is single-GPU by design (exllamav3 quantizes layer-by-layer with calibration in one

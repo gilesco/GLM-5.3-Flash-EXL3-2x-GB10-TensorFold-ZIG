@@ -4586,3 +4586,23 @@ anchors header carry the swap (the duel rows stand as the Focus cell's until
 a TR3 duel re-pairs them — the next duel window runs on the new default).
 The swap takes effect at the next testing-stack restart (the fingerprint
 changes; both hosts carry the pack staged).
+
+## (round 132, cont. 11) Requants OUT OF SCOPE (user) — the docs scrubbed (2026-11-02)
+
+**(user)**: "Requants are going to be out of scope for this repo until we find a
+safe efficient method. Remove any requant tasks or aspirations from all docs."
+
+Executed: **docs/REQUANT.md deleted** (the arc's design + the closure banner —
+its lessons live in this log's round-131/132 entries and the agent-skill
+stores); **PERF_PLAN.md** carries the scope note at the front list (requants
+out of scope; sub-4bpw work proceeds by SERVING community-built packs, never
+by local quantization; the requant mentions below in that doc are the AZ
+pack's executed provenance only) and the stale "Vision qualification (queued,
+post-requant)" section is replaced by its closure (vision qualified in the
+round-55 era, the standing default); **ECOSYSTEM.md**'s two aspiration
+phrasings reworded (the sub-4bpw watch item and the androidli entry — the
+community 3bpw packs are a serving track, not a quantization one). The
+ledger's requant mentions are closed history (the round-58/72 entries) and
+stand. The requant-era scripts (scripts/requant/, scripts/az-window.sh) are
+inert and unreferenced. The 3bpw track continues unchanged — it downloads and
+SERVES community packs.

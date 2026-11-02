@@ -566,7 +566,7 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   round 131: this line watches TensorFold + GLM-5.3-Flash ideas only — other
   engines and other model families are out of scope)**: one transferable idea
   surfaced — a peer's TensorFold-on-GB10 line runs DeepSeek-V4.1 at **EXL3
-  2.9bpw at 1M context**, which makes **a sub-4bpw Focus requant** concrete for
+  2.9bpw at 1M context**, which makes **a sub-4bpw serve** concrete for
   OUR checkpoint: the staged pipeline (az-window.sh) exists, the quality bar is
   hardmode (user), and the payoff is device memory — the admission headroom the
   chunk-buffer and stream fights need. That is PERF_PLAN Front 1's
@@ -588,7 +588,8 @@ The user's spec: GLM-5.3-Flash (the architecture name IS glm5_next), vision,
   TP=2 over CX7, TensorFold 0.6.0, vision + fp8 KV + spill + DFlash2 all
   verified; KV pool 3.89M tokens (vs 1.86M at 4bpw); forward latency -8/-16/
   -17.5% vs 4bpw; EvalPlus 86.3% (4bpw: 86.5%). THE COMMUNITY'S 3bpw PACK —
-  the requant goal, without our capture. CAVEATS: the base is dealignai's
+  a ready-made sub-4bpw serve — no local quantization (requants are out of
+  scope, user round 132). CAVEATS: the base is dealignai's
   UNCENSORED derivative (not zai-org — content policy is the user's call),
   its receipts are EvalPlus not hardmode, and the verification era is 0.6.0.
 - **JANGQ-AI/GLM-5.3-Flash-EXL3** (4.0bpw): vision 16-bit, MTP in, mul1,
