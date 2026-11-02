@@ -227,6 +227,9 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       effort-tail-era 93); dense8+fp8 88/104 (TC-99 partial + TC-101/104).
       Standard tool-eval 95 (dense8 cell, the morning campaign) — recorded as
       tool-eval, never cross-compared. Owed: production's current-bench prodqual.
+      The bpw4sweep (the 4bpw local packs, one per window): **Mia-AiLab 4bpw
+      94/104** (production's own family, the best) · **Focus 93** · **AZ 90**
+      (glm-topk4b applies on v1.2.1; the perf leader) · TR3 next.
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 

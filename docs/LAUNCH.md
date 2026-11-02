@@ -4521,3 +4521,16 @@ verified: `PACK//\/--` — the same proven form as the MODEL_ID derivation) and
 the skip marker + refusal counter are cleared. The MIA window relaunches: no
 staging needed (both hosts have the pack + the main ref), straight to the
 restart.
+
+## (round 132, cont. 6) The MIA pack receipted: 94/104 — the sweep's best, and production's own family (2026-11-02)
+
+The HUBDIR byte fix held: no staging needed (both hosts had the pack +
+normalized main refs), straight to the restart. **Mia-AiLab 4bpw-TensorFold:
+hardmode 94/104** — the sweep's best score, and the pack family PRODUCTION
+serves (its /v1 serve line mounts this checkpoint's hash snapshot), measured
+at our standing config on v1.2.1. g1 clean. Perf level with the Focus cell
+(pp 1,031 d0, solo tg128 39.2 — same family shape).
+
+**The matrix (hardmode, 104 scenarios, v1.2.1, dense4fp8 standing)**:
+Mia-AiLab 4bpw **94** · Focus **93** · AZ **90** (the top-4 selector — the
+perf leader: pp 1,184, solo tg 57.7) · TR3 next (window 3).
