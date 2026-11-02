@@ -38,7 +38,16 @@ NEW=$(ssh -o BatchMode=yes "$SSH_TARGET" "ls -td ~/$PROJ/results/campaign-* 2>/d
 [ "$(basename "$NEW")" = "$(basename "$(cat "$MARKER" 2>/dev/null)")" ] && exit 0   # already poked about this one
 # only completed campaigns wake the agent (the wrapper's last log line is " done.")
 if ! ssh -o BatchMode=yes "$SSH_TARGET" "tail -1 '$NEW/campaign.log' 2>/dev/null | grep -q ' done\.'" 2>/dev/null; then
-  exit 0   # still running (or crashed hard) — nothing to read yet
+  # the campaign has not printed its completion marker — either still running
+  # or crashed before it. A campaign whose newest receipt went quiet for over
+  # 10 minutes while production is up is done-or-dead: poke anyway (the
+  # last-poked marker keeps this single-shot), so a crashed window can never
+  # sit silently (round 132: the MIA window died mid-phase and poked nothing).
+  NEW_AGE=$(ssh -o BatchMode=yes "$SSH_TARGET" "echo \$(( \$(date +%s) - \$(stat -c %Y '$NEW/bpw4sweep.md' '$NEW'/*.md 2>/dev/null | xargs stat -c %Y 2>/dev/null | sort -n | tail -1) ))" 2>/dev/null)
+  case "${NEW_AGE:-99999}" in
+    ''|*[!0-9]*) exit 0 ;;
+    *) [ "$NEW_AGE" -gt 600 ] || exit 0 ;;
+  esac
 fi
 # 3. the agent's session in this project (newest first)
 SID=$(curl -s -m 10 -u "$AUTH" "$API/session?directory=$PWD&order=desc" \

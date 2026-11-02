@@ -1070,16 +1070,66 @@ fi
 # v1.2.1 — retires with the arc's verdict (user, round 132: the 4bpw local
 # sweep first, then the 3bpw track)). ONE pack per window (the pause
 # discipline): the first pack without a persistent .done marker is staged to
-# both hosts (the worker -> the head over 192.168.2.x when the head lacks
-# it), served at the standing config (dense4fp8, vision, 512K x4), gated
-# (g1 determinism; the config gates g3/g4 are engine properties already
-# receipted on v1.2.1), hardmode-batteried (bench_cell), and perf-probed
-# (bench_perf). Relaunching the same PHASES advances to the next pack; the
-# receipts live in results/bpw4sweep/ (persistent across windows).
+# both hosts (the worker -> the head over 192.168.2.x; snapshots/main is
+# normalized by symlink when a copy is hash-keyed only), served at the
+# standing config (dense4fp8, vision, 512K x4), gated (g1 determinism),
+# hardmode-batteried (bench_cell), and perf-probed (bench_perf). Relaunching
+# the same PHASES advances to the next pack; receipts and per-pack summaries
+# live in results/bpw4sweep/ (persistent across windows). A refusal records +
+# retries (two = skipped with receipt) and MUST NOT fall through into the
+# probes — the post-restart steps run only when the server is up.
 # ---------------------------------------------------------------------------
 BPW4_PACK_AZ="MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
 BPW4_PACK_MIA="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main PATCHES="
 BPW4_PACK_TR3="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main PATCHES="
+bpw4_pack() {      # $1 tag, $2 model id, $3 env pairs — one pack, start to receipt
+  local TAG="$1" PACK="$2" ENVPAIRS="$3"
+  local P="$OUT/bpw4sweep.md"
+  echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
+  local HUBDIR="models--${PACK//\/--}"
+  local W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
+  if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/main" ]; then
+    echo "- staging $HUBDIR from the worker (the head lacks snapshots/main; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' '))" >> "$P"
+    if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/main" 2>/dev/null; then
+      rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+      echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+    elif ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
+      rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+      local H; H=$(ls "$HF_CACHE/hub/$HUBDIR/snapshots" | grep -v main | head -1)
+      [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/main" && echo "- staged (hash snapshot; main symlinked to $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+    else
+      echo "- FAIL: neither host has $HUBDIR — recorded" >> "$P"
+      local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
+      echo "$N" > "$SWEEP_DIR/$TAG.refusals"
+      [ "$N" -ge 2 ] && { echo "- missing twice — the pack is skipped with this receipt" >> "$P"; touch "$SWEEP_DIR/$TAG.done"; }
+      return 0
+    fi
+  fi
+  # shellcheck disable=SC2086
+  if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- FAIL: the server refused the pack" >> "$P"
+    local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
+    echo "$N" > "$SWEEP_DIR/$TAG.refusals"
+    if [ "$N" -ge 2 ]; then
+      echo "- refused twice — the pack is skipped with this receipt (retry: clear $SWEEP_DIR/$TAG.done)" >> "$P"
+      touch "$SWEEP_DIR/$TAG.done"
+    else
+      echo "- recorded; the next window retries this pack" >> "$P"
+    fi
+    return 0
+  fi
+  echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
+  local RP="$SWEEP_DIR/$TAG-req.json"; req_file "$RP" "$REF_PROMPT"
+  chat "$RP" > "$SWEEP_DIR/$TAG-1a.json"; chat "$RP" > "$SWEEP_DIR/$TAG-1b.json"
+  if [[ "$(content_sha "$SWEEP_DIR/$TAG-1a.json")" == "$(content_sha "$SWEEP_DIR/$TAG-1b.json")" ]]; then
+    echo "- PASS g1 determinism (content)" >> "$P"
+  else echo "- FAIL g1 determinism" >> "$P"; fi
+  bench_cell "$TAG" "$SWEEP_DIR/$TAG-battery" >> "$P" 2>&1
+  bench_perf "$TAG-perf" "$SWEEP_DIR/$TAG-perf" 4 >> "$P" 2>&1
+  grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" > "$SWEEP_DIR/$TAG.summary" 2>/dev/null || echo "no score" > "$SWEEP_DIR/$TAG.summary"
+  touch "$SWEEP_DIR/$TAG.done"
+  echo "- pack $TAG receipted (score: $(cat "$SWEEP_DIR/$TAG.summary"))" >> "$P"
+}
 if want bpw4sweep && ! phase_done bpw4sweep; then
   log "=== bpw4sweep"
   P="$OUT/bpw4sweep.md"; : > "$P"
@@ -1095,55 +1145,11 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
     for f in "$SWEEP_DIR"/*.summary; do echo "  - $(basename "$f"): $(cat "$f")" >> "$P"; done
     touch "$OUT/.bpw4sweep.done"
   else
-    echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
-    HUBDIR="models--${PACK//\//--}"   # the HF convention: one slash becomes TWO dashes (cf. line 1220)
-    W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
-    if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/main" ]; then
-      echo "- staging $HUBDIR from the worker (the head lacks snapshots/main; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' ')')" >> "$P"
-      if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/main" 2>/dev/null; then
-        rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-        echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
-      elif ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
-        rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-        H=$(ls "$HF_CACHE/hub/$HUBDIR/snapshots" | grep -v main | head -1)
-        [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/main" && echo "- staged (hash snapshot; main symlinked to $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
-      else
-        echo "- FAIL: neither host has $HUBDIR — recorded" >> "$P"
-        N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
-        echo "$N" > "$SWEEP_DIR/$TAG.refusals"
-        [ "$N" -ge 2 ] && { echo "- missing twice — the pack is skipped with this receipt" >> "$P"; touch "$SWEEP_DIR/$TAG.done"; }
-        touch "$OUT/.bpw4sweep.done"
-        return 0
-      fi
-    fi
-    # shellcheck disable=SC2086
-    if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
-      echo "- FAIL: the server refused the pack" >> "$P"
-      N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
-      echo "$N" > "$SWEEP_DIR/$TAG.refusals"
-      if [ "$N" -ge 2 ]; then
-        echo "- refused twice — the pack is skipped with this receipt (retry: clear $SWEEP_DIR/$TAG.done)" >> "$P"
-        touch "$SWEEP_DIR/$TAG.done"
-      else
-        echo "- recorded; the next window retries this pack" >> "$P"
-      fi
-      touch "$OUT/.bpw4sweep.done"
-    fi
-    echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
-    RP="$SWEEP_DIR/$TAG-req.json"; req_file "$RP" "$REF_PROMPT"
-    chat "$RP" > "$SWEEP_DIR/$TAG-1a.json"; chat "$RP" > "$SWEEP_DIR/$TAG-1b.json"
-    if [[ "$(content_sha "$SWEEP_DIR/$TAG-1a.json")" == "$(content_sha "$SWEEP_DIR/$TAG-1b.json")" ]]; then
-      echo "- PASS g1 determinism (content)" >> "$P"
-    else echo "- FAIL g1 determinism" >> "$P"; fi
-    bench_cell "$TAG" "$SWEEP_DIR/$TAG-battery" >> "$P" 2>&1
-    grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" >> "$P" || true
-    bench_perf "$TAG-perf" "$SWEEP_DIR/$TAG-perf" 4 >> "$P" 2>&1
-    grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" > "$SWEEP_DIR/$TAG.summary" 2>/dev/null || echo "no score" > "$SWEEP_DIR/$TAG.summary"
-    touch "$SWEEP_DIR/$TAG.done"
-    echo "- pack $TAG receipted: $SWEEP_DIR/$TAG.md" >> "$P"
+    bpw4_pack "$TAG" "$PACK" "$ENVPAIRS"
+    touch "$OUT/.bpw4sweep.done"
   fi
-  touch "$OUT/.bpw4sweep.done"
 fi
+
 
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
