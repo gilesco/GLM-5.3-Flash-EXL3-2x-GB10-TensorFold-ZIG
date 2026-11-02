@@ -4502,3 +4502,22 @@ config): **Focus 93 · AZ 90** · Mia-AiLab 4bpw and TR3 pending (windows 2-3;
 the MIA window stages its pack from the worker — the staging path's first
 real exercise). Production serves the Mia-AiLab family, so that window is
 the closest like-for-like with the served default.
+
+## (round 132, cont. 5) The poke chain proven fixed; the MIA skip was one more byte bug (2026-11-02)
+
+**The poke chain works again — proven**: the campaign-20261102-141000 window
+hit the pack refusal path, the rebuilt phase RETURNED cleanly (no fall-through
+into the dead-server probes), the campaign printed its completion marker, and
+the cron poked — the first refusal-path poke of the arc. The staleness
+fallback (a quiet-10-min campaign while production is up pokes anyway) is now
+belt-and-braces behind it.
+
+**The MIA skip was bogus**: refusal #2 came from the HUBDIR derivation losing
+a byte in the function rebuild (`${PACK//\/ --}` without the separator — the
+slash was never replaced, so the phase looked for a nonexistent dir and
+concluded "neither host has it"). Both hosts' MIA copies are actually fine and
+`snapshots/main`-normalized. The line is rewritten byte-explicitly (od
+verified: `PACK//\/--` — the same proven form as the MODEL_ID derivation) and
+the skip marker + refusal counter are cleared. The MIA window relaunches: no
+staging needed (both hosts have the pack + the main ref), straight to the
+restart.

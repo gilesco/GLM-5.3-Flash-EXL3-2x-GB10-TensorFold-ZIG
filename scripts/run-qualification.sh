@@ -1086,7 +1086,7 @@ bpw4_pack() {      # $1 tag, $2 model id, $3 env pairs — one pack, start to re
   local TAG="$1" PACK="$2" ENVPAIRS="$3"
   local P="$OUT/bpw4sweep.md"
   echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
-  local HUBDIR="models--${PACK//\/--}"
+  local HUBDIR="models--${PACK//\//--}"   # pattern=escaped-slash, separator=/, replacement=--
   local W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
   if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/main" ]; then
     echo "- staging $HUBDIR from the worker (the head lacks snapshots/main; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' '))" >> "$P"
