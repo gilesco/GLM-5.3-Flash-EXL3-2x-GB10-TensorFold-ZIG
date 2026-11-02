@@ -1092,17 +1092,21 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
   done
   if [ -z "$PACK" ]; then
     echo "- all packs receipted — the sweep is complete:" >> "$P"
-    for f in "$SWEEP_DIR"/*.md; do echo "  - $f" >> "$P"; done
+    for f in "$SWEEP_DIR"/*.summary; do echo "  - $(basename "$f"): $(cat "$f")" >> "$P"; done
     touch "$OUT/.bpw4sweep.done"
   else
     echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
     HUBDIR="models--${PACK//\//--}"   # the HF convention: one slash becomes TWO dashes (cf. line 1220)
     W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
-    if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots" ]; then
-      echo "- staging $HUBDIR from the worker (the head lacks it)" >> "$P"
-      if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
+    if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/main" ]; then
+      echo "- staging $HUBDIR from the worker (the head lacks snapshots/main; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' ')')" >> "$P"
+      if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/main" 2>/dev/null; then
         rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
         echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+      elif ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
+        rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+        H=$(ls "$HF_CACHE/hub/$HUBDIR/snapshots" | grep -v main | head -1)
+        [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/main" && echo "- staged (hash snapshot; main symlinked to $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
       else
         echo "- FAIL: neither host has $HUBDIR — recorded" >> "$P"
         N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
@@ -1134,6 +1138,7 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
     bench_cell "$TAG" "$SWEEP_DIR/$TAG-battery" >> "$P" 2>&1
     grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" >> "$P" || true
     bench_perf "$TAG-perf" "$SWEEP_DIR/$TAG-perf" 4 >> "$P" 2>&1
+    grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$TAG-battery/bench.log" > "$SWEEP_DIR/$TAG.summary" 2>/dev/null || echo "no score" > "$SWEEP_DIR/$TAG.summary"
     touch "$SWEEP_DIR/$TAG.done"
     echo "- pack $TAG receipted: $SWEEP_DIR/$TAG.md" >> "$P"
   fi
