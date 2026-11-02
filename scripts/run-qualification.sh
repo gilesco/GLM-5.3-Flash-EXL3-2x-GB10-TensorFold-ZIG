@@ -1096,7 +1096,7 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
     touch "$OUT/.bpw4sweep.done"
   else
     echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
-    HUBDIR="models--${PACK//\//-}"
+    HUBDIR="models--${PACK//\//--}"   # the HF convention: one slash becomes TWO dashes (cf. line 1220)
     W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
     if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots" ]; then
       echo "- staging $HUBDIR from the worker (the head lacks it)" >> "$P"
