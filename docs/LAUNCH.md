@@ -4475,3 +4475,30 @@ ordering).
 The anchors' solo/c2/c4/overhead rows re-paired (dated 2026-11-02) and the
 chart re-rendered. The depth-front picture on v1.2.1: cold crossed (ours),
 warm still production's edge, decode gaps narrowed.
+
+## (round 132, cont. 2) The bpw4sweep's first three windows: two script bugs, then the AZ receipted (2026-11-02)
+
+The sweep's first two launches died to my own bugs (each caught by the phase's
+own receipts within a minute, production restored each time): the pack env
+strings dropped the `MODEL_ID=` prefix (env tried to EXECUTE the pack path —
+campaign-20261102-121636), and the pack extraction then kept the prefix in the
+hub-dir derivation (`models--MODEL_ID=local--...`; the staging rsync aborted
+the window — campaign-20261102-122535). Both fixed (bca058e lineage), staging
+failure now takes the receipt path instead of aborting.
+
+**Window 3 (campaign-20261102-123433) — the AZ pack receipted** (~50 min, the
+one-pack-per-window shape working as designed):
+- **glm-topk4b.patch applies cleanly on v1.2.1** — the AZ's top-4 selector
+  serve is intact on the new engine (the prepare marker carries it)
+- **hardmode 90/104** — the AZ's best receipt (+1 over its 89 history; the
+  Focus leads at 93)
+- **g1 determinism: identical contents**
+- **the fastest bench table on this line**: pp 1,184 tok/s at d0 (the Focus
+  cell: 1,035), solo tg128 57.7 (the Focus: ~40) — the top-4 design's half
+  expert work showing in prefill and decode alike
+
+The checkpoint matrix so far (hardmode, 104 scenarios, v1.2.1, standing
+config): **Focus 93 · AZ 90** · Mia-AiLab 4bpw and TR3 pending (windows 2-3;
+the MIA window stages its pack from the worker — the staging path's first
+real exercise). Production serves the Mia-AiLab family, so that window is
+the closest like-for-like with the served default.
