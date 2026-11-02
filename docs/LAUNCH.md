@@ -4606,3 +4606,34 @@ ledger's requant mentions are closed history (the round-58/72 entries) and
 stand. The requant-era scripts (scripts/requant/, scripts/az-window.sh) are
 inert and unreferenced. The 3bpw track continues unchanged — it downloads and
 SERVES community packs.
+
+## (round 132, cont. 14) THE 3BPW ENGINE FLOOR: the CUDA family reads 4-bit EXL3 experts (2026-11-02)
+
+The dereferencing staging worked (the worker's copy: real files — but 589G,
+because -L walked the whole hub dir and materialized the blob chain's data
+twice over; the snapshots are self-contained), and the serve produced THE
+definitive receipt of the sub-4bpw question:
+
+`error: EXL3 at 3.05 bits: the CUDA family reads 4-bit EXL3 experts (UnsupportedQuant)`
+
+**The native engine's GLM family has a hard 4-bit expert floor.** The
+turboderp packs (3.05bpw plain and sc_3.10bpw self-calibrated) are
+unservable on this engine regardless of quantizer quality — the check names
+the family's reader, not the pack, so the sc_3.10 variant was skipped
+WITHOUT a window (the receipt text is pack-generic) and both hosts'
+turboderp dirs were pruned (~720G reclaimed: the head 129G+135G, the worker
+589G of -L duplication). TB305/TB310 carry skip receipts.
+
+**The decisive window is running**: androidli's 3.0bpw-mcg-TensorFold pack —
+its community verification was on TensorFold 0.6.0 (the PYTHON-engine era,
+production's line), so its window settles whether ANY sub-4-bit GLM pack
+serves on the native CUDA line, or whether the 4-bit expert floor gates the
+whole sub-4bpw goal (an upstream watch item if so — the packs exist; the
+engine's reader is the constraint).
+
+The README now leads with both SVGs (the perf-vs-production chart and the
+sweep scorecards, moved above the status table), and the docs table carries
+the sweep artifacts' row. The docs alignment pass completed: DELTAS' header
+and Engine row on v1.2.1 with the era-labeled quality numbers, VALIDATION
+and the CONTEXT plan carry the v1.2.1 re-qualification notes (the CONTEXT
+plan's queued depth re-run: DONE, 12/12 twice).

@@ -36,6 +36,14 @@ NCCL. Everything is Docker; the hosts need nothing but docker, ssh and the NVIDI
 
 ## Current status
 
+<p align="center">
+  <img src="docs/perf-vs-production.svg" alt="Bar chart: our performance as a percentage of production per metric — higher is always better, time metrics inverted; the values are the definitive pair in docs/perf-anchors.tsv" width="740">
+</p>
+
+<p align="center">
+  <img src="docs/bpw4-sweep-cards.svg" alt="Scorecards for the 4bpw checkpoint sweep: hardmode (104 scenarios), prefill, and tg at three depths per pack — generated from docs/bpw4-sweep.tsv" width="740">
+</p>
+
 The served default is the **TR3-4bpw checkpoint** (Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw; the round-132 (user) swap after the 4bpw sweep — 94/104 hardmode, the best top-8 decode) on **TensorFold v1.2.1** (the pin in
 `scripts/local.sh`) plus `glm-tail-release.patch` (the load-ahead's tail-page release —
 [patches/README.md](patches/README.md)). Fully qualified end to end; the receipts live in
@@ -52,10 +60,6 @@ its tracker.
 | Speed | **Loading TAKEN** (95 s vs production's 93.7); solo **93.9%** (55.4 vs 59.0), c2 **83.1%**, c4 **92.4%\***, ITL **102% — crossed**, TTFT overhead **92.0%**, **the cold depth cost CROSSED (309%)** — ours 5.6 s vs production's 17.1 s at d8192 cold (its slope 2.03 ms/tok, slowing with depth; ours 0.656 flat); the open front is the **warm full-hit skip** (production 0.21 s vs our 1.42 s resume). The scoreboard: [docs/DELTAS.md](docs/DELTAS.md); the chart: [docs/perf-vs-production.svg](docs/perf-vs-production.svg) |
 | Vision | **Enabled as the standing default** at the 524,288 window; verified production-equivalent perception — [docs/DELTAS.md](docs/DELTAS.md) |
 | The bars | **(user)** quality — hardmode: beat production's run-level or come close; perf — surpass production on loading, generation tok/s, and prefill. Loading is taken; the perf fronts' states: [docs/PERF_PLAN.md](docs/PERF_PLAN.md) |
-
-<p align="center">
-  <img src="docs/perf-vs-production.svg" alt="Bar chart: our performance as a percentage of production per metric — higher is always better, time metrics inverted; the values are the definitive pair in docs/perf-anchors.tsv" width="740">
-</p>
 
 The benchmark cards and the per-run graphics render in the bench's web UI (from the
 head: `~/tool-eval-bench/.venv/bin/tool-eval-bench serve`); `docs/cards/` holds the
@@ -194,6 +198,7 @@ production all serve from the same caches.
 | [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) | the ladder math and its outcome |
 | [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | the upstream watch: the releases, the issues and PRs, what transfers |
 | [docs/perf-anchors.tsv](docs/perf-anchors.tsv) + `perf-vs-production.svg` | the chart's data and its generated SVG (never hand-edited) |
+| [docs/bpw4-sweep.tsv](docs/bpw4-sweep.tsv) + `bpw4-sweep-cards.svg` | the 4bpw checkpoint sweep's scorecard data and its generated SVG (rendered by scripts/render-sweep-cards.sh) |
 | [docs/SITE.md](docs/SITE.md) *(git-ignored)* | this site's real values |
 | [AGENTS.md](AGENTS.md) | the working conventions for agents in this repo |
 

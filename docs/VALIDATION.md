@@ -78,6 +78,9 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 > idle duel receipt (round 33, its new patch series). The 2026-10-23 rows below are the
 > v1.1.0-era history:
 >
+> **2026-11-02: re-qualified on engine v1.2.1** (`1db3edb`, round 132) — gates ALL
+> PASS (content form), the depth ladder 12/12 at 8k/64k/192k/384k, the duel re-paired
+> the decode fronts; the receipts: campaign-20261102-081320 / -112634.
 > **2026-10-28: the engine is v1.1.8 with `TF_GLM_INDEX_CUDA=1`** (round 49's adoption;
 > `campaign-20261028-141916/22-ixgates.md`) — the duel under the knob reads within noise
 > of the anchors (solo 57.0/56.9, c2 93.7, c4 152.3); the 2026-10-27 rows stand as the
