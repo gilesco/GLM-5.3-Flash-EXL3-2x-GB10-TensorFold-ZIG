@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs knobsv121 duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -954,6 +954,46 @@ fi
 # receipts in results/bpw4sweep/) and the 3bpw track CLOSED on the engine's 4-bit
 # expert floor: the CUDA family reads 4-bit EXL3 experts — all three community
 # packs refused (UnsupportedQuant). Re-run patterns: git history.
+
+# ---------------------------------------------------------------------------
+# phase: knobsv121 (SESSION-SPECIFIC; the two v1.2.1 GLM knobs A/B'd on the
+# served TR3 default — retires with the knobs' verdicts). All arms on the clean
+# testing port 8001. Arms: baseline (the standing config) -> TF_GLM_CHUNK_SOLO=4096
+# (upstream: a cold prompt's first token 6-9% sooner from 8K to 128K, same bytes,
+# +1.6-1.9 GiB prompt buffers) -> TF_GLM_VISION_HOST=1 (rank 0 holds 240 MiB for
+# the tower instead of 1.05 GiB — the room returns for KV; the vision sanity: one
+# image-bearing request must still answer). Each arm: restart -> bench_perf (the
+# pp/tg/TTFT table IS the cold measurement — benchy fills are novel per restart).
+# The verdicts: the deltas vs the baseline, recorded per knob.
+# ---------------------------------------------------------------------------
+if want knobsv121 && ! phase_done knobsv121; then
+  log "=== knobsv121"
+  P="$OUT/knobsv121.md"; : > "$P"
+  echo "# knobsv121 (the v1.2.1 GLM knobs on the TR3 default; all arms on 8001)" >> "$P"
+  KNOB_DIR="results/knobsv121"; mkdir -p "$KNOB_DIR"
+  for arm in "BASE:" "CS:TF_GLM_CHUNK_SOLO=4096" "VH:TF_GLM_VISION_HOST=1"; do
+    t="${arm%%:*}"; e="${arm#*:}"
+    [ -f "$KNOB_DIR/$t.done" ] && continue
+    echo "## arm $t (env: ${e:-the standing defaults})" >> "$P"
+    # shellcheck disable=SC2086
+    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $e; then
+      echo "- FAIL: the server refused arm $t" >> "$P"; touch "$KNOB_DIR/$t.done"; continue
+    fi
+    echo "- server: $(serve_line)" >> "$P"
+    bench_perf "knob-$t" "$KNOB_DIR/$t-perf" 4 >> "$P" 2>&1
+    grep -h -oE "TTFT[^,]*" "$KNOB_DIR/$t-perf"/2026/*/*--*.md 2>/dev/null | head -3 >> "$P" || true
+    if [ "$t" = VH ]; then
+      # the vision sanity: one image-bearing request must still answer (content check)
+      VC=$(curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+        -d '{"model":"'"$SERVED_NAME"'","messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,'"$(base64 -w0 docs/architecture.svg 2>/dev/null | head -c 200000)"'"}},{"type":"text","text":"What does this diagram show? One sentence."}]}],"max_tokens":100}' 2>/dev/null)
+      VOK=$(echo "$VC" | python3 -c 'import json,sys; d=json.load(sys.stdin); c=d["choices"][0]["message"]["content"]; print("OK" if len(c)>20 else "EMPTY: "+c[:80])' 2>/dev/null || echo "PARSE FAIL")
+      echo "- vision sanity: $VOK" >> "$P"
+    fi
+    touch "$KNOB_DIR/$t.done"
+  done
+  echo "- the arms' tables above are the verdict material (the deltas vs BASE)" >> "$P"
+  touch "$OUT/.knobsv121.done"
+fi
 
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
