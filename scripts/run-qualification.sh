@@ -1088,7 +1088,7 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
   PACK=""; ENVPAIRS=""; TAG=""
   for spec in "AZ:$BPW4_PACK_AZ" "MIA:$BPW4_PACK_MIA" "TR3:$BPW4_PACK_TR3"; do
     t="${spec%%:*}"; e="${spec#*:}"
-    if [ ! -f "$SWEEP_DIR/$t.done" ]; then TAG="$t"; PACK="${e%% *}"; ENVPAIRS="$e"; break; fi
+    if [ ! -f "$SWEEP_DIR/$t.done" ]; then TAG="$t"; PACK="${e%% *}"; PACK="${PACK#MODEL_ID=}"; ENVPAIRS="$e"; break; fi
   done
   if [ -z "$PACK" ]; then
     echo "- all packs receipted — the sweep is complete:" >> "$P"
@@ -1100,8 +1100,17 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
     W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
     if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots" ]; then
       echo "- staging $HUBDIR from the worker (the head lacks it)" >> "$P"
-      rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-      echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+      if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
+        rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+        echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+      else
+        echo "- FAIL: neither host has $HUBDIR — recorded" >> "$P"
+        N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
+        echo "$N" > "$SWEEP_DIR/$TAG.refusals"
+        [ "$N" -ge 2 ] && { echo "- missing twice — the pack is skipped with this receipt" >> "$P"; touch "$SWEEP_DIR/$TAG.done"; }
+        touch "$OUT/.bpw4sweep.done"
+        return 0
+      fi
     fi
     # shellcheck disable=SC2086
     if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
