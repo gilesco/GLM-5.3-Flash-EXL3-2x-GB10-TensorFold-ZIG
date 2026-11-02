@@ -1105,6 +1105,20 @@ bpw4_pack() {      # $1 tag, $2 model id, $3 env pairs — one pack, start to re
       return 0
     fi
   fi
+  # prepare demands snapshots/main on BOTH hosts; normalize the worker too
+  # (the TR3 window's refusal was exactly this: the head staged, the worker
+  # hash-keyed only — campaign-20261102-151912)
+  if ! ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/main" 2>/dev/null; then
+    if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
+      ssh -o BatchMode=yes "$W" "C=.cache/huggingface/hub/$HUBDIR/snapshots; H=\$(ls \$C | grep -v main | head -1); [ -n \"\$H\" ] && ln -s \"\$H\" \"\$C/main\" && echo worker-main-normalized" >> "$P"
+    else
+      echo "- FAIL: the worker lacks $HUBDIR entirely — recorded" >> "$P"
+      local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
+      echo "$N" > "$SWEEP_DIR/$TAG.refusals"
+      [ "$N" -ge 2 ] && { echo "- missing twice — the pack is skipped with this receipt" >> "$P"; touch "$SWEEP_DIR/$TAG.done"; }
+      return 0
+    fi
+  fi
   # shellcheck disable=SC2086
   if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
     echo "- FAIL: the server refused the pack" >> "$P"

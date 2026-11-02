@@ -4534,3 +4534,16 @@ at our standing config on v1.2.1. g1 clean. Perf level with the Focus cell
 **The matrix (hardmode, 104 scenarios, v1.2.1, dense4fp8 standing)**:
 Mia-AiLab 4bpw **94** · Focus **93** · AZ **90** (the top-4 selector — the
 perf leader: pp 1,184, solo tg 57.7) · TR3 next (window 3).
+
+## (round 132, cont. 7) The TR3 window: the staging path worked; the refusal was prepare's worker-side check (2026-11-02)
+
+Window 3's first attempt: the staging code's first real run SUCCEEDED (the
+TR3 pack staged worker -> head, 164 GB, main symlinked to the hash snapshot),
+then the restart refused — and the receipt shows it was NOT the engine:
+**prepare demands snapshots/main on BOTH hosts**, and the worker's TR3 copy
+is hash-keyed only (the same pattern the MIA pack had; both packs' local
+copies carry no main ref — production serves its own pack by hash from its
+own volume). The refusal path recorded + armed the retry cleanly (the poke
+fired; the completion marker printed). Fix: the staging function now
+normalizes the worker's snapshots/main too (a permanent fix, not the MIA
+manual one-off). TR3's marker cleared; the window relaunches.
