@@ -4832,3 +4832,25 @@ twice at max_tokens 1: cold TTFT vs warm TTFT — the resume cost is THE
 instrument) → bench_perf. The BASE arm carries the vision-suite rider (the
 targeted-1024 cross-check, cont. 20a's loose end). The verdict decides
 whether the WARM row moves onto the anchors.
+
+## (round 132, cont. 24) THE KWSHARE A/B'S REFUSALS WERE MY INVOCATION BUGS — fixed, relaunched; the vision rider closed 4/4 (2026-11-02)
+
+The kvshare121 window (campaign-20261102-230421) refused BOTH arms — and the
+refusal lines name my bugs, not engine gates: (1) `TF_GLM_KV_SHARE=n` — the
+release notes' "n" is a COUNT placeholder ("give how many states the prompt
+cache over the KV pages keeps"), not a literal; the engine's arg-parse refused
+the letter. (2) The bf16 fallback spelled `KV_CACHE=bf16` — start.sh only
+accepts empty (the bf16 default) or fp8. **The #1732 mechanism was never
+tested; the fp8×pages fatality is NOT re-decided.** Fixed: `TF_GLM_KV_SHARE=2`
+(a two-state keep), the bf16 fallback omits KV_CACHE, and the warm_probe
+parser's split-index off-by-one (it printed FAILED on successful sends — the
+same campaign's evidence) replaced with labeled regex parsing. Arm markers
+cleared; the window relaunched.
+
+Landed from the same window: **the vision-suite rider on the standing config:
+targeted 4/4** (quadrants 'Red', Golden Gate, zebra, 'STOP') — the targeted-1024
+instrument fix verified on the standing serve; cont. 20a's loose end is closed.
+The BASE bench table landed too (its tg numbers wobble vs the knobsv121 BASE —
+the bench's known run-to-run noise; the duel instruments remain the honest
+pairs). The lesson, for the record: a refusal is a receipt — read WHAT it
+refuses before writing the verdict (the engine printed the expected format).

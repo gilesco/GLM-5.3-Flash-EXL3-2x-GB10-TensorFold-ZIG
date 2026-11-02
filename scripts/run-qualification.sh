@@ -971,8 +971,10 @@ fi
 # pattern: git history.)
 # ---------------------------------------------------------------------------
 # phase: kvshare121 (SESSION-SPECIFIC; the v1.2.1 pages-based prompt retention
-# A/B — retires with the verdict). #1732's opt-in: TF_GLM_KV_SHARE=n with
-# TF_KV_PAGES=on keeps prompts as the KV pool's pages ("a 64k message sent
+# A/B — retires with the verdict). #1732's opt-in: TF_GLM_KV_SHARE=<count>
+# (how many states the prompt cache keeps over the KV pages — the release
+# notes' "n" is a placeholder, NOT a literal; the 230421 refusal receipt)
+# with TF_KV_PAGES=on keeps prompts as the KV pool's pages ("a 64k message sent
 # again resumes in about 1.7 s instead of prefilling for 36 s" upstream at
 # TP=3). Our WARM row: the kept-states resume replays at 1.42 s at d8192;
 # production's full-hit skip is 0.21 s — this mechanism is the named upstream
@@ -995,27 +997,27 @@ if want kvshare121 && ! phase_done kvshare121; then
     local dst="$1" p8k r
     p8k=$(python3 -c "print(('The quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ')*300)")
     for i in 1 2; do
-      r=$(curl -s -m 300 -w '\nTTFTMARK %{time_starttransfer} %{time_total}' \
+      r=$(curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
         "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
         -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p8k")" \
-        | python3 -c 'import sys, json
+        | python3 -c 'import sys, json, re
 t = sys.stdin.read()
 body, _, tim = t.rpartition("TTFTMARK")
 d = json.loads(body)
-u = d["usage"]
-print("prompt_tokens=%d ttft_s=%s total_s=%s" % (u["prompt_tokens"], tim.split()[1], tim.split()[2]))' 2>/dev/null || echo "send $i FAILED")
+m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
+print("prompt_tokens=%d ttft_s=%s total_s=%s" % (d["usage"]["prompt_tokens"], m.group(1), m.group(2)))' 2>/dev/null || echo "send $i FAILED")
       echo "- send $i: $r" >> "$dst"
     done
   }
-  for arm in "BASE:" "KVS:TF_GLM_KV_SHARE=n TF_KV_PAGES=on"; do
+  for arm in "BASE:" "KVS:TF_GLM_KV_SHARE=2 TF_KV_PAGES=on"; do
     t="${arm%%:*}"; e="${arm#*:}"
     [ -f "$KVS_DIR/$t.done" ] && continue
     echo "## arm $t (env: ${e:-the standing defaults})" >> "$P"
     # shellcheck disable=SC2086
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $e; then
       if [ "$t" = KVS ]; then
-        echo "- FAIL: the server refused KVS on fp8 (the branch-era fatal pair reproduces on mainline?) — retrying on bf16" >> "$P"
-        t="KVS2"; e="TF_GLM_KV_SHARE=n TF_KV_PAGES=on KV_CACHE=bf16"
+        echo "- FAIL: the server refused KVS on fp8 (its refusal line is the receipt — dtype gate or shape) — retrying on bf16" >> "$P"
+        t="KVS2"; e="TF_GLM_KV_SHARE=2 TF_KV_PAGES=on"
         # shellcheck disable=SC2086
         if ! restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 PARALLEL=4 $e; then
           echo "- FAIL: KVS2 refused on bf16 too — the refusal is the receipt" >> "$P"
