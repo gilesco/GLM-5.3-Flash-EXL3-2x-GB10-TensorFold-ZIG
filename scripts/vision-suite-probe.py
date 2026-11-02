@@ -18,7 +18,7 @@ for e in manifest:
     img = open("assets/vision/" + e["file"], "rb").read()
     mime = "image/png" if e["file"].endswith(".png") else "image/jpeg"
     durl = "data:%s;base64," % mime + base64.b64encode(img).decode()
-    for kind, qkey, mt in (("targeted", "question", 64), ("detail", "detail_question", 1024)):
+    for kind, qkey, mt in (("targeted", "question", 1024), ("detail", "detail_question", 1024)):
         body = {"model": mid, "temperature": 0, "max_tokens": mt,
                 "messages": [{"role": "user", "content": [
                     {"type": "image_url", "image_url": {"url": durl}},
