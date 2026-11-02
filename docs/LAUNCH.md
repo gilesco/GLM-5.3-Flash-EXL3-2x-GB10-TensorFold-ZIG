@@ -4395,3 +4395,53 @@ REQUANT.md banner: cooling/thermal headroom, different hardware, or a
 community 3bpw line. The reqproof phase retires from
 scripts/run-qualification.sh in the next sitting's commit (window flow
 untouched otherwise).
+
+## (round 132) TensorFold v1.2.1: the review, the pin bump, the re-qualification, and the hardmode baseline (2026-11-02)
+
+**The review.** Upstream tagged v1.2.1 (1db3edb) on Nov 1; 173 commits past our
+round-130 pin (49a01bb3 = v1.2.0 + #1732 + #1736 + #1505 — all three confirmed
+in the release, so the bump loses nothing). What v1.2.1 adds for GLM-5.3-Flash
+on our cell: `TF_GLM_CHUNK_SOLO=4096` (#1823 — a cold prompt's first token
+6-9% sooner from 8K to 128K on GB10s, same bytes, 1.6-1.9 GiB more prompt
+buffers), `TF_GLM_VISION_HOST=1` (#1760 — with --vision, rank 0 holds 240 MiB
+for the tower instead of 1.05 GiB; ~0.8 GiB/rank back for KV at 512K), the
+#1868 fix (a loaded server left ~36 GiB of checkpoint in the page cache — on
+GB10 unified memory that is the GPU's too; long prompts ran 0.73x until
+restart — now dropped after load), `GET /v1/load` (#1655), the CUDA-graph
+capture-poisoning fix (#1744), TP rank-liveness error clarity (#1813), and the
+CUDA-13 driver floor (#1791). Both knobs are untested here — the knobs front
+REOPENS with exactly these two (cold depth + memory headroom).
+
+**The pin bump + re-qualification** (campaign-20261102-081320): TF_COMMIT →
+1db3edbe in scripts/local.sh; pinbump PASS (tensorfold-native 1.2.1 on both
+hosts, the marker moved, the image copied to the worker). The full battery:
+gates g1-g4 all PASS (content form), depth 12/12 (8k/64k/192k/384k, the
+standing config re-qualified end to end), prefill 1,085 tok/s on the ~26.9k
+probe (pp2048@d0 1,035-1,036 across cells — within noise of the standing
+1,049; no anchor change), climb's PARALLEL=5/6/8 ALL REFUSED at 512K even
+with a 4 GiB prompt cache (recorded outcomes). prodqual was SKIPPED —
+production was down when its turn came (a flow deviation; production's fresh
+current-bench anchor is owed on the next window). The standard tool-eval
+scored 95 on the dense8+fp8 cell (69 scenarios) — same instrument +3 over
+that cell's first-campaign 92; recorded as tool-eval, never cross-compared
+with hardmode.
+
+**(user) decisions, all in bca058e:**
+- "GLM-5.3-Flash-Next" → **GLM-5.3-Flash** — the same model (the architecture
+  name IS glm5_next; the release notes' "Flash Next" items are this family).
+- **PARALLEL caps at 4** on the 2-node pair — the climb and climbP phases
+  retired permanently; no 5/6/8 tests anywhere.
+- **Hardmode is the only quality instrument** — bench_cell's battery gains
+  --hardmode (the standard batch rides inside it; plain 69-scenario runs are
+  retired; tool-eval and hardmode scores never cross-compare families).
+
+**The hardmode baseline on v1.2.1** (campaign-20261102-095700, the first
+hardmode-instrument campaign): the standing config (dense4fp8, the Focus
+checkpoint, vision, 512Kx4) scores **93** on the 104-scenario battery — the
+Focus cell's best hardmode receipt (ties the effort-tail-era 93; production's
+run-level 94 is the old-bench-era anchor — the current-bench production datum
+is owed via prodqual). Fails: TC-100, TC-104, partial TC-99. The dense8+fp8
+reference cell scored 88 (fails TC-99 partial, TC-101, TC-104 — the diff is
+one scenario each way; stability-shaped, recorded). The next step per
+PERF_PLAN: the prodqual + same-window duel on v1.2.1 (the decode rows' duel
+instrument), then the two new GLM knobs.
