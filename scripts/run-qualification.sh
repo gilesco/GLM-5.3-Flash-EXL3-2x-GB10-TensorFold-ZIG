@@ -30,11 +30,10 @@
 #              bf16 KV path ONLY — fp8 KV and paging are mutually exclusive there (the
 #              engine exits on the combination; 87e4417e receipt, campaign-20261023-165319)
 #   throughputP the perf-only bench on paged bf16 KV (dense4, 512K window)
-#   climbP     PARALLEL=5/6/8 under paging: pages allocate on demand, so admission
-#              is about live paged usage, not streams × window
 #              at 512K — the speed numbers the first campaign's full-eval cells lack
-#   climb      dense4fp8 at 512K with PARALLEL=6 then 8: does admission take it,
-#              and what does aggregate decode do (refusal = recorded outcome)
+#   (climb/climbP retired round 132 (user): PARALLEL caps at 4 on the 2-node pair —
+#   no 5/6/8 tests anywhere; the 5/6/8 refusals at 512K stand receipted in
+#   campaign-20261102-081320)
 #   depth      the depth gate the forum thread taught us: seeded fact+needle
 #              probes at 8k/64k/192k/384k on the fp8-KV 512K config (production's
 #              93.9% Cyrillic score is the community bar)
@@ -62,12 +61,12 @@ LOG="$OUT/campaign.log"
 log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$LOG"; }
 phase_done() { [[ -f "$OUT/.$1.done" ]] && [[ "${FORCE:-0}" != 1 ]]; }
 
-PHASES="${PHASES:-preflight reference prodqual parity candidate kvqual kvqual4 throughput climb kvqual4P throughputP climbP knobs duel confirm depth cliff prefill rung summary}"
+PHASES="${PHASES:-preflight reference prodqual parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung summary}"
 want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput climb kvqual4P throughputP climbP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -93,7 +92,7 @@ restart() {        # restart the testing stack with env pairs: restart K=V ...
   log "serving: $(serve_line)"
   log "$(roce_state)"
   # propagate start.sh's exit code even when called in an if-context (set -e is
-  # suppressed there) — the climb phase depends on refusals being visible
+  # suppressed there) — refusals stay visible for any admission probe
   return $rc
 }
 
@@ -272,12 +271,14 @@ serve_line() {     # the sm_121 admission line of the running server, verbatim
 bench_cell() {     # the fixed matrix bench options against the running server
   local label="$1" dest="$2" rc=0
   mkdir -p "$dest"
+  # --hardmode (user, round 132): hardmode is THE quality instrument and it INCLUDES
+  # the standard batch — the plain 69-scenario run is retired; scores never cross-compare
   PYTHONUNBUFFERED=1 "$BENCH" run \
     --base-url "http://127.0.0.1:$PORT/v1" \
     --model "$SERVED_NAME" \
     --format openai \
     --tokenizer "$MODEL_ID" \
-    --seed 42 --perf --parallel 2 --timeout 240 --no-live \
+    --seed 42 --perf --hardmode --parallel 2 --timeout 240 --no-live \
     --label "$label" --output-dir "$dest" --json-file "$dest/result.json" \
     2>&1 | tee "$dest/bench.log" | tail -20 || rc=$?
   # a non-zero bench exit must not kill the campaign (set -e) — record it and move on
@@ -761,33 +762,6 @@ if want throughput && ! phase_done throughput; then
   touch "$OUT/.throughput.done"
 fi
 
-# phase: climb — how many 512K streams fit on dense4fp8? (the plan's rule: a refusal is
-# a recorded outcome, not an OOM — no fallback here; PARALLEL=4 needs 14.4 GiB of the
-# 15.8 GiB the first campaign saw free, so 6 and 8 should both fit)
-# ---------------------------------------------------------------------------
-if want climb && ! phase_done climb; then
-  log "=== climb (dense4fp8 at 512K, PARALLEL=5/6/8)"
-  P="$OUT/03d-climb.md"; : > "$P"
-  echo "# climb (dense4fp8 + fp8 KV + 524288; client parallel = server streams)" >> "$P"
-  echo "- the engine's admission arithmetic at this window: 8 streams need 25.29 GiB, budget leaves ~15.8 — it suggests --parallel 5 (5 x 3.16 = 15.81 GiB, knife-edge); 6+ is blocked by the engine's 12.2 GiB reserve (no knob exposed)" >> "$P"
-  for N in 5 6 8; do
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=$N; then
-      echo "## PARALLEL=$N" >> "$P"; echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
-      bench_perf "climb$N" "$OUT/climb$N" $N >> "$P"
-    else
-      # the usual refusal cause at 512K is the kept-states store's worst-case sizing;
-      # retry once with a trimmed prompt cache before recording the refusal
-      echo "- PARALLEL=$N refused at defaults; retrying with PROMPT_CACHE_GIB=4" >> "$P"
-      if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=$N PROMPT_CACHE_GIB=4; then
-        echo "## PARALLEL=$N (prompt cache trimmed to 4 GiB)" >> "$P"; echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
-        bench_perf "climb$N" "$OUT/climb$N" $N >> "$P"
-      else
-        echo "- PARALLEL=$N refused at 524288 even with a 4 GiB prompt cache — recorded outcome" >> "$P"
-      fi
-    fi
-  done
-  touch "$OUT/.climb.done"
-fi
 
 # ---------------------------------------------------------------------------
 # phase: kvqual4P — VALIDATION §2 gates on PAGED GLM KV (the #1163/#1211 branch):
@@ -834,26 +808,6 @@ if want throughputP && ! phase_done throughputP; then
 fi
 
 # ---------------------------------------------------------------------------
-# phase: climbP — PARALLEL=5/6/8 under paging. The window-mode ceiling sat at
-# "the engine's 12.2 GiB reserve blocks 6+"; demand-based pages only hold what is
-# actually live, so this is the branch's real payoff question.
-# ---------------------------------------------------------------------------
-if want climbP && ! phase_done climbP; then
-  log "=== climbP (paged dense4bf16, PARALLEL=5/6/8)"
-  P="$OUT/05c-climbP.md"; : > "$P"
-  echo "# climbP (PAGED bf16 KV + dense4 + 524288; client parallel = server streams)" >> "$P"
-  echo "- paging allocates 512-row pages on demand: admission is about live usage (a full 512K stream holds ~6.3 GiB bf16), not streams × window" >> "$P"
-  for N in 5 6 8; do
-    if restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 TF_KV_PAGES=on PARALLEL=$N; then
-      echo "## PARALLEL=$N" >> "$P"; echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
-      bench_perf "climbP$N" "$OUT/climbP$N" $N >> "$P"
-    else
-      echo "- PARALLEL=$N refused (paged bf16; the engine's last lines follow)" >> "$P"
-      docker logs "$CONTAINER_NAME" 2>&1 | tail -2 >> "$P"
-    fi
-  done
-  touch "$OUT/.climbP.done"
-fi
 
 # ---------------------------------------------------------------------------
 # phase: knobs — the untested TF_GLM_ decode/prefill knobs (2026-10-23 source
