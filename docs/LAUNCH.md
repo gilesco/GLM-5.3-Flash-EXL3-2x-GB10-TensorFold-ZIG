@@ -4445,3 +4445,33 @@ reference cell scored 88 (fails TC-99 partial, TC-101, TC-104 — the diff is
 one scenario each way; stability-shaped, recorded). The next step per
 PERF_PLAN: the prodqual + same-window duel on v1.2.1 (the decode rows' duel
 instrument), then the two new GLM knobs.
+
+## (round 132, cont.) The v1.2.1 duel re-pairs the decode fronts; prodqual's window-ordering fact (2026-11-02)
+
+**prodqual skipped AGAIN** (campaign-20261102-112634) — and the reason is now
+clear: prodqual probes the opencode production on 8000 (read-only), while the
+duel's production arm restarts production FOR TESTING on 8001 — the two arms
+cannot share one window (the flow stops 8000 around the duel's restart). The
+duel's production probes ARE a fresh same-instrument production measurement,
+so the perf rows carry a current anchor; production's current-bench HARMODE
+datum still needs its own window (prodqual alone, or prodqual-first
+ordering).
+
+**The v1.2.1 duel** (ours dense4fp8 vs production 0.6.6, same probes):
+- solo decode: ours 55.5/55.3 (Δ 0.3%) vs production 58.9/59.1 (Δ 0.2%) —
+  **93.9%** (the round-130 pair was 93.2% — +0.7 pp on the new engine)
+- c2 aggregate: ours 92.3 vs 111.1 — **83.1%** (was 80.5%)
+- c4 aggregate: ours 143.3 vs 155.1 — **92.4%**, with production's volley
+  coming in LOW this run (its range is 155-241 with cache state; ours holds
+  142-148 across runs — the round-130 pair was 144.9/192.6)
+- request overhead: ours 199 vs 183 ms (92.0%, unchanged shape)
+- ITL: ours 56.8 ms/chunk (507 chunks, the chunked rhythm) vs production
+  17.0 ms (2049 chunks) — per-token ~16.7 vs 17.0 ms, the crossing stands
+- TTFT at depth: ours 3,748/5,574 ms (d4096/d8192 — true cold, slope 0.656)
+  vs production 2,440/2,368 — its persistent cache warm-hit artifact again
+  (its d8192 came in BELOW its d4096); the prodcold receipt (17.1 s true
+  cold) stands as production's real cold cost
+
+The anchors' solo/c2/c4/overhead rows re-paired (dated 2026-11-02) and the
+chart re-rendered. The depth-front picture on v1.2.1: cold crossed (ours),
+warm still production's edge, decode gaps narrowed.
