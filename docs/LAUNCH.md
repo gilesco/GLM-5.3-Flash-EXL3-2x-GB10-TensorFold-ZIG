@@ -4770,3 +4770,17 @@ prompt cache halved 3.3→1.9 GiB — resume-capacity risk at depth). Presented
 with this digest.
 
 Next per the plan: the user's CS call, then the next plan item.
+
+## (round 132, cont. 21) PRODBENCH — the owed production hardmode anchor gets a port-rule-compliant instrument (2026-11-02)
+
+The perf plan's one owed item is production's current-bench hardmode anchor
+(prodqual measured against the live 8000 — retired with the port rule). The
+replacement: **prodbench** — production FOR TESTING on 8001 (the duel's
+choreography verbatim: our stack yields the port, the intent-keyed start, the
+stop after, our stack restored) with the bench's hardmode battery (v3.0.1,
+--hardmode, ~25 min of client load) as the read-only probe. Our side's
+same-bench receipt: TR3 94/104. Also: the BENCH_BASE_URL override — still
+present in the load functions despite cont. 17's revert note — is now removed
+at all 4 sites; the testing port is unconditional and the script-start port
+lock is the one guard. The phase retires when the anchor lands in the
+scoreboard. Window launched: PHASES="prodbench".
