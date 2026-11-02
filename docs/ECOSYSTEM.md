@@ -572,3 +572,36 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   chunk-buffer and stream fights need. That is PERF_PLAN Front 1's
   checkpoint-rev lever with a concrete shape. (Out of scope, not tracked: other
   engines on GB10, other families' serving threads.)
+
+## 2026-11-02 — the GLM-5.3-Flash EXL3 checkpoint landscape (the HF sweep, round 132)
+
+The user's spec: GLM-5.3-Flash (the architecture name IS glm5_next), vision,
+2x GB10 at TP=2, 512K — the checkpoints that fit it. The sweep:
+
+- **turboderp/GLM-5.3-Flash-exl3** (Oct 30): the canonical quantizer's plain
+  2.05/3.05/4.05 + SELF-CALIBRATED 2.10/2.60/3.10/4.10 packs. The 3.05/3.10
+  line is the sub-4 target from the release's author. Needs exllamav3 >=1.4.5
+  (glm5_next) — our engine reads the family.
+- **androidli/GLM-5.3-Flash-Uncensored-EXL3-3.0bpw-mcg-TensorFold** (the
+  zai-org discussion, Oct 19): experts-only 3.0bpw mcg, everything else
+  source-native (vision tower included). MEASURED ON OUR SHAPE: 2x DGX Spark
+  TP=2 over CX7, TensorFold 0.6.0, vision + fp8 KV + spill + DFlash2 all
+  verified; KV pool 3.89M tokens (vs 1.86M at 4bpw); forward latency -8/-16/
+  -17.5% vs 4bpw; EvalPlus 86.3% (4bpw: 86.5%). THE COMMUNITY'S 3bpw PACK —
+  the requant goal, without our capture. CAVEATS: the base is dealignai's
+  UNCENSORED derivative (not zai-org — content policy is the user's call),
+  its receipts are EvalPlus not hardmode, and the verification era is 0.6.0.
+- **JANGQ-AI/GLM-5.3-Flash-EXL3** (4.0bpw): vision 16-bit, MTP in, mul1,
+  153 GB, "for DGX Spark". Quantized ON a GB10 with the layer-streamed
+  converter.
+- **LibertAIDAI/GLM-5.3-Flash-EXL3-4bpw**: experts 4bpw mul1 + MTP experts
+  6bpw, everything else BF16 byte-identical, 165 GiB, receipts vs TR3 (ppl
+  -0.8%, expert error lower).
+- **Terra3312/...-4bpw-MUL1**: vision + lm_head at 6bpw (a quality trade),
+  the INT8-GEMV decode path angle.
+- **yamz-labs/...-EXL3-Yamz** (99.7 GB): a turboderp 2.05/3.05 per-layer mix,
+  scale-tuned — tested ONLY on AMD Strix Halo (Kyojin engine), config warning.
+- **vcruz305/...-EXL3-K2** (2-bit experts, 97.7 GB): qualified only on
+  vLLM/L40 at 8K; vision unqualified. Deep-bit, low priority.
+- On site already: the Focus (93/104 hardmode on v1.2.1 — receipted today),
+  the AZ, Mia-AiLab 4bpw-TensorFold + TR3, the DFlash2 drafters.
