@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs knobsv121 duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs kvshare121 duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -957,41 +957,81 @@ fi
 # expert floor: the CUDA family reads 4-bit EXL3 experts — all three community
 # packs refused (UnsupportedQuant). Re-run patterns: git history.
 
+# (the knobsv121 phase RETIRED round 132 (cont. 23) — both verdicts final:
+# VH (TF_GLM_VISION_HOST=1) REJECTED — two arms noise-to-negative, the model's
+# 0.82 GiB shed absorbed by a larger prompt cache (net +0.2 GiB), vision intact
+# (the assets/vision detail leg 4/4); CS (TF_GLM_CHUNK_SOLO=4096) HELD (user) —
+# solo-only gains (d0 +5.1%, d4096 +8.7%, d8192 flat, no concurrent effect) at
+# +1.87 GiB and a halved prompt cache. Receipts: results/knobsv121/. Re-run
+# patterns: git history.)
+# (the prodbench phase RETIRED round 132 (cont. 22) — its purpose is served:
+# production's current-bench hardmode anchor landed at 94/104 (campaign-
+# 20261102-213954, production FOR TESTING on the clean 8001, the same
+# bench_cell instrument as ours) — the served TR3 TIES it at 94. Re-run
+# pattern: git history.)
 # ---------------------------------------------------------------------------
-# phase: knobsv121 (SESSION-SPECIFIC; the two v1.2.1 GLM knobs A/B'd on the
-# served TR3 default — retires with the knobs' verdicts). All arms on the clean
-# testing port 8001. Arms: baseline (the standing config) -> TF_GLM_CHUNK_SOLO=4096
-# (upstream: a cold prompt's first token 6-9% sooner from 8K to 128K, same bytes,
-# +1.6-1.9 GiB prompt buffers) -> TF_GLM_VISION_HOST=1 (rank 0 holds 240 MiB for
-# the tower instead of 1.05 GiB — the room returns for KV; the vision sanity: the
-# repoed assets/vision suite via scripts/vision-suite-probe.py — our vision
-# assets, never ad-hoc fixtures (user, round 132)). Each arm: restart ->
-# bench_perf (the pp/tg/TTFT table IS the cold measurement — benchy fills are
-# novel per restart). The verdicts: the deltas vs the baseline, recorded per knob.
+# phase: kvshare121 (SESSION-SPECIFIC; the v1.2.1 pages-based prompt retention
+# A/B — retires with the verdict). #1732's opt-in: TF_GLM_KV_SHARE=n with
+# TF_KV_PAGES=on keeps prompts as the KV pool's pages ("a 64k message sent
+# again resumes in about 1.7 s instead of prefilling for 36 s" upstream at
+# TP=3). Our WARM row: the kept-states resume replays at 1.42 s at d8192;
+# production's full-hit skip is 0.21 s — this mechanism is the named upstream
+# pattern for that front. The known fatal pair (fp8 KV x TF_KV_PAGES, recorded
+# on the pre-mainline branch) is re-decided here on v1.2.1 mainline. Arms:
+# BASE (the standing config) -> KVS (TF_GLM_KV_SHARE=n TF_KV_PAGES=on on fp8;
+# if the serve refuses, KVS2 retries the pair on bf16 — the branch-era rule).
+# Each arm: restart -> serve line (the memory shape) -> the warm-resume probe
+# (an ~8k prompt sent twice at max_tokens 1: cold TTFT vs warm TTFT) ->
+# bench_perf. The BASE arm also runs the vision suite (the targeted-1024
+# cross-check rider, cont. 20a's loose end). The verdicts: the warm TTFT
+# delta, the memory shape, the gates' byte-exactness on the resumed arm.
 # ---------------------------------------------------------------------------
-if want knobsv121 && ! phase_done knobsv121; then
-  log "=== knobsv121"
-  P="$OUT/knobsv121.md"; : > "$P"
-  echo "# knobsv121 (the v1.2.1 GLM knobs on the TR3 default; all arms on 8001)" >> "$P"
-  KNOB_DIR="results/knobsv121"; mkdir -p "$KNOB_DIR"
-  for arm in "BASE:" "CS:TF_GLM_CHUNK_SOLO=4096" "VH:TF_GLM_VISION_HOST=1"; do
+if want kvshare121 && ! phase_done kvshare121; then
+  log "=== kvshare121"
+  P="$OUT/kvshare121.md"; : > "$P"
+  echo "# kvshare121 (the #1732 pages-based prompt retention A/B on the TR3 default; all arms on 8001)" >> "$P"
+  KVS_DIR="results/kvshare121"; mkdir -p "$KVS_DIR"
+  warm_probe() {  # $1 = receipt file — an ~8k prompt sent twice at max_tokens 1
+    local dst="$1" p8k r
+    p8k=$(python3 -c "print(('The quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ')*300)")
+    for i in 1 2; do
+      r=$(curl -s -m 300 -w '\nTTFTMARK %{time_starttransfer} %{time_total}' \
+        "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+        -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p8k")" \
+        | python3 -c 'import sys, json
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+d = json.loads(body)
+u = d["usage"]
+print("prompt_tokens=%d ttft_s=%s total_s=%s" % (u["prompt_tokens"], tim.split()[1], tim.split()[2]))' 2>/dev/null || echo "send $i FAILED")
+      echo "- send $i: $r" >> "$dst"
+    done
+  }
+  for arm in "BASE:" "KVS:TF_GLM_KV_SHARE=n TF_KV_PAGES=on"; do
     t="${arm%%:*}"; e="${arm#*:}"
-    [ -f "$KNOB_DIR/$t.done" ] && continue
+    [ -f "$KVS_DIR/$t.done" ] && continue
     echo "## arm $t (env: ${e:-the standing defaults})" >> "$P"
     # shellcheck disable=SC2086
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $e; then
-      echo "- FAIL: the server refused arm $t" >> "$P"; touch "$KNOB_DIR/$t.done"; continue
+      if [ "$t" = KVS ]; then
+        echo "- FAIL: the server refused KVS on fp8 (the branch-era fatal pair reproduces on mainline?) — retrying on bf16" >> "$P"
+        t="KVS2"; e="TF_GLM_KV_SHARE=n TF_KV_PAGES=on KV_CACHE=bf16"
+        # shellcheck disable=SC2086
+        if ! restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 PARALLEL=4 $e; then
+          echo "- FAIL: KVS2 refused on bf16 too — the refusal is the receipt" >> "$P"
+          touch "$KVS_DIR/KVS.done"; continue
+        fi
+      else
+        echo "- FAIL: the server refused arm $t" >> "$P"; touch "$KVS_DIR/$t.done"; continue
+      fi
     fi
     echo "- server: $(serve_line)" >> "$P"
-    bench_perf "knob-$t" "$KNOB_DIR/$t-perf" 4 >> "$P" 2>&1
-    grep -h -oE "TTFT[^,]*" "$KNOB_DIR/$t-perf"/2026/*/*--*.md 2>/dev/null | head -3 >> "$P" || true
-    if [ "$t" = VH ]; then
-      # the vision sanity: OUR vision assets (user, round 132) — the repoed
-      # round-55 suite over assets/vision/manifest.json (the synthetic quadrants
-      # + 3 photos, agent-verified ground truth). The round-132 SVG ad-hoc
-      # fixture was an invalid test — the tower wants raster.
-      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$KNOB_DIR/VH-vision.json" > "$KNOB_DIR/VH-vision.log" 2>&1 || true
-      python3 - "$KNOB_DIR/VH-vision.json" >> "$P" <<'PYEOF'
+    warm_probe "$P"
+    bench_perf "kv-$t" "$KVS_DIR/$t-perf" 4 >> "$P" 2>&1
+    if [ "$t" = BASE ]; then
+      # the vision-suite rider: the targeted-1024 cross-check on the standing config
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$KVS_DIR/BASE-vision.json" > "$KVS_DIR/BASE-vision.log" 2>&1 || true
+      python3 - "$KVS_DIR/BASE-vision.json" >> "$P" <<'PYEOF'
 import json, sys
 man = {e["file"]: e for e in json.load(open("assets/vision/manifest.json"))}
 try:
@@ -1002,24 +1042,18 @@ tgt = [a for a in ans if a["kind"] == "targeted"]
 ok = 0
 for a in tgt:
     e = man[a["file"]]
-    low = a["answer"].lower()
-    hit = any(w in low for w in e["expect"])
+    hit = any(w in a["answer"].lower() for w in e["expect"])
     ok += hit
-    print("- vision targeted %s: %s — %r" % (a["file"], "PASS" if hit else "FAIL", " ".join(a["answer"].split())[:100]))
-print("- vision suite: targeted %d/%d (detail answers in %s)" % (ok, len(tgt), sys.argv[1]))
+    print("- vision targeted %s: %s — %r" % (a["file"], "PASS" if hit else "FAIL", " ".join(a["answer"].split())[:80]))
+print("- vision suite: targeted %d/%d" % (ok, len(tgt)))
 PYEOF
     fi
-    touch "$KNOB_DIR/$t.done"
+    touch "$KVS_DIR/$t.done"
   done
-  echo "- the arms' tables above are the verdict material (the deltas vs BASE)" >> "$P"
-  touch "$OUT/.knobsv121.done"
+  echo "- the verdict material: send-2 TTFT (the warm resume) BASE vs KVS/KVS2, the serve lines' memory shapes, the bench tables" >> "$P"
+  touch "$OUT/.kvshare121.done"
 fi
 
-# (the prodbench phase RETIRED round 132 (cont. 22) — its purpose is served:
-# production's current-bench hardmode anchor landed at 94/104 (campaign-
-# 20261102-213954, production FOR TESTING on the clean 8001, the same
-# bench_cell instrument as ours) — the served TR3 TIES it at 94. Re-run
-# pattern: git history.)
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one

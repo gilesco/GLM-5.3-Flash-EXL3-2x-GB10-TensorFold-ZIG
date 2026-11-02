@@ -573,6 +573,27 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   checkpoint-rev lever with a concrete shape. (Out of scope, not tracked: other
   engines on GB10, other families' serving threads.)
 
+## 2026-11-02 — the upstream watch (round 132, cont. 23): v1.2.1 still latest; the GLM opt-ins dispositioned
+
+- The releases page: **v1.2.1 (Nov 1) is the latest engine release** — the only
+  newer tag is the Mac desktop app (app-v1.0.0, Nov 2, bundles engine 1.2.0;
+  irrelevant to the CUDA line). Nothing to bump to.
+- The v1.2.1 GLM opt-ins, dispositioned on our line: **#1823** `TF_GLM_CHUNK_SOLO`
+  (A/B'd: held, user); **#1760** `TF_GLM_VISION_HOST` (A/B'd: rejected);
+  **#1732** `TF_GLM_KV_SHARE=n` + `TF_KV_PAGES=on` (the pages-based prompt
+  retention — upstream's own receipt: "a 64k message sent again resumes in
+  about 1.7 s instead of prefilling for 36 s" — THE named pattern for our WARM
+  front: production full-hit 0.21 s vs our 1.42 s kept-states replay) — the
+  A/B is in flight (the kvshare121 phase; the fp8×pages fatality re-decided on
+  mainline); **#1736** `TF_GLM_HOST_CACHE` (prompt states in pinned host
+  memory — built for discrete cards with little device room; our GB10s are
+  unified-memory hosts, low priority, untested).
+- No GLM concurrency content for c4 in v1.2.1 beyond what we run (#1779's
+  shared draft rounds covers GLM and is in our receipts; #1505's expert
+  prefetch measured "within 1%" for GLM at TP=2 upstream). The c4 front stays
+  upstream-gated on the batched-launch pattern.
+- No sub-4-bit EXL3 expert reader for GLM in v1.2.1 — the 3bpw gate stands.
+
 ## 2026-11-02 — the GLM-5.3-Flash EXL3 checkpoint landscape (the HF sweep, round 132)
 
 The user's spec: GLM-5.3-Flash (the architecture name IS glm5_next), vision,

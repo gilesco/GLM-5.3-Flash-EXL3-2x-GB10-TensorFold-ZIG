@@ -269,8 +269,11 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       four detail answers correct at 1024 tokens; the targeted leg's 3 empties
       were the probe's 64-token cap under thinking (the instrument fixed to
       1024, cont. 20a), not a tower fault.
-- [ ] **The CS adopt-vs-hold call** — the user's: real decode gains vs the
-      halved prompt cache (resume-capacity risk at depth).
+- [x] **The CS adopt-vs-hold call** — CLOSED (cont. 23, user): **HOLD** — the
+      gains land on fronts already crossed (solo 110%, c2 127%); c4 (the one
+      front behind, 80%) doesn't move; the +1.87 GiB / halved prompt-cache
+      trade is paid at the 512K×4 admission margin with an unmeasured
+      multi-turn risk. The knob stays available as an env, never the default.
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 

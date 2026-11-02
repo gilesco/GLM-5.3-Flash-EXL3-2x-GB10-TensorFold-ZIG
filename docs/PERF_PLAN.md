@@ -28,7 +28,7 @@ upstream-gated**:
   pathology. The cache churn: no evictions at probe scale, but the concurrent
   resume SERIALIZES 4× (round 123). The remaining decode gap is the uniform
   per-token machinery — **upstream-gated** (the batched-launch pattern reaching
-  GLM, the pair-seam CUDA steps — v1.2.1 LANDED (round 132: the GLM knobs #1823/#1760 are upstream, the #1868 page-cache fix, /v1/load; the re-qualification + the duel re-paired the decode fronts) — the watch continues each sitting).
+  GLM, the pair-seam CUDA steps — v1.2.1 LANDED (round 132: the GLM knobs #1823/#1760 are upstream, the #1868 page-cache fix, /v1/load; the re-qualification + the duel re-paired the decode fronts; the knobs A/B'd: #1760 VH rejected, #1823 CS held (user) — and #1732's KV_SHARE+pages pair is the next A/B, the warm-resume mechanism) — the watch continues each sitting).
   **Re-attributed (round 131, the azqual receipt)**: a large share of the
   decode gap is ROUTING DEPTH, not machinery — the AZ-EXL3 serve
   (num_experts_per_tok=4 vs the Focus's 8, quantization identical) decodes

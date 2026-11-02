@@ -4803,3 +4803,32 @@ Next per the plan: the user's CS call (presented with options this sitting);
 beyond it the one open perf front is the warm full-hit skip (production 0.21 s
 vs our 1.42 s resume — the upstream host-cache trio #1736/#1795 is the named
 pattern), upstream-gated pending the watch.
+
+## (round 132, cont. 23) CS HELD (user); the knobs retire; the upstream watch points at #1732 — the kvshare A/B launches (2026-11-02)
+
+**(user)**: "We go with your recommendation" — **CS (TF_GLM_CHUNK_SOLO=4096)
+HOLD**: the gains land on fronts already crossed (solo 110%, c2 127%); c4 (the
+one front behind, 80%) doesn't move; the +1.87 GiB / halved prompt-cache trade
+is paid at the 512K×4 admission margin with an unmeasured multi-turn risk. The
+knob stays available as an env, never the default. **The knobsv121 phase
+retired** (VH rejected + CS held — both verdicts final; the receipts stand in
+results/knobsv121/).
+
+**The upstream watch** (the releases page): v1.2.1 (Nov 1) is still the latest
+engine release — nothing to bump to. The v1.2.1 GLM opt-ins are now
+dispositioned in ECOSYSTEM.md: #1823 held, #1760 rejected, **#1732
+(TF_GLM_KV_SHARE=n + TF_KV_PAGES=on — prompts as pool pages; upstream's
+receipt: a 64k re-send resumes in ~1.7 s vs 36 s prefill) is the named
+mechanism for our WARM front** (production full-hit 0.21 s vs our 1.42 s
+kept-states replay) — and #1736 (host-cache) is low-priority for our
+unified-memory shape. No c4 content beyond what we run; no sub-4-bit reader
+(the 3bpw gate stands).
+
+**Launched: the kvshare121 window** (PHASES="kvshare121") — the #1732 A/B on
+the standing config: BASE vs KVS (fp8; if the serve refuses, KVS2 retries on
+bf16 — the branch-era fatality re-decided on mainline). Each arm: restart →
+serve line (the memory shape) → the warm-resume probe (an ~8k prompt sent
+twice at max_tokens 1: cold TTFT vs warm TTFT — the resume cost is THE
+instrument) → bench_perf. The BASE arm carries the vision-suite rider (the
+targeted-1024 cross-check, cont. 20a's loose end). The verdict decides
+whether the WARM row moves onto the anchors.
