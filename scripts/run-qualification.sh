@@ -978,8 +978,11 @@ fi
 # again resumes in about 1.7 s instead of prefilling for 36 s" upstream at
 # TP=3). Our WARM row: the kept-states resume replays at 1.42 s at d8192;
 # production's full-hit skip is 0.21 s — this mechanism is the named upstream
-# pattern for that front. The known fatal pair (fp8 KV x TF_KV_PAGES, recorded
-# on the pre-mainline branch) is re-decided here on v1.2.1 mainline. Arms:
+# pattern for that front. The fp8 x pages pair is a DESIGNED non-combination on mainline (the
+# 233025 receipt, the engine's own line: "--kv-cache fp8 keeps a window per
+# stream: unset TF_KV_PAGES, or set it to auto or off") — pages require
+# bf16/auto. The bf16 arm (KVS2, KV_CACHE= empty) is the mechanism test;
+# fp8+pages is closed as a rule, not a bug. Arms:
 # BASE (the standing config) -> KVS (TF_GLM_KV_SHARE=n TF_KV_PAGES=on on fp8;
 # if the serve refuses, KVS2 retries the pair on bf16 — the branch-era rule).
 # Each arm: restart -> serve line (the memory shape) -> the warm-resume probe
@@ -1018,8 +1021,11 @@ print("prompt_tokens=%d ttft_s=%s total_s=%s" % (d["usage"]["prompt_tokens"], m.
       if [ "$t" = KVS ]; then
         echo "- FAIL: the server refused KVS on fp8 (its refusal line is the receipt — dtype gate or shape) — retrying on bf16" >> "$P"
         t="KVS2"; e="TF_GLM_KV_SHARE=2 TF_KV_PAGES=on"
+        # KV_CACHE= (EMPTY) is the bf16 spelling — omitting it lets config.sh's
+        # fp8 default leak through (the 233025 KVS2 receipt: the same fp8-pages
+        # refusal fired on the "bf16" arm because fp8 was never unset)
         # shellcheck disable=SC2086
-        if ! restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 PARALLEL=4 $e; then
+        if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 $e; then
           echo "- FAIL: KVS2 refused on bf16 too — the refusal is the receipt" >> "$P"
           touch "$KVS_DIR/KVS.done"; continue
         fi

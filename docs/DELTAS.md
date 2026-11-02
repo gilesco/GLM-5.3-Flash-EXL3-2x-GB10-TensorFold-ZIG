@@ -31,9 +31,12 @@ production started FOR TESTING on 8001, ours on main): **loading 98.6% — TAKEN
 ceiling); **the depth front has its final honest shape (the round-131 prodcold receipt —
 production's TRUE cold on novel fills its persistent cache cannot hit)**: COLD we win 3.1×
 (ours 5.57 s at d8192, slope 0.656 ms/tok flat, vs production's 17.13 s, slope 2.026 — its
-cold prefill SLOWS with depth) — **the cold depth cost is CROSSED (309%)**; WARM production
-leads (0.21 s on a full-hit SKIP vs our 1.42 s kept-states resume — the open piece is the
-skip, engine-side). The round-130 "42%" and the round-130 "166%" both compared across cache
+cold prefill SLOWS with depth) — **the cold depth cost is CROSSED (309%)**; WARM
+re-measured on v1.2.1 (cont. 25): our same-session hit is **0.302 s** vs
+production's 0.21 s full-hit skip — **70%** (the round-131 v1.2.0-era number
+was 1.42 s; the #1868 page-cache fix the likely mover — both receipts cited in
+the anchors row); the open pieces are the cross-restart resume path and the
+concurrent resume's 4× serialization. The round-130 "42%" and the round-130 "166%" both compared across cache
 states (our cold vs its warm; our warm vs its warm-from-history). The
 marks-policy patch is the fix candidate). The old score rows (92/100 etc.) are formally
 cross-version history.

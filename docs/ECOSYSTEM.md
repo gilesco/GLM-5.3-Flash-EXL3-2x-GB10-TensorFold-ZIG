@@ -580,12 +580,17 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   irrelevant to the CUDA line). Nothing to bump to.
 - The v1.2.1 GLM opt-ins, dispositioned on our line: **#1823** `TF_GLM_CHUNK_SOLO`
   (A/B'd: held, user); **#1760** `TF_GLM_VISION_HOST` (A/B'd: rejected);
-  **#1732** `TF_GLM_KV_SHARE=n` + `TF_KV_PAGES=on` (the pages-based prompt
+  **#1732** `TF_GLM_KV_SHARE=<count>` + `TF_KV_PAGES=on` (the pages-based prompt
   retention — upstream's own receipt: "a 64k message sent again resumes in
   about 1.7 s instead of prefilling for 36 s" — THE named pattern for our WARM
-  front: production full-hit 0.21 s vs our 1.42 s kept-states replay) — the
-  A/B is in flight (the kvshare121 phase; the fp8×pages fatality re-decided on
-  mainline); **#1736** `TF_GLM_HOST_CACHE` (prompt states in pinned host
+  front) — the A/B is in flight (the kvshare121 phase): **the fp8×pages pair
+  is a DESIGNED non-combination on mainline** (the engine's admission line:
+  "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to
+  auto or off" — the 233025 receipt; pages require bf16/auto KV); the bf16
+  mechanism arm is the live test. Our own same-session warm hit re-measured at
+  **0.302 s** on the standing fp8 config (cont. 25) — 70% of production's
+  0.21 s full-hit skip, from the v1.2.0-era 1.42 s. **#1736**
+  `TF_GLM_HOST_CACHE` (prompt states in pinned host
   memory — built for discrete cards with little device room; our GB10s are
   unified-memory hosts, low priority, untested).
 - No GLM concurrency content for c4 in v1.2.1 beyond what we run (#1779's

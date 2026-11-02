@@ -4854,3 +4854,33 @@ The BASE bench table landed too (its tg numbers wobble vs the knobsv121 BASE —
 the bench's known run-to-run noise; the duel instruments remain the honest
 pairs). The lesson, for the record: a refusal is a receipt — read WHAT it
 refuses before writing the verdict (the engine printed the expected format).
+
+## (round 132, cont. 25) THE WARM FRONT RE-MEASURED: 0.302 s — 70% of production's skip; the fp8×pages rule confirmed; the bf16 arm re-spelled (2026-11-02)
+
+**The BASE arm's warm-resume receipt (campaign-20261102-233025) is the
+headline**: an 8,414-token prompt sent twice at max_tokens=1 — cold TTFT
+**7.22 s**, warm TTFT **0.302 s** (24×). The SAME instrument definition as the
+anchors' WARM row (1-token, d8192, cache hit) whose ours-number was 1,422 ms
+from the round-131 receipt — **the row is corrected to 302 ms / 70% of
+production's 0.21 s full-hit skip**, per the round-entry rule (both receipts
+cited; the round-131 number was the v1.2.0-era stack — the #1868 page-cache
+fix the likely mover). The chart re-rendered; DELTAS/README/PERF_PLAN
+re-scoped: the warm solo TTFT is near-parity; the open pieces are the
+cross-restart resume path and the concurrent resume's 4× serialization.
+
+**The fp8×pages pair is a DESIGNED non-combination on mainline** — the
+engine's admission line (the KVS refusal, campaign-20261102-233025):
+"--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to
+auto or off". Pages require bf16/auto KV; the standing fp8 config cannot take
+pages without leaving fp8. **And the "bf16" arm never ran**: omitting KV_CACHE
+let config.sh's fp8 default leak through — the same fp8 refusal fired on the
+KVS2 arm. Fixed: `KV_CACHE=` (EMPTY) is the bf16 spelling; the phase header
+carries the confirmed rule. Markers cleared; the window relaunched for the
+bf16 mechanism test (the #1732 question: does pages beat our 0.302 s
+same-session hit, and at what memory shape on bf16).
+
+**Overnight queue** (the autonomous run continues on the pokes): (1) the KVS2
+verdict → retire kvshare121; (2) the cross-restart warm attribution (a
+prodcold-style re-run on v1.2.1 — the row's open piece); (3) the ledger's
+no-GPU hygiene items (the worker clock probe, the g3 /metrics counter check);
+(4) the upstream watch each sitting.

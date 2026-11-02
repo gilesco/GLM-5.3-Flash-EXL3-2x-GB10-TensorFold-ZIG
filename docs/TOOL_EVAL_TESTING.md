@@ -274,6 +274,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       front behind, 80%) doesn't move; the +1.87 GiB / halved prompt-cache
       trade is paid at the 512K×4 admission margin with an unmeasured
       multi-turn risk. The knob stays available as an env, never the default.
+- [ ] **kvshare121 — the #1732 pages mechanism A/B (in flight)**: the fp8×pages
+      pair is a DESIGNED non-combination on mainline (the engine's admission
+      line: "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or
+      set it to auto or off" — campaign-20261102-233025; pages require
+      bf16/auto). Two invocation receipts along the way (the release's "n" is
+      a count placeholder; KV_CACHE=bf16 is not a legal value — empty is the
+      bf16 spelling, and omitting KV_CACHE leaks config.sh's fp8 default).
+      The bf16 mechanism arm (KVS2) is the live test. **Landed already: the
+      BASE warm-resume re-measurement — cold 7.22 s → warm 0.302 s at 8,414
+      tokens** (the same instrument definition as the anchors' WARM row; the
+      v1.2.0-era 1.42 s was 4.7× slower — the row corrected to 302 ms / 70%
+      with both receipts cited).
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 

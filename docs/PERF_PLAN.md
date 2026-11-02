@@ -54,8 +54,16 @@ upstream-gated**:
   final shape (the prodcold receipt)**: production's cold slope is 2.026
   ms/tok (17.1 s at d8192, SLOWING with depth — not the 0.266 the round-130
   duel read, which was its persistent-cache-warm number); ours is 0.656 flat
-  — the cold front CROSSES (309%). Production's real edge is the WARM full-
-  hit skip (0.21 s vs our 1.42 s resume) — the open piece, engine-side.
+  — the cold front CROSSES (309%). Production's real edge was the WARM full-
+  hit skip — RE-MEASURED cont. 25 on v1.2.1 (the same instrument definition,
+  the same-session immediate repeat at max_tokens=1, d8.4k): ours 0.302 s vs
+  production's 0.21 s — 70%, from the v1.2.0-era 1.42 s (the #1868 page-cache
+  fix the likely mover; both receipts cited in the anchors row). The open
+  pieces: the cross-restart resume path and the concurrent resume's 4×
+  serialization. The #1732 pages mechanism (the named upstream pattern for a
+  full-hit skip) requires bf16/auto KV — the fp8×pages pair is a designed
+  non-combination on mainline (the engine's admission line, the 233025
+  receipt); the bf16 mechanism test is in flight.
 - **The standing strengths**: the concurrent deep prefill WINS 1.53× (2,799 vs
   1,834 t/s); the decode ITL crosses (102%); TTFT overhead 92%.
 - **LOADING (round 127, 2026-10-31): TAKEN — 98.6%, at production's number.** The

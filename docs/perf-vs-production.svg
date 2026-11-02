@@ -30,9 +30,9 @@
     <text x="900" y="251.5" font-size="13.5" font-weight="700" fill="#1a1f24" text-anchor="end">308%</text>
     <text x="849" y="251.5" font-size="10" fill="#1a1f24" text-anchor="end">5,570 vs 17,129 ms</text>
     <text x="12" y="291.5" font-size="12.5" fill="#9fb1c9">TTFT at depth, WARM (1-token, d8192, cache hit)</text>
-    <rect x="270" y="274" width="31" height="26" rx="4" fill="#d29922"/>
-    <text x="309" y="291.5" font-size="13.5" font-weight="700" fill="#d29922">15%</text>
-    <text x="341" y="291.5" font-size="10" fill="#8b949e">1,422 vs ~212 ms</text>
+    <rect x="270" y="274" width="145" height="26" rx="4" fill="#d29922"/>
+    <text x="423" y="291.5" font-size="13.5" font-weight="700" fill="#d29922">70%</text>
+    <text x="455" y="291.5" font-size="10" fill="#8b949e">302 vs ~212 ms</text>
     <text x="12" y="331.5" font-size="12.5" fill="#9fb1c9">prefill (benchy pp2048 @ d0)</text>
     <rect x="270" y="314" width="143" height="26" rx="4" fill="#d29922"/>
     <text x="421" y="331.5" font-size="13.5" font-weight="700" fill="#d29922">69%</text>
