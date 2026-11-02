@@ -242,6 +242,27 @@ TR3 posts the best top-8 decode — tg128 46.0/46.2/45.2 — and dominates the
 Focus on both axes; the scorecards:
 docs/bpw4-sweep-cards.svg from docs/bpw4-sweep.tsv, generated). The
 served-default swap (Focus -> TR3) is asked of the user with the cards.
+- [x] **The v1.2.1 knobs A/B + the duel re-pair** (round 132, 2026-11-02,
+      campaign-20261102-195440 + -210117): the duel re-paired onto the served
+      TR3 cell (both engines on the clean 8001, same window — the first pair
+      needed the **stack-stop fix**: the knobs phase leaves our stack on 8001
+      and production-for-testing's start refused "port 8001 already in use";
+      the duel now stops our stack first — the (user) autonomous-flow rule):
+      **solo 110% CROSSED** (64.4/64.2 vs 58.5/58.6), c2 127% (110.3 vs 87.0),
+      c4 80% (152.6 vs 192.0 — production's range 155-241), ITL 109% (15.6 vs
+      17.1 ms/token), overhead 91% (201 vs 183). The knobs (results/knobsv121/):
+      **CS `TF_GLM_CHUNK_SOLO=4096`** — real decode gains (tg d0 +5.1%,
+      d4096 +8.7%, d8192 flat) at a real trade (+1.87 GiB model, the prompt
+      cache halved 3.3→1.9 GiB) — **the adopt call is the user's**;
+      **VH `TF_GLM_VISION_HOST=1`** — REJECTED (two arms noise-to-negative:
+      −6.7/+5.3/−6.1 then −8.9/+12.6/−7.1 tg; the model sheds 0.82 GiB but the
+      prompt cache grows 3.3→3.4-3.5 — net free +0.2 GiB only). The VH arm's
+      vision sanity (the repoed assets/vision suite): **vision INTACT** — all
+      four detail answers correct at 1024 tokens; the targeted leg's 3 empties
+      were the probe's 64-token cap under thinking (the instrument fixed to
+      1024, cont. 20a), not a tower fault.
+- [ ] **The CS adopt-vs-hold call** — the user's: real decode gains vs the
+      halved prompt cache (resume-capacity risk at depth).
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 

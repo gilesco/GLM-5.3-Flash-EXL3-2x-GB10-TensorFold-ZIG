@@ -16,7 +16,12 @@ measure, target = beat production's run-level 94 or come close**. On the CURRENT
 **TR3 94**, the Focus **93**, the AZ top-4 **90** (docs/bpw4-sweep-cards.svg). On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
-or bench versions). The Focus cell's scoreboard (the round-130 head-to-head,
+or bench versions). **The served TR3 cell's scoreboard (the round-132 duel, 2026-11-02 —
+campaign-20261102-210117: both engines on the clean 8001, same window; the duel's
+stack-stop fix)**: solo **110% — CROSSED** (64.4 vs 58.5 t/s), c2 **127%** (110.3 vs 87.0),
+c4 **80%** (152.6 vs 192.0 — production's c4 range 155-241 with cache state, this run near
+its top; ours holds 150-153 on TR3), ITL **109% — crossed** (15.6 vs 17.1 ms/token), TTFT
+overhead **91%** (201 vs 183 ms). The Focus cell's scoreboard (the round-130 head-to-head,
 2026-10-31 — the first two-arm duel since the port split, campaign-20261031-200757:
 production started FOR TESTING on 8001, ours on main): **loading 98.6% — TAKEN** (95 s vs
 93.7), solo **93.2%** (54.9 vs 58.9), c2 **80.5%** (89.0 vs 110.6), c4 **75.2%** (144.9 vs

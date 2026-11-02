@@ -4736,3 +4736,37 @@ cont. 17).
 Next: relaunch `PHASES="duel knobsv121"` — the prod arm pairs (both engines on
 8001, same window) and the anchors re-pair onto TR3; VH re-tests with the
 suite; then the CS adopt-vs-hold call goes to the user.
+
+## (round 132, cont. 20) THE TR3 DUEL PAIRS — SOLO CROSSES 110%; VH rejected on two arms; the vision instrument fixed (2026-11-02)
+
+**The duel paired** (campaign-20261102-210117 — the stack-stop fix worked: the
+phase stopped our stack, production-for-testing bound 8001, both arms measured
+in the same window). **The served TR3 cell's scoreboard vs production 0.6.6**:
+solo **110% — CROSSED** (ours 64.4/64.2 vs production 58.5/58.6), c2 **127%**
+(110.3 vs 87.0), c4 **80%** (152.6 vs 192.0 — production's c4 range 155-241
+with cache state, this run near its top; ours holds 150-153), ITL **109%**
+(15.6 vs 17.1 ms/token — ours' chunked rhythm 61.6 ms ÷ 3.9 tokens), TTFT
+overhead **91%** (201 vs 183 ms). The TR3 decode dividend is now a same-window
+receipt: the Focus cell was 93.9/83.1/92.4/102/92.0 — the swap moved every
+decode front. **Anchors re-paired, the chart re-rendered, DELTAS + README
+updated** (the cold/warm depth rows stand on the round-131 prodcold receipt,
+untouched).
+
+**VH (TF_GLM_VISION_HOST=1) REJECTED — final, two arms**: tg d0 −6.7/−8.9%,
+d4096 +5.3/+12.6%, d8192 −6.1/−7.1% vs BASE (noise-to-negative, no consistent
+gain); the model sheds 0.82 GiB but the prompt cache GREW 3.3→3.4-3.5 GiB —
+net free headroom +0.2 GiB. **Vision is INTACT on the knob** — the repoed
+assets/vision suite's detail leg: all four answers correct (quadrant colors +
+positions, Golden Gate, zebra, STOP sign). The targeted leg's 3-of-4 empties
+were the probe's 64-token cap burning on the reasoning channel (the
+small-max_tokens gotcha) — **the instrument fixed to 1024** (cont. 20a: the
+probe + the visionen inline copy). The base-serve targeted re-check rides the
+next window (the exit path stopped our stack before restoring production —
+correct: production needs both GPUs; the stack is down until the next window).
+
+**CS (TF_GLM_CHUNK_SOLO=4096) — the adopt call is the user's**: real gains
+(tg d0 +5.1%, d4096 +8.7%, d8192 flat) at a real trade (+1.87 GiB model, the
+prompt cache halved 3.3→1.9 GiB — resume-capacity risk at depth). Presented
+with this digest.
+
+Next per the plan: the user's CS call, then the next plan item.
