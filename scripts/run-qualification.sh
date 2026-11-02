@@ -1077,9 +1077,9 @@ fi
 # (bench_perf). Relaunching the same PHASES advances to the next pack; the
 # receipts live in results/bpw4sweep/ (persistent across windows).
 # ---------------------------------------------------------------------------
-BPW4_PACK_AZ="local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
-BPW4_PACK_MIA="Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main PATCHES="
-BPW4_PACK_TR3="Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main PATCHES="
+BPW4_PACK_AZ="MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
+BPW4_PACK_MIA="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main PATCHES="
+BPW4_PACK_TR3="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main PATCHES="
 if want bpw4sweep && ! phase_done bpw4sweep; then
   log "=== bpw4sweep"
   P="$OUT/bpw4sweep.md"; : > "$P"
@@ -1106,7 +1106,15 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
     # shellcheck disable=SC2086
     if ! restart $ENVPAIRS DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
       echo "- FAIL: the server refused the pack" >> "$P"
-      touch "$SWEEP_DIR/$TAG.done"; touch "$OUT/.bpw4sweep.done"; exit 1
+      N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
+      echo "$N" > "$SWEEP_DIR/$TAG.refusals"
+      if [ "$N" -ge 2 ]; then
+        echo "- refused twice — the pack is skipped with this receipt (retry: clear $SWEEP_DIR/$TAG.done)" >> "$P"
+        touch "$SWEEP_DIR/$TAG.done"
+      else
+        echo "- recorded; the next window retries this pack" >> "$P"
+      fi
+      touch "$OUT/.bpw4sweep.done"
     fi
     echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
     RP="$SWEEP_DIR/$TAG-req.json"; req_file "$RP" "$REF_PROMPT"
