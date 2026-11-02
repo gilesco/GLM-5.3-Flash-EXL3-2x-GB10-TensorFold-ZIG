@@ -4689,3 +4689,50 @@ The next tests per the plan, prepared under the criteria: the duel window
 (re-pairs the anchors on the served TR3 default — production-for-testing on
 8001, both engines clean), then the two GLM knobs (TF_GLM_CHUNK_SOLO /
 TF_GLM_VISION_HOST) on 8001.
+
+## (round 132, cont. 19) THE DUEL+KNOBS WINDOW: TR3's decode dividend is real; the prod arm's port conflict receipted; two (user) directives documented (2026-11-02)
+
+**The window** (campaign-20261102-195440): the duel's OURS arm measured on the
+served TR3 default — **solo 63.9/63.6 t/s** (stability Δ 0.6%), c2 109.0, c4
+150.5 aggregate; ITL mean 61.6 ms / p50 54.8 / p95 86.3 (520 chunks); TTFT d0
+201 ms, slope 0.656 ms/token. vs the Focus-cell ours arm (solo 55.4): **+15%**
+— the TR3 perf dividend is real. **The prod arm SKIPPED with its receipt**: our
+own stack (left up by knobsv121, which runs first in the phase-list order) held
+8001 — production-for-testing's start refused: "port 8001 is already in use"
+(campaign.log 20:35). The anchors still stand on the Focus-cell pair until the
+prod arm re-runs in the same window as the ours arm.
+
+**The knobs** (results/knobsv121/, bench_perf tables per arm):
+- **CS (TF_GLM_CHUNK_SOLO=4096)**: tg d0 49.8 (+5.1%), d4096 47.4 (+8.7%),
+  d8192 47.8 (flat) vs BASE 47.4/43.6/47.7 — real gains, beyond noise. The
+  trade: model 86.62 GiB (+1.87), prompt cache 3.3→1.9 GiB (halved),
+  13.1 GiB left (−1.5) — resume-capacity risk at depth.
+- **VH (TF_GLM_VISION_HOST=1)**: tg d0 44.2 (−6.7%), d4096 45.9 (+5.3%),
+  d8192 44.8 (−6.1%) — noise-to-negative. The memory: model 83.93 GiB (−0.82)
+  but the prompt cache GREW 3.3→3.5 GiB — net free +0.2 GiB only; the tower's
+  gift is mostly absorbed. Lean reject. **Its vision sanity was an INVALID
+  test** — an SVG data URL fixture; the tower wants raster (PARSE FAIL receipt).
+
+**Two (user) directives, documented permanently in AGENTS.md hard boundaries**:
+1. (user) "We use our vision assets for testing" — vision tests run the repoed
+   `assets/vision/` suite (manifest.json: the synthetic _quadrants.png + 3
+   CC-licensed photos, agent-verified ground truth) via
+   `scripts/vision-suite-probe.py`; never ad-hoc fixtures, never files
+   scavenged from other tools' trees.
+2. (user) "We use the autonomous workflow process for keeping the production
+   and testing processes separate" — separation runs through the window flow:
+   production stops at entry, restored on every exit path; production-for-
+   testing binds 8001 (intent-keyed) only while our testing stack is stopped;
+   a phase starting production-for-testing stops our stack first and restarts
+   ours after.
+
+**Executed on both**: the duel phase stops our stack before the 8001
+production-for-testing start (the ours arm restarts it); the knobsv121 VH arm's
+vision sanity is now the repoed suite (4 targeted + 4 detail over
+assets/vision). `results/knobsv121/VH.done` cleared — the arm re-runs with a
+valid vision test. AGENTS.md also drops the stale prodqual mention (retired
+cont. 17).
+
+Next: relaunch `PHASES="duel knobsv121"` — the prod arm pairs (both engines on
+8001, same window) and the anchors re-pair onto TR3; VH re-tests with the
+suite; then the CS adopt-vs-hold call goes to the user.

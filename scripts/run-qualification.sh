@@ -961,10 +961,11 @@ fi
 # testing port 8001. Arms: baseline (the standing config) -> TF_GLM_CHUNK_SOLO=4096
 # (upstream: a cold prompt's first token 6-9% sooner from 8K to 128K, same bytes,
 # +1.6-1.9 GiB prompt buffers) -> TF_GLM_VISION_HOST=1 (rank 0 holds 240 MiB for
-# the tower instead of 1.05 GiB — the room returns for KV; the vision sanity: one
-# image-bearing request must still answer). Each arm: restart -> bench_perf (the
-# pp/tg/TTFT table IS the cold measurement — benchy fills are novel per restart).
-# The verdicts: the deltas vs the baseline, recorded per knob.
+# the tower instead of 1.05 GiB — the room returns for KV; the vision sanity: the
+# repoed assets/vision suite via scripts/vision-suite-probe.py — our vision
+# assets, never ad-hoc fixtures (user, round 132)). Each arm: restart ->
+# bench_perf (the pp/tg/TTFT table IS the cold measurement — benchy fills are
+# novel per restart). The verdicts: the deltas vs the baseline, recorded per knob.
 # ---------------------------------------------------------------------------
 if want knobsv121 && ! phase_done knobsv121; then
   log "=== knobsv121"
@@ -983,11 +984,28 @@ if want knobsv121 && ! phase_done knobsv121; then
     bench_perf "knob-$t" "$KNOB_DIR/$t-perf" 4 >> "$P" 2>&1
     grep -h -oE "TTFT[^,]*" "$KNOB_DIR/$t-perf"/2026/*/*--*.md 2>/dev/null | head -3 >> "$P" || true
     if [ "$t" = VH ]; then
-      # the vision sanity: one image-bearing request must still answer (content check)
-      VC=$(curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-        -d '{"model":"'"$SERVED_NAME"'","messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,'"$(base64 -w0 docs/architecture.svg 2>/dev/null | head -c 200000)"'"}},{"type":"text","text":"What does this diagram show? One sentence."}]}],"max_tokens":100}' 2>/dev/null)
-      VOK=$(echo "$VC" | python3 -c 'import json,sys; d=json.load(sys.stdin); c=d["choices"][0]["message"]["content"]; print("OK" if len(c)>20 else "EMPTY: "+c[:80])' 2>/dev/null || echo "PARSE FAIL")
-      echo "- vision sanity: $VOK" >> "$P"
+      # the vision sanity: OUR vision assets (user, round 132) — the repoed
+      # round-55 suite over assets/vision/manifest.json (the synthetic quadrants
+      # + 3 photos, agent-verified ground truth). The round-132 SVG ad-hoc
+      # fixture was an invalid test — the tower wants raster.
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$KNOB_DIR/VH-vision.json" > "$KNOB_DIR/VH-vision.log" 2>&1 || true
+      python3 - "$KNOB_DIR/VH-vision.json" >> "$P" <<'PYEOF'
+import json, sys
+man = {e["file"]: e for e in json.load(open("assets/vision/manifest.json"))}
+try:
+    ans = json.load(open(sys.argv[1]))
+except Exception as ex:
+    print("- vision suite: UNREADABLE (%s)" % ex); raise SystemExit
+tgt = [a for a in ans if a["kind"] == "targeted"]
+ok = 0
+for a in tgt:
+    e = man[a["file"]]
+    low = a["answer"].lower()
+    hit = any(w in low for w in e["expect"])
+    ok += hit
+    print("- vision targeted %s: %s — %r" % (a["file"], "PASS" if hit else "FAIL", " ".join(a["answer"].split())[:100]))
+print("- vision suite: targeted %d/%d (detail answers in %s)" % (ok, len(tgt), sys.argv[1]))
+PYEOF
     fi
     touch "$KNOB_DIR/$t.done"
   done
@@ -1020,7 +1038,13 @@ if want duel && ! phase_done duel; then
 
   if ! prod_running; then
     # the autonomous head-to-head: production for TESTING starts on 8001 (the
-    # intent-keyed start, round 129 (user)); the window flow restores it on 8000
+    # intent-keyed start, round 129 (user)); the window flow restores it on 8000.
+    # Separation runs through the window flow, never ad-hoc (user, round 132):
+    # our testing stack yields 8001 first — the two never share the port (the
+    # round-132 receipt: the knobs phase left the stack up and the 8001 start
+    # refused with "port 8001 is already in use") — the ours arm restarts it below.
+    log "duel: stopping our testing stack to free 8001"
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
     log "duel: production down — starting it FOR TESTING on 8001"
     PORT=8001 "$HOME/$PROD_TIP/start.sh" </dev/null >>"$LOG" 2>&1 || true
   fi

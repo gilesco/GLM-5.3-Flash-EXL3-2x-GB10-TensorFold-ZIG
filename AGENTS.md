@@ -20,10 +20,15 @@ Hard boundaries, never crossed:
   flow and test dances stop production for GPU work and restart it on EVERY exit
   path; the crash-net restarts it whenever it is down with no window running. The
   guardrails: production always comes back; production's code/config is never
-  modified beyond the intent-keyed port; `prodqual` probes it read-only. **The
-  ports are intent-keyed (user)**: production started FOR OPENCODE serves 8000;
-  production started FOR TESTING serves 8001 (`PORT=8001 $TIP/start.sh`); our
-  testing stack always serves 8001 — opencode never connects to testing.
+  modified beyond the intent-keyed port; the duel probes production-for-testing
+  read-only. **The ports are intent-keyed (user)**: production started FOR OPENCODE
+  serves 8000; production started FOR TESTING serves 8001 (`PORT=8001
+  $TIP/start.sh`); our testing stack always serves 8001 — opencode never connects
+  to testing. **Separation runs through the autonomous window flow, never ad-hoc
+  (user, round 132)**: when a phase starts production-for-testing on 8001 it stops
+  our testing stack first (the two never share the port — the round-132 duel
+  refusal: "port 8001 is already in use") and restarts ours after; production
+  itself is stopped/restored only by the window flow's entry/exit paths.
 - This line is **EXL3 only** (the NVFP4 route has its own repo) and the context goal is
   **524,288 tokens — nothing above**.
 - **Every quality/perf metric runs on the clean testing port 8001** — never
@@ -31,6 +36,13 @@ Hard boundaries, never crossed:
   negates the testing environment; any such result is invalid). Production-vs-us
   comparisons use production started FOR TESTING on 8001 (the duel's pattern — the
   intent-keyed port).
+- **Vision tests use the repo's own vision assets — never ad-hoc fixtures, never
+  files scavenged from other tools' trees (user, round 132)**: `assets/vision/`
+  (`manifest.json`: the synthetic byte-verified `_quadrants.png` + 3 CC-licensed
+  photos with agent-verified ground truth) via the repoed runner
+  `scripts/vision-suite-probe.py <base-url> <out-json>`. The round-132 SVG sanity
+  was an invalid test — the tower wants raster; the suite exists so no test ever
+  improvises an image again.
 - **Nothing is posted upstream** (no issues/PRs to ashhart/TensorFold or other repos).
   Findings for upstream are written into `docs/ECOSYSTEM.md` as data.
 - Site identity (hostnames, IPs, ssh targets, rail devices, HCA names) lives only in
