@@ -1082,23 +1082,28 @@ fi
 BPW4_PACK_AZ="MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
 BPW4_PACK_MIA="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main PATCHES="
 BPW4_PACK_TR3="MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main PATCHES="
-sweep_pack() {      # $1 tag, $2 model id, $3 env pairs — one pack, start to receipt
-  local TAG="$1" PACK="$2" ENVPAIRS="$3"
-  local P="$OUT/bpw4sweep.md"
+sweep_pack() {      # $1 tag, $2 model id, $3 env pairs, $4 receipt path — one pack, start to receipt
+  local TAG="$1" PACK="$2" ENVPAIRS="$3" P="$4"
   echo "- this window's pack: $PACK (env: $ENVPAIRS)" >> "$P"
   local HUBDIR="models--${PACK//\//--}"   # pattern=escaped-slash, separator=/, replacement=--
   local W="${WORKER:-$(grep ^WORKER= scripts/local.sh | cut -d= -f2)}"
   local REV="main"
   [[ "$ENVPAIRS" =~ MODEL_REVISION=([^ ]+) ]] && REV="${BASH_REMATCH[1]}"
+  # the HF cache keys snapshots by COMMIT; refs/$REV names it — normalize the path
+  if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ] && [ -f "$HF_CACHE/hub/$HUBDIR/refs/$REV" ]; then
+    local H; H=$(cat "$HF_CACHE/hub/$HUBDIR/refs/$REV")
+    ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/$REV"
+    echo "- normalized: snapshots/$REV -> $H (the cache keys snapshots by commit)" >> "$P"
+  fi
   if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ]; then
     echo "- staging $HUBDIR from the worker (the head lacks snapshots/$REV; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' '))" >> "$P"
     if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
       rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
       echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
-    elif ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
+    elif ssh -o BatchMode=yes "$W" "test -f .cache/huggingface/hub/$HUBDIR/refs/$REV" 2>/dev/null; then
       rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-      local H; H=$(ls "$HF_CACHE/hub/$HUBDIR/snapshots" | grep -v "$REV" | head -1)
-      [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" && echo "- staged (hash snapshot; $REV symlinked to $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+      local H; H=$(cat "$HF_CACHE/hub/$HUBDIR/refs/$REV")
+      [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" && echo "- staged (refs/$REV -> $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
     else
       echo "- FAIL: neither host has $HUBDIR — recorded" >> "$P"
       local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
@@ -1120,7 +1125,7 @@ sweep_pack() {      # $1 tag, $2 model id, $3 env pairs — one pack, start to r
   # hash-keyed only — campaign-20261102-151912)
   if ! ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
     if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots" 2>/dev/null; then
-      ssh -o BatchMode=yes "$W" "C=.cache/huggingface/hub/$HUBDIR/snapshots; H=\$(ls \$C | grep -v "$REV" | head -1); [ -n \"\$H\" ] && ln -s \"\$H\" \"\$C/$REV\" && echo worker-$REV-normalized" >> "$P"
+      ssh -o BatchMode=yes "$W" "C=.cache/huggingface/hub/$HUBDIR; H=\$(cat \$C/refs/$REV); [ -n \"\$H\" ] && ln -s \"\$H\" \"\$C/snapshots/$REV\" && echo worker-$REV-normalized" >> "$P"
     else
       echo "- FAIL: the worker lacks $HUBDIR entirely — recorded" >> "$P"
       local N; N=$(( $(cat "$SWEEP_DIR/$TAG.refusals" 2>/dev/null || echo 0) + 1 ))
@@ -1169,7 +1174,7 @@ if want bpw4sweep && ! phase_done bpw4sweep; then
     for f in "$SWEEP_DIR"/*.summary; do echo "  - $(basename "$f"): $(cat "$f")" >> "$P"; done
     touch "$OUT/.bpw4sweep.done"
   else
-    sweep_pack "$TAG" "$PACK" "$ENVPAIRS"
+    sweep_pack "$TAG" "$PACK" "$ENVPAIRS" "$P"
     touch "$OUT/.bpw4sweep.done"
   fi
 fi
@@ -1202,7 +1207,7 @@ if want bpw3sweep && ! phase_done bpw3sweep; then
     for f in "$SWEEP_DIR"/TB305.summary "$SWEEP_DIR"/TB310.summary "$SWEEP_DIR"/ANDROID.summary; do [ -f "$f" ] && echo "  - $(basename "$f"): $(cat "$f")" >> "$P"; done
     touch "$OUT/.bpw3sweep.done"
   else
-    sweep_pack "$TAG" "$PACK" "$ENVPAIRS"
+    sweep_pack "$TAG" "$PACK" "$ENVPAIRS" "$P"
     touch "$OUT/.bpw3sweep.done"
   fi
 fi
