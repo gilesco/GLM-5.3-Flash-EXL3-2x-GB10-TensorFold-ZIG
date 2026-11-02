@@ -35,7 +35,7 @@ NCCL. Everything is Docker; the hosts need nothing but docker, ssh and the NVIDI
 
 ## Current status
 
-The served default is the **AZ-Focus checkpoint** on **TensorFold v1.2.0** (the pin in
+The served default is the **TR3-4bpw checkpoint** (Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw; the round-132 (user) swap after the 4bpw sweep — 94/104 hardmode, the best top-8 decode) on **TensorFold v1.2.1** (the pin in
 `scripts/local.sh`) plus `glm-tail-release.patch` (the load-ahead's tail-page release —
 [patches/README.md](patches/README.md)). Fully qualified end to end; the receipts live in
 the trackers below. This README carries the current status only — every detail links to
@@ -64,7 +64,7 @@ round-108 definitive-run cards as history (the current numbers live in
 ## Requirements
 
 - Two GB10 hosts (head + worker): docker + nvidia runtime, key-based ssh head → worker,
-  ~200 GB free disk each (the served Focus checkpoint is ~164 GB; the Mia line's cells
+  ~200 GB free disk each (the served checkpoints are ~164 GB; the Mia line's cells
   are ~176 GB).
 - The checkpoints **on both** hosts: the Focus default is local files
   (`local/GLM-5.3-Flash-AZ-Focus-EXL3` — see the revisions table below); the Mia line's
@@ -207,7 +207,7 @@ production all serve from the same caches.
   [#593](https://github.com/ashhart/TensorFold/issues/593)); the EXL3 two-rank and DFlash2
   work is #855/#976 and #979, first released in v1.1.0. Apache-2.0; see LICENSE, NOTICE
   and upstream's THIRD_PARTY_NOTICES.
-- The served default checkpoint is **AxonZeta's AZ-Focus EXL3**
+- The served default checkpoint is **Mia-AiLab's TR3-4bpw EXL3** (the round-132 (user) swap; the AZ-Focus stays receipted at 93)
   (`local/GLM-5.3-Flash-AZ-Focus-EXL3`) — its terms apply, and the stock/top4cfg cells
   serve `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` (a byte-identical re-host of
   `brandonmusic/GLM-5.3-Flash-tr3-4bpw`, ShapleyMCG License 1.0 — attribution asked); the

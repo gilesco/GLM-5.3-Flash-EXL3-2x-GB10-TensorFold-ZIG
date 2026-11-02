@@ -4572,3 +4572,17 @@ served-default swap is the user's call (asked with the cards).
 The 3bpw track (turboderp 3.05/3.10 + androidli 3.0bpw) launches next per
 the user's sequencing; production's current-bench hardmode anchor (solo
 prodqual) is still owed and pairs the cards' production row.
+
+## (round 132, cont. 9) THE SERVED DEFAULT SWAPS TO TR3-4BPW (user) (2026-11-02)
+
+**(user)**: "Swap to TR3" — config.sh's MODEL_ID default is now
+Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw (main). The reasoning, receipted: the
+sweep's verdict — TR3 94/104 hardmode (best, tied with the MIA pack) with the
+best top-8 decode (tg128 46.0/46.2/45.2 at d0/d4096/d8192) — dominates the
+served Focus (93) on BOTH axes (+1 quality, +13%/+11% decode, prefill level);
+the user's rule ("better quality is acceptable when the performance gap is
+small") is met with no gap at all. The README's served-default notes and the
+anchors header carry the swap (the duel rows stand as the Focus cell's until
+a TR3 duel re-pairs them — the next duel window runs on the new default).
+The swap takes effect at the next testing-stack restart (the fingerprint
+changes; both hosts carry the pack staged).

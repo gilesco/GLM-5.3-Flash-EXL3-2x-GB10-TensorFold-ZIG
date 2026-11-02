@@ -52,8 +52,8 @@ TF_REPO="${TF_REPO:-https://github.com/ashhart/TensorFold.git}"
 # line is EXL3 only; the NVFP4 route has its own repo. The ranks cross-check every
 # checkpoint byte against each other at start, so a copy that differs on one host stops
 # both before serving.
-MODEL_ID="${MODEL_ID:-local/GLM-5.3-Flash-AZ-Focus-EXL3}"
-MODEL_REVISION="${MODEL_REVISION:-main}"   # the qualified optimum (2026-10-27, (user): hardmode is the quality bar — the Focus's 92 run-level vs production's 94; the top4cfg (89/76% subset) remains receipted as the perf leader)
+MODEL_ID="${MODEL_ID:-Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw}"
+MODEL_REVISION="${MODEL_REVISION:-main}"   # the qualified optimum (2026-11-02, (user): the 4bpw sweep's verdict — TR3 94/104 hardmode with the best top-8 decode (tg128 46.0/46.2/45.2), dominating the Focus's 93 on both axes; the scorecards: docs/bpw4-sweep-cards.svg; the prior Focus swap (2026-10-27) stood at 93)
                              # the site's top4cfg variant of this checkpoint — num_experts_per_tok
                              # 4, byte-surgical vs the base snapshot (one line differs). Receipts:
                              # perf campaign-20261024-135458 (solo 108% of production, c2 103%,
