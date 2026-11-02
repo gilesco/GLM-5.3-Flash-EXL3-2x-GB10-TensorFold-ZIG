@@ -217,6 +217,16 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       campaign). Measure & hand upstream: adaptive-k acceptance, prefill fairness,
       structured-output draft truncation (the cliff). Watch: EXLR8 exl3-trellis experts.
       Ease-of-use stance held: no second config system, no patch ladders.
+- [x] **The v1.2.1 engine bump + the hardmode baseline** (round 132, 2026-11-02):
+      TF_COMMIT → 1db3edb (tensorfold-native 1.2.1 both hosts, pinbump PASS);
+      gates g1-g4 PASS, depth 12/12, prefill within noise of standing, PARALLEL
+      5/6/8 refused at 512K (climb/climbP retired — the (user) cap at 4). The
+      hardmode-instrument campaign (the (user) hardmode-only directive, the
+      standard batch rides inside): **the standing config (dense4fp8, Focus,
+      vision) 93/104** — the cell's best hardmode receipt (ties the
+      effort-tail-era 93); dense8+fp8 88/104 (TC-99 partial + TC-101/104).
+      Standard tool-eval 95 (dense8 cell, the morning campaign) — recorded as
+      tool-eval, never cross-compared. Owed: production's current-bench prodqual.
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 
