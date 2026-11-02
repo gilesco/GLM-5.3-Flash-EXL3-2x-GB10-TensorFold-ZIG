@@ -1098,10 +1098,10 @@ sweep_pack() {      # $1 tag, $2 model id, $3 env pairs, $4 receipt path — one
   if [ ! -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ]; then
     echo "- staging $HUBDIR from the worker (the head lacks snapshots/$REV; it has: $(ls "$HF_CACHE/hub/$HUBDIR/snapshots" 2>/dev/null | tr '\n' ' '))" >> "$P"
     if ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
-      rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
-      echo "- staged: $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
+      rsync -aL "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+      echo "- staged: $(du -shL "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
     elif ssh -o BatchMode=yes "$W" "test -f .cache/huggingface/hub/$HUBDIR/refs/$REV" 2>/dev/null; then
-      rsync -a "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
+      rsync -aL "$W:.cache/huggingface/hub/$HUBDIR/" "$HF_CACHE/hub/$HUBDIR/"
       local H; H=$(cat "$HF_CACHE/hub/$HUBDIR/refs/$REV")
       [ -n "$H" ] && ln -s "$H" "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" && echo "- staged (refs/$REV -> $H): $(du -sh "$HF_CACHE/hub/$HUBDIR" | cut -f1)" >> "$P"
     else
@@ -1117,8 +1117,11 @@ sweep_pack() {      # $1 tag, $2 model id, $3 env pairs, $4 receipt path — one
   if [ -d "$HF_CACHE/hub/$HUBDIR/snapshots/$REV" ] && ! ssh -o BatchMode=yes "$W" "test -d .cache/huggingface/hub/$HUBDIR/snapshots/$REV" 2>/dev/null; then
     echo "- staging $HUBDIR @ $REV to the worker (the head has it; the worker lacks it)" >> "$P"
     ssh -o BatchMode=yes "$W" "mkdir -p .cache/huggingface/hub/$HUBDIR"
-    rsync -a "$HF_CACHE/hub/$HUBDIR/" "$W:.cache/huggingface/hub/$HUBDIR/"
-    echo "- staged to the worker: $(ssh -o BatchMode=yes "$W" "du -sh .cache/huggingface/hub/$HUBDIR" 2>/dev/null | cut -f1)" >> "$P"
+    # -L: the hf_xet cache materializes snapshot files as SYMLINK CHAINS (snapshot ->
+    # blob -> the xet store) - plain -a copies the dangling links (the worker got 632K
+    # of stubs; campaign-20261102-175307). Dereference: copy the data.
+    rsync -aL "$HF_CACHE/hub/$HUBDIR/" "$W:.cache/huggingface/hub/$HUBDIR/"
+    echo "- staged to the worker: $(ssh -o BatchMode=yes "$W" "du -shL .cache/huggingface/hub/$HUBDIR" 2>/dev/null | cut -f1)" >> "$P"
   fi
   # prepare demands snapshots/$REV on BOTH hosts; normalize the worker too
   # (the TR3 window's refusal was exactly this: the head staged, the worker
