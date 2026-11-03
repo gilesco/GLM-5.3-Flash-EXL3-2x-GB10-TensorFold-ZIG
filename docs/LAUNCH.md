@@ -4937,3 +4937,33 @@ Verified on the live hosts: **the worker delivers 3834 MHz, the head 3892**
 (healthy X925; the probe's preflight line will now read the worker honestly).
 The ledger's hygiene item closed; the g3 /metrics counter check remains (it
 needs a live serve — rides the next window).
+
+## (round 132, cont. 31) THE DOCS AUDIT — what a fresh checkout serves, verified; the loading row re-dated to 90% on the served default (2026-11-03)
+
+**(user)**: "Check all the documents are up to date. Reflecting what serves
+when a new checkout occurs, improve the documentation for quickstart. Ensure
+the performance and quality is correct for the served defaults."
+
+**The audit's findings, all fixed**:
+- The quickstart + config table verified against the fresh-clone experience:
+  prepare.sh discovers the site when `scripts/local.sh` is missing (or
+  `local.sh.example` is the by-hand shape), `DOWNLOAD=1 scripts/prepare.sh`
+  fetches a missing checkpoint, `./scripts/start.sh` serves the TR3 pack on
+  8001 (v1.2.1, dense4fp8, 524288×4, DFlash2 drafts, vision on). The config
+  table gained the missing **VISION row** (default `1` — it was served but
+  undocumented) and the **KV_CACHE empty-means-bf16 spelling** (cont. 26's
+  semantics — the literal `bf16` is refused, empty omits `--kv-cache`).
+- The scoreboard's numbers audited for the served default: quality 94/104 ✓
+  (the prodbench tie), solo/c2/ITL/overhead ✓ (the TR3 duel), c4 80% ✓, cold
+  309% ✓ (annotated with the TR3 duel re-verification: d8192 5,587 ms, slope
+  0.657), warm 70% ✓, the cross-restart text fixed (receipted cold).
+- **The loading row RE-DATED — the audit's one real correction**: the served
+  TR3-on-v1.2.1 serve times **104.5 s end to end** (103/106 s, Δ 2.9%;
+  campaign-20261103-090007) vs production's 93.7 — **90%**, not "taken at
+  98.6%". The prior 95 s receipt was the Focus-cell v1.2.0 qualification; the
+  TR3 pack's load pays ~+9 s over the Focus cell (the mover unattributed —
+  the pack's staging layout or the v1.2.1 load path). The chart re-rendered;
+  README's Speed row, the bars row, PERF_PLAN's status bullet + scoreboard
+  table, and DELTAS's TR3 paragraph all carry the honest number. **The
+  loading front's re-take is open** — a new named front for the plan.
+The loadtime phase retired with the receipt.

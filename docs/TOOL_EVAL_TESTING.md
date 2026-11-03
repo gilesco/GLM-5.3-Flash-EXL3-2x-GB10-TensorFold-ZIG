@@ -297,6 +297,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
+- [x] **The docs audit for the fresh checkout** (cont. 30-31): the quickstart +
+      config table verified against what serves on a new clone (the TR3 pack @
+      8001 on v1.2.1, dense4fp8, 524288×4, vision on — prepare.sh discovers the
+      site when local.sh is missing; DOWNLOAD=1 fetches a missing checkpoint);
+      the config table gained the **VISION row** (default 1 — it was served but
+      undocumented) and the **KV_CACHE empty-means-bf16 spelling** (cont. 26's
+      semantics); the cold row annotated with the TR3 duel re-verification; the
+      stale "open pieces" text fixed (the cross-restart resume is receipted
+      cold); **the loading row RE-DATED — 90% on the served default** (104.5 vs
+      93.7 s, the standing serve timed twice; the "taken at 98.6%" claim was
+      the Focus-cell v1.2.0 receipt — the front's re-take is open).
 - [x] **First campaign run** (2026-10-23 01:13–02:45, `results/campaign-20261023-011329/`)
       — the 512K window qualified end-to-end on the first overnight run:
 

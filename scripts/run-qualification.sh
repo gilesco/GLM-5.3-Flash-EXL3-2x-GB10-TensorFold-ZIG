@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs loadtime duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -987,28 +987,11 @@ fi
 # The round-131 v1.2.0-era 1.42 s was that era's measurement of the same
 # instrument definition — the row carries both receipts. Receipts:
 # results/warmrestart/. Re-run patterns: git history.)
-# ---------------------------------------------------------------------------
-# phase: loadtime (SESSION-SPECIFIC; retires with the receipt). The loading
-# row's receipt is the Focus-cell v1.2.0 qualification (95 s wall, campaign-
-# 20261031-142431); the served default is now TR3 on v1.2.1 and the recent
-# restart logs show ~101 s health waits. This phase times the standing serve
-# end to end — the restart wall (stop + checks + health), twice — and the
-# receipt re-dates the row for the served default.
-# ---------------------------------------------------------------------------
-if want loadtime && ! phase_done loadtime; then
-  log "=== loadtime (the TR3-on-v1.2.1 loading wall, twice)"
-  P="$OUT/loadtime.md"; : > "$P"
-  echo "# loadtime (the standing serve's restart wall: stop + checks + /health; twice)" >> "$P"
-  ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-  for i in 1 2; do
-    S=$(date +%s)
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-    W=$(( $(date +%s) - S ))
-    echo "- wall $i: ${W} s" >> "$P"
-  done
-  touch "$OUT/.loadtime.done"
-fi
-
+# (the loadtime phase RETIRED round 132 (cont. 31) — the receipt re-dated the
+# loading row for the served default: the TR3-on-v1.2.1 wall is 104.5 s
+# (103/106, campaign-20261103-090007) vs production's 93.7 — 90%; the prior
+# "taken at 98.6%" was the Focus-cell v1.2.0 receipt. Re-run patterns: git
+# history.)
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one

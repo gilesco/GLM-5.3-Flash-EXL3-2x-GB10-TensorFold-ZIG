@@ -69,7 +69,7 @@ upstream-gated**:
   standing fp8 config stays; the front's open pieces are unchanged.
 - **The standing strengths**: the concurrent deep prefill WINS 1.53× (2,799 vs
   1,834 t/s); the decode ITL crosses (102%); TTFT overhead 92%.
-- **LOADING (round 127, 2026-10-31): TAKEN — 98.6%, at production's number.** The
+- **LOADING: RE-DATED (cont. 31) — 90% on the served default (104.5 vs 93.7 s; the TR3 pack's load pays ~+9 s over the Focus cell's 95 s v1.2.0 receipt — the mover unattributed). The front was TAKEN at 98.6% on round 127 (the Focus cell, v1.2.0 + the tail release).** The
   pin bumped to v1.2.0 (user) for the upstream loading cluster (#1616/#1636: the
   16-reader load-ahead + the 8-thread expert pack; 268 → 46 s at TP=3 upstream) —
   the first bumped boot refused at admission 0.12 GiB short (the read-ahead's
@@ -104,7 +104,7 @@ both engines on the testing port. Historical table below for the round-23 duel's
 | streaming pace | 17.0 ms/tok | 17.0 ms/tok | 100% | per-token ITL (ours arrives in 3.4-token bursts) |
 
 </details>
-| loading (restart wall) | 93.7 s | 95 s | 98.6% | v1.2.0 + the tail release; the engine boot 93.0 s (campaign-20261031-142431) — the front is taken |
+| loading (restart wall) | 93.7 s | 104.5 s | 90% | RE-DATED cont. 31 for the served default (TR3 on v1.2.1: 103/106 s, campaign-20261103-090007); the 95 s / 98.6% row was the Focus-cell v1.2.0 receipt (campaign-20261031-142431) |
 
 Retired claims: the "concurrency cliff" (bench artifact, round 6), the "2-second fixed
 overhead" (was concurrency queueing), the bench's shallow-depth concurrent rows as an

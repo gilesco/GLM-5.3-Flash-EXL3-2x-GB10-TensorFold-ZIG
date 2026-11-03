@@ -19,7 +19,9 @@ OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — 
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
 or bench versions). **The served TR3 cell's scoreboard (the round-132 duel, 2026-11-02 —
 campaign-20261102-210117: both engines on the clean 8001, same window; the duel's
-stack-stop fix)**: solo **110% — CROSSED** (64.4 vs 58.5 t/s), c2 **127%** (110.3 vs 87.0),
+stack-stop fix)**: loading **90%** (104.5 vs 93.7 s — re-dated cont. 31 for the served
+default: 103/106 s, campaign-20261103-090007; the Focus cell's 95 s was the v1.2.0
+receipt), solo **110% — CROSSED** (64.4 vs 58.5 t/s), c2 **127%** (110.3 vs 87.0),
 c4 **80%** (152.6 vs 192.0 — production's c4 range 155-241 with cache state, this run near
 its top; ours holds 150-153 on TR3), ITL **109% — crossed** (15.6 vs 17.1 ms/token), TTFT
 overhead **91%** (201 vs 183 ms). The Focus cell's scoreboard (the round-130 head-to-head,
