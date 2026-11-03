@@ -4884,3 +4884,20 @@ verdict → retire kvshare121; (2) the cross-restart warm attribution (a
 prodcold-style re-run on v1.2.1 — the row's open piece); (3) the ledger's
 no-GPU hygiene items (the worker clock probe, the g3 /metrics counter check);
 (4) the upstream watch each sitting.
+
+## (round 132, cont. 26) THE KV_CACHE CATCH-22 — the empty spelling was structurally unreachable; one config line opens bf16+pages (2026-11-03)
+
+The 235800 window's KVS2 refusal was the SAME fp8 message — the "bf16" arm
+re-fp8'd itself again. Root cause, precisely: config.sh's
+`KV_CACHE="${KV_CACHE:-fp8}"` — the `:-` form treats EMPTY as unset and
+substitutes fp8 — while start.sh's bf16 path (omitting --kv-cache) requires
+KV_CACHE empty AFTER config.sh. The empty spelling could not exist through the
+stack; both the 233025 and 235800 windows burned on it. **Fix**: the form is
+now `${KV_CACHE-fp8}` (no colon) — unset keeps the fp8 standing default,
+`KV_CACHE=` (empty) is the explicit bf16 spelling (start.sh line 273 omits
+--kv-cache on empty; the "bf16" literal stays illegal per start.sh's case).
+Verified on the head with both-path probes: unset→fp8, empty→bf16,
+fp8→fp8. The docs-guard's check_default needed its internal grep (the
+call-site edit was cosmetic — the function re-derives its own pattern with
+`:-` hardcoded) widened to both expansion forms. The window relaunched for
+the bf16 mechanism arm.
