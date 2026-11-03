@@ -5066,3 +5066,26 @@ fp8 (the refusal would be the receipt), (C) KV_HOST on bf16+pages (the memory
 shape + the warm probe — #1795, the WARM row's named pattern), (D) PATCHES=
 (the glm-tail-release redundancy — #1884 mainlined the release; the memory
 numbers decide the retirement).
+
+## (round 133, cont. 5) THE PATCH RETIRES; KV_HOST's shape is striking; the deepfill probe fixed and relaunched (2026-11-03)
+
+**postbump (campaign-20261103-230631) — three of four arms delivered**:
+- **Arm D — glm-tail-release.patch RETIRES**: the no-patch serve is identical
+  on memory (model 84.75 GiB, 13.9 GiB left — the with-patch serves read
+  13.9-14.2). #1884 mainlined the release; **the PATCHES default is now
+  EMPTY** (patches opt-in by name; the config fingerprint change re-prepares
+  cached). The patch's v1.2.0-era history stays in its comment + the ledger.
+- **Arm C — TF_GLM_KV_HOST works on bf16+pages, and the shape is striking**:
+  model 82.03 GiB, the device pool collapsed to **1.50 GiB** (the KV latent
+  rows in pinned host memory), **a 14.1 GiB prompt cache**, 16.7 GiB left —
+  the host-side cache could hold many more kept states (resume capacity).
+  Its warm check never ran (the probe bug) — the re-run decides.
+- **Arm B — KV_HOST on fp8 refused, and the engine names it**: "TF_GLM_KV_HOST
+  keeps the KV pool's pages in host memory: set TF_KV_PAGES=on (and --kv-cache
+  bf16) as well" — consistent with the fp8×pages rule.
+- **Arm A — the deep fills FAILED on my probe bug**: the JSON body went
+  through a shell argument and blew the arg limit at 32k+ tokens. Fixed:
+  `-d @file` (a temp body file); arm C gains the warm check. Relaunching.
+
+Also landed: the docs' version moves (README's serve row/pin line/config
+table, DELTAS's engine row — v1.2.2 with the certification receipts).

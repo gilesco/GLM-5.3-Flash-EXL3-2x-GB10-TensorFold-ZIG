@@ -4,9 +4,9 @@ This repo is a **testing line** for the native engine, next to
 [MiaAI-Lab's GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold](https://github.com/MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold)
 (our production). Both serve the **same checkpoint** — the difference is the
 engine and the patch policy. Read this before pointing real traffic at it.
-*(Updated 2026-11-02 after the v1.2.1 bump and the 4bpw sweep — receipts in
+*(Updated 2026-11-03 after the v1.2.2 bump — receipts in
 docs/LAUNCH.md and docs/TOOL_EVAL_TESTING.md; this repo's edits are AI-generated, see the
-README. The engine is **v1.2.1** (`1db3edb`, round 132: gates ALL PASS, depth 12/12, the
+README. The engine is **v1.2.2** (`00e7ddd`, round 133: gates ALL PASS, depth 12/12, hardmode 94, the
 duel re-paired the decode fronts) with **`TF_GLM_INDEX_CUDA=1`** as the
 standing default (round 49: the depth ladder −2.6% at 131k → −5.5% at 393k, gates ALL
 PASS). The served default is now the **TR3-4bpw checkpoint** (the round-132
@@ -52,7 +52,7 @@ gates PASS on both, including the modified checkpoint's battery.)*
 
 | | EXL3 recipe (production) | this repo |
 | --- | --- | --- |
-| Engine | TensorFold **Python 0.6.x** in a PyTorch-based image, plus a 122-patch recipe (Mia's series folded onto the python-0.6 tip, 2026-10-27) | TensorFold **native** (`tensorfold-native`, Zig, no Python) at a pinned commit — **v1.2.1 (`1db3edb…`, round 132: gates ALL PASS, depth 12/12, the duel re-paired); paged KV mainline** |
+| Engine | TensorFold **Python 0.6.x** in a PyTorch-based image, plus a 122-patch recipe (Mia's series folded onto the python-0.6 tip, 2026-10-27) | TensorFold **native** (`tensorfold-native`, Zig, no Python) at a pinned commit — **v1.2.2 (`00e7ddd…`, round 133: gates ALL PASS, depth 12/12, hardmode 94, the duel re-paired); paged KV mainline** |
 | Checkpoint | Mia-AiLab EXL3 4 bpw (~176 GB) stock + DFlash2 drafter | **the TR3-4bpw checkpoint (the (user) default, 2026-11-02) + DFlash2** — a different checkpoint from production's, chosen on the hardmode bar; the stock and top4cfg Mia cells remain serveable (`MODEL_ID`/`MODEL_REVISION`/`PATCHES` per the README). This line is EXL3 only — the NVFP4 route (NVIDIA's checkpoint, MTP drafts, the v1.0.x receipts) has its own repo (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing) |
 | Code carried locally | a patch series against TensorFold's site-packages | **none** — upstream code, built at a pinned commit |
 | Upgrade path | rebase the patch series by hand (see the old repo's REBASE-NOTES) | bump `TF_REF` (or take the default `latest-v1`); prepare rebuilds the image |

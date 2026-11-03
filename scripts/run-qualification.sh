@@ -1033,17 +1033,19 @@ if want postbump && ! phase_done postbump; then
   echo "# postbump (the v1.2.2 follow-ups; all arms on 8001)" >> "$P"
   PB_DIR="results/postbump"; mkdir -p "$PB_DIR"
   deep_probe() {  # $1 receipt, $2 depth-tokens, $3 tag — a NOVEL fill per depth, max_tokens 1
-    local dst="$1" d="$2" tag="$3" p r
-    p=$(python3 -c "import sys; n=int(sys.argv[1]); print(('Depth fill %s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[2]) * n)" "$((d / 27))" "$tag")
+    local dst="$1" d="$2" tag="$3" r bf
+    bf=$(mktemp /tmp/deepfill.XXXXXX.json)
+    python3 -c "import json,sys; n=int(sys.argv[1]); print(json.dumps({'model':sys.argv[2],'messages':[{'role':'user','content':('Depth fill %s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[3]) * n}],'max_tokens':1}))" "$((d / 27))" "$SERVED_NAME" "$tag" > "$bf"
     r=$(curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
       "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p")" \
+      -d @"$bf" \
       | python3 -c 'import sys, json, re
 t = sys.stdin.read()
 body, _, tim = t.rpartition("TTFTMARK")
 d2 = json.loads(body)
 m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
 print("prompt_tokens=%d ttft_s=%s" % (d2["usage"]["prompt_tokens"], m.group(1)))' 2>/dev/null || echo "FAILED")
+    rm -f "$bf"
     echo "- cold fill @ $tag: $r" >> "$dst"
   }
   # --- arm A: the deep-prefill curve on the standing config
@@ -1065,6 +1067,8 @@ print("prompt_tokens=%d ttft_s=%s" % (d2["usage"]["prompt_tokens"], m.group(1)))
   if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_HOST=1; then
     echo "- server: $(serve_line)" >> "$P"
     deep_probe "$P" 65536 "kvhost-bf16-d64k"
+    echo "- the KV_HOST warm check (an 8k prompt twice: does the host-side cache keep the 0.30 s hit?):" >> "$P"
+    warm_probe "$P" 2
   else
     echo "- REFUSED on bf16+pages too (the receipt)" >> "$P"
   fi
