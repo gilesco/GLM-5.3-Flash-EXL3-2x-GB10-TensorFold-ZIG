@@ -5000,3 +5000,18 @@ docs/ECOSYSTEM.md (the 2026-11-03 entry). **The pin moved to 00e7ddd**
 the marker must move — fail-honest). Next: the re-qualification window
 (the gates, depth, prefill, the duel re-pair), the loading re-measurement
 (two levers landed for the re-take), hardmode if the gates move.
+
+## (round 133, cont. 1) THE PINBUMP LANDED: v1.2.2 built and distributed (2026-11-03)
+
+**pinbump (campaign-20261103-195127): the marker moved** — 1db3edb → 00e7ddd
+(the prepare built the pinned commit; "the battery runs on the new engine").
+**glm-tail-release.patch applied cleanly on the new loader** (patches= listed
+in the prepared marker) — its redundancy question (#1884 mainlined the
+page-cache release) is now empirical: the serve lines' memory numbers in the
+re-qualification receipts decide whether the patch still adds anything or
+retires. The re-qualification window launched: `PHASES="preflight parity
+candidate kvqual4 depth prefill duel"` — the §2 gates (the GLM items claim
+identical replies; the gates verify), the depth ladder, prefill, and the duel
+re-pair on the new engine. The window's restart walls carry the v1.2.2
+loading receipt (the digest-cache + page-cache-release effects on the 104.5 s
+wall). Hardmode after the gates, if they hold.
