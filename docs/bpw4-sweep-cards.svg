@@ -4,7 +4,7 @@
 <text x="16" y="48" font-size="12" fill="#616161">hardmode = the 104-scenario battery (bench v3.0.1) · pp = llama-benchy pp2048 @ d0 tok/s · tg = solo tg128 tok/s at depth · c4 = 4 streams at d8192</text>
 <g><rect x="16" y="62" width="285" height="240" rx="10" fill="#ffffff" stroke="#e0e0e0"/>
 <rect x="16" y="62" width="285" height="6" rx="3" fill="#1565c0"/>
-<text x="30" y="92" font-size="14" font-weight="bold" fill="#212121">Focus (the served default)</text>
+<text x="30" y="92" font-size="14" font-weight="bold" fill="#212121">Focus</text>
 <text x="30" y="132" font-size="34" font-weight="bold" fill="#1565c0">93</text>
 <text x="102" y="132" font-size="12" fill="#757575">/104 hardmode</text>
 <text x="30" y="156" font-size="11.5" fill="#424242">prefill pp2048 @ d0</text>
@@ -38,7 +38,7 @@
 </g>
 <g><rect x="622" y="62" width="285" height="240" rx="10" fill="#ffffff" stroke="#e0e0e0"/>
 <rect x="622" y="62" width="285" height="6" rx="3" fill="#2e7d32"/>
-<text x="636" y="92" font-size="14" font-weight="bold" fill="#212121">TR3-4bpw</text>
+<text x="636" y="92" font-size="14" font-weight="bold" fill="#212121">TR3-4bpw (the served default)</text>
 <text x="636" y="132" font-size="34" font-weight="bold" fill="#2e7d32">94</text>
 <text x="708" y="132" font-size="12" fill="#757575">/104 hardmode</text>
 <text x="636" y="156" font-size="11.5" fill="#424242">prefill pp2048 @ d0</text>

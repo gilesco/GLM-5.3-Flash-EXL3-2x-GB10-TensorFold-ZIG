@@ -1476,8 +1476,8 @@ fi
 # temperature 1.0 / top_p 0.95 / max reasoning effort (Z.ai docs, Together,
 # Unsloth — max effort is the model's default, so sampling is the only lever
 # the bench exposes). One hardmode run at the recommended settings on the
-# served default compares against the greedy receipts: the Focus 92 (round 37)
-# and production 94 (round 35 — production was ALSO measured greedy, so any
+# served default compares against the greedy receipts: the then-served Focus 92
+# (round 37) and production 94 (round 35 — production was ALSO measured greedy, so any
 # lift is ours to take without touching the comparison's fairness).
 # ---------------------------------------------------------------------------
 if want settingsab && ! phase_done settingsab; then

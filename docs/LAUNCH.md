@@ -4967,3 +4967,18 @@ the performance and quality is correct for the served defaults."
   table, and DELTAS's TR3 paragraph all carry the honest number. **The
   loading front's re-take is open** — a new named front for the plan.
 The loadtime phase retired with the receipt.
+
+## (round 132, cont. 32) THE MODEL CARD'S STALE DEFAULT MARKER — the user caught it (2026-11-03)
+
+**(user)**: "Redo the model card on the readme.md — I still see 'Focus (the
+served default)' on there." Found and fixed at the SOURCE: `docs/bpw4-sweep.tsv`
+labeled the Focus card "the served default" (the cards predate the TR3 swap)
+while the TR3 card carried no marker — the TSV now marks **TR3-4bpw (the served
+default)** and the cards regenerated. The same staleness in **config.sh's
+comment block above MODEL_ID** (it still described the Focus as the default)
+rewritten (TR3 the default, the Focus the prior default still serveable); the
+settingsab phase comment's "the served default" → "the then-served Focus".
+The final sweep: every remaining "served default" hit is either current-TR3 or
+clearly dated history (the round-27/38 decision records). The lesson: the
+generated artifacts inherit their sources — the TSV was fixed for the numbers
+in cont. 31's audit but its LABELS were not re-checked.

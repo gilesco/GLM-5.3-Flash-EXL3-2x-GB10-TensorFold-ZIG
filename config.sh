@@ -45,10 +45,13 @@ TF_REF="${TF_REF:-latest-v1}"
 TF_COMMIT="${TF_COMMIT:-}"
 TF_REPO="${TF_REPO:-https://github.com/ashhart/TensorFold.git}"
 
-# The served default checkpoint: AxonZeta's AZ-Focus EXL3 (topk=8 by design — the
-# (user) hardmode-bar default; a local checkpoint on both hosts, see docs/SITE.md, not in
-# git). The stock/top4cfg cells serve Mia-AiLab's EXL3 one (4-bit mcg routed experts, BF16
-# elsewhere) — production's checkpoint, already in this site's Hugging Face caches. This
+# The served default checkpoint: Mia-AiLab's TR3-4bpw EXL3 (the round-132 (user)
+# swap — the 4bpw sweep's verdict: 94/104 hardmode with the best top-8 decode; the
+# scorecards: docs/bpw4-sweep-cards.svg). The prior default was AxonZeta's AZ-Focus
+# EXL3 (topk=8 by design, the 2026-10-27 swap; 93/104) — still serveable as a local
+# checkpoint on both hosts (see docs/SITE.md, not in git). The stock/top4cfg cells
+# serve Mia-AiLab's EXL3 one (4-bit mcg routed experts, BF16 elsewhere) —
+# production's checkpoint, already in this site's Hugging Face caches. This
 # line is EXL3 only; the NVFP4 route has its own repo. The ranks cross-check every
 # checkpoint byte against each other at start, so a copy that differs on one host stops
 # both before serving.
