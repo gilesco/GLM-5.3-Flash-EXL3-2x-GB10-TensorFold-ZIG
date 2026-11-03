@@ -5048,3 +5048,21 @@ masked the contract. Relaunched with the phase list as the argument.
   no visible digest-cache skip (the load dominates). The hmcheck window re-dates
   the row with a timed v1.2.2 wall + the hardmode battery (the 94's
   certification on the new engine).
+
+## (round 133, cont. 4) THE BUMP IS CERTIFIED: hardmode 94 on v1.2.2; the loading row re-dated (91%); the postbump window launched (2026-11-03)
+
+**hmcheck (campaign-20261103-221555) closes the certification**: **hardmode
+94/104 on the served v1.2.2 config** — the quality tie holds on the new engine
+(the same score as the v1.2.1 receipt and production's prodbench 94). The
+**timed v1.2.2 restart wall: 103 s** — the loading row re-dated (91% vs
+production's 93.7; the front is stable across the bump; the digest-cache and
+page-cache-release levers show no wall effect — the weights load dominates).
+The serve line: model 84.75 GiB, 13.9 GiB left, a 2.7 GiB prompt cache.
+
+**Launched: the postbump window** — four arms: (A) the deep-prefill curve
+(cold TTFT at 32k/64k/128k novel fills — #1577's 5-14% claim lives where our
+8k instruments don't reach; measured-vs-slope is the receipt), (B) KV_HOST on
+fp8 (the refusal would be the receipt), (C) KV_HOST on bf16+pages (the memory
+shape + the warm probe — #1795, the WARM row's named pattern), (D) PATCHES=
+(the glm-tail-release redundancy — #1884 mainlined the release; the memory
+numbers decide the retirement).

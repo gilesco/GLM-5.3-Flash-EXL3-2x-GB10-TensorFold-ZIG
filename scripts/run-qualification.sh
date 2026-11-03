@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs postbump hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1011,6 +1011,73 @@ if want hmcheck && ! phase_done hmcheck; then
   echo "- server: $(serve_line)" >> "$P"
   bench_cell hm-v122 "$OUT/hm-v122" >> "$P"
   touch "$OUT/.hmcheck.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: postbump (SESSION-SPECIFIC; retires with the receipts). The v1.2.2
+# follow-ups in one window:
+#   A. the deep-prefill instrument: cold TTFT at 32k/64k/128k fills (distinct
+#      novel prompts per depth) — #1577's 5-14% claim lives at 32-167K where the
+#      duel's 8k instruments don't reach; the measured-vs-slope comparison is
+#      the gain's receipt.
+#   B. TF_GLM_KV_HOST=1 on the standing fp8 config (#1795 — the WARM row's
+#      named pattern): the refusal would be the receipt (the kvshare lesson).
+#   C. TF_GLM_KV_HOST=1 on bf16+pages (the kvshare shape): the serve line's
+#      memory shape + the warm probe decide.
+#   D. PATCHES= (no glm-tail-release): admission + the memory numbers decide
+#      the patch's retirement (#1884 mainlined the release).
+# ---------------------------------------------------------------------------
+if want postbump && ! phase_done postbump; then
+  log "=== postbump (deepfill + KV_HOST + the patch arm)"
+  P="$OUT/postbump.md"; : > "$P"
+  echo "# postbump (the v1.2.2 follow-ups; all arms on 8001)" >> "$P"
+  PB_DIR="results/postbump"; mkdir -p "$PB_DIR"
+  deep_probe() {  # $1 receipt, $2 depth-tokens, $3 tag — a NOVEL fill per depth, max_tokens 1
+    local dst="$1" d="$2" tag="$3" p r
+    p=$(python3 -c "import sys; n=int(sys.argv[1]); print(('Depth fill %s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[2]) * n)" "$((d / 27))" "$tag")
+    r=$(curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
+      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+      -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p")" \
+      | python3 -c 'import sys, json, re
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+d2 = json.loads(body)
+m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
+print("prompt_tokens=%d ttft_s=%s" % (d2["usage"]["prompt_tokens"], m.group(1)))' 2>/dev/null || echo "FAILED")
+    echo "- cold fill @ $tag: $r" >> "$dst"
+  }
+  # --- arm A: the deep-prefill curve on the standing config
+  echo "## arm A (the standing config; the deep-prefill curve)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  echo "- server: $(serve_line)" >> "$P"
+  for d in 32768 65536 131072; do deep_probe "$P" "$d" "d$d"; done
+  echo "- the slope extrapolation: 0.634 ms/tok x depth + 197 ms overhead (d32k ~21.0 s, d64k ~41.6 s, d128k ~83.2 s) — measured below it means #1577 delivers at depth" >> "$P"
+  # --- arm B: KV_HOST on fp8
+  echo "## arm B (TF_GLM_KV_HOST=1 on fp8)" >> "$P"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_KV_HOST=1; then
+    echo "- server: $(serve_line)" >> "$P"
+    deep_probe "$P" 65536 "kvhost-fp8-d64k"
+  else
+    echo "- REFUSED on fp8 (the receipt — the kvshare pattern: read WHAT it refuses)" >> "$P"
+  fi
+  # --- arm C: KV_HOST on bf16+pages
+  echo "## arm C (TF_GLM_KV_HOST=1 on bf16+pages)" >> "$P"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_HOST=1; then
+    echo "- server: $(serve_line)" >> "$P"
+    deep_probe "$P" 65536 "kvhost-bf16-d64k"
+  else
+    echo "- REFUSED on bf16+pages too (the receipt)" >> "$P"
+  fi
+  # --- arm D: no patch
+  echo "## arm D (PATCHES= — the glm-tail-release redundancy check)" >> "$P"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES=; then
+    echo "- server: $(serve_line)" >> "$P"
+    deep_probe "$P" 65536 "nopatch-d64k"
+    echo "- the decision: if the memory numbers match the with-patch serve (13.9-14.2 left), the patch retires" >> "$P"
+  else
+    echo "- REFUSED without the patch — the patch STAYS (the admission receipt)" >> "$P"
+  fi
+  touch "$OUT/.postbump.done"
 fi
 
 # ---------------------------------------------------------------------------
