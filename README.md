@@ -106,6 +106,8 @@ cp scripts/local.sh.example scripts/local.sh   # or skip this: prepare.sh discov
 - `DRY_RUN=1 ./scripts/start.sh` prints both ranks' docker commands and changes nothing.
 - `DOWNLOAD=1 ./scripts/prepare.sh` fetches the checkpoint into the head's HF cache (and
   rsyncs it to the worker) when a host lacks it.
+- Verify what serves: `./scripts/status.sh` (containers, /health, the serve line — the
+  memory shape, the drafts, the window) or `curl -s http://localhost:8001/v1/models`.
 - The first build compiles TensorFold (Zig + nvcc, sm_121) and takes a while; every later
   build with the same commit is a docker-cache hit.
 
