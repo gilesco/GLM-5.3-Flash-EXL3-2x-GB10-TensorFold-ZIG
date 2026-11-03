@@ -573,6 +573,58 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   checkpoint-rev lever with a concrete shape. (Out of scope, not tracked: other
   engines on GB10, other families' serving threads.)
 
+## 2026-11-03 — v1.2.2 released (18:53, `00e7ddd`): the bump is ON — the GLM surface
+
+The watch fired: **v1.2.2 carries directly relevant GLM content**. The items,
+dispositioned for our line (the TR3 pack, 2×GB10 TP=2, dense4fp8, DFlash2, vision):
+
+- **#1577 — GLM cold prompts 5-14% sooner at 32K-167K tokens** (a prompt chunk's
+  MTP pass runs on its last row past the caches; identical replies; measured at
+  TP=3, generic GLM-on-CUDA). Moves our prefill front (~69-72%) and the cold
+  TTFT rows. HIGH.
+- **#1884 — the page cache on load: released once the weights are loaded, "on
+  CUDA, every family's loader"** (~15 GiB freed on a served 27B; unified memory
+  no longer holds the checkpoint twice). **This is glm-tail-release.patch
+  mainlined generically** — the patch likely retires on the bump, and the
+  loading front's re-take (90%, 104.5 s) gets two more levers (this + #1771).
+  HIGH.
+- **#1771 — the ranks compute and compare a cached checkpoint digest**
+  (`TENSORFOLD_CHECKPOINT_SHA256` no longer required; `--tp` lands as a server
+  flag with `--rank/--master/--master-port`). Our health wait includes the
+  cross-rank byte verify on EVERY restart — a cached digest may skip it warm →
+  the loading front's re-take. HIGH.
+- **#1795 — `TF_GLM_KV_HOST`: the KV pages' latent rows in pinned host memory**
+  (for 1M-token windows on 96 GB cards; unset = identical tokens at TP=2 on two
+  GB10s) — **the WARM row's named upstream pattern (#1795) landed**. A knob
+  test after the bump (on our unified-memory shape the pinned-host trade is
+  unmeasured). MEDIUM-HIGH.
+- **#1842 — `TF_GLM_CHUNK_SOLO=4096` beside `--drafter` is REFUSED at load**
+  ("it held 1.6-1.9 GiB of prompt buffers that no pass used") — **validates the
+  (user) CS hold**; the knob is drafter-incompatible upstream now. BEHAVIOR
+  CHANGE, no effect on our standing config.
+- **#1987 — GLM refuses a checkpoint whose `tensorfold_activation_dtype` asks
+  for anything but bfloat16** — the packs served on v1.2.1; if the TR3 pack
+  carries the key with a non-bf16 value the bump's serve refuses (the pinbump
+  receipt will show it). BEHAVIOR-CHANGE RISK, likely moot.
+- **#1962 — image prompts: a cached state is never resumed for a different,
+  moved or re-gridded image, and image prompts' states are no longer saved to
+  disk or learned** — a correctness improvement for our vision default
+  (multi-turn vision cache hits get identity-checked).
+- **#1904 — the GLM DFlash2 drafter's malformed-header checks** (robustness for
+  our drafter); **#1996 — the recipe documents CHUNK_SOLO's TP=3 gain halving
+  under TF_GLM_ROCE_MULTI**; **#1467 — Qwen3.8-27B EXL3 prefill 38-42% faster
+  on a GB10** (dense-EXL3 prompt kernels — whether the grouped-expert MoE path
+  shares them, the bump's bench tells).
+- No sub-4-bit EXL3 expert reader for GLM — the 3bpw gate stands.
+
+**The bump protocol** (the round-33/45/127 pattern): the pin → 00e7ddd
+(local.sh), pinbump (the explicit prepare, the marker must move), then the
+re-qualification (the §2 gates, depth, prefill, the duel re-pair) + the
+loading re-measurement (the digest cache + the page-cache release are the two
+levers) + hardmode if the gates show any output movement. Adopt only
+receipts-equal-or-better. Watch: glm-tail-release.patch may fail to apply on
+the new loader (it would be redundant anyway — retire it if so).
+
 ## 2026-11-02 — the upstream watch (round 132, cont. 23): v1.2.1 still latest; the GLM opt-ins dispositioned
 
 - The releases page: **v1.2.1 (Nov 1) is the latest engine release** — the only

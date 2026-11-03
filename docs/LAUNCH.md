@@ -4982,3 +4982,21 @@ The final sweep: every remaining "served default" hit is either current-TR3 or
 clearly dated history (the round-27/38 decision records). The lesson: the
 generated artifacts inherit their sources — the TSV was fixed for the numbers
 in cont. 31's audit but its LABELS were not re-checked.
+
+## (round 133) THE V1.2.2 BUMP — the watch fired: the GLM cold-prompt gain, our tail-release patch mainlined, the digest cache; pinbump launched (2026-11-03)
+
+**(user)**: "Ok, time to look at the upstream repo v1.2.2 released now?" —
+**Confirmed: v1.2.2 released 18:53 Nov 3 (00e7ddd)**, and it is a strong bump
+for our line: #1577 (GLM cold prompts 5-14% sooner at 32-167K, identical
+replies), #1884 (the page cache released on load for every CUDA family —
+glm-tail-release.patch mainlined, ~15 GiB class), #1771 (the cached
+cross-rank checkpoint digest — the byte-verify may skip warm), #1795
+(TF_GLM_KV_HOST — the WARM row's named pattern), #1842 (CS beside --drafter
+refused — validates the user's hold), #1962 (image-state identity in the
+prompt cache), the risks: #1987 (the non-bf16 activation-dtype refusal —
+the packs likely moot) and the patch's applicability. The full disposition:
+docs/ECOSYSTEM.md (the 2026-11-03 entry). **The pin moved to 00e7ddd**
+(scripts/local.sh on the head); **pinbump launched** (the explicit prepare,
+the marker must move — fail-honest). Next: the re-qualification window
+(the gates, depth, prefill, the duel re-pair), the loading re-measurement
+(two levers landed for the re-take), hardmode if the gates move.
