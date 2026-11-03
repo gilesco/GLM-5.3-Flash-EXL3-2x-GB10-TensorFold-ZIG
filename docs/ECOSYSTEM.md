@@ -587,9 +587,12 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   is a DESIGNED non-combination on mainline** (the engine's admission line:
   "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to
   auto or off" — the 233025 receipt; pages require bf16/auto KV); the bf16
-  mechanism arm is the live test. Our own same-session warm hit re-measured at
-  **0.302 s** on the standing fp8 config (cont. 25) — 70% of production's
-  0.21 s full-hit skip, from the v1.2.0-era 1.42 s. **#1736**
+  mechanism arm SERVED (the 000653 receipt: the on-demand pool, 18.5 GiB left,
+  +3.5 vs the fp8 standing config) — and the verdict is NO ADOPTION: the warm
+  same-session TTFT is a wash (0.3047 vs 0.302 s) and solo bench decode costs
+  ~5-10% on bf16 KV. Our own same-session warm hit re-measured at **0.302 s**
+  on the standing fp8 config (cont. 25) — 70% of production's 0.21 s full-hit
+  skip, from the v1.2.0-era 1.42 s. **#1736**
   `TF_GLM_HOST_CACHE` (prompt states in pinned host
   memory — built for discrete cards with little device room; our GB10s are
   unified-memory hosts, low priority, untested).

@@ -4672,8 +4672,8 @@ are invalid." And: "If we want quality or performance metrics we need to run the
 on a clean unused port (8001)."
 
 Executed: the against-8000 bench KILLED mid-run; **both campaign receipts from
-this thread's 8000-targeted runs deleted** (campaign-20261102-191715 /
--191940 — invalid, never to be cited); the BENCH_BASE_URL override plumbing
+this thread's 8000-targeted runs deleted** (the two invalidated dirs, the
+191715 / 191940 evening timestamps — invalid, never to be cited); the BENCH_BASE_URL override plumbing
 REVERTED (the load arms point at the testing port unconditionally); **the
 metrics-port lock installed** at run-qualification.sh's start (`PORT != 8001`
 refuses to run — one guard covering every load arm and probe); **the prodqual

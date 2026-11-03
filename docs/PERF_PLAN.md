@@ -63,7 +63,10 @@ upstream-gated**:
   serialization. The #1732 pages mechanism (the named upstream pattern for a
   full-hit skip) requires bf16/auto KV — the fp8×pages pair is a designed
   non-combination on mainline (the engine's admission line, the 233025
-  receipt); the bf16 mechanism test is in flight.
+  receipt); the bf16 arm SERVED (the 000653 receipt: +3.5 GiB headroom, the
+  on-demand pool) and the verdict is NO ADOPTION — the warm same-session TTFT
+  is a wash vs the standing cache and bf16 KV costs solo decode ~5-10%. The
+  standing fp8 config stays; the front's open pieces are unchanged.
 - **The standing strengths**: the concurrent deep prefill WINS 1.53× (2,799 vs
   1,834 t/s); the decode ITL crosses (102%); TTFT overhead 92%.
 - **LOADING (round 127, 2026-10-31): TAKEN — 98.6%, at production's number.** The

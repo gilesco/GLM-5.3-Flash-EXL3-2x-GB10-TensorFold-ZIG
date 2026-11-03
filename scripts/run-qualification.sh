@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs kvshare121 duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -969,99 +969,15 @@ fi
 # 20261102-213954, production FOR TESTING on the clean 8001, the same
 # bench_cell instrument as ours) — the served TR3 TIES it at 94. Re-run
 # pattern: git history.)
-# ---------------------------------------------------------------------------
-# phase: kvshare121 (SESSION-SPECIFIC; the v1.2.1 pages-based prompt retention
-# A/B — retires with the verdict). #1732's opt-in: TF_GLM_KV_SHARE=<count>
-# (how many states the prompt cache keeps over the KV pages — the release
-# notes' "n" is a placeholder, NOT a literal; the 230421 refusal receipt)
-# with TF_KV_PAGES=on keeps prompts as the KV pool's pages ("a 64k message sent
-# again resumes in about 1.7 s instead of prefilling for 36 s" upstream at
-# TP=3). Our WARM row: the kept-states resume replays at 1.42 s at d8192;
-# production's full-hit skip is 0.21 s — this mechanism is the named upstream
-# pattern for that front. The fp8 x pages pair is a DESIGNED non-combination on mainline (the
-# 233025 receipt, the engine's own line: "--kv-cache fp8 keeps a window per
-# stream: unset TF_KV_PAGES, or set it to auto or off") — pages require
-# bf16/auto. The bf16 arm (KVS2, KV_CACHE= empty) is the mechanism test;
-# fp8+pages is closed as a rule, not a bug. Arms:
-# BASE (the standing config) -> KVS (TF_GLM_KV_SHARE=n TF_KV_PAGES=on on fp8;
-# if the serve refuses, KVS2 retries the pair on bf16 — the branch-era rule).
-# Each arm: restart -> serve line (the memory shape) -> the warm-resume probe
-# (an ~8k prompt sent twice at max_tokens 1: cold TTFT vs warm TTFT) ->
-# bench_perf. The BASE arm also runs the vision suite (the targeted-1024
-# cross-check rider, cont. 20a's loose end). The verdicts: the warm TTFT
-# delta, the memory shape, the gates' byte-exactness on the resumed arm.
-# ---------------------------------------------------------------------------
-if want kvshare121 && ! phase_done kvshare121; then
-  log "=== kvshare121"
-  P="$OUT/kvshare121.md"; : > "$P"
-  echo "# kvshare121 (the #1732 pages-based prompt retention A/B on the TR3 default; all arms on 8001)" >> "$P"
-  KVS_DIR="results/kvshare121"; mkdir -p "$KVS_DIR"
-  warm_probe() {  # $1 = receipt file — an ~8k prompt sent twice at max_tokens 1
-    local dst="$1" p8k r
-    p8k=$(python3 -c "print(('The quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ')*300)")
-    for i in 1 2; do
-      r=$(curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-        "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-        -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p8k")" \
-        | python3 -c 'import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-d = json.loads(body)
-m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
-print("prompt_tokens=%d ttft_s=%s total_s=%s" % (d["usage"]["prompt_tokens"], m.group(1), m.group(2)))' 2>/dev/null || echo "send $i FAILED")
-      echo "- send $i: $r" >> "$dst"
-    done
-  }
-  for arm in "BASE:" "KVS:TF_GLM_KV_SHARE=2 TF_KV_PAGES=on"; do
-    t="${arm%%:*}"; e="${arm#*:}"
-    [ -f "$KVS_DIR/$t.done" ] && continue
-    echo "## arm $t (env: ${e:-the standing defaults})" >> "$P"
-    # shellcheck disable=SC2086
-    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $e; then
-      if [ "$t" = KVS ]; then
-        echo "- FAIL: the server refused KVS on fp8 (its refusal line is the receipt — dtype gate or shape) — retrying on bf16" >> "$P"
-        t="KVS2"; e="TF_GLM_KV_SHARE=2 TF_KV_PAGES=on"
-        # KV_CACHE= (EMPTY) is the bf16 spelling — omitting it lets config.sh's
-        # fp8 default leak through (the 233025 KVS2 receipt: the same fp8-pages
-        # refusal fired on the "bf16" arm because fp8 was never unset)
-        # shellcheck disable=SC2086
-        if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 $e; then
-          echo "- FAIL: KVS2 refused on bf16 too — the refusal is the receipt" >> "$P"
-          touch "$KVS_DIR/KVS.done"; continue
-        fi
-      else
-        echo "- FAIL: the server refused arm $t" >> "$P"; touch "$KVS_DIR/$t.done"; continue
-      fi
-    fi
-    echo "- server: $(serve_line)" >> "$P"
-    warm_probe "$P"
-    bench_perf "kv-$t" "$KVS_DIR/$t-perf" 4 >> "$P" 2>&1
-    if [ "$t" = BASE ]; then
-      # the vision-suite rider: the targeted-1024 cross-check on the standing config
-      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$KVS_DIR/BASE-vision.json" > "$KVS_DIR/BASE-vision.log" 2>&1 || true
-      python3 - "$KVS_DIR/BASE-vision.json" >> "$P" <<'PYEOF'
-import json, sys
-man = {e["file"]: e for e in json.load(open("assets/vision/manifest.json"))}
-try:
-    ans = json.load(open(sys.argv[1]))
-except Exception as ex:
-    print("- vision suite: UNREADABLE (%s)" % ex); raise SystemExit
-tgt = [a for a in ans if a["kind"] == "targeted"]
-ok = 0
-for a in tgt:
-    e = man[a["file"]]
-    hit = any(w in a["answer"].lower() for w in e["expect"])
-    ok += hit
-    print("- vision targeted %s: %s — %r" % (a["file"], "PASS" if hit else "FAIL", " ".join(a["answer"].split())[:80]))
-print("- vision suite: targeted %d/%d" % (ok, len(tgt)))
-PYEOF
-    fi
-    touch "$KVS_DIR/$t.done"
-  done
-  echo "- the verdict material: send-2 TTFT (the warm resume) BASE vs KVS/KVS2, the serve lines' memory shapes, the bench tables" >> "$P"
-  touch "$OUT/.kvshare121.done"
-fi
-
+# (the kvshare121 phase RETIRED round 132 (cont. 27) — the verdict: the #1732
+# pages mechanism SERVES on bf16 only (fp8+pages is a designed non-combination;
+# the engine's admission line) — campaign-20261103-000653: model 81.35 GiB, the
+# on-demand pool (2050 pages of 512 rows, 12.76 GiB), 18.5 GiB left (+3.5 vs
+# BASE) — but the warm same-session TTFT is a WASH (0.3047 s vs BASE's 0.302)
+# and solo bench decode costs ~5-10% on bf16 KV (the 2x bytes on the attention
+# path; the concurrent bench rows are in noise). NO ADOPTION — the standing
+# fp8 config stays; the bf16+pages shape is receipted as available. Receipts:
+# results/kvshare121/. Re-run patterns: git history.)
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one
