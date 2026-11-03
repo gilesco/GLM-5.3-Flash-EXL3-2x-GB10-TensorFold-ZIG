@@ -9,18 +9,18 @@
 # 86% subset); the top4cfg (89 / 76%) stays receipted as the perf leader.
 #
 # title=The fronts — this line vs production 0.6.6 (same harness
-# dated=2026-11-02
-# receipts=the served default is the TR3-4bpw checkpoint (the round-132 (user) swap):
-# receipts=the TR3 cell's round-132 duel (campaign-20261102-210117 — both engines on the
-# receipts=clean 8001, same window, the stack-stop fix). The top4cfg's crossed rows (solo
-# receipts=111/c2 124/c4 108) remain receipted in TOOL_EVAL_TESTING.md as the perf leader.
+# dated=2026-11-03
+# receipts=the served default is the TR3-4bpw checkpoint on TensorFold v1.2.2 (the
+# receipts=round-133 bump): the v1.2.2 duel (campaign-20261103-201958 — both engines on the
+# receipts=clean 8001, same window; gates g1-g4 PASS, depth 12/12). The top4cfg's crossed
+# receipts=rows (solo 111/c2 124/c4 108) remain receipted in TOOL_EVAL_TESTING.md as the perf leader.
 # Columns: label|direction(lower|higher)|production|ours|raw label (receipt numbers as displayed)
 loading (warm restart wall)|lower|93.7|104.5|104.5 vs 93.7 s — **90% (RE-DATED for the served default)**: the standing TR3-on-v1.2.1 serve timed end to end twice (103/106 s, Δ 2.9%; campaign-20261103-090007); the prior 95 s receipt was the Focus-cell v1.2.0 qualification (campaign-20261031-142431, the engine boot 93.0 s) — the TR3 pack's load pays ~+9 s over the Focus cell (the mover unattributed: the pack's staging layout or the v1.2.1 load path); production's 93.7 stands
-decode solo (2048-token, measured)|higher|58.5|64.4|64.4 vs 58.5 t/s — the TR3 duel (campaign-20261102-210117: ours 64.4/64.2, production 58.5/58.6; **110%, CROSSED** — the TR3 decode dividend; the Focus-cell pair was 55.4/59.0, 93.9%)
-decode c2 aggregate (measured)|higher|87.0|110.3|110.3 vs 87.0 t/s — the TR3 duel (**127%**; production's c2 volleys 87-111 across windows with cache state, ours holds 109-110 on TR3; the Focus-cell pair was 92.3/111.1)
-decode c4 aggregate (measured)|higher|192.0|152.6|152.6 vs 192.0 t/s — the TR3 duel (80%; production's c4 range 155-241 with cache state — this run near its top; ours holds 150-153 on TR3; the Focus-cell pair was 143.3/155.1)
-request overhead (TTFT, 1-token, solo)|lower|183|201|201 vs 183 ms — the TR3 duel (91%; ours 199-201 across windows, production 183-185)
+decode solo (2048-token, measured)|higher|58.6|63.3|63.3 vs 58.6 t/s — the v1.2.2 duel (campaign-20261103-201958: ours 63.3/63.2, production 58.6/58.6; **108% — CROSSED holds**; the v1.2.1 pair was 64.4/58.5, 110%)
+decode c2 aggregate (measured)|higher|87.2|109.1|109.1 vs 87.2 t/s — the v1.2.2 duel (**125%**; production's c2 volleys 87-111 across windows with cache state, ours 109-110; the v1.2.1 pair was 110.3/87.0)
+decode c4 aggregate (measured)|higher|192.4|149.3|149.3 vs 192.4 t/s — the v1.2.2 duel (78%; production's c4 range 155-241 with cache state — this run near its top; ours holds 149-153; the v1.2.1 pair was 152.6/192.0)
+request overhead (TTFT, 1-token, solo)|lower|184|197|197 vs 184 ms — the v1.2.2 duel (93%; ours 197-201 across windows, production 183-185)
 TTFT at depth, COLD (1-token, d8192, novel fill)|lower|17129|5570|5,570 vs 17,129 ms — **309%, CROSSED** (the round-131 prodcold receipt, campaign-20261101-051733: production's true cold — novel fills its persistent cache cannot hit — costs 17.1 s at d8192 and 8.8 s at d4096, slope 2.026 ms/tok vs our 0.656; its cold prefill SLOWS with depth (0.66 at d0 from its bench rate, ours stays flat); the round-130 '42%' compared our COLD against its cache-warm 2,363 — the persistent-cache artifact; **re-verified on the TR3 duel** (campaign-20261102-210117: ours d8192 5,587 ms, slope 0.657))
 TTFT at depth, WARM (1-token, d8192, cache hit)|lower|212|302|302 vs ~212 ms — 70% (RE-MEASURED cont. 25 on v1.2.1, the same instrument definition — the same-session immediate repeat at max_tokens=1, d8.4k: campaign-20261102-233025, cold 7.22 s → warm 0.302 s; the round-131 receipt was 1,422 ms on the v1.2.0-era stack — the #1868 page-cache fix the likely mover; production's full-hit skip 0.21 s at d8192, 0.086 s at d4096; the cross-restart resume is COLD (7.25 s — the store does not survive a restart; the 003946 receipt), so the open pieces narrow to the concurrent resume's 4× serialization)
 prefill (benchy pp2048 @ d0)|higher|1518|1049|1,049 vs 1,518 tok/s — the round-129 same-day pair (both engines re-run today: campaign-20261031-145914 / -171731; the round-108 pair was 1,039/1,516)
-streaming latency per token (ITL)|lower|17.1|15.6|15.6 vs 17.1 ms/token — the TR3 duel (109% — crossed further; ours' chunked rhythm 61.6 ms ÷ 3.9 tokens vs production's 17.1 ms single-token chunks; the round-130 pair was 16.6/17.0)
+streaming latency per token (ITL)|lower|17.1|16.0|16.0 vs 17.1 ms/token — the v1.2.2 duel (107% — crossed; ours' chunked rhythm 63.1 ms ÷ 3.9 tokens vs production's 17.1 ms single-token chunks; the v1.2.1 pair was 15.6/17.1)

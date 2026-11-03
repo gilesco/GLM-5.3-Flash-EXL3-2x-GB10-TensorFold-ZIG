@@ -5025,3 +5025,26 @@ so PHASES became "requal v1.2.2", want() matched no phase, and
 campaign-20261103-200937 ran hollow ("done." in one line; the flow restored
 production cleanly — no harm). Every prior launch had label == PHASES, which
 masked the contract. Relaunched with the phase list as the argument.
+
+## (round 133, cont. 3) THE V1.2.2 RE-QUALIFICATION: gates PASS, depth 12/12, the fronts hold, prefill −3.5% (2026-11-03)
+
+**The re-qualification (campaign-20261103-201958) certifies the bump**:
+- **The §2 gates g1-g4 ALL PASS** (content form) — the GLM items' identical-
+  replies claims hold on our pack (drafted=plain, resumed=fresh,
+  concurrent=solo, determinism).
+- **Depth 12/12** (3/3 at 8k/64k/192k/384k).
+- **Prefill 1,114 tok/s at a 26,870-token fill** — above the pp2048-era ~1,030
+  receipts; the duel's prefill slope **0.657 → 0.634 ms/tok (−3.5%)** — #1577
+  partially visible at 8k (its full 5-14% claim lives at 32-167K).
+- **The duel pair (both engines on 8001, same window)**: solo 63.3/63.2 vs
+  58.6/58.6 (**108% — crossed holds**), c2 109.1 vs 87.2 (**125%**), c4 149.3
+  vs 192.4 (78% — production near its range top again), ITL 16.0 vs 17.1
+  (**107%**), overhead 197 vs 184 ms (93%). All within noise of the v1.2.1
+  pair; the anchors re-dated onto the v1.2.2 pair, the chart re-rendered.
+- **Memory: no regression on the served config** — the dense4fp8 serve line:
+  model 84.75 GiB (identical to v1.2.1), 14.2 GiB left, a 2.9 GiB prompt
+  cache. (The 86.71/12.6 first line was the dense8 parity cell.)
+- **The loading**: health waits 96-101 s — consistent with the 104.5 s wall;
+  no visible digest-cache skip (the load dominates). The hmcheck window re-dates
+  the row with a timed v1.2.2 wall + the hardmode battery (the 94's
+  certification on the new engine).
