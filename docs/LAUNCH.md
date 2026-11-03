@@ -4901,3 +4901,17 @@ fp8→fp8. The docs-guard's check_default needed its internal grep (the
 call-site edit was cosmetic — the function re-derives its own pattern with
 `:-` hardcoded) widened to both expansion forms. The window relaunched for
 the bf16 mechanism arm.
+
+## (round 132, cont. 28) THE HOLLOW WINDOW — a phase registered against the wrong line; warmrestart fixed and relaunched (2026-11-03)
+
+The warmrestart launch bug, for the record: the patcher's registration
+substring matched BOTH the phase-registration line and the default-PHASES line
+(the cont. 23 trap, reintroduced) — the assert stopped the write, but the
+newline-separated shell chain still committed the digest and launched
+`PHASES="warmrestart"` against a script that had no such phase. **The window
+(campaign-20261103-003103) ran hollow** — its receipt is campaign.log only, no
+phase output; noted and superseded. Fixed: the registration is line-targeted
+(the `for _p in` line only), the phase's warm_probe block rewritten with
+single backslashes (the patcher's escaping had doubled the line-continuations
+into literal `\\`, ending each command early), bash -n + the guard green.
+ Relaunched.
