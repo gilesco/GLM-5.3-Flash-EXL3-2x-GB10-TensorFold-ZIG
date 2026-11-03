@@ -1048,6 +1048,22 @@ print("prompt_tokens=%d ttft_s=%s" % (d2["usage"]["prompt_tokens"], m.group(1)))
     rm -f "$bf"
     echo "- cold fill @ $tag: $r" >> "$dst"
   }
+  warm_probe() {  # $1 receipt, $2 sends — an ~8k prompt at max_tokens 1
+    local dst="$1" n="$2" p8k r i
+    p8k=$(python3 -c "print(('The quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ')*300)")
+    for i in $(seq 1 "$n"); do
+      r=$(curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
+        "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+        -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p8k")" \
+        | python3 -c 'import sys, json, re
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+d2 = json.loads(body)
+m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
+print("prompt_tokens=%d ttft_s=%s total_s=%s" % (d2["usage"]["prompt_tokens"], m.group(1), m.group(2)))' 2>/dev/null || echo "send $i FAILED")
+      echo "- send $i: $r" >> "$dst"
+    done
+  }
   # --- arm A: the deep-prefill curve on the standing config
   echo "## arm A (the standing config; the deep-prefill curve)" >> "$P"
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4

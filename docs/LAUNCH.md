@@ -5089,3 +5089,21 @@ numbers decide the retirement).
 
 Also landed: the docs' version moves (README's serve row/pin line/config
 table, DELTAS's engine row — v1.2.2 with the certification receipts).
+
+## (round 133, cont. 6) THE DEEP-PREFILL CURVE: linear at ~0.785 ms/tok to 170K; the wake missed a poke; the warm_probe definition fixed (2026-11-04)
+
+**The poke chain missed the 23:38 completion** (the user asked "No poke
+today?") — the wake for campaign-20261103-232127 never fired; processed
+directly. **Arm A's deep-prefill curve is the sitting's headline**: cold TTFT
+33.5 s at 42,469 tokens, 66.7 s at 84,959, 133.1 s at 169,904 — **~0.785
+ms/tok, perfectly linear across 42k→170k** (no depth blowup inside the 512K
+window). The deep slope sits above the duel's 8k slope (0.634) — the deep
+curve is the front's new evidence (a v1.2.1 comparison was never run, so no
+#1577 delta claim at depth; the 8k duel already receipted −3.5%).
+
+**The phase died mid-arm-C**: the fix added the warm_probe CALL but postbump
+never defined the function (the retired phases took their definitions with
+them) — arm D never ran. The definition added; relaunched (arms re-run; the
+KV_HOST warm check and the patch arm land their receipts). Arm C's serve
+shape re-confirmed: model 82.03, the device pool 1.50 GiB, a 13.6 GiB prompt
+cache, 16.1 GiB left.
