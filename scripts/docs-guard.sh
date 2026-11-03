@@ -68,7 +68,7 @@ _unknown=$(comm -23 <(printf '%s\n' "$readme_phases") <(printf '%s\n' "$script_d
 # --- 5. config defaults in the README table --------------------------------------
 check_default() {  # $1 config var, $2 README grep pattern, $3 what must appear
   local d
-  d=$(grep -m1 -oP "^$1=\"\\\$\\{$1:-\K[^}]+" config.sh || true)
+  d=$(grep -m1 -oP "^$1=\"\\\$\\{$1:?-?\\K[^}]+" config.sh || true)
   [[ -n $d ]] || { fail "cannot read $1's default from config.sh"; return; }
   if grep -q "^$2" README.md && grep "^$2" README.md | grep -q -- "$3"; then
     pass "README's $1 row carries the default ($3)"
@@ -77,7 +77,7 @@ check_default() {  # $1 config var, $2 README grep pattern, $3 what must appear
   fi
 }
 check_default CONTEXT   '| `CONTEXT` / `PARALLEL`'  "$(grep -m1 -oP '^CONTEXT="\$\{CONTEXT:-\K[^}]+' config.sh)"
-check_default KV_CACHE  '| `KV_CACHE`'              "$(grep -m1 -oP '^KV_CACHE="\$\{KV_CACHE:-\K[^}]+' config.sh)"
+check_default KV_CACHE  '| `KV_CACHE`'              "$(grep -m1 -oP '^KV_CACHE="\$\{KV_CACHE:?-?\K[^}]+' config.sh)"
 check_default DENSE_BITS '| `DENSE_BITS` / `HEAD_BITS`' "$(grep -m1 -oP '^DENSE_BITS="\$\{DENSE_BITS:-\K[^}]+' config.sh)"
 
 # --- 6. receipt existence (the head only — results/ is not in git) ---------------

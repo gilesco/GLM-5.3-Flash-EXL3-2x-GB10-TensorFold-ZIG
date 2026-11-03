@@ -182,9 +182,15 @@ PDL="${PDL:-0}"
 # v1.1.2's prepared fp8 latent cache and now the DEFAULT: the §2 exactness gates PASSED on
 # it at 524288 (dense8+fp8 and dense4fp8, content form — VALIDATION §2 receipt), it halves
 # per-stream KV bytes (the 512K ladder fits at 4–5 streams on it), and dense4fp8 is the
-# qualified serving config. NOTE: fp8 KV and TF_KV_PAGES are mutually exclusive on the
-# KV-pages branch (bf16 is its only paged path — docs/ECOSYSTEM.md).
-KV_CACHE="${KV_CACHE:-fp8}"
+# qualified serving config. NOTE: fp8 KV and TF_KV_PAGES are mutually exclusive
+# on the KV-pages branch (bf16 is its only paged path — docs/ECOSYSTEM.md), and
+# as of round 132 (cont. 26) ON MAINLINE TOO (the engine's admission line, the
+# 233025 receipt). The ${VAR-default} form (no colon) makes the EMPTY spelling
+# reachable: unset → fp8 (the standing default); KV_CACHE= (empty) → bf16
+# explicitly (start.sh omits --kv-cache on empty — the "bf16" literal is not a
+# legal value). The 233025/235800 windows burned on the ${:-} form treating
+# empty as unset.
+KV_CACHE="${KV_CACHE-fp8}"
 
 # PROMPT_K: v1.1.1 regroups prompt-projection K slices (one K slice at every operator row
 # count), which can change replies versus 1.1.0 — including long or resumed prompts. "shape"
