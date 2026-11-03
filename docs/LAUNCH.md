@@ -4915,3 +4915,25 @@ phase output; noted and superseded. Fixed: the registration is line-targeted
 single backslashes (the patcher's escaping had doubled the line-continuations
 into literal `\\`, ending each command early), bash -n + the guard green.
  Relaunched.
+
+## (round 132, cont. 29) THE CROSS-RESTART ATTRIBUTION + the worker clock probe's eternal zero, solved (2026-11-03)
+
+**warmrestart (campaign-20261103-003946) closes the WARM row's first open
+piece**: cold 7.24 s → warm 0.302 s before the restart (the same-session hit
+re-verified — triple-receipted 0.302/0.302/0.305 across windows); **after the
+restart the same prompt costs 7.25 s — CROSS-RESTART IS COLD**. The prompt
+cache does not survive a stack restart; the round-131 v1.2.0-era 1.42 s was
+that era's measurement of the same instrument definition (the row already
+carries both receipts; its note now records the cold cross-restart receipt).
+The front's open piece narrows to the concurrent resume's 4× serialization.
+The warmrestart phase retired with the receipt.
+
+**The worker clock probe's eternal zero — solved**: `ssh host bash -c
+"$snippet"` lets the REMOTE shell word-split the probe snippet — its second
+line (`[[ -e $f ]] || { echo 0; exit 0; }`) ran standalone with $f unset and
+printed 0, which the probe took as its answer. The fix: feed the snippet via
+stdin (`ssh host bash -s <<<"$snippet"` — byte-exact, no remote parsing).
+Verified on the live hosts: **the worker delivers 3834 MHz, the head 3892**
+(healthy X925; the probe's preflight line will now read the worker honestly).
+The ledger's hygiene item closed; the g3 /metrics counter check remains (it
+needs a live serve — rides the next window).

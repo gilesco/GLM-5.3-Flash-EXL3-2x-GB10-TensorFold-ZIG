@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs warmrestart duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -264,7 +264,10 @@ echo "$a $b" | tr -d 'a-z:' | awk '{m=int(1000*($4-$2)/($3-$1)); print (m>100 &&
 EOF
 )
   if [[ "$host" == local ]]; then out=$(bash -c "$snippet" 2>/dev/null) || out=0
-  else out=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" bash -c "$snippet" 2>/dev/null) || out=0; fi
+  # bash -s reads the snippet from STDIN — `ssh host bash -c "$snippet"` lets the
+  # remote shell word-split it: its second line ran standalone with $f unset and
+  # echoed 0 (the worker's eternal zero, solved round 132 cont. 29)
+  else out=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" bash -s <<<"$snippet" 2>/dev/null) || out=0; fi
   echo "${out:-0}"
 }
 
@@ -978,47 +981,12 @@ fi
 # path; the concurrent bench rows are in noise). NO ADOPTION — the standing
 # fp8 config stays; the bf16+pages shape is receipted as available. Receipts:
 # results/kvshare121/. Re-run patterns: git history.)
-# ---------------------------------------------------------------------------
-# phase: warmrestart (SESSION-SPECIFIC; retires with the receipt). The WARM
-# row's first open piece: does the warm same-session hit (0.302 s, cont. 25)
-# survive a STACK RESTART, or does the cross-restart resume pay the store's
-# replay (the round-131 v1.2.0-era 1.42 s) or go cold (a full prefill)?
-# Instrument: an ~8k prompt at max_tokens=1 — cold, same-session warm, then a
-# restart, then the same prompt again. The receipt attributes the round-131
-# 1.42 s to its path and closes the row's first open piece.
-# ---------------------------------------------------------------------------
-if want warmrestart && ! phase_done warmrestart; then
-  log "=== warmrestart (the cross-restart warm attribution)"
-  P="$OUT/warmrestart.md"; : > "$P"
-  echo "# warmrestart (the warm hit vs a stack restart; the standing config)" >> "$P"
-  WR_DIR="results/warmrestart"; mkdir -p "$WR_DIR"
-  warm_probe() {  # $1 = receipt file, $2 = sends — an ~8k prompt at max_tokens 1
-    local dst="$1" n="$2" p8k r i
-    p8k=$(python3 -c "print(('The quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ')*300)")
-    for i in $(seq 1 "$n"); do
-      r=$(curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-        "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-        -d "$(python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':sys.argv[2]}],'max_tokens':1}))" "$SERVED_NAME" "$p8k")" \
-        | python3 -c 'import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-d = json.loads(body)
-m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
-print("prompt_tokens=%d ttft_s=%s total_s=%s" % (d["usage"]["prompt_tokens"], m.group(1), m.group(2)))' 2>/dev/null || echo "send $i FAILED")
-      echo "- send $i: $r" >> "$dst"
-    done
-  }
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "## before the restart (the standing config)" >> "$P"
-  warm_probe "$P" 2
-  ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "## after the restart (the same prompt, fresh stacks both ranks)" >> "$P"
-  warm_probe "$P" 1
-  echo "- the attribution: ~0.3 s = the store survives and replays fast; ~1.4 s = the round-131 replay path; ~7 s = cross-restart is cold" >> "$P"
-  touch "$OUT/.warmrestart.done"
-fi
-
+# (the warmrestart phase RETIRED round 132 (cont. 29) — the attribution:
+# cross-restart is COLD (7.25 s — the prompt cache does not survive a stack
+# restart; the same-session hit re-verified at 0.302 s, triple-receipted).
+# The round-131 v1.2.0-era 1.42 s was that era's measurement of the same
+# instrument definition — the row carries both receipts. Receipts:
+# results/warmrestart/. Re-run patterns: git history.)
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one

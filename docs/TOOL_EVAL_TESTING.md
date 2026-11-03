@@ -210,7 +210,13 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       same bench_cell instrument): **94/104** (campaign-20261102-213954) — the
       served TR3 TIES it at 94; the battery's saturation warning (--parallel 2)
       recorded on both sides alike.
-- [ ] Small hygiene: worker clock probe reads 0 via ssh (acpi_cppc path?); consider
+- [x] ~~Small hygiene: worker clock probe reads 0 via ssh~~ FIXED (cont. 29):
+      `ssh host bash -c "$snippet"` let the remote shell word-split the probe —
+      its second line ran standalone with $f unset and echoed 0. The probe now
+      feeds the snippet via stdin (`bash -s <<<"$snippet"`); the worker
+      delivers 3834 MHz, the head 3892 (healthy X925). Remaining hygiene: the
+      g3 `/metrics` cache-counter check (needs a live serve — rides the next
+      window); consider
       pinning the upstream ref in prepare so receipts stop drifting with HEAD.
 - [x] **One-command campaign** (`scripts/run-qualification.sh`, 2026-10-23): preflight →
       production reference probe → parity cells → fp8-KV exactness gates (VALIDATION §2)
