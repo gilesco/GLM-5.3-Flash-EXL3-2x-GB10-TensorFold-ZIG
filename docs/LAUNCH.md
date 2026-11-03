@@ -5015,3 +5015,13 @@ identical replies; the gates verify), the depth ladder, prefill, and the duel
 re-pair on the new engine. The window's restart walls carry the v1.2.2
 loading receipt (the digest-cache + page-cache-release effects on the 104.5 s
 wall). Hardmode after the gates, if they hold.
+
+## (round 133, cont. 2) THE HOLLOW WINDOW, AGAIN — the launch wrapper's arg IS the phase list (2026-11-03)
+
+The re-qualification launch used a descriptive label ("requal v1.2.2") —
+**autonomous-launch.sh's $1 is BOTH the label AND the PHASES string** (its
+header's own example: `autonomous-launch.sh "preflight ncurouter summary"`) —
+so PHASES became "requal v1.2.2", want() matched no phase, and
+campaign-20261103-200937 ran hollow ("done." in one line; the flow restored
+production cleanly — no harm). Every prior launch had label == PHASES, which
+masked the contract. Relaunched with the phase list as the argument.
