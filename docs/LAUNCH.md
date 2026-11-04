@@ -5187,3 +5187,32 @@ fp8+pages marriage (the heavyweight port), #4 the cost-table correctness fix
 per-passage NLL rule (never the aggregate mean), the
 never-consult-the-measured-endpoint rule, the host-drift awareness. Full
 disposition: docs/ECOSYSTEM.md (the 2026-11-04 entry).
+
+## (round 133, cont. 11) THE MIA FOLD-IN STACK PORTED: chunk4096 + cost-tables + dflash2-ingest (2026-11-04)
+
+The patch-craft protocol ran end to end on fold-ins #2+#4 (+#1's companion):
+- **0094 → glm-mia-chunk4096.patch**: the reject was trailing hunk context
+  only (their base carries `window_rows = 16`, ours 8); the change itself
+  (`prefill_rows` 2048 → 4096) is verbatim. Adapted against 00e7ddd.
+- **0095 → glm-mia-dflash2-ingest.patch** (verbatim, applies clean): DFlash2's
+  `MAX_CTX` 2048 → 4096 — without it the pair dies at the first real prefill
+  (DrafterContextTooWide). `WIN` stays 2048 by design.
+- **0096 → glm-mia-cost-tables.patch** (verbatim, applies clean): the GB10
+  verify-cost tables re-priced (52.0+6.8 → 38.73+5.68 lone, 76.0+4.1 →
+  47.38+5.05 shared) — applies clean, PROVING v1.2.2 still carries the
+  over-priced tables that starve the overhead learner.
+- **The scratch-repo stack verify passed**: all three apply in alphabetical
+  order (chunk4096 < cost-tables < dflash2-ingest) and alone; symbol greps
+  clean (every consumer reads the constants; the only remaining 2048 in the
+  touched files is `WIN`). One tooling bug caught and fixed en route: a header
+  builder that dropped the diff body for two files.
+- **The deepfills phase added** (session-specific): deepdelta's instrument on
+  the patched serve (+7% claimed → ~0.73 ms/tok expected vs the standing
+  0.785), plus the g3 /metrics capture re-done cleanly (curl to a file, then
+  grep — the two heredoc captures landed nothing).
+
+**LAUNCHED**: `RC_PATCHES="glm-mia-chunk4096.patch,glm-mia-cost-tables.patch,
+glm-mia-dflash2-ingest.patch" scripts/autonomous-launch.sh "preflight
+resumecost deepfills summary"` — the receipt (content gate sha, the deep-fill
+delta, the boot wall, the serve line's memory) judges the stack. ABSORB_MMA
+(0041, 28 KB of CUDA) is the next port after this verdict.

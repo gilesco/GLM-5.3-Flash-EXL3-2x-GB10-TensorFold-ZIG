@@ -27,6 +27,41 @@ and the Docker build applies them right after the TensorFold checkout.
    configuration, not patches. Port a patch only when its measured win is worth the
    rebase tax on every future version bump.
 
+## The Mia 1104 fold-in stack (EXPERIMENTAL, 2026-11-04, round 133 cont. 11)
+
+Three patches ported from [MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104](https://github.com/MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104)
+(Apache-2.0) against TensorFold `00e7ddd` (v1.2.2); shipped together via
+`RC_PATCHES="glm-mia-chunk4096.patch,glm-mia-cost-tables.patch,glm-mia-dflash2-ingest.patch"`
+(alphabetical order is load-bearing: chunk4096 → cost-tables → dflash2-ingest).
+The scratch-repo stack verify passed (each applies, in order and alone; symbol
+greps clean — every consumer reads the constants, `WIN` stays 2048 by design).
+
+- **glm-mia-chunk4096.patch** — `prefill_rows` 2048 → 4096 (cuda_state.zig).
+  A prompt chunk's rows double, amortizing the EXL3 trellis decode over 2× the
+  rows (with 288 routed experts × 45 layers, the largest fixed cost in a
+  prompt pass). Mia measured **+7% prefill, byte-identical replies**; our
+  round-131 p4096 rejection was on the old pin. COST: the chunk device scratch
+  roughly doubles (their pair: +1.58 GiB prompt buffers, +0.57 GiB drafter
+  share). ADAPTED: trailing hunk context only (their base carries
+  `window_rows = 16`, ours 8).
+- **glm-mia-dflash2-ingest.patch** — DFlash2 `MAX_CTX` 2048 → 4096
+  (dflash.zig). The drafter's context CAPACITY follows the wider chunk;
+  without it the pair dies at the first real prefill
+  (`DrafterContextTooWide`). `WIN` stays 2048 by design (a sliding window,
+  not a capacity).
+- **glm-mia-cost-tables.patch** — cuda_lanes.zig's verify-cost tables
+  re-priced from a GB10-pair measurement (lone 52.0+6.8 → 38.73+5.68, shared
+  76.0+4.1 → 47.38+5.05; applies clean, proving v1.2.2 still carries the
+  over-priced tables). Output-neutral scheduling prices: the old constants
+  starved depth.zig's overhead learner (4 of 139 measured shared forwards
+  could fire it vs 133 at these prices).
+
+OWNER: this line. STATUS: EXPERIMENTAL — judged by the deepfills window
+(deepdelta's fills on the patched serve; ~0.73 ms/tok expected vs the
+standing 0.785) plus the content gate (identical greedy sha = the ship
+check). Graduates into `config.sh`'s PATCHES default only on a
+receipts-equal-or-better verdict; retires with the session notes otherwise.
+
 ## Candidates under watch (upstream PR scan, 2026-10-23)
 
 - **#1079 — DFlash2/lanes decode (+9–15% on qwen27, "replies unchanged")** — TESTED AND
