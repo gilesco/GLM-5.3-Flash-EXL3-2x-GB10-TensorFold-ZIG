@@ -1039,11 +1039,17 @@ fi
 if want deepfills && ! phase_done deepfills; then
   log "=== deepfills (the Mia stack's deep fills)"
   P="$OUT/deepfills.md"; : > "$P"
-  echo "# deepfills (the patched serve: chunk4096 + cost-tables + dflash2-ingest)" >> "$P"
+  echo "# deepfills (the window's RC_PATCHES stack)" >> "$P"
   echo "- RC_PATCHES: ${RC_PATCHES:-unset}" >> "$P"
+  # the g3 capture BEFORE the restart: resumecost's resume traffic is what
+  # moves the counter, and this phase's own restart resets the serve
+  curl -s -m 10 "http://127.0.0.1:$PORT/metrics" -o "$OUT/g3-resumecost.txt" || true
   # self-contained (the deepdelta pattern): this phase restarts the serve itself
-  # so it never depends on phase order or a prior phase's boot
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  # so it never depends on phase order or a prior phase's boot — and a restart
+  # only carries what it is handed (the gotcha: RC_PATCHES does NOT propagate),
+  # so the patch env and the window's opt-in knobs are passed explicitly
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_ABSORB_MMA=1 PATCHES="${RC_PATCHES:-}"
+  echo "- the g3 counter after resumecost's traffic (pre-restart): $(grep -o "tensorfold:prompt_tokens_cached_total [0-9]*" "$OUT/g3-resumecost.txt" 2>/dev/null | tail -1 || echo absent)" >> "$P"
   echo "- engine: $(grep "TensorFold commit" "$LOG" 2>/dev/null | tail -1)" >> "$P"
   echo "- patches staged: $(grep -o "glm-mia-[a-z0-9-]*\.patch" "$LOG" 2>/dev/null | sort -u | tr '\n' ' ')" >> "$P"
   echo "- server: $(serve_line)" >> "$P"

@@ -301,28 +301,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
-- [ ] **ABSORB_MMA (0041) port — IN PROGRESS** (round 133, cont. 14): the
-      reject map is complete — 17 hunks across 7 files reject on our v1.2.2
-      tree (their base is a 1.1.9-era pin; #1577-era upstream moved the
-      contexts). SOLVED already: glm_glue.cu's include (append
-      glm_glue_num.cuh after attn — their base had a p2p include we lack) and
-      cuda_engine.zig's `e.initNumerics();` insertion (after our
-      `errdefer e.bp.deinit();`; their :188 context carried the pre-CS bp
-      init). REMAINING, formulaic but per-site: cuda_ranks.zig ×7 (the
-      Numerics field in Settings, the Fingerprint layout bump **16 → 17**
-      (our tree is at 16 "15 plus kda_pad"; their base was 12 — the +1 must
-      hit OUR layout), the numerics field + its three list sites + explain),
-      cuda_engine.zig ×2 (the view() and MTP Forward literals gain
-      `.absorb_mma = e.settings.numerics.absorb_mma`), cuda_forward.zig ×1
-      (the Forward field), cuda_glue.zig ×2, cuda_prompts.zig ×1,
-      cuda_ranks_test.zig ×2. Method: scratch-tree `git apply --reject` +
-      per-site fixes + `git diff` = the adapted patch; symbol greps mandatory
-      (the fingerprint struct is rank-pairing-critical — a wrong adaptation
-      is a boot refusal, not a compile error). Window plan:
-      RC_PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch" (the
-      cost tables ride — output-neutral), the engine env TF_GLM_ABSORB_MMA=1
-      (the opt-in knob the patch reads), hardmode in PHASES for the loaded
-      judgment (+8% prefill claimed, identical answers).
+- [ ] **ABSORB_MMA (0041) port — SHIPPED to the window** (round 133, cont.
+      15; opened cont. 14): ALL 17 sites adapted onto the v1.2.2 tree — the
+      adapted diff's diffstat matches the original exactly (9 files, 247
+      insertions, 7 deletions); the Fingerprint layout bumps OUR 16 → 17;
+      glm_glue_num.cuh (156 lines of CUDA) applies verbatim. Verified: the
+      fresh-tree apply-check passes alone and the stack (absorb + cost
+      tables) applies in alphabetical order; the symbol matrix is complete
+      (engine 3, forward 2, glue Set+2 kernels+2 load sites, prompts 1,
+      ranks 8 numerics sites, the test list + the new test block). The
+      window: RC_PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch"
+      PHASES "preflight resumecost deepfills hmcheck summary" with
+      TF_GLM_ABSORB_MMA=1 (the restart takes env pairs directly — the
+      RC_PATCHES gotcha's fix: pass PATCHES="${RC_PATCHES}" explicitly on any
+      in-phase restart). The judgment: the content sha (bit-equal sampled
+      outputs), the resumecost rows (the small-prompt front must NOT
+      regress), the deep fills (+8% claimed), hardmode (the loaded
+      judgment), and the g3 pre-restart counter capture.
 - [x] **deepdelta — the #1577 deep curve on both pins** (round 133, cont. 9):
       the same novel fills (50,960/101,948/203,882 tokens — the legs'
       prompt_tokens match exactly) on v1.2.1 and v1.2.2: **−2.6 to −3.5%

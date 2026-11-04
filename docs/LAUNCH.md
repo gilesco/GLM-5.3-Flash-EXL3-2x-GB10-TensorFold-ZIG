@@ -5307,3 +5307,30 @@ cuda_prompts.zig ×1, cuda_ranks_test.zig ×2. The full map + the window plan
 the ledger's open item. The chunk-pair verdict and the g3 counter find are
 committed (cont. 13); no window is running — the port continues next sitting
 with fresh context.
+
+## (round 133, cont. 15) THE ABSORB_MMA PORT COMPLETE AND SHIPPED: all 17 sites adapted, the diffstat identical to the original (2026-11-04)
+
+The 0041 (ABSORB_MMA) port is done: **all 17 rejected hunks re-anchored onto
+the v1.2.2 tree** via the scratch --reject + per-site python fixer (every
+site an exact-once assertion — two anchors needed disambiguating: forward's
+set() matches twice, the second builder untouched; "indexer" not "index").
+**The adapted diff's diffstat matches Mia's original exactly: 9 files, 247
+insertions, 7 deletions** — the strongest possible shape signal. Verified:
+fresh-tree apply-check alone, the stack (absorb < cost, alphabetical)
+applies, the symbol matrix complete, layout 16 → 17 with all three list
+sites + explain.
+
+**The restart discovery**: `restart` takes env pairs directly
+(`restart K=V ...` → `env "$@" ./scripts/start.sh`) — which both explains
+the cont.-13 RC_PATCHES loss (a restart only carries what it is handed) and
+gives the window its opt-in path. The deepfills phase now restarts with
+`TF_GLM_ABSORB_MMA=1 PATCHES="${RC_PATCHES:-}"` explicitly, and the g3
+/metrics capture moved BEFORE the restart (resumecost's resume traffic is
+what moves the counter; the phase's restart resets the serve).
+
+**LAUNCHED**: `RC_PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch"
+scripts/autonomous-launch.sh "preflight resumecost deepfills hmcheck summary"`
+— the judgment: the content sha (bit-equal outputs), the resumecost rows
+(the small-prompt front must NOT regress — the chunk pair's lesson), the
+deep fills (+8% claimed on their card), hardmode (the loaded judgment), and
+the g3 counter. The build is fresh (a new patch) — the window is ~35-45 min.

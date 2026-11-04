@@ -65,6 +65,27 @@ OWNER: this line. The stack verdict receipts: results/campaign-20261104-203617/
 and results/campaign-20261104-210211/ (the resumecost rows + the deepfills
 receipts + the g3 counter find: `tensorfold:prompt_tokens_cached_total`).
 
+## glm-mia-absorb-mma.patch (EXPERIMENTAL, 2026-11-04, round 133 cont. 15)
+
+The ABSORB_MMA port (Mia 0041, Apache-2.0): a prompt pass's absorb_q and
+expand_v MLA matmuls run as head-batched bf16 tensor-core GEMMs with fp32
+sums when `TF_GLM_ABSORB_MMA=1` (off by default — the fp32 summation order
+differs from the SIMT kernels; the numerics ride every rank fingerprint,
+layout 16 → 17, so disagreeing ranks refuse to start). 17 context-drifted
+hunks re-anchored onto the v1.2.2 tree; the diffstat matches the original
+exactly (9 files, 247 insertions, 7 deletions); glm_glue_num.cuh (the
+156-line kernel file) applies verbatim; the scratch stack verify passed
+(alone and under the cost tables, alphabetical). Their measurement (RTX PRO
+6000, 2048 rows × 32 heads): absorb 1.212 → 0.113 ms, expand 1.471 →
+0.093 ms per matmul, +8% prefill end-to-end, sampled outputs bit-equal to
+SIMT. SHIPPED with glm-mia-cost-tables.patch via
+`RC_PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch"` in the
+"preflight resumecost deepfills hmcheck summary" window; judged by the
+content gate (sampled-bit-equal → the greedy sha must hold), the resumecost
+rows (the small-prompt front must NOT regress — the chunk pair's lesson),
+and the deep fills. Graduates into config.sh's env only on
+receipts-equal-or-better.
+
 ## Candidates under watch (upstream PR scan, 2026-10-23)
 
 - **#1079 — DFlash2/lanes decode (+9–15% on qwen27, "replies unchanged")** — TESTED AND
