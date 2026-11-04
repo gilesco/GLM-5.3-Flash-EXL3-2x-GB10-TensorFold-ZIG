@@ -25,6 +25,13 @@ keep_newest() { # housekeeping must never block a stop
 if ssh -o BatchMode=yes "$WORKER" "docker ps -q --filter name=^/${CONTAINER_NAME}\$ | grep -q ." ; then
   save_log "$WORKER" 1 "rank 1 ($WORKER)"; keep_newest 1
   if ssh -o BatchMode=yes "$WORKER" "docker rm -f $CONTAINER_NAME" >/dev/null 2>&1; then
+    # the wedge guard (Mia 1104's restart race): rm -f can return with the old
+    # task still dying on a ~85 GiB container — poll, then warn if it lingers
+    for _i in $(seq 1 15); do
+      ssh -o BatchMode=yes "$WORKER" "docker inspect $CONTAINER_NAME >/dev/null 2>&1" 2>/dev/null || break
+      sleep 2
+    done
+    ssh -o BatchMode=yes "$WORKER" "docker inspect $CONTAINER_NAME >/dev/null 2>&1" 2>/dev/null && warn "rank 1's container name still present on $WORKER after 30 s (the task may be dying — the next start's wedge guard will wait)"
     echo "rank 1 stopped on $WORKER"
   else warn "rank 1's container could not be removed on $WORKER (docker there logs in?)"; fi
 else

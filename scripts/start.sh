@@ -157,11 +157,27 @@ fi
 step() { printf '[start.sh %s] %s\n' "$(date +%H:%M:%S)" "$*"; }  # the wall decomposition's ticks (round 125)
 step "the checks and the prepare check done"
 log "rank 1 on $WORKER (starts first; it follows rank 0's steps)"
+# the wedge guard (Mia 1104's restart race — their host needed a power cycle):
+# docker rm -f can return with the old task still dying on a ~85 GiB container;
+# poll until the name is genuinely absent on the worker and die-loud if it
+# never clears, instead of firing docker run over a dying task
+for _i in $(seq 1 30); do
+  worker "docker inspect $CONTAINER_NAME >/dev/null 2>&1" || break
+  sleep 2
+done
+if worker "docker inspect $CONTAINER_NAME >/dev/null 2>&1"; then
+  die "rank 1's old container is still present on $WORKER after 60 s — refusing to start over it (the Mia-1104 wedge)"
+fi
 worker "$rank1_cmd" >/dev/null || die "could not start rank 1 on $WORKER"
 
 log "rank 0 here: serving $MODEL_ID@$MODEL_REVISION at $HOST:$PORT (container $CONTAINER_NAME)"
 step "rank 1's container started on the worker"
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+for _i in $(seq 1 30); do
+  docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 || break
+  sleep 2
+done
+docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 && die "rank 0's old container is still present after 60 s — refusing to start over it (the Mia-1104 wedge)"
 "${rank0_cmd[@]}" >/dev/null
 step "rank 0's container started; waiting for /health"
 

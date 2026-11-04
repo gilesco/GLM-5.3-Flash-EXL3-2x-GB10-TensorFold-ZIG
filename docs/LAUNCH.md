@@ -5160,3 +5160,30 @@ ECOSYSTEM #1577 entry is dispositioned; the ledger carries the entry; the
 phase retired. The g3 /metrics hygiene check came back INCONCLUSIVE (neither
 the count nor the fallback landed in the receipt — the capture needs a
 cleaner re-run; the item stays open with that note).
+
+## (round 133, cont. 10) MIA'S 1104 RECIPE — a native-engine cousin for our hardware; the wedge guard adopted; the fold-in list ranked (2026-11-04)
+
+**(user)**: "Take a look at this https://github.com/MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104
+— what can we learn from it to fold into our solution?"
+
+**What it is**: Mia's lab's brand-new native-engine recipe for 2× GB10 — 105
+patches on their own pin (f350cd3e, a 1.1.9-era base), fp8 KV on shared pages
+(2.1M tokens), 1M window × 8 streams, ABSORB_MMA on, DFlash2 4-bit — with a
+full measurement campaign published (RESULTS.md, traps and retractions
+included). Cross-stack numbers (caveated): their decode is far behind ours
+(our v1.2.2 base decodes ~65% faster); **their prefill wins ~40%** (1,735-1,812
+tok/s flat vs our ~1,030-1,274 declining).
+
+**Adopted immediately — the wedge guard**: their campaign power-cycled a host
+on a restart race (docker rm -f returning with the old ~100 GiB task dying;
+docker run over it). Our three removal points (start.sh's rank-1 remote
+launch, rank-0's local launch, stop.sh's worker removal) now poll docker
+inspect until the name is genuinely absent — die-loud on launch, warn on
+stop. **The fold-in queue (the user prioritizes)**: #1 ABSORB_MMA (+8.0%
+prefill, identical answers — the port candidate), #2 the 4,096-row chunk
+(+7%, byte-identical — our round-131 rejection was on the old pin), #3 the
+fp8+pages marriage (the heavyweight port), #4 the cost-table correctness fix
+(0096/0097 — check upstream v1.2.2 first). The methodology adoptions: the
+per-passage NLL rule (never the aggregate mean), the
+never-consult-the-measured-endpoint rule, the host-drift awareness. Full
+disposition: docs/ECOSYSTEM.md (the 2026-11-04 entry).

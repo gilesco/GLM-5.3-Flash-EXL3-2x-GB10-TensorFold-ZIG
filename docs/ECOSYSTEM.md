@@ -573,6 +573,69 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
   checkpoint-rev lever with a concrete shape. (Out of scope, not tracked: other
   engines on GB10, other families' serving threads.)
 
+## 2026-11-04 — Mia's 1104 recipe: a native-engine cousin for our exact hardware (the fold-in analysis)
+
+**The find**: [MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104](https://github.com/MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104)
+(Apache-2.0, released 2026-11-04) — a **brand-new native-engine recipe for
+2× GB10**: `tensorfold-native` at their own pin `f350cd3e` (a 1.1.9-era base)
+plus **105 patches** (93 from their RTX PRO 6000 recipe + 12 GB10-specific),
+DFlash2 4-bit, `PARALLEL=8`, `CONTEXT=1048576`, **fp8 KV ON SHARED PAGES**
+(4,098 pages, 2.1M tokens), `DENSE=q8`, `HEAD=q8`, `ABSORB_MMA=1`. It ships a
+full measurement campaign (`docs/speed/RESULTS.md` — the traps and
+retractions left in). Not comparable head-to-head: their engine base is older
+(1.1.9 + patches vs our v1.2.2 upstream) and their harness differs (the
+client on a third Spark, fixed prompts, greedy).
+
+**The cross-stack numbers, caveated**: their decode (greedy prose ~37-38
+solo, 68-70 at 4 fixed streams) is far behind ours (63-64 solo, 149 c4
+aggregate) — our v1.2.2 base decodes ~65% faster. **Their prefill wins:
+1,735-1,812 tok/s FLAT to 256K vs our ~1,030-1,274 declining** — the patch
+stack's prefill work is the gap.
+
+**The fold-in list, ranked**:
+1. **ABSORB_MMA** (their patch, opt-in): **+8.0% prefill with identical
+   answers** — the biggest single prefill lever we lack. Port candidate #1
+   (Apache-2.0, portable; our prefill front 69% → ~75% if it holds).
+2. **The 4,096-row prompt chunk** (0094-0095, +7% prefill byte-identical,
+   DFlash2's MAX_CTX matched): our round-131 p4096 rejection was on the OLD
+   pin — their stack restructured the chunk path. Port candidate #2.
+   Together ~+15% prefill.
+3. **The fp8+pages marriage** (0017-0033): their pool holds 2.1M tokens on
+   12.5 GiB/rank — the combination our pin REFUSES ("fp8 keeps a window per
+   stream"). The heavyweight port (a project, the roadmap's pages×fp8 item).
+4. **~~The restart wedge guard~~ — DONE this sitting**: their campaign
+   **power-cycled a host** (`docker rm -f` returning with the old ~100 GiB
+   task still dying; `docker run` over it wedged the box). Our three removal
+   points (rank 1's remote launch, rank 0's local launch, stop.sh's worker
+   removal) now poll `docker inspect` until the name is genuinely absent and
+   die-loud/warn if it lingers.
+5. **The cost-table correctness (0096/0097)**: the engine's verify-cost
+   tables were +34%/+60% wrong on the intercepts, starving the adaptive
+   draft-allocation learner; the fix is output-neutral with an unmeasurable
+   throughput effect (their noise). Check whether v1.2.2 upstream carries the
+   corrected tables; port if not.
+6. **Methodology adoptions**: the fixed-prompt decode gate (ours already
+   matches), **per-passage NLL for numerics A/Bs — never the aggregate mean**
+   (their W8A8/q6 trap: the aggregate said better while the passages said
+   worse and the greedy answers moved), the never-consult-the-measured-
+   endpoint rule (their advisor shim pointed at the benchmark server and
+   polluted two legs), the ~1.5% host-state drift after long uptime (our
+   fresh-restart windows are protected), the interleaved ABA requirement at
+   the 1-2% level.
+7. **Their findings that confirm ours**: DFlash2 4-bit confirmed (bf16
+   drafter −3.7%), MTP a wash at 1 stream and −15/−17.5% at load,
+   `cached_tokens` 0 when nothing resumed (our unwired gotcha), the
+   draft-rule plateau (the confidence bracket nets zero — don't chase it),
+   the shared-side overlap real (falsified the other way: −1.4/−1.0/−0.7%).
+
+**What does not fold**: `DENSE=q8`/`HEAD=q8` as defaults (our dense4/head4 is
+measured faster on our pin and the hardmode tie holds), the 1M window / 8
+streams (outside our spec: 512K × 4, (user)), TP=4 (hardware we don't have),
+W8A8 (their own quality-priced off), `CONTEXT=auto`/memguard (nice patterns —
+noted for our scripts, low priority). **The ports are patch-port projects
+against our pin** (the patch-craft protocol: read their patches, adapt to the
+v1.2.2 tree, `git apply --check`, build, the A/B) — the user prioritizes.
+
 ## 2026-11-03 — v1.2.2 released (18:53, `00e7ddd`): the bump is ON — the GLM surface
 
 The watch fired: **v1.2.2 carries directly relevant GLM content**. The items,
