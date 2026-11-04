@@ -81,6 +81,22 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   or read the room from the engine's own serve line.
 - One concern per patch (patches/README rule 3): a bundled patch cannot be
   measured or dropped independently.
+- **A phase-level `restart` loses the window's RC_PATCHES** (2026-11-04,
+  campaign-20261104-210211): the wrapper's initial boot carries the patch env,
+  but an in-phase restart silently falls back to config.sh's PATCHES (empty) —
+  the later phases then measure the UNPATCHED serve while the receipt claims
+  the patched one. Detection: the serve line's rows-clause ("passes of up to
+  2048 rows" where 4096 was expected) and the memory numbers. Before any
+  phase of a patched window restarts the serve, re-assert the patch env
+  explicitly and verify the rows-clause in the receipt.
+- **Porting an instrument function is not copy-paste-simplify** (2026-11-04):
+  the deepdelta fill contract computes the repeat count in bash
+  (`n=$((d / 27))`) and passes model/tag/n as SEPARATE argv slots; inlining it
+  and passing the depth as the count built 1.37M-token fills that the
+  admission layer refused instantly — the receipt read "FAILED" with no
+  error surfaced. Keep the argv contract when porting a proven instrument;
+  sanity-check the built body's size (wc -c on the temp file) before the
+  first send.
 
 ## Verification
 

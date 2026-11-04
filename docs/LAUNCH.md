@@ -5289,3 +5289,21 @@ include-block context; cuda_engine.zig:188 Buffers.init context; the other 7
 files apply clean). A phase-level restart losing RC_PATCHES is logged as a
 gotcha (check the serve line's rows-clause whenever a patched window's phase
 restarts).
+
+## (round 133, cont. 14) THE ABSORB_MMA PORT MAPPED: 17 hunks across 7 files; the two trivial adaptations solved; the rest checkpointed for the next sitting (2026-11-04)
+
+The 0041 (ABSORB_MMA) reject survey is complete: 17 hunks across 7 files
+reject on our v1.2.2 tree (their base is a 1.1.9-era pin — the #1577-era
+upstream rework moved the contexts; the scratch --reject pass + manual fixes
+is the method). **Solved**: glm_glue.cu's include (append glm_glue_num.cuh
+after attn; their base carried a p2p include we lack) and cuda_engine.zig's
+`e.initNumerics();` (after our bp errdefer — their context had the pre-CS bp
+init). **Remaining (formulaic, per-site)**: cuda_ranks.zig ×7 — with the
+key detail that our Fingerprint layout is already 16 ("15 plus kda_pad";
+their base was 12), so the bump is 16 → 17 onto OUR field lists — plus the
+engine view/MTP Forward literals ×2, the Forward field, cuda_glue.zig ×2,
+cuda_prompts.zig ×1, cuda_ranks_test.zig ×2. The full map + the window plan
+(absorb-mma + cost-tables, TF_GLM_ABSORB_MMA=1, hardmode in PHASES) live in
+the ledger's open item. The chunk-pair verdict and the g3 counter find are
+committed (cont. 13); no window is running — the port continues next sitting
+with fresh context.
