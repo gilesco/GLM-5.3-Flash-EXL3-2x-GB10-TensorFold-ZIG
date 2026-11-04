@@ -5135,3 +5135,14 @@ loading 91% (GLM lacks TF_LOAD_PREFETCH upstream — gated), solo/c2/ITL/cold
 crossed, c4 + the concurrent resume gated/parked, warm 70% (the 0.09 s
 residual parked). The 8-hour run continues on the watch cadence (the wake-gap
 noted: one completion's poke never fired — monitored), the docs current.
+
+## (round 133, cont. 8) THE DEEPDELTA WINDOW — the #1577 deep curve on both pins (2026-11-04)
+
+The watch: v1.2.2 still latest (no new trigger). The one quantitative receipt
+left on the bump gets taken: **deepdelta** — the SAME novel fills
+(42,469/84,959/169,904 tokens — the postbump curve's sizes) on **v1.2.1
+(1db3edb) and v1.2.2 (00e7ddd)**, the pin swapped twice in one window (each
+leg's prepare explicit per the pinbump pattern; each leg's engine commit
+receipted from the log). The duel already receipted the 8k slope −3.5%; the
+deep fills quantify the gain where #1577's 5-14% claim lives (32-167K). The
+g3 /metrics cache-counter hygiene check rides leg 2 (it needs a live serve).
