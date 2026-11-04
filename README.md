@@ -146,7 +146,7 @@ The ones that matter:
 | `NCCL_SOCKET_IFNAME` / `NCCL_IB_HCA` | *(required)* | netdevs NCCL may use; the two cabled RoCE devices for the engine's gather and NCCL RDMA |
 | `TF_REF` / `TF_COMMIT` / `TF_REPO` | `v1.2.2` (via local.sh) / upstream | the TensorFold line to track; pin via `local.sh` (see above) |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint — the TR3 quant (the round-132 (user) swap; 94/104 hardmode, the best top-8 decode); present on both hosts (staged) |
-| `PATCHES` | *(empty — patches are opt-in by name)* | **glm-tail-release RETIRED (the round-133 bump)**: #1884 mainlined the page-cache release for every CUDA family and the no-patch serve is byte-identical on memory (campaign-20261103-230631 arm D). The served pack's weights are pristine upstream; `glm-topk4b.patch` remains opt-in for the top4cfg/AZ cells — [patches/README.md](patches/README.md) |
+| `PATCHES` | `glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch` | **the Mia-1104 fold-in stack (the round-133 adoption)**: ABSORB_MMA (a prompt's absorb_q/expand_v as tensor-core GEMMs, opt-out `TF_GLM_ABSORB_MMA=0`) + the GB10 verify-cost tables — the deep fills −6.8/−7.0/−6.9%, greedy byte-identical (campaign-20261104-213422); history: glm-tail-release RETIRED (#1884 mainlined it), glm-topk4b stays opt-in for the top4cfg/AZ cells — [patches/README.md](patches/README.md) |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` and the snapshot is present (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` / `PARALLEL` | `524288` / `4` | window and streams — the qualified optimum |
 | `DRAFTS` | `1` | `0` → `--no-drafts` (the serial reference); `1` drafts with DFlash2 (else the MTP head) |
@@ -154,6 +154,7 @@ The ones that matter:
 | `DENSE_BITS` / `HEAD_BITS` | `4` / `4` | pack the dense linears / head at load: the measured speed leader (monotonic 4<6<8<16); with fp8 KV this is the qualified serving config |
 | `VISION` | `1` | `--vision --vision-image-tokens 2048` — the standing default (the round-51 (user) call); `0` serves text-only. The vision test assets: `assets/vision/` via `scripts/vision-suite-probe.py` |
 | `TF_GLM_INDEX_CUDA` | `1` | the DSA indexer's dedicated CUDA kernels — the depth-ladder TTFT gains grow with depth; set `0` to compare |
+| `TF_GLM_ABSORB_MMA` | `1` | a prompt pass's absorb_q/expand_v as head-batched bf16 tensor-core GEMMs with fp32 sums (the Mia-1104 0041 port; decode windows keep the SIMT kernels) — the deep fills −6.8/−7.0/−6.9%; the fp32 summation order differs from SIMT, hence the opt-out `0`; the numerics ride every rank fingerprint (layout 17), so disagreeing ranks refuse to start; needs `PATCHES` |
 | `PDL` | `0` | `1` → programmatic dependent launch on the mm kernels (hurt dense4 in the matrix — the ledger) |
 | `RECALL` / `PROMPT_CACHE_GIB` | `0` / engine default | the drafts-copy-from-text cache; the kept-states store's size cap |
 | `SERVED_NAME` / `PORT` / `HOST` | `GLM-5.3-Flash-EXL3` / `8001` / `0.0.0.0` | API surface — **this line always serves the testing port 8001** |

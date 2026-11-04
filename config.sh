@@ -210,7 +210,7 @@ PROMPT_K="${PROMPT_K:-}"
 # the top4cfg checkpoint requires. Receipts: perf campaign-20261024-135458 (solo 108% of
 # production, c2 103%, c4 78%, slope 0.593) and the battery campaign-20261024-142659
 # (§2 gates ALL PASS, tool-eval 93/100 above stock's 92, hardmode 89 vs production's 91).
-PATCHES="${PATCHES-}"   # EMPTY since round 133 (cont. 5): glm-tail-release RETIRED — #1884 (v1.2.2) mainlined the page-cache release for every CUDA family and the no-patch serve is byte-identical on memory (84.75 GiB model, 13.9 GiB left — campaign-20261103-230631 arm D; the with-patch serve: 13.9-14.2). The patch's history: on v1.2.0 the 16-reader load-ahead left the tail's ~2-3 GiB resident and admission tripped 0.12 GiB short (campaign-20261031-004214); the release restored the room (the qualification passed at 93.0 s, campaign-20261031-142431). ${PATCHES-} (no colon): unset AND empty both mean no patches — a patch is opt-in by name (glm-topk4b.patch for the top4cfg/AZ cells)
+PATCHES="${PATCHES-glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch}"   # the qualified optimum (2026-11-04, round 133 cont. 16): the Mia-1104 ABSORB_MMA port + the GB10 verify-cost tables. Receipts: the deep fills -6.8/-7.0/-6.9% (campaign-20261104-213422 deepfills), the small-prompt front clean, greedy byte-identical (sha 9e04a49e5786), 93.9 s warm-cache boot, 13.9 GiB left; the confirmation window (cont. 16) re-runs hardmode + the gates on this stack. HISTORY: EMPTY since cont. 5 — glm-tail-release RETIRED (#1884 v1.2.2 mainlined the page-cache release; the no-patch serve byte-identical on memory). ${PATCHES-} (no colon): unset -> this default, EMPTY -> no patches (the opt-out; glm-topk4b.patch stays opt-in for the top4cfg/AZ cells)
 
 # TEMPERATURE: the server's default sampling temperature (stock default 1.0). TensorFold
 # drafts with DFlash2 on greedy (temperature 0) requests only — agent frameworks that send
@@ -325,6 +325,17 @@ case "$PROMPT_K" in ""|shape) ;; *) die "PROMPT_K must be empty (v1.1.1 default)
 # off-arm slopes rising vs flat on-arm, §2 gates ALL PASS, the duel within noise, loading/
 # decode/d0 unchanged. ADOPTED as the standing default (round 49); unset to compare.
 export TF_GLM_INDEX_CUDA="${TF_GLM_INDEX_CUDA:-1}"
+# ABSORB_MMA (the qualified optimum, 2026-11-04, round 133 cont. 16): a prompt pass's
+# absorb_q and expand_v MLA matmuls run as head-batched bf16 tensor-core GEMMs with fp32
+# sums (the Mia-1104 0041 port; the SIMT kernels keep decode windows). Receipts: the deep
+# fills -6.8/-7.0/-6.9% (0.735/0.727/0.738 vs the standing 0.788/0.782/0.793 ms/tok at
+# 43.7k/87.4k/174.8k — campaign-20261104-213422 deepfills; the fill-rate drop is itself
+# the proof the MMA kernels ran), the small-prompt front clean (the resumecost rows on
+# the patches-staged serve), greedy byte-identical (sha 9e04a49e5786), 93.9 s warm-cache
+# boot, 13.9 GiB left. The fp32 summation ORDER differs from SIMT, hence the opt-out:
+# TF_GLM_ABSORB_MMA=0. The numerics ride every rank fingerprint (layout 17): ranks that
+# disagree refuse to start. Needs PATCHES (below) — the kernels ship in the overlay.
+export TF_GLM_ABSORB_MMA="${TF_GLM_ABSORB_MMA:-1}"
 case "$TEMPERATURE" in ""|*) [[ -z "$TEMPERATURE" ]] || [[ "$TEMPERATURE" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "TEMPERATURE must be a number (0 enables DFlash2 drafts on every request; empty: the engine default 1.0)" ;; esac
 
 # --- site identity must be set (scripts/local.sh) -------------------------------------------

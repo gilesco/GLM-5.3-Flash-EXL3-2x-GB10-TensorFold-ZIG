@@ -5334,3 +5334,36 @@ scripts/autonomous-launch.sh "preflight resumecost deepfills hmcheck summary"`
 (the small-prompt front must NOT regress — the chunk pair's lesson), the
 deep fills (+8% claimed on their card), hardmode (the loaded judgment), and
 the g3 counter. The build is fresh (a new patch) — the window is ~35-45 min.
+
+## (round 133, cont. 16) THE ABSORB_MMA VERDICT: the +7% claim LANDS (−6.8/−7.0/−6.9%); the stack ADOPTED into config.sh; the confirmation window launched (2026-11-04)
+
+**campaign-20261104-213422 (the verdict window)**:
+- **The deep fills on the full stack (ABSORB ON)**: 32.08/63.54/129.05 s at
+  43,682/87,386/174,758 tokens = **0.735/0.727/0.738 ms/tok vs the standing
+  0.788/0.782/0.793 — −6.8/−7.0/−6.9%. Mia's +7% prefill claim lands almost
+  exactly on our shape** (the fill-rate drop is itself the proof the MMA
+  kernels ran — nothing else in the stack touches prefill).
+- **The g3 item CLOSES**: `tensorfold:prompt_tokens_cached_total 126976`
+  after resumecost's traffic (pre-restart capture) — the counter is wired;
+  the 0 post-restart is the fresh serve, consistent.
+- **The fingerprint pairing (layout 17) verified by the healthy boot** — the
+  port's riskiest bit (rank pairing) works.
+- **The boot order decoded**: hmcheck ran FIRST bare (its 94 = the standing
+  control, NOT the stack judged) and resumecost ran patches-staged with
+  ABSORB off (its rows clean: d4096 warm 1.91 restored, d8192 cold 5.38 /
+  warm 1.40 — no regression). So the missing pieces: the sha + the
+  small-prompt rows on the ABSORB-ON serve, and hardmode on the stack.
+- Memory 13.9 GiB left (−0.2 vs standing), boot 93.9 s warm-cache — flat.
+
+**THE ADOPTION** (the bump pattern: the config edit makes the candidate the
+thing the standing phases test): config.sh now carries
+`PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch"` (unset → the
+stack, EMPTY → the opt-out) and `TF_GLM_ABSORB_MMA=1` (the generic TF_GLM_*
+env passthrough reaches both ranks). README's PATCHES row + a new
+TF_GLM_ABSORB_MMA row.
+
+**LAUNCHED (the confirmation window)**: `scripts/autonomous-launch.sh
+"preflight resumecost hmcheck summary"` — bare restarts now inherit the
+adopted stack, so the resumecost probes receipt the sha + the small-prompt
+rows on the ABSORB-ON serve and hmcheck judges the stack loaded. The duel
+re-pair + the vision re-check follow on the next window.
