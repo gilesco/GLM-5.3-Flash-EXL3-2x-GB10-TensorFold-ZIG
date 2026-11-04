@@ -5367,3 +5367,29 @@ TF_GLM_ABSORB_MMA row.
 adopted stack, so the resumecost probes receipt the sha + the small-prompt
 rows on the ABSORB-ON serve and hmcheck judges the stack loaded. The duel
 re-pair + the vision re-check follow on the next window.
+
+## (round 133, cont. 17) THE CONFIRMATION WINDOW: hardmode 95 ON THE STACK (a point above production); the resumecost override caught and fixed (2026-11-04)
+
+**campaign-20261104-224230**:
+- **hardmode on the full stack: 95/104** — the first boot inherited the
+  adopted config (the serve line's 13.9 GiB / 2.6 GiB cache = the ABSORB-ON
+  shape) and scored a point ABOVE production's 94 (the standing control the
+  same day: 94). The restart wall 120 s. The stack's quality receipt is
+  better-or-equal.
+- **The plumbing catch**: the resumecost phase's restart carried
+  `PATCHES="${RC_PATCHES:-}"` — the RC_PATCHES-era mechanism; with
+  RC_PATCHES unset it expanded EMPTY and defeated the config.sh adoption
+  (the rows ran on the pristine serve). Silver lining: those rows are the
+  FIRST clean v1.2.2-pristine resumecost baseline (d2048 1.69 / d4096
+  3.64→1.92 / d8192 5.41→1.41, sha 9e04a49e5786). **Fixed** to the nested
+  form `${RC_PATCHES-${PATCHES-}}` (an explicit RC_PATCHES still wins; the
+  unset case inherits the adopted default) in both the resumecost phase and
+  the deepfills phase.
+- The trackers: the ledger's ABSORB item + the g3 closure committed, the
+  ECOSYSTEM #1 dispositioned ADOPTED, the anchors' cold row carries the
+  adopted deep curve (0.727-0.738).
+
+**LAUNCHED (window C)**: `scripts/autonomous-launch.sh "preflight resumecost
+summary"` — with the override fixed, the resumecost phase now receipts the
+sha + the small-prompt rows on the ABSORB-ON serve (the last gap in the
+stack's confirmation). The duel re-pair + the vision re-check follow.

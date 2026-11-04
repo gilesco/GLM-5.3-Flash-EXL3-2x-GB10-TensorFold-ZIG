@@ -222,6 +222,11 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       counter is the wired instrument.** The nonzero reading (a resume hit)
       rides the next window with resume traffic; consider
       pinning the upstream ref in prepare so receipts stop drifting with HEAD.
+- [x] **The g3 `/metrics` cache-counter check — CLOSED** (round 133, cont.
+      16): `tensorfold:prompt_tokens_cached_total` read **126,976** after
+      resumecost's resume traffic (the pre-restart capture,
+      campaign-20261104-213422) — the counter is fully wired; the API usage
+      field stays 0 (the known gotcha), /metrics is the instrument.
 - [x] **One-command campaign** (`scripts/run-qualification.sh`, 2026-10-23): preflight →
       production reference probe → parity cells → fp8-KV exactness gates (VALIDATION §2)
       → depth probes → structured-output cliff → prefill probe → 524288 rung → summary.
@@ -301,23 +306,35 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
-- [ ] **ABSORB_MMA (0041) port — SHIPPED to the window** (round 133, cont.
-      15; opened cont. 14): ALL 17 sites adapted onto the v1.2.2 tree — the
-      adapted diff's diffstat matches the original exactly (9 files, 247
-      insertions, 7 deletions); the Fingerprint layout bumps OUR 16 → 17;
-      glm_glue_num.cuh (156 lines of CUDA) applies verbatim. Verified: the
-      fresh-tree apply-check passes alone and the stack (absorb + cost
-      tables) applies in alphabetical order; the symbol matrix is complete
-      (engine 3, forward 2, glue Set+2 kernels+2 load sites, prompts 1,
-      ranks 8 numerics sites, the test list + the new test block). The
-      window: RC_PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch"
-      PHASES "preflight resumecost deepfills hmcheck summary" with
-      TF_GLM_ABSORB_MMA=1 (the restart takes env pairs directly — the
-      RC_PATCHES gotcha's fix: pass PATCHES="${RC_PATCHES}" explicitly on any
-      in-phase restart). The judgment: the content sha (bit-equal sampled
-      outputs), the resumecost rows (the small-prompt front must NOT
-      regress), the deep fills (+8% claimed), hardmode (the loaded
-      judgment), and the g3 pre-restart counter capture.
+- [ ] **ABSORB_MMA (0041) port — ADOPTED, the confirmation window running**
+      (round 133, cont. 16): the verdict receipt (campaign-20261104-213422)
+      — the deep fills on the full stack **−6.8/−7.0/−6.9%** (0.735/0.727/
+      0.738 vs the standing 0.788/0.782/0.793 ms/tok; the fill-rate drop
+      proves the MMA kernels ran), the g3 counter **126,976** after
+      resumecost's traffic (CLOSED — the counter is wired), the fingerprint
+      pairing (layout 17) verified by the healthy boot, memory −0.2 GiB, the
+      warm-cache boot 93.9 s. The boot order decoded: hmcheck ran bare (94 =
+      the standing control) and resumecost ran ABSORB-off (its rows clean:
+      the d4096 warm 1.91 restored, d8192 5.38/1.40 — no regression).
+      **config.sh adopted the stack** (PATCHES default = absorb+cost,
+      TF_GLM_ABSORB_MMA=1; README rows updated). The confirmation window
+      ("preflight resumecost hmcheck summary", bare restarts inherit the
+      stack) receipts the sha + the small-prompt rows on the ABSORB-ON serve
+      and hardmode on the stack; the duel re-pair + the vision re-check
+      follow.
+- [x] **The ABSORB_MMA confirmation window** (round 133, cont. 17): hardmode
+      on the full stack (the first boot inherited the adopted config — the
+      serve line's 13.9 GiB / 2.6 GiB cache is the ABSORB-ON shape):
+      **95/104 — one point ABOVE production's 94** (the standing control in
+      the prior window: 94). The restart wall 120 s. **The plumbing catch**:
+      the resumecost phase carried a `PATCHES="${RC_PATCHES:-}"` override
+      from the RC_PATCHES era — with RC_PATCHES unset it expanded to EMPTY,
+      defeating the config.sh adoption (its rows ran pristine: the first
+      clean v1.2.2-pristine resumecost baseline — d2048 1.69, d4096
+      3.64→1.92, d8192 5.41→1.41, sha ✓). FIXED to the nested form
+      (`${RC_PATCHES-${PATCHES-}}`): an explicit RC_PATCHES still wins, the
+      unset case inherits the adopted default. The stack's sha +
+      small-prompt receipt rides the next resumecost run.
 - [x] **deepdelta — the #1577 deep curve on both pins** (round 133, cont. 9):
       the same novel fills (50,960/101,948/203,882 tokens — the legs'
       prompt_tokens match exactly) on v1.2.1 and v1.2.2: **−2.6 to −3.5%

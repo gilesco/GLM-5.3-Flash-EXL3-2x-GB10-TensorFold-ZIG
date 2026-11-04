@@ -593,9 +593,14 @@ aggregate) — our v1.2.2 base decodes ~65% faster. **Their prefill wins:
 stack's prefill work is the gap.
 
 **The fold-in list, ranked**:
-1. **ABSORB_MMA** (their patch, opt-in): **+8.0% prefill with identical
-   answers** — the biggest single prefill lever we lack. Port candidate #1
-   (Apache-2.0, portable; our prefill front 69% → ~75% if it holds).
+1. **ABSORB_MMA — DISPOSITIONED (cont. 16): ADOPTED.** Ported (0041, all 17
+   hunks re-anchored onto v1.2.2; the diffstat identical to the original)
+   and measured: **the deep fills −6.8/−7.0/−6.9%** (0.735/0.727/0.738 vs
+   the standing 0.788/0.782/0.793 ms/tok — the +7-8% claim lands on our
+   shape), greedy byte-identical, hardmode **95 on the stack** (≥ the 94
+   tie), the small-prompt front clean, memory −0.2 GiB, the fingerprint
+   layout 16→17 pairing verified. Adopted into config.sh (PATCHES default +
+   TF_GLM_ABSORB_MMA=1). Receipts: campaign-20261104-213422 and -224230.
 2. **~~The 4,096-row prompt chunk~~ — DISPOSITIONED (cont. 12-13): REJECTED
    for our line.** Ported (0094 adapted + 0095) and measured in two windows:
    builds/boots healthy, replies byte-identical, loading fine (94.6 s

@@ -1048,7 +1048,7 @@ if want deepfills && ! phase_done deepfills; then
   # so it never depends on phase order or a prior phase's boot — and a restart
   # only carries what it is handed (the gotcha: RC_PATCHES does NOT propagate),
   # so the patch env and the window's opt-in knobs are passed explicitly
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_ABSORB_MMA=1 PATCHES="${RC_PATCHES:-}"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_ABSORB_MMA=1 PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- the g3 counter after resumecost's traffic (pre-restart): $(grep -o "tensorfold:prompt_tokens_cached_total [0-9]*" "$OUT/g3-resumecost.txt" 2>/dev/null | tail -1 || echo absent)" >> "$P"
   echo "- engine: $(grep "TensorFold commit" "$LOG" 2>/dev/null | tail -1)" >> "$P"
   echo "- patches staged: $(grep -o "glm-mia-[a-z0-9-]*\.patch" "$LOG" 2>/dev/null | sort -u | tr '\n' ' ')" >> "$P"
@@ -2145,7 +2145,7 @@ if want resumecost && ! phase_done resumecost; then
     log "resumecost: restarting the testing stack (the standing config)"
     ( while true; do echo "$(date +%H:%M:%S) $(nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader,nounits 2>/dev/null)" >> "$OUT/boot-mem.log"; sleep 3; done ) &
     RC_SAMPLER=$!
-    if ! restart MODEL_ID=local/GLM-5.3-Flash-AZ-Focus-EXL3 MODEL_REVISION=main DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 VISION=0 TF_GLM_PROF=1 PATCHES="${RC_PATCHES:-}"; then
+    if ! restart MODEL_ID=local/GLM-5.3-Flash-AZ-Focus-EXL3 MODEL_REVISION=main DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 VISION=0 TF_GLM_PROF=1 PATCHES="${RC_PATCHES-${PATCHES-}}"; then
       kill "$RC_SAMPLER" 2>/dev/null || true
       echo "- our serve refused to start — the phase is void" >> "$P"
       touch "$OUT/.resumecost.done"; exit 0
