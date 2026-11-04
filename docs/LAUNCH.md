@@ -5216,3 +5216,39 @@ glm-mia-dflash2-ingest.patch" scripts/autonomous-launch.sh "preflight
 resumecost deepfills summary"` — the receipt (content gate sha, the deep-fill
 delta, the boot wall, the serve line's memory) judges the stack. ABSORB_MMA
 (0041, 28 KB of CUDA) is the next port after this verdict.
+
+## (round 133, cont. 12) THE MIA STACK'S FIRST WINDOW: builds, boots, byte-identical — but the small-prompt front REGRESSES; the deep fills hit a phase bug (2026-11-04)
+
+**campaign-20261104-203617** (the stack's first window): the build applied all
+three patches clean, the boot came up healthy — **"prompts in passes of up to
+4096 rows"** (chunk4096 live), 13.7 GiB left (−0.4 vs standing), load 142.1 s
+(0/47 cached files — a COLD page cache from the fresh image build; the re-run
+settles whether the patch itself costs loading). The content receipts:
+**sha=9e04a49e5786 on every probe — byte-identical replies** (the ship check
+PASSES), and the resume path works at the new boundary (resumed at 4096).
+
+**But the same-instrument resumecost rows (both sides run TF_GLM_PROF=1
+VISION=0 — the standing resumecost pattern, so the comparison is clean)**:
+- d2048 (1886 tok) cold: 1.710 → 1.673 s (~2% faster)
+- d4096 (3737 tok) cold: 3.709 → 3.711 s (identical); **warm: 1.964 → 3.717 s
+  — the resume benefit LOST** (the patched cache shows resumed at 0, misses:
+  a 4096-row cut is bigger than a 3737-token prompt, so nothing resumes)
+- d8192 (7442 tok) cold: 5.55 → 7.17 s (**+29%**); warm: 1.44 → 3.22 s
+  (**+124%**)
+
+The mechanism is structural: states cut at 4096-row boundaries — sub-4096
+prompts can't partially resume. Mia's workload (fixed deep prompts, 8
+streams) never feels this; **our opencode workload lives on small/medium warm
+resumes — our weakest front (70%)**.
+
+**The deep fills did not run**: two compounding bugs — my deepfills phase
+passed the depth as the REPEAT COUNT (n=32768 repeats ≈ 1.37M-token fills →
+instant refusals), and the phase ran before the boot (no restart of its own —
+the greps found an empty log, the curls hit a dead serve). Fixed: n=d/27 in
+bash with its own argv slot, the phase is self-contained (its own restart, the
+deepdelta pattern), the receipt lines hardened, the resume-evidence tail
+added. **RE-LAUNCHED**: the same PHASES with the fixed phase; the image is
+cached so the window is fast. The verdict framework: the deep fills decide
+whether Mia's +7% holds on our shape, but the warm-resume granularity loss is
+already disqualifying for OUR line unless the user weighs it otherwise
+(the bump protocol: receipts-equal-or-better — the warm row would regress).

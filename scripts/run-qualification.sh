@@ -1041,12 +1041,16 @@ if want deepfills && ! phase_done deepfills; then
   P="$OUT/deepfills.md"; : > "$P"
   echo "# deepfills (the patched serve: chunk4096 + cost-tables + dflash2-ingest)" >> "$P"
   echo "- RC_PATCHES: ${RC_PATCHES:-unset}" >> "$P"
-  echo "- engine: $(grep "TensorFold commit" "$LOG" | tail -1)" >> "$P"
-  echo "- patches seen in the log: $(grep -o "glm-mia-[a-z0-9-]*\.patch" "$LOG" | sort -u | tr '\n' ' ')" >> "$P"
+  # self-contained (the deepdelta pattern): this phase restarts the serve itself
+  # so it never depends on phase order or a prior phase's boot
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  echo "- engine: $(grep "TensorFold commit" "$LOG" 2>/dev/null | tail -1)" >> "$P"
+  echo "- patches staged: $(grep -o "glm-mia-[a-z0-9-]*\.patch" "$LOG" 2>/dev/null | sort -u | tr '\n' ' ')" >> "$P"
   echo "- server: $(serve_line)" >> "$P"
   for d in 32768 65536 131072; do
+    n=$((d / 27))
     bf=$(mktemp /tmp/deepfill.XXXXXX.json)
-    python3 -c "import json,sys; n=int(sys.argv[1]); print(json.dumps({'model':sys.argv[2],'messages':[{'role':'user','content':('Deep fill mia-d%s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[1]) * n}],'max_tokens':1}))" "$d" "$SERVED_NAME" > "$bf"
+    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':('Deep fill mia-d%s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[2]) * int(sys.argv[3])}],'max_tokens':1}))" "$SERVED_NAME" "$d" "$n" > "$bf"
     curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
       "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
       -d @"$bf" 2>/dev/null | python3 -c '
@@ -1058,6 +1062,8 @@ m = re.search(r"ttft=([0-9.]+) total=([0-9.]+)", tim)
 print("cold fill @ d%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], d["usage"]["prompt_tokens"], m.group(1)))' "$d" >> "$P" 2>/dev/null || echo "cold fill @ d$d: FAILED" >> "$P"
     rm -f "$bf"
   done
+  echo "- the last serve lines (the resume evidence):" >> "$P"
+  grep -E "prompt cache:|done chatcmpl" "$LOG" 2>/dev/null | tail -6 | sed 's/^/  /' >> "$P" || true
   curl -s -m 10 "http://127.0.0.1:$PORT/metrics" -o "$OUT/g3-metrics.txt" || true
   {
     echo "- the g3 hygiene: cached-counter lines in /metrics ($(wc -l < "$OUT/g3-metrics.txt" 2>/dev/null || echo 0) total lines):"
