@@ -5107,3 +5107,31 @@ them) — arm D never ran. The definition added; relaunched (arms re-run; the
 KV_HOST warm check and the patch arm land their receipts). Arm C's serve
 shape re-confirmed: model 82.03, the device pool 1.50 GiB, a 13.6 GiB prompt
 cache, 16.1 GiB left.
+
+## (round 133, cont. 7) THE POSTBUMP VERDICTS: the deep curve reproduced; the patch retirement confirmed on speed too; KV_HOST non-viable here (2026-11-04)
+
+**The third postbump run (campaign-20261103-235114) completes the arc**:
+- **Arm A — the deep-prefill curve REPRODUCED**: 33.67/66.88/133.44 s at
+  42,469/84,959/169,904 tokens (the re-run Δ < 0.5%) — **linear at ~0.785
+  ms/tok, no depth blowup inside the 512K window**. The front's deep evidence
+  (the #1577 delta stays at the 8k duel's −3.5%; no v1.2.1 deep comparison was
+  run).
+- **Arm D — the patch retirement CONFIRMED on speed too**: the no-patch serve
+  at 14.1 GiB left (identical memory) and its 87.4k fill at 68.8 s — **the
+  same 0.787 ms/tok rate as the with-patch curve**. glm-tail-release is
+  retired from the default PATCHES (empty; opt-in by name), noted in
+  patches/README.md.
+- **Arm C — TF_GLM_KV_HOST is NON-VIABLE on our shape**: refused on fp8 (the
+  engine names pages+bf16); on bf16+pages the serve comes up (the device pool
+  1.50 GiB, a 13.6 GiB prompt cache) but **every request timed out** (600 s
+  deep, 300 s warm × 2) — the host-side KV path does not answer at 512K×4.
+  The WARM row's named pattern (#1795) is closed for this line; the standing
+  0.302 s hit (70%) stands. Dispositioned in ECOSYSTEM.md.
+- **Arm B — the fp8 refusal re-receipted** (the engine's own requirement line).
+
+**The perf plan's state after the bump**: every named lever is adopted,
+measured out, parked with a price, or upstream-gated — quality tied (94=94),
+loading 91% (GLM lacks TF_LOAD_PREFETCH upstream — gated), solo/c2/ITL/cold
+crossed, c4 + the concurrent resume gated/parked, warm 70% (the 0.09 s
+residual parked). The 8-hour run continues on the watch cadence (the wake-gap
+noted: one completion's poke never fired — monitored), the docs current.

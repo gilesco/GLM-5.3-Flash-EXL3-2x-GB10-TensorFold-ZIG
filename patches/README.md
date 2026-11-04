@@ -1,3 +1,9 @@
+<!-- ROUND 133 (cont. 7): glm-tail-release is RETIRED from the default PATCHES
+(empty since the v1.2.2 bump) — #1884 mainlined the page-cache release for every
+CUDA family and the no-patch serve is byte-identical on memory AND speed
+(campaign-20261103-235114 arm D: 14.1 GiB left, 68.8 s at an 87k fill — the same
+rate as the with-patch curve). The patch stays here as history and re-runs only
+if the line ever pins below v1.2.2. -->
 # Patch overlay policy
 
 This directory carries **optional local patches** applied to the TensorFold tree at image

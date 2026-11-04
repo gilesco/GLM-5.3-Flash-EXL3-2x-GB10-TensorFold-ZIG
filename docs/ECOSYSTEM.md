@@ -594,10 +594,14 @@ dispositioned for our line (the TR3 pack, 2×GB10 TP=2, dense4fp8, DFlash2, visi
   cross-rank byte verify on EVERY restart — a cached digest may skip it warm →
   the loading front's re-take. HIGH.
 - **#1795 — `TF_GLM_KV_HOST`: the KV pages' latent rows in pinned host memory**
-  (for 1M-token windows on 96 GB cards; unset = identical tokens at TP=2 on two
-  GB10s) — **the WARM row's named upstream pattern (#1795) landed**. A knob
-  test after the bump (on our unified-memory shape the pinned-host trade is
-  unmeasured). MEDIUM-HIGH.
+  — **DISPOSITIONED (cont. 7): non-viable on our shape**. On fp8 the engine
+  refuses it by name ("set TF_KV_PAGES=on (and --kv-cache bf16) as well"); on
+  bf16+pages the serve comes up with a striking shape (the device pool
+  collapses to 1.50 GiB, a 13.6-14.1 GiB prompt cache) but **every request
+  timed out** (600 s deep / 300 s warm × 2) — the host-side KV path does not
+  answer at our 512K×4 shape. The WARM front's named pattern is closed for
+  this line; the standing 0.302 s same-session hit (70% of production's skip)
+  stands.
 - **#1842 — `TF_GLM_CHUNK_SOLO=4096` beside `--drafter` is REFUSED at load**
   ("it held 1.6-1.9 GiB of prompt buffers that no pass used") — **validates the
   (user) CS hold**; the knob is drafter-incompatible upstream now. BEHAVIOR
