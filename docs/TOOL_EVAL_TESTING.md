@@ -215,8 +215,12 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       its second line ran standalone with $f unset and echoed 0. The probe now
       feeds the snippet via stdin (`bash -s <<<"$snippet"`); the worker
       delivers 3834 MHz, the head 3892 (healthy X925). Remaining hygiene: the
-      g3 `/metrics` cache-counter check (needs a live serve — rides the next
-      window); consider
+      g3 `/metrics` cache-counter check — **the counter is FOUND (cont. 13):
+      `tensorfold:prompt_tokens_cached_total` ("prompt tokens of finished
+      requests restored from kept prompt states") exists in /metrics (294
+      lines); the API usage field stays 0 (the known gotcha) — the /metrics
+      counter is the wired instrument.** The nonzero reading (a resume hit)
+      rides the next window with resume traffic; consider
       pinning the upstream ref in prepare so receipts stop drifting with HEAD.
 - [x] **One-command campaign** (`scripts/run-qualification.sh`, 2026-10-23): preflight →
       production reference probe → parity cells → fp8-KV exactness gates (VALIDATION §2)

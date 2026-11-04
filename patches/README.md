@@ -27,40 +27,43 @@ and the Docker build applies them right after the TensorFold checkout.
    configuration, not patches. Port a patch only when its measured win is worth the
    rebase tax on every future version bump.
 
-## The Mia 1104 fold-in stack (EXPERIMENTAL, 2026-11-04, round 133 cont. 11)
+## The Mia 1104 fold-in stack (verdicts 2026-11-04, round 133 cont. 12-13)
 
-Three patches ported from [MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104](https://github.com/MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104)
-(Apache-2.0) against TensorFold `00e7ddd` (v1.2.2); shipped together via
-`RC_PATCHES="glm-mia-chunk4096.patch,glm-mia-cost-tables.patch,glm-mia-dflash2-ingest.patch"`
-(alphabetical order is load-bearing: chunk4096 → cost-tables → dflash2-ingest).
-The scratch-repo stack verify passed (each applies, in order and alone; symbol
-greps clean — every consumer reads the constants, `WIN` stays 2048 by design).
+Ported from [MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104](https://github.com/MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104)
+(Apache-2.0) against TensorFold `00e7ddd` (v1.2.2). The scratch-repo stack
+verify passed; two windows measured them (campaign-20261104-203617 and
+-210211). **The chunk pair is REJECTED for our line; the cost tables stay
+staged.**
 
-- **glm-mia-chunk4096.patch** — `prefill_rows` 2048 → 4096 (cuda_state.zig).
-  A prompt chunk's rows double, amortizing the EXL3 trellis decode over 2× the
-  rows (with 288 routed experts × 45 layers, the largest fixed cost in a
-  prompt pass). Mia measured **+7% prefill, byte-identical replies**; our
-  round-131 p4096 rejection was on the old pin. COST: the chunk device scratch
-  roughly doubles (their pair: +1.58 GiB prompt buffers, +0.57 GiB drafter
-  share). ADAPTED: trailing hunk context only (their base carries
-  `window_rows = 16`, ours 8).
-- **glm-mia-dflash2-ingest.patch** — DFlash2 `MAX_CTX` 2048 → 4096
-  (dflash.zig). The drafter's context CAPACITY follows the wider chunk;
-  without it the pair dies at the first real prefill
-  (`DrafterContextTooWide`). `WIN` stays 2048 by design (a sliding window,
-  not a capacity).
-- **glm-mia-cost-tables.patch** — cuda_lanes.zig's verify-cost tables
-  re-priced from a GB10-pair measurement (lone 52.0+6.8 → 38.73+5.68, shared
-  76.0+4.1 → 47.38+5.05; applies clean, proving v1.2.2 still carries the
-  over-priced tables). Output-neutral scheduling prices: the old constants
-  starved depth.zig's overhead learner (4 of 139 measured shared forwards
-  could fire it vs 133 at these prices).
+- **glm-mia-chunk4096.patch + glm-mia-dflash2-ingest.patch — REJECTED**
+  (keep as history; re-run only if the line ever wants a deep-prefill-only
+  mode). The receipts: builds and boots healthy ("passes of up to 4096
+  rows", 13.7 GiB left, load 94.6 s warm-cache — no loading cost), replies
+  byte-identical (sha 9e04a49e5786 on every probe, both windows), BUT the
+  small-prompt front regresses on the clean same-instrument rows (both sides
+  ran TF_GLM_PROF=1 VISION=0 — the standing resumecost pattern):
+  d8192 cold 5.55 → 7.17/7.20 s (+29/30%), d8192 warm 1.44 → 3.22/3.24 s
+  (+124%), d4096 warm **benefit lost entirely** (resume at 0 — a 4096-row
+  state cut cannot partially serve a 3737-token prompt), d2048 ~2% faster.
+  The mechanism is structural: states cut at 4096-row boundaries — sub-4096
+  and odd-sized prompts (the opencode workload's mid-range) lose their warm
+  resumes. Mia's fixed-deep-prompt workload never feels this. The deep +7%
+  claim went unverified on our shape (the deepfills instrument ran against
+  the unpatched serve after an in-phase restart lost RC_PATCHES — see the
+  launch log) and does not change the verdict: the bump protocol requires
+  receipts-equal-or-better and the warm front regresses.
+- **glm-mia-cost-tables.patch — STAGED for the ABSORB_MMA window** (output-
+  neutral: sha-identical everywhere, no effect on max_tokens=1 probes —
+  rounds=0). The 2-constant correction (52.0+6.8 → 38.73+5.68 lone, 76.0+4.1
+  → 47.38+5.05 shared) is measured on our exact hardware (2× GB10) and
+  un-starves depth.zig's overhead learner; its effect shows only under
+  loaded draft scheduling, so it rides the ABSORB_MMA window's hardmode
+  phases. Applies clean (proving v1.2.2 still carries the over-priced
+  tables).
 
-OWNER: this line. STATUS: EXPERIMENTAL — judged by the deepfills window
-(deepdelta's fills on the patched serve; ~0.73 ms/tok expected vs the
-standing 0.785) plus the content gate (identical greedy sha = the ship
-check). Graduates into `config.sh`'s PATCHES default only on a
-receipts-equal-or-better verdict; retires with the session notes otherwise.
+OWNER: this line. The stack verdict receipts: results/campaign-20261104-203617/
+and results/campaign-20261104-210211/ (the resumecost rows + the deepfills
+receipts + the g3 counter find: `tensorfold:prompt_tokens_cached_total`).
 
 ## Candidates under watch (upstream PR scan, 2026-10-23)
 

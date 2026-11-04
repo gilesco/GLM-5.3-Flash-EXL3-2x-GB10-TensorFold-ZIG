@@ -5252,3 +5252,40 @@ cached so the window is fast. The verdict framework: the deep fills decide
 whether Mia's +7% holds on our shape, but the warm-resume granularity loss is
 already disqualifying for OUR line unless the user weighs it otherwise
 (the bump protocol: receipts-equal-or-better — the warm row would regress).
+
+## (round 133, cont. 13) THE MIA STACK VERDICT: the chunk pair REJECTED (double-receipted); the cost tables staged; the g3 counter found (2026-11-04)
+
+**campaign-20261104-210211 (the re-run) completes the verdict**:
+- **The small-prompt regression REPRODUCED** (two windows, same instrument —
+  both sides TF_GLM_PROF=1 VISION=0): d8192 cold 7.20 s (vs standing 5.55,
+  +30%), d8192 warm 3.23 s (vs 1.44, +124%), d4096 warm==cold at 3.74 s (the
+  resume benefit lost — resumed at 0), d2048 1.68 s (~2% faster). Replies
+  byte-identical again (sha 9e04a49e5786). Loading FINE: 94.6 s warm-cache
+  (47/47 cached) vs the standing 103 — the first window's 142 s was pure
+  cold-cache from the fresh image build.
+- **The deep fills ran against the UNPATCHED serve**: the deepfills phase's
+  own restart LOST the window's RC_PATCHES (the framework's in-phase restart
+  does not propagate the wrapper's patch env — the serve line's "passes of up
+  to 2048 rows" caught it). The fills (34.43/68.36/138.62 s at
+  43,682/87,386/174,758 tokens = 0.788/0.782/0.793 ms/tok) are a THIRD
+  reproduction of the standing deep curve. The +7% claim goes unverified on
+  our shape — and does not change the verdict.
+- **THE VERDICT: glm-mia-chunk4096 + glm-mia-dflash2-ingest REJECTED for our
+  line** (the bump protocol: receipts-equal-or-better — the warm front
+  regresses on exactly the prompt sizes our opencode workload uses; the
+  4096-row state cut cannot partially serve sub-4096/odd-sized prompts).
+  The patches stay as history in patches/ with the receipt; config.sh's
+  PATCHES default stays empty.
+- **glm-mia-cost-tables STAGED for the ABSORB_MMA window** (output-neutral,
+  sha-identical everywhere; its learner-unstarving effect shows only under
+  loaded draft scheduling — it rides that window's hardmode phases).
+- **The g3 /metrics counter is FOUND**: `tensorfold:prompt_tokens_cached_total`
+  (294 lines; the 0 reading was a fresh serve with no requests). The API
+  usage field stays 0 (the known gotcha) — /metrics is the wired instrument.
+  The nonzero reading rides the next window with resume traffic.
+
+**Next**: the ABSORB_MMA (0041) port — the reject map is known (glm_glue.cu:9
+include-block context; cuda_engine.zig:188 Buffers.init context; the other 7
+files apply clean). A phase-level restart losing RC_PATCHES is logged as a
+gotcha (check the serve line's rows-clause whenever a patched window's phase
+restarts).

@@ -596,10 +596,17 @@ stack's prefill work is the gap.
 1. **ABSORB_MMA** (their patch, opt-in): **+8.0% prefill with identical
    answers** — the biggest single prefill lever we lack. Port candidate #1
    (Apache-2.0, portable; our prefill front 69% → ~75% if it holds).
-2. **The 4,096-row prompt chunk** (0094-0095, +7% prefill byte-identical,
-   DFlash2's MAX_CTX matched): our round-131 p4096 rejection was on the OLD
-   pin — their stack restructured the chunk path. Port candidate #2.
-   Together ~+15% prefill.
+2. **~~The 4,096-row prompt chunk~~ — DISPOSITIONED (cont. 12-13): REJECTED
+   for our line.** Ported (0094 adapted + 0095) and measured in two windows:
+   builds/boots healthy, replies byte-identical, loading fine (94.6 s
+   warm-cache) — but the small-prompt front regresses structurally (states
+   cut at 4096-row boundaries): d8192 cold +29/30%, d8192 warm +124%, the
+   d4096 warm benefit lost entirely (a 4096-row cut cannot partially serve a
+   3737-token prompt). Our opencode workload lives on exactly those odd-sized
+   mid-range warm resumes; Mia's fixed-deep-prompt workload never feels it.
+   The deep +7% claim went unverified here (the instrument ran against the
+   unpatched serve) and does not change the verdict. Receipts:
+   campaign-20261104-203617 and -210211; patches/README carries the verdict.
 3. **The fp8+pages marriage** (0017-0033): their pool holds 2.1M tokens on
    12.5 GiB/rank — the combination our pin REFUSES ("fp8 keeps a window per
    stream"). The heavyweight port (a project, the roadmap's pages×fp8 item).
@@ -612,8 +619,11 @@ stack's prefill work is the gap.
 5. **The cost-table correctness (0096/0097)**: the engine's verify-cost
    tables were +34%/+60% wrong on the intercepts, starving the adaptive
    draft-allocation learner; the fix is output-neutral with an unmeasurable
-   throughput effect (their noise). Check whether v1.2.2 upstream carries the
-   corrected tables; port if not.
+   throughput effect (their noise). **Ported (cont. 11) as
+   glm-mia-cost-tables.patch — applies clean, proving v1.2.2 still carries
+   the over-priced tables (52.0+6.8 / 76.0+4.1). STAGED for the ABSORB_MMA
+   window's loaded phases** (sha-identical everywhere; its effect shows only
+   under loaded draft scheduling).
 6. **Methodology adoptions**: the fixed-prompt decode gate (ours already
    matches), **per-passage NLL for numerics A/Bs — never the aggregate mean**
    (their W8A8/q6 trap: the aggregate said better while the passages said
