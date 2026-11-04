@@ -5146,3 +5146,17 @@ leg's prepare explicit per the pinbump pattern; each leg's engine commit
 receipted from the log). The duel already receipted the 8k slope −3.5%; the
 deep fills quantify the gain where #1577's 5-14% claim lives (32-167K). The
 g3 /metrics cache-counter hygiene check rides leg 2 (it needs a live serve).
+
+## (round 133, cont. 9) THE #1577 DEEP DELTA QUANTIFIED: −2.6 to −3.5% at 50k-204k fills (2026-11-04)
+
+**deepdelta (campaign-20261104-182759) closes the bump's last quantitative
+question**: the SAME novel fills on both pins — v1.2.1: 41.35/82.71/166.96 s
+at 50,960/101,948/203,882 tokens; v1.2.2: 39.98/80.53/161.13 s — **−2.6 to
+−3.5%, v1.2.2 uniformly faster** (both curves linear: 0.811-0.819 vs
+0.785-0.790 ms/tok; the legs' prompt_tokens match exactly, so the comparison
+is clean). The gain is the LOW end of the upstream 5-14% claim — that was
+TP=3, we are TP=2. The anchors' cold row carries the deep-curve line; the
+ECOSYSTEM #1577 entry is dispositioned; the ledger carries the entry; the
+phase retired. The g3 /metrics hygiene check came back INCONCLUSIVE (neither
+the count nor the fallback landed in the receipt — the capture needs a
+cleaner re-run; the item stays open with that note).

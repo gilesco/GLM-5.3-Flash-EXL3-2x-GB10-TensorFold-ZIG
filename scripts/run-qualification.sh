@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs deepdelta hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1020,59 +1020,12 @@ fi
 # 87.4k); TF_GLM_KV_HOST non-viable on our shape (refused on fp8 by design —
 # the engine names pages+bf16 — and every request timed out on bf16+pages).
 # Receipts: results/postbump/. Re-run patterns: git history.)
-# ---------------------------------------------------------------------------
-# phase: deepdelta (SESSION-SPECIFIC; retires with the receipt). The #1577
-# deep-prefill delta: the SAME novel fills (the postbump curve's 42k/85k/170k)
-# on v1.2.1 (1db3edb) and v1.2.2 (00e7ddd) — the pin swapped twice in this
-# window, each leg's prepare explicit (the pinbump pattern) and its engine
-# commit receipted from the log's "TensorFold commit" line. The duel already
-# receipted the 8k slope −3.5%; the deep fills quantify the gain where #1577's
-# claim lives (32-167K). The g3 /metrics cache-counter hygiene check rides
-# leg 2 (needs a live serve).
-# ---------------------------------------------------------------------------
-if want deepdelta && ! phase_done deepdelta; then
-  log "=== deepdelta (the deep curve: v1.2.1 vs v1.2.2)"
-  P="$OUT/deepdelta.md"; : > "$P"
-  echo "# deepdelta (the #1577 deep curve; the same fills on both pins)" >> "$P"
-  DD_DIR="results/deepdelta"; mkdir -p "$DD_DIR"
-  CUR=$(grep "^TF_COMMIT=" scripts/local.sh | cut -d= -f2 | cut -d" " -f1)
-  echo "- the returning pin: $CUR" >> "$P"
-  deep_probe() {  # $1 receipt, $2 depth-tokens, $3 tag — a NOVEL fill, max_tokens 1
-    local dst="$1" d="$2" tag="$3" r bf
-    bf=$(mktemp /tmp/deepfill.XXXXXX.json)
-    python3 -c "import json,sys; n=int(sys.argv[1]); print(json.dumps({'model':sys.argv[2],'messages':[{'role':'user','content':('Deep delta fill %s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[3]) * n}],'max_tokens':1}))" "$((d / 27))" "$SERVED_NAME" "$tag" > "$bf"
-    r=$(curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      -d @"$bf" \
-      | python3 -c 'import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-d2 = json.loads(body)
-m = re.search(r"ttf.=([0-9.]+) total=([0-9.]+)", tim)
-print("prompt_tokens=%d ttft_s=%s" % (d2["usage"]["prompt_tokens"], m.group(1)))' 2>/dev/null || echo "FAILED")
-    rm -f "$bf"
-    echo "- cold fill @ $tag: $r" >> "$dst"
-  }
-  for leg in "v1.2.1:1db3edbe7e692e83c7f5056754dc4e69e79a6c22" "v1.2.2:$CUR"; do
-    t="${leg%%:*}"; c="${leg#*:}"
-    echo "## leg $t ($c)" >> "$P"
-    sed -i "s|^TF_COMMIT=.*|TF_COMMIT=$c  # deepdelta leg $t|" scripts/local.sh
-    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-    if ! ./scripts/prepare.sh >>"$LOG" 2>&1; then
-      echo "- the $t prepare FAILED — its log tail:" >> "$P"; tail -6 "$LOG" >> "$P"
-      continue
-    fi
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-    echo "- engine: $(grep "TensorFold commit" "$LOG" | tail -1)" >> "$P"
-    echo "- server: $(serve_line)" >> "$P"
-    for d in 32768 65536 131072; do deep_probe "$P" "$d" "$t-d$d"; done
-  done
-  echo "- the g3 hygiene: /metrics cache counter:" >> "$P"
-  curl -s -m 10 "http://127.0.0.1:$PORT/metrics" | grep -c "cached_tokens" >> "$P" 2>/dev/null || echo "0 (the counter is absent — the exporter mapping is the open item)" >> "$P"
-  echo "- the delta: v1.2.2's fills vs v1.2.1's at the same token counts (the #1577 claim: 5-14% sooner at 32-167K)" >> "$P"
-  touch "$OUT/.deepdelta.done"
-fi
-
+# (the deepdelta phase RETIRED round 133 (cont. 9) — the receipt: the #1577
+# deep delta is −2.6 to −3.5% at 50k-204k fills (v1.2.2 uniformly faster, both
+# curves linear at 0.79 vs 0.81 ms/tok) — the low end of the 5-14% claim (that
+# was TP=3; we are TP=2). The identical-fill comparison is self-consistent
+# (both legs' prompt_tokens match exactly). Receipts: results/deepdelta/.
+# Re-run patterns: git history.)
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one

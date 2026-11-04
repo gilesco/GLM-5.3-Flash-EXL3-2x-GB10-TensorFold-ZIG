@@ -580,8 +580,11 @@ dispositioned for our line (the TR3 pack, 2×GB10 TP=2, dense4fp8, DFlash2, visi
 
 - **#1577 — GLM cold prompts 5-14% sooner at 32K-167K tokens** (a prompt chunk's
   MTP pass runs on its last row past the caches; identical replies; measured at
-  TP=3, generic GLM-on-CUDA). Moves our prefill front (~69-72%) and the cold
-  TTFT rows. HIGH.
+  TP=3, generic GLM-on-CUDA). **QUANTIFIED on our shape (the deepdelta receipt,
+  campaign-20261104-182759): −2.6 to −3.5% at 50k-204k fills** — the low end of
+  the claim (TP=3 there, TP=2 here), consistent across depths, both curves
+  linear (0.79 vs 0.81 ms/tok). Moves our prefill front (~69-72%) and the cold
+  TTFT rows.
 - **#1884 — the page cache on load: released once the weights are loaded, "on
   CUDA, every family's loader"** (~15 GiB freed on a served 27B; unified memory
   no longer holds the checkpoint twice). **This is glm-tail-release.patch

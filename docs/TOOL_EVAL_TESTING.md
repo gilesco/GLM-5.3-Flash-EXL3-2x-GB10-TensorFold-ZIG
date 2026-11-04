@@ -297,6 +297,12 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
+- [x] **deepdelta — the #1577 deep curve on both pins** (round 133, cont. 9):
+      the same novel fills (50,960/101,948/203,882 tokens — the legs'
+      prompt_tokens match exactly) on v1.2.1 and v1.2.2: **−2.6 to −3.5%
+      (v1.2.2 uniformly faster; both curves linear, 0.79 vs 0.81 ms/tok)** —
+      the low end of the upstream 5-14% claim (TP=3 there, TP=2 here). The
+      cold row carries the deep-curve line.
 - [x] **The docs audit for the fresh checkout** (cont. 30-31): the quickstart +
       config table verified against what serves on a new clone (the TR3 pack @
       8001 on v1.2.1, dense4fp8, 524288×4, vision on — prepare.sh discovers the
