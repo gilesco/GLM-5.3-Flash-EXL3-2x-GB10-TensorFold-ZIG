@@ -5393,3 +5393,29 @@ re-pair + the vision re-check follow on the next window.
 summary"` — with the override fixed, the resumecost phase now receipts the
 sha + the small-prompt rows on the ABSORB-ON serve (the last gap in the
 stack's confirmation). The duel re-pair + the vision re-check follow.
+
+## (round 133, cont. 18) THE STACK'S CONFIRMATION COMPLETE: byte-identical AND 5-6% faster on the small prompts; the visioncheck phase prepared; the duel re-pair launched (2026-11-04)
+
+**campaign-20261104-233541 (window C)** — with the resumecost override fixed,
+the rows ran on the FULL stack (the restart line carries
+PATCHES=glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch; the ABSORB env
+flows via config.sh's TF_GLM_* passthrough):
+- **sha 9e04a49e5786 on every probe** — the content gate on the ABSORB-ON
+  serve PASSES.
+- **The small prompts are 5-6% FASTER on the stack**: d2048 1.587/1.589/1.591
+  (the pristine v1.2.2 baseline: 1.69), d4096 3.453→1.838/1.834 (pristine
+  3.64→1.92), d8192 5.141→1.342/1.343 (pristine 5.41→1.41) — the MMA
+  kernels engage on small prompt passes too (rows ≥ 64), and the warm
+  resumes work (cached=2048 on the d4096 shots).
+
+**The adoption's evidence is now complete on every axis**: deep prefill
+−6.8/−7.0/−6.9%, small prompts −5/−5/−6% cold + warm better, greedy
+byte-identical everywhere, hardmode 95 on the stack (≥ the 94 tie), memory
+−0.2 GiB, loading flat, the fingerprint pairing verified.
+
+**The visioncheck phase added** (session-specific): the vision suite on the
+adopted stack — the ABSORB_MMA kernels engage on the vision tower's prompt
+passes too, so the standing 4/4 receipt needs a re-take. **LAUNCHED**:
+`scripts/autonomous-launch.sh "visioncheck duel summary"` — the vision
+re-take, then the duel re-pair (the fronts vs production-for-testing → the
+anchors/chart update), then the digest.

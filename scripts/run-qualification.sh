@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs deepfills hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs deepfills visioncheck hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1076,6 +1076,24 @@ print("cold fill @ d%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], d["usage"]["
     grep -i "cached" "$OUT/g3-metrics.txt" 2>/dev/null | head -5 || echo "  (no cached* lines — the counter is absent/unwired)"
   } >> "$P"
   touch "$OUT/.deepfills.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: visioncheck (SESSION-SPECIFIC; retires with the receipt). The
+# vision suite on the ADOPTED stack: the ABSORB_MMA kernels engage on the
+# vision tower's prompt passes too (rows >= 64), so the standing 4/4
+# receipt needs a re-take on the adopted config. The repo's own assets via
+# the repoed runner; the answers saved raw for the side-by-side digest.
+# ---------------------------------------------------------------------------
+if want visioncheck && ! phase_done visioncheck; then
+  log "=== visioncheck (the vision suite on the adopted stack)"
+  P="$OUT/visioncheck.md"; : > "$P"
+  echo "# visioncheck (the adopted stack)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  echo "- server: $(serve_line)" >> "$P"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/vision-answers.json" >> "$P" 2>&1 || echo "- the probe FAILED" >> "$P"
+  echo "- the answers: $OUT/vision-answers.json (the digest compares against the manifest's ground truth)" >> "$P"
+  touch "$OUT/.visioncheck.done"
 fi
 
 # ---------------------------------------------------------------------------
