@@ -6032,3 +6032,39 @@ period/pattern fingerprinted against the pool's free-list rotation), paged
 visible. The next sitting reads the marriage's kernel file
 (glm_glue_latent.cuh) for the paged fetch's address arithmetic against the
 6,380/6,960 discrepancy.
+
+## (round 133, cont. 42) THE V3 FINGERPRINT: the paged multi-chunk prefill MIS-READS ITS OWN CHUNK-2 ROWS; the kernel addressing verified consistent; the gates-coverage hole; the format bisect launched (2026-11-05)
+
+**campaign-20261105-170810 (poolcanary2 v3, the race fixed)**: the
+fingerprint is decisive — **the unpaged control is perfect** (all ten longs
+reply their own MKR-{i}QX, all shorts NONE); **the paged serve cannot
+reliably read its own chunk-2 rows**: round 1's long mangles the code
+("Vault Access Code: 7-"), round 2's answer surfaces "gable" — a token
+from the harbor PREAMBLE (chunk-1 content!) — as the "code", rounds 3-10
+collapse to NONE. The vault code sits at row ~2,105 — chunk 2's own
+freshly-written rows. Round 1 failed on FRESH pages (never written) — the
+mis-read is not (only) stale content; the fetch itself is wrong for the
+rows past the 2,048 boundary. The battery's gross contamination: with
+concurrency + recycling, the mis-addressed reads land in OTHER streams'
+pages.
+
+**The kernel-addressing read came back CLEAN**: the write kernel
+(cache + page + row×512; scales at +page + row), the dense read (bases
+moved once: pt[c]×pstep − start×LW, the same pattern the bf16 gates
+proved), the sparse read (pt[src/CH]×pstep + (src%CH)×LW — matching the
+write exactly), the pooled-keys fetch (ps/2 elements = ps bytes) — every
+path cross-checks against every other. Static analysis is exhausted.
+
+**THE GATES-COVERAGE HOLE**: the bf16-paged gates (kvqual4P) ran the gate
+battery — and the depth probes (8k+, multi-chunk) ran on the UNPAGED
+config. If the gate probes were all one-chunk (≤2,048 tokens), **the
+battery was the first multi-chunk multi-turn paged workload this line has
+ever run** — and the bug may live in the BASE's shared paged machinery,
+not the marriage at all.
+
+**LAUNCHED: poolcanary3** — the format bisect: the same canary on PAGED
+BF16 (KV_CACHE=bf16 + TF_KV_PAGES=on — the base's path, the same kernel
+structure) beside the fp8 control, five rounds each. bf16 fails too ⇒ the
+base's shared multi-chunk machinery (the finding goes upstream as data);
+bf16 clean ⇒ E4M3-specific and the kernel hunt narrows to the
+scales/quantize path.

@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary poolcanary2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1078,6 +1078,40 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null)
   done
   echo "- VERDICT: a short reply naming any MKR- code is contamination on that serve; paged-vs-pagednoshare splits the store's role from the pool's" >> "$P"
   touch "$OUT/.poolcanary2.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: poolcanary3 (SESSION-SPECIFIC; retires with the receipt). The format
+# bisect for the paged multi-chunk mis-read (the canary v3 fingerprint: the
+# model cannot see its own chunk-2 rows on fp8 pages; the unpaged control is
+# perfect; the kernel addressing verified consistent). The SAME canary on
+# PAGED BF16 (the base's path) beside the fp8 control. Retires with the receipt.
+# ---------------------------------------------------------------------------
+if want poolcanary3 && ! phase_done poolcanary3; then
+  log "=== poolcanary3 (the format bisect: paged bf16 vs paged fp8)"
+  P="$OUT/96-poolcanary3.md"; : > "$P"
+  echo "# poolcanary3 (the canary on paged bf16 vs paged fp8)" >> "$P"
+  for mode in bf16 fp8; do
+    if [ "$mode" = bf16 ]; then
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=bf16 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
+    else
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
+    fi
+    echo "- serve $mode: $(serve_line | cut -c1-130)" >> "$P"
+    for i in 1 2 3 4 5; do
+      bf=$(mktemp /tmp/pc3.XXXXXX.json)
+      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 28 + ' The vault access code is MKR-' + sys.argv[2] + 'QX. Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
+      R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
+except Exception: print("PARSE-FAILED")' 2>/dev/null)
+      echo "  $mode round$i long reply: $R" >> "$P"
+      rm -f "$bf"
+    done
+    echo "- $mode engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|prompt cache:" | tail -12 | sed 's/^/  /' >> "$P"
+  done
+  echo "- VERDICT: a long reply that is not exactly its own MKR-{i}QX is the mis-read; bf16 failing too means the base's shared paged multi-chunk machinery" >> "$P"
+  touch "$OUT/.poolcanary3.done"
 fi
 
 # ---------------------------------------------------------------------------
