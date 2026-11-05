@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedchecks knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedchecks windowedsha knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1088,6 +1088,86 @@ except Exception:
   echo "- rank 1's last docker logs:" >> "$P"
   worker "docker logs $CONTAINER_NAME 2>&1 | tail -20" 2>/dev/null | sed 's/^/  /' >> "$P" || echo "  (unavailable)" >> "$P"
   touch "$OUT/.pagedchecks.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: windowedsha (SESSION-SPECIFIC; retires with the receipt). The bitwise
+# cross-check for the fp8+pages marriage. The campaign-20261105-114648 receipt
+# showed max_tokens=1 shas are seed jitter (one sha dominates across depths
+# and seeds; the unique ones are sampling flakes) — unusable as a numerics
+# reference. Redesigned: greedy (temperature 0), thinking off, max_tokens=64 —
+# a deterministic 64-token chain, so the sha is a logits fingerprint. Three
+# serves, the same three prompts each (fresh cache, same order => the same
+# resume pattern): B standing / P marriage-paged / A marriage-unpaged.
+# P==A => paging byte-identical; A==B => the marriage's unpaged path matches
+# the shipping model. Retires with the receipt.
+# ---------------------------------------------------------------------------
+windowedsha_probes() { # $1 = serve tag
+  _tag="$1"; _eng="/tmp/wsha.eng.$_tag"; : > "$_eng"
+  for d in 102 204; do
+    bf=$(mktemp /tmp/wsha.XXXXXX.json)
+    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * int(sys.argv[2])}],'max_tokens':64,'temperature':0,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$d" > "$bf"
+    curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
+      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+      -d @"$bf" 2>/dev/null | python3 -c '
+import sys, json, re
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+try:
+    d = json.loads(body)
+    m = re.search(r"ttft=([0-9.]+)", tim)
+    print("serve %s harbor x%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], sys.argv[2], d["usage"]["prompt_tokens"], m.group(1)))
+except Exception:
+    print("serve %s harbor x%s: FAILED" % (sys.argv[1], sys.argv[2]))' "$_tag" "$d" >> "$P" 2>/dev/null || echo "serve $_tag harbor x$d: FAILED" >> "$P"
+    rm -f "$bf"
+  done
+  bf=$(mktemp /tmp/wsha.XXXXXX.json)
+  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Deep paged fill mia-d32768 - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' * 1213}],'max_tokens':64,'temperature':0,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
+  curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
+    "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+    -d @"$bf" 2>/dev/null | python3 -c '
+import sys, json, re
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+try:
+    d = json.loads(body)
+    m = re.search(r"ttft=([0-9.]+)", tim)
+    print("serve %s fill x1213: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], d["usage"]["prompt_tokens"], m.group(1)))
+except Exception:
+    print("serve %s fill x1213: FAILED" % sys.argv[1])' "$_tag" >> "$P" 2>/dev/null || echo "serve $_tag fill x1213: FAILED" >> "$P"
+  rm -f "$bf"
+  grep -E "done chatcmpl" "$LOG" 2>/dev/null | tail -3 > "$_eng" || true
+  echo "- serve $_tag engine lines (the authoritative shas):" >> "$P"
+  sed 's/^/  /' "$_eng" >> "$P"
+}
+if want windowedsha && ! phase_done windowedsha; then
+  log "=== windowedsha (the bitwise cross-check: three serves, greedy shas)"
+  P="$OUT/windowedsha.md"; : > "$P"
+  echo "# windowedsha (the bitwise cross-check for the fp8+pages marriage)" >> "$P"
+  echo "- instrument: greedy (temperature 0), thinking off, max_tokens=64 - the sha of a deterministic 64-token chain is a logits fingerprint (the 114648 max_tokens=1 shas were seed jitter; withdrawn as references)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  echo "- serve B (the standing config): $(serve_line)" >> "$P"
+  windowedsha_probes B
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- serve P (the marriage paged, the 114648 serve): $(serve_line)" >> "$P"
+  windowedsha_probes P
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- serve A (the marriage unpaged, same image): $(serve_line)" >> "$P"
+  windowedsha_probes A
+  _bb=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B 2>/dev/null | sed 's/sha=//' | paste -sd, -)
+  _bp=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.P 2>/dev/null | sed 's/sha=//' | paste -sd, -)
+  _ba=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.A 2>/dev/null | sed 's/sha=//' | paste -sd, -)
+  echo "- serve B shas: ${_bb:-none}" >> "$P"
+  echo "- serve P shas: ${_bp:-none}" >> "$P"
+  echo "- serve A shas: ${_ba:-none}" >> "$P"
+  if [ -n "$_bp" ] && [ "$_bp" = "$_ba" ]; then echo "- VERDICT paged vs marriage-unpaged: MATCH (paging is byte-identical)" >> "$P"; else echo "- VERDICT paged vs marriage-unpaged: MISMATCH or missing ($_bp vs $_ba)" >> "$P"; fi
+  if [ -n "$_bb" ] && [ "$_ba" = "$_bb" ]; then echo "- VERDICT marriage-unpaged vs standing: MATCH (the marriage path is byte-identical to the shipping model)" >> "$P"; else echo "- VERDICT marriage-unpaged vs standing: MISMATCH or missing ($_ba vs $_bb)" >> "$P"; fi
+  rm -f /tmp/wsha.eng.*
+  echo "- rank 0's last docker logs:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | tail -25 | sed 's/^/  /' >> "$P" || echo "  (the container is gone)" >> "$P"
+  echo "- rank 1's last docker logs:" >> "$P"
+  worker "docker logs $CONTAINER_NAME 2>&1 | tail -15" 2>/dev/null | sed 's/^/  /' >> "$P" || echo "  (unavailable)" >> "$P"
+  touch "$OUT/.windowedsha.done"
 fi
 
 # ---------------------------------------------------------------------------

@@ -99,6 +99,35 @@ receipts: the deep fills −6.8/−7.0/−6.9%, the small prompts −5-6%, greed
 byte-identical everywhere, the vision 4/4, the duel fronts solo 110% /
 c2 ~99% of production's top volley / cold 334% / ITL ~107% crossed.
 
+## glm-mia-fp8-pages.patch — EXPERIMENTAL (the serving path validated; the bitwise cross-check in flight)
+
+The fp8+pages marriage (Mia 1104 0017-0025, Apache-2.0, adapted to v1.2.2;
+0026-0033 are separate optimizations, not ported): E4M3 latent caches on the
+KV page pool — 6,380 bytes/token beside DFlash2 vs 13,056 bf16, one shared
+elastic pool (4,100 pages × 512 rows ≈ 2.1M tokens, 13.61 GiB/rank), the
+unpaged config preserved by construction. Port history: the first window died
+TokenUnits at the first DSA sparse launch (campaign-20261105-105143) — ROOT
+CAUSE: 0022's `Table.logical` port covered ONE latent.Table site (their base
+had one; v1.2.2 has three) while 0021's dispatch routes E4M3 to the _paged
+kernels at every site; FIXED at all three (`.logical = c.ls != 0`,
+cuda_dsa_block.zig). The re-run (campaign-20261105-114648): **the serving
+path WORKS** — 11 requests, no TokenUnits (the debug stack never fired),
+page-level 512-row resume (ttft 0.898/0.862 s on resumed 15,315-token
+prompts), the cold 46,108-token fill 37.95 s = 0.82 ms/tok and 92,240 →
+74.21 s = 0.80 ms/tok (the windowed rate, unchanged at depth), the pool
+pressure mechanics live. The max_tokens=1 engine shas proved seed jitter
+(withdrawn as references); the greedy bitwise cross-check (the windowedsha
+session phase: standing vs paged vs marriage-unpaged, deterministic 64-token
+chains) judges byte-identity. Not adopted; config.sh defaults unchanged.
+
+## glm-zz-debug-tokenunits.patch — DEBUG, TEMPORARY (retires with the diagnosis)
+
+Logs the exact mismatch inputs at the TokenUnits return in cuda_latent.zig
+chunks() (sparse, t.pt, t.logical, paged8, kv8, rows/heads/lw/nch/hb) into
+the dying rank's docker logs. Sorts after the marriage (glm-zz-*). Fired
+never on campaign-20261105-114648 (the logical fix held); retires once the
+bitwise receipt lands.
+
 ## Candidates under watch (upstream PR scan, 2026-10-23)
 
 - **#1079 — DFlash2/lanes decode (+9–15% on qwen27, "replies unchanged")** — TESTED AND

@@ -615,15 +615,26 @@ stack's prefill work is the gap.
    The deep +7% claim went unverified here (the instrument ran against the
    unpatched serve) and does not change the verdict. Receipts:
    campaign-20261104-203617 and -210211; patches/README carries the verdict.
-3. **The fp8+pages marriage** (0017-0033): their pool holds 2.1M tokens on
-   12.5 GiB/rank — the combination our pin REFUSES ("fp8 keeps a window per
-   stream"). The heavyweight port (a project, the roadmap's pages×fp8 item).
+3. **The fp8+pages marriage** (0017-0025 ported; 0026-0033 are separate
+   optimizations, not ported): their pool holds 2.1M tokens on 12.5 GiB/rank
+   — the combination our pin REFUSES ("fp8 keeps a window per stream"). The
+   heavyweight port (a project, the roadmap's pages×fp8 item). STATUS
+   (2026-11-05, cont. 33): ported (the 1,201-line combined patch) and the
+   TokenUnits death root-caused — 0022's `Table.logical` covered one
+   latent.Table site, v1.2.2 has three; fixed at all three. **The serving
+   path VALIDATED** (campaign-20261105-114648: 11 requests, 512-row
+   page-level resume, the cold 46,108-token fill 0.82 ms/tok and 92,240
+   0.80 ms/tok — the windowed rate unchanged at depth); the greedy bitwise
+   cross-check (windowedsha) in flight.
 4. **~~The restart wedge guard~~ — DONE this sitting**: their campaign
    **power-cycled a host** (`docker rm -f` returning with the old ~100 GiB
    task still dying; `docker run` over it wedged the box). Our three removal
    points (rank 1's remote launch, rank 0's local launch, stop.sh's worker
-   removal) now poll `docker inspect` until the name is genuinely absent and
-   die-loud/warn if it lingers.
+   removal) now poll `docker inspect` and die-loud/warn if it lingers.
+   (Cont. 30 correction: the polls check `{{.State.Running}}` — an Exited
+   husk passes and the launch's own `docker rm -f` clears it; the original
+   presence form blocked its own self-healing and false-refused the
+   campaign-20261105-111256 launch over a dead husk.)
 5. **~~The cost-table correctness~~ — DISPOSITIONED (cont. 20): DROPPED.**
    Ported (0096 verbatim, applies clean — v1.2.2 does carry the over-priced
    tables) and adopted alongside ABSORB_MMA; the attribution duel then

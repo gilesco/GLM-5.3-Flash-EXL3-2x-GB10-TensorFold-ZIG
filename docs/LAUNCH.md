@@ -5705,3 +5705,43 @@ t.pt, t.logical, paged8, kv8, rows/heads/lw/nch/hb — the dying rank's
 words land in the pagedchecks receipt via the docker-logs capture.
 **LAUNCHED**: `RC_PATCHES="glm-mia-fp8-pages.patch,glm-zz-debug-tokenunits.patch"
 scripts/autonomous-launch.sh "pagedchecks summary"`.
+
+## (round 133, cont. 33) THE MARRIAGE'S SERVING PATH VALIDATED (campaign-20261105-114648); the max_tokens=1 shas WITHDRAWN as jitter; the redesigned greedy bitwise cross-check launched (2026-11-05)
+
+**campaign-20261105-114648 (pagedchecks, the logical fix + the debug
+stack)**: THE SERVING PATH WORKS. No TokenUnits anywhere — the debug patch
+never fired; the serve completed every request and was still alive at the
+phase's end. The receipt (the engine's own lines; the probe FAILEDs are the
+instrument's reply-parse):
+- the resume chains at 512-row page granularity: 15,315 cached
+  6144/14336/14336 → ttft 7.500/0.898/0.862 s; 30,690 cached
+  14336/28672/28672 → 13.191/1.812/1.709 s;
+- the cold paged fills: 46,108 → 37.952 s = 0.82 ms/tok; 92,240 → 74.213 s
+  = 0.80 ms/tok — the deep-prefill rate HOLDS at depth on pages;
+- the pool mechanics live: prompt-cache hits climbing, evicted 2 under
+  pressure; the boot pool 4,100 pages × 512 rows (13.61 GiB), 15.7 GiB left.
+
+**The sha references WITHDRAWN (correction discipline)**: the max_tokens=1
+engine shas are seed jitter, not depth signatures — 9e04a49e5786 dominates
+across 15,315 (×3), 30,690 fully-resumed (×2) AND 92,240 cold, all with
+different seeds, while the "depth" shas (d59eced1ded0 @30,690 cached=14336,
+9d06e5d38103 @46,108) are single occurrences whose pattern sampling explains
+(the same prompt's fully-resumed shots hash the common value). A bitwise
+instrument needs deterministic decoding.
+
+**LAUNCHED: windowedsha (redesigned)** — greedy (temperature 0), thinking
+off, max_tokens=64: the sha of a deterministic 64-token chain is a logits
+fingerprint (one divergent argmax ⇒ a different sha). THREE serves in one
+window, the same three prompts each (harbor ×102 ≈ 15,315, ×204 ≈ 30,690,
+the fill ×1213 ≈ 46,108; fresh cache, same order ⇒ the same resume
+pattern): B the standing config first (proven), P the marriage paged (the
+exact 114648 serve), A the marriage unpaged (same image, never booted —
+riskiest, last). P==A ⇒ paging byte-identical; A==B ⇒ the marriage's
+unpaged path matches the shipping model. Pairwise verdicts print into the
+receipt. RC_PATCHES="glm-mia-fp8-pages.patch,glm-zz-debug-tokenunits.patch"
+(the cached image — no rebuilds anywhere in the window).
+
+**(user) topology recorded** (the git-ignored SITE.md, both copies): the
+head↔worker link is a POINT-TO-POINT fabric — the worker's fabric address
+is reachable from the head only; the agent host reaches the worker by its
+routable name (the cont. 29 misdiagnosis came from exactly this).

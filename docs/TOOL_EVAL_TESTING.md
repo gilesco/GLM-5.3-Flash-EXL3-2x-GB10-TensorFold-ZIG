@@ -310,6 +310,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       logical fix did NOT resolve the death (identical TokenUnits, rank-1
       first, all three sites fixed); the debug patch (glm-zz-debug-
       tokenunits) launched to log the exact mismatch inputs.
+- [x] **campaign-20261105-114648 — the marriage's third pagedchecks: THE
+      SERVING PATH WORKS** (the logical fix held; the debug patch never
+      fired): 11 requests, page-level 512-row resume (ttft 7.500/0.898/0.862
+      and 13.191/1.812/1.709 s on the resume chains), the cold fills 46,108
+      → 0.82 ms/tok and 92,240 → 0.80 ms/tok (the windowed rate unchanged at
+      depth), the pool pressure mechanics live. The probe FAILEDs are the
+      instrument's parse.
+- [ ] **The max_tokens=1 sha references WITHDRAWN (cont. 33)**: seed jitter,
+      not depth signatures (9e04a49e5786 dominates across depths and seeds;
+      the unique shas are sampling flakes). The bitwise instrument
+      redesigned — greedy + thinking-off + 64-token chains (deterministic
+      logits fingerprints); **windowedsha in flight**: three serves in one
+      window (B standing / P marriage-paged / A marriage-unpaged), the same
+      three prompts each, pairwise sha verdicts in the receipt.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460
