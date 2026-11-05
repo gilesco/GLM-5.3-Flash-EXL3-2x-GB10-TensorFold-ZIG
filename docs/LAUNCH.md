@@ -5488,3 +5488,29 @@ ledger's ABSORB item closes. **The deepfills and visioncheck session phases
 retired** (their receipts complete; the registry notes live in this log and
 the ledger). One tooling slip during the retirement (the "fi"-substring
 match in the cut helper) caught by bash -n and fixed before commit.
+
+## (round 133, cont. 23) THE FP8+PAGES MARRIAGE: (user) proceeds; the port scoped and 0017 adapted (2026-11-05)
+
+**(user)**: "Proceed with 'The fp8+pages marriage'". The scoping pass:
+- **The scope correction**: the marriage is patches **0017-0025** (~1,460
+  lines — the E4M3 latent-cache kernels, the page layout, the pool
+  admission, the contract tests); **0026-0033 are separate decode
+  optimizations** (the EXL3 grouped load-ahead, the MoE-glue fusion, the
+  step-link work) that rode their stack — not part of the marriage, not
+  ported now.
+- **The cumulative stack-apply map**: 16 rejected hunks across ~12 files,
+  centered on the KV pool core + the snapshot layout (the rank-pairing-
+  critical, boot-refusal class). 0021 applies clean.
+- **0017 DONE** (scratch commit b592905): the paged E4M3 fetch woven into
+  v1.2.2's restructured inline `load_kv` — v1.2.2 replaced their base's
+  uint2-fetch lambda with a byte-wise `__nv_cvt_fp8x2` decode, so the page
+  translation (dense_page found once; the sparse token→page/row) weaves
+  into our branch; unpaged compiles to page=0/row=src — identical
+  arithmetic. The bf16 paged path's keys_at base came in the applied hunks.
+- **REMAINING**: 0018 (440 lines, 8 files — the page layout + pool +
+  snapshot centerpiece), 0019 (the pool admission), 0020 (the contract
+  tests), 0022-0025. Method: scratch-repo per-patch commits, the final
+  `git diff` = the shippable `glm-mia-fp8-pages.patch`. The candidate
+  config: KV_CACHE=fp8 + TF_KV_PAGES=on. The value on our 512K×4 spec: the
+  shared pool's free list feeds the prompt cache (the warm front's kept
+  states) and the admission goes elastic; the worst case is unchanged.

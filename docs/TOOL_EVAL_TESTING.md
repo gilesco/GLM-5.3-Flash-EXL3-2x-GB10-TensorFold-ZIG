@@ -306,6 +306,28 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
+- [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
+      133, cont. 23; (user): "Proceed"): the port is scoped and started.
+      **Scope correction**: the marriage is patches **0017-0025** (~1,460
+      lines — the E4M3 latent-cache kernels, the page layout, the pool
+      admission, the contract tests); 0026-0033 are separate decode
+      optimizations (the EXL3 load-ahead, the MoE-glue fusion, the step-link
+      work) that rode their stack — NOT part of the marriage. The cumulative
+      stack-apply maps 16 rejected hunks across ~12 files, centered on the
+      KV pool core + the snapshot layout (rank-pairing-critical,
+      boot-refusal class). METHOD: scratch-repo per-patch commits — 0017 is
+      DONE (the paged E4M3 fetch woven into v1.2.2's restructured inline
+      `load_kv`: the byte-wise `__nv_cvt_fp8x2` decode keeps the window's
+      arithmetic; unpaged compiles to page=0/row=src — identical; scratch
+      commit b592905). REMAINING: 0018 (440 lines, 8 files — the page layout
+      + pool + snapshot centerpiece), 0019 (the pool admission), 0020 (the
+      contract tests), 0022-0025 (the DSA block, the paged chunks twin, the
+      page-id checks, the comments) — 0021 applied clean. The candidate
+      config: KV_CACHE=fp8 + TF_KV_PAGES=on. The value on our 512K×4 spec:
+      the shared pool's free list feeds the prompt cache (the warm front's
+      kept states) and the admission becomes elastic; the worst case is
+      unchanged. The judgment window: the gates + the memory shape + the
+      instruments, same as every adoption.
 - [x] **ABSORB_MMA — ADOPTED AND CLOSED** (round 133, cont. 21): the
       hardmode re-take on the ABSORB-only shipping config reads **95/104**
       (campaign-20261105-003101 — the 95 was not the tables' artifact; the
