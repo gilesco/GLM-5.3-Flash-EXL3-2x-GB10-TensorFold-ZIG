@@ -5779,3 +5779,36 @@ prints a loud warning into the receipt instead of dying. Same probe shapes
 150; the receipt's prompt_tokens is the truth), same three serves, same
 cached image (the debug patch stays in RC_PATCHES for the fingerprint and
 retires at the verdict).
+
+## (round 133, cont. 35) windowedsha v2 RAN CLEAN — MISMATCH on all three serves; the drafter confound identified; v3 (the seed pin + a determinism control) launched (2026-11-05)
+
+**campaign-20261105-130738 (windowedsha v2)**: the fixed phase ran
+end-to-end — all nine engine lines captured, the verdicts printed, the
+summary completed (the normal-path poke ✓). The verdict: **MISMATCH on
+both comparisons** — B (standing) 2b850b4131e5/fe7455676b0e/8a727d09edf4,
+P (marriage paged) cd83affed326/b329335ec26a/c858f728c763, A (marriage
+unpaged) 3db8352f5eee/9e431f718cee/d97e80a27672 — and P≠A is the clean
+isolation (same image, same tree, paging toggled).
+
+**BUT the drafter confound is uncontrolled**: the DFlash2 drafter samples
+per request — the done-lines show wildly different verify profiles on the
+SAME prompts (B rounds 20/21/20; P 16/27/11 with 52/53 accepted on the
+fill; A 32/32/28 with 35/41) — and the verify-batch SIZE changes the
+target GEMM shapes, whose fp reduction orders can flip near-tied argmaxes:
+even a greedy target's reply chain is seed-dependent through the drafter.
+The accept-pattern corroboration (P 52/53 vs A 35/41 on the same fill)
+says the targets' outputs genuinely differ — but it cannot separate kernel
+numerics from batch-shape numerics without a seed pin.
+
+**v3 launched**: every probe pins seed=42 (the duel's precedent) — the
+drafter's proposals and verify-batch shapes become identical across serves
+— plus a CONTROL serve (B2: the standing config booted twice) measuring
+the instrument's own determinism; P-vs-A and A-vs-B are interpretable only
+if B==B2. If v3 still mismatches with clean profiles, byte-identity is NOT
+a property the marriage can claim (the paged fetch kernels and the
+windowed load_kv tile the reductions differently — same stored values,
+different fp accumulation order) and the judgment moves entirely to the
+quality instruments on the paged config (hardmode + the gates + the duel
+re-pair with TF_KV_PAGES=on; the ABSORB precedent: hardmode ≥ production's
+94). The ttft receipt stands (no perf surprise: the paged fill 38.12 s ≈
+marriage-unpaged 37.94 s; standing 35.39 s carries absorb's −7%).

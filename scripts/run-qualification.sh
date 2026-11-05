@@ -1106,7 +1106,7 @@ windowedsha_probes() { # $1 = serve tag
   _tag="$1"; _eng="/tmp/wsha.eng.$_tag"; : > "$_eng"
   for d in 102 204; do
     bf=$(mktemp /tmp/wsha.XXXXXX.json)
-    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * int(sys.argv[2])}],'max_tokens':64,'temperature':0,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$d" > "$bf"
+    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * int(sys.argv[2])}],'max_tokens':64,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$d" > "$bf"
     curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
       "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
       -d @"$bf" 2>/dev/null | python3 -c '
@@ -1122,7 +1122,7 @@ except Exception:
     rm -f "$bf"
   done
   bf=$(mktemp /tmp/wsha.XXXXXX.json)
-  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Deep paged fill mia-d32768 - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' * 1213}],'max_tokens':64,'temperature':0,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
+  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Deep paged fill mia-d32768 - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' * 1213}],'max_tokens':64,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
   curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
     "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
     -d @"$bf" 2>/dev/null | python3 -c '
@@ -1146,10 +1146,13 @@ if want windowedsha && ! phase_done windowedsha; then
   log "=== windowedsha (the bitwise cross-check: three serves, greedy shas)"
   P="$OUT/windowedsha.md"; : > "$P"
   echo "# windowedsha (the bitwise cross-check for the fp8+pages marriage)" >> "$P"
-  echo "- instrument: greedy (temperature 0), thinking off, max_tokens=64 - the sha of a deterministic 64-token chain is a logits fingerprint (the 114648 max_tokens=1 shas were seed jitter; withdrawn as references)" >> "$P"
+  echo "- instrument: greedy (temperature 0), thinking off, max_tokens=64, seed pinned 42 - a deterministic chain is a logits fingerprint (v2 lesson: the unseeded DFlash2 drafter varies the verify-batch shapes per request, and verify-batch numerics make even a greedy target's chain seed-dependent; the control serve B2 gates every verdict)" >> "$P"
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
   echo "- serve B (the standing config): $(serve_line)" >> "$P"
   windowedsha_probes B
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  echo "- serve B2 (the determinism control: the standing config again): $(serve_line)" >> "$P"
+  windowedsha_probes B2
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- serve P (the marriage paged, the 114648 serve): $(serve_line)" >> "$P"
   windowedsha_probes P
@@ -1159,11 +1162,14 @@ if want windowedsha && ! phase_done windowedsha; then
   _bb=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
   _bp=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.P 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
   _ba=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.A 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
+  _bb2=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B2 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
   echo "- serve B shas: ${_bb:-none}" >> "$P"
+  echo "- serve B2 shas: ${_bb2:-none}" >> "$P"
   echo "- serve P shas: ${_bp:-none}" >> "$P"
   echo "- serve A shas: ${_ba:-none}" >> "$P"
-  if [ -n "$_bp" ] && [ "$_bp" = "$_ba" ]; then echo "- VERDICT paged vs marriage-unpaged: MATCH (paging is byte-identical)" >> "$P"; else echo "- VERDICT paged vs marriage-unpaged: MISMATCH or missing ($_bp vs $_ba)" >> "$P"; fi
-  if [ -n "$_bb" ] && [ "$_ba" = "$_bb" ]; then echo "- VERDICT marriage-unpaged vs standing: MATCH (the marriage path is byte-identical to the shipping model)" >> "$P"; else echo "- VERDICT marriage-unpaged vs standing: MISMATCH or missing ($_ba vs $_bb)" >> "$P"; fi
+  if [ -n "$_bb" ] && [ "$_bb" = "$_bb2" ]; then echo "- CONTROL B vs B2 (same config, fresh serve): MATCH - the instrument is deterministic" >> "$P"; else echo "- CONTROL B vs B2: MISMATCH or missing ($_bb vs $_bb2) - the instrument is NOT deterministic; the verdicts below are uninterpretable" >> "$P"; fi
+  if [ -n "$_bp" ] && [ "$_bp" = "$_ba" ]; then echo "- VERDICT paged vs marriage-unpaged: MATCH (paging is byte-identical)" >> "$P"; else echo "- VERDICT paged vs marriage-unpaged: MISMATCH ($_bp vs $_ba)" >> "$P"; fi
+  if [ -n "$_bb" ] && [ "$_ba" = "$_bb" ]; then echo "- VERDICT marriage-unpaged vs standing: MATCH (the marriage path is byte-identical to the shipping model)" >> "$P"; else echo "- VERDICT marriage-unpaged vs standing: MISMATCH ($_ba vs $_bb)" >> "$P"; fi
   rm -f /tmp/wsha.eng.*
   echo "- rank 0's last docker logs:" >> "$P"
   docker logs "$CONTAINER_NAME" 2>&1 | tail -25 | sed 's/^/  /' >> "$P" || echo "  (the container is gone)" >> "$P"

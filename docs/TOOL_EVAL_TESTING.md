@@ -327,7 +327,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       adds ~nil), but the sha capture grepped $LOG (= campaign.log, which
       never carries engine request lines) and the verdict block died under
       set -euo pipefail — the shas are lost, not recoverable.** The fixed
-      phase (docker-logs capture, pipefail-guarded assignments) re-runs.
+      phase (docker-logs capture, pipefail-guarded assignments) re-ran as v2
+      (campaign-20261105-130738): **ran clean, MISMATCH on all three serves**
+      (B/P/A all differ; P≠A is the same-tree paging toggle) — but the
+      DFlash2 drafter's per-request sampling varied the verify-batch shapes
+      (rounds/accepted wildly different on identical prompts), and
+      verify-batch numerics make even a greedy target's chain
+      seed-dependent. v3 pins seed=42 everywhere + a determinism control
+      serve (B2); if the mismatch survives clean profiles, byte-identity is
+      not a property the marriage can claim and the judgment moves to the
+      quality instruments on the paged config.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460
