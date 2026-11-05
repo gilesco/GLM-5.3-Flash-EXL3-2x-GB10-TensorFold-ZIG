@@ -5687,3 +5687,21 @@ worker; production's rank 1 confirmed up.
 **LAUNCHED**: the pagedchecks re-run (the logical-fixed patch, no prof) —
 the first request's DSA sparse launch should now clear TokenUnits, and the
 probes + the deep fills judge the marriage's serving path at last.
+
+## (round 133, cont. 31) THE 113129 POKE (the fixed quiet-age probe verified) + the TokenUnits debug patch shipped (2026-11-05)
+
+**The 113129 poke arrived** via the fixed quiet-age probe (10 min of quiet
+on a crashed window — the catch path working as designed; the receipt was
+already digested in cont. 27/28). **The logical fix did NOT resolve the
+death**: the pagedchecks re-run (113129) died identically — rank 1 first
+(its log ends pre-serving), `following rank 0 stopped (TokenUnits)`, the
+watch taking rank 0 down — with all three latent.Table sites carrying
+`.logical = c.ls != 0`. The married chunks() is self-consistent
+(kv8 = scales != 0; the sites pass c.ls as scales and logical = c.ls != 0),
+so the mismatch comes from a call path static reading hasn't surfaced.
+**The debug patch** (glm-zz-debug-tokenunits.patch, sorts after the
+marriage) logs the exact mismatch inputs at the TokenUnits return: sparse,
+t.pt, t.logical, paged8, kv8, rows/heads/lw/nch/hb — the dying rank's
+words land in the pagedchecks receipt via the docker-logs capture.
+**LAUNCHED**: `RC_PATCHES="glm-mia-fp8-pages.patch,glm-zz-debug-tokenunits.patch"
+scripts/autonomous-launch.sh "pagedchecks summary"`.
