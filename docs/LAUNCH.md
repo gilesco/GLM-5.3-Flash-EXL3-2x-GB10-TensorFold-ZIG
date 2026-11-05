@@ -5995,3 +5995,40 @@ the store's role from the pool's), and unpaged (the control). A short
 reply naming any MKR- code is contamination on that serve; the
 paged-vs-pagednoshare split identifies the channel. Same patch set ⇒ the
 cached image; ~20 min.
+
+## (round 133, cont. 41) THE CHANNEL IS THE POOL PAGES THEMSELVES: the store EXONERATED (pagednoshare behaves identically); the paged two-chunk prefill is NON-DETERMINISTIC on identical inputs (the alternation); the stride-discrepancy lead; v3 launched (2026-11-05)
+
+**campaign-20261105-164822 (poolcanary2)** — three findings and one bug of
+mine:
+- **MY BUG**: the phase rm'd the long requests' body files right after
+  backgrounding their curls — the longs never ran (PARSE-FAILED); only the
+  shorts executed. Fixed (the body file survives until the wait).
+- **THE STORE EXONERATED**: paged and pagednoshare (TF_GLM_KV_SHARE=0, no
+  store, no resumes) behave IDENTICALLY — the adopt path is not the
+  channel. The store's role in the battery's contamination is dead.
+- **THE PUREST SIGNAL**: on pagednoshare — no store, no resumes, five
+  IDENTICAL sequential two-chunk prompts (2,139 tokens, temp 0, seed 42) —
+  the replies ALTERNATE ("The user has provided a long repeated list" /
+  NONE / …). Non-determinism on identical fresh prefill inputs, requiring
+  exactly: the paged path AND a multi-chunk prompt (>2,048 rows, crossing
+  the chunk boundary). The one-chunk canary v1 was perfectly deterministic.
+  On the store-on serve: fresh ≠ resumed (one fresh reply, four identical
+  resumed). The unpaged serve: fully consistent.
+- The two-chunk prefill means chunk 2 READS CHUNK 1'S ROWS BACK FROM THE
+  PAGES. Non-determinism there, varying with WHICH PHYSICAL PAGES a
+  request got (the free list cycles — hence the period), plus the
+  battery's wholesale cross-request content, points at ONE class: a wrong
+  address stride in the paged E4M3 fetch — reads landing in neighboring
+  pages whose recycled content varies per allocation. **The documented
+  lead**: the code carries BOTH "6,380 in E4M3 beside DFlash2 (no head
+  part)" and "E4M3 6,960" (with head) as per-row bytes; the boot runs
+  6,960 (4,100 pages × 512 rows = 13.61 GiB). A kernel or path still using
+  the 6,380 stride drifts ~1.6 pages off by row 512 — reads landing in
+  other pages, content varying with recycling.
+
+**LAUNCHED: v3** — the race fixed, 10 rounds (the alternation's
+period/pattern fingerprinted against the pool's free-list rotation), paged
+(store off — the cleanest instrument) + unpaged, the LONG replies now
+visible. The next sitting reads the marriage's kernel file
+(glm_glue_latent.cuh) for the paged fetch's address arithmetic against the
+6,380/6,960 discrepancy.

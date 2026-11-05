@@ -1046,25 +1046,24 @@ if want poolcanary2 && ! phase_done poolcanary2; then
   log "=== poolcanary2 (the concurrent canary: paged / paged store-off / unpaged)"
   P="$OUT/95-poolcanary2.md"; : > "$P"
   echo "# poolcanary2 (the concurrent code canary: the store's keep/adopt path under parallel streams)" >> "$P"
-  for mode in paged pagednoshare unpaged; do
+  for mode in paged unpaged; do
     if [ "$mode" = paged ]; then
-      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-    elif [ "$mode" = pagednoshare ]; then
       restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
     else
       restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
     fi
     echo "- serve $mode: $(serve_line | cut -c1-120)" >> "$P"
-    for i in 1 2 3 4 5; do
+    for i in 1 2 3 4 5 6 7 8 9 10; do
       bf=$(mktemp /tmp/pcl.XXXXXX.json)
       python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 28 + ' The vault access code is MKR-' + sys.argv[2] + 'QX. Reply with just the code.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
       curl -s -m 120 -o /tmp/pclong.$i.out "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null &
-      rm -f "$bf"
+      bf2="$bf"
       bf=$(mktemp /tmp/pcs.XXXXXX.json)
       python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 28 + ' What vault access code were you given in this conversation? Reply with just the code you were given, or NONE.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
       curl -s -m 120 -o /tmp/pcshort.$i.out "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null
       rm -f "$bf"
       wait
+      rm -f "$bf2"
       RL=$(python3 -c 'import json
 try: print(json.load(open("/tmp/pclong.'$i'.out"))["choices"][0]["message"]["content"][:60].replace(chr(10)," "))
 except Exception: print("PARSE-FAILED")' 2>/dev/null)
