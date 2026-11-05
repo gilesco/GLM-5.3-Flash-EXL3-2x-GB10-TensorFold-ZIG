@@ -5514,3 +5514,18 @@ match in the cut helper) caught by bash -n and fixed before commit.
   config: KV_CACHE=fp8 + TF_KV_PAGES=on. The value on our 512K×4 spec: the
   shared pool's free list feeds the prompt cache (the warm front's kept
   states) and the admission goes elastic; the worst case is unchanged.
+
+## (round 133, cont. 24) THE MARRIAGE'S 0018 MAPPED: v1.2.2 already carries the paged-pool machinery (2026-11-05)
+
+The 0018 reject map is complete (8 files): **the headline is that v1.2.2
+already carries the paged-pool machinery** — `TF_GLM_KV_SHARE` ("keeps
+prompts as KV pool pages"), `fw.State.initPagedFormat`, `Pages.pool/leases/
+promise/finish` are all upstream — so the marriage adds the E4M3 layout and
+flips the fp8 refusal onto EXISTING infrastructure. The per-file map lives
+in the ledger's open item. The semantics after 0018: fp8+pages pages (one
+shared pool; a stream takes the pages its request needs; 6,380 bytes/token
+E4M3 beside DFlash2 vs 13,056 bf16), unknown TF_KV_PAGES values refused
+(`BadKvPages`), and the pool admits elastically (`PoolTooSmall` when even
+every-other-stream-done cannot fit). 0017 is committed in the scratch repo
+(b592905); 0018's adaptation is the next sitting's work block — the
+KV-pool core deserves fresh context, not a drained one.

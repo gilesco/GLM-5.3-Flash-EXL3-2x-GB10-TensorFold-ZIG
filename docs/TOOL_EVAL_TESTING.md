@@ -327,7 +327,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       the shared pool's free list feeds the prompt cache (the warm front's
       kept states) and the admission becomes elastic; the worst case is
       unchanged. The judgment window: the gates + the memory shape + the
-      instruments, same as every adoption.
+      instruments, same as every adoption. **0018's map (cont. 24)**: the
+      KEY find — v1.2.2 ALREADY carries the paged-pool machinery
+      (`TF_GLM_KV_SHARE` "keeps prompts as KV pool pages: set TF_KV_PAGES=on",
+      `fw.State.initPagedFormat`, `Pages.pool/leases/promise/finish`) — the
+      marriage adds the E4M3 shape to existing infrastructure, not new
+      machinery. Per-file: cuda.zig (+1 import), cuda_start.zig (the
+      `paging()` flip: fp8+pages pages, `BadKvPages` for unknown values),
+      cuda_native.zig (the BadKvPages/PoolTooSmall explains + 2 test
+      rewrites — our extra `GlmKvHostNeedsPages` tail preserved),
+      cuda_pages.zig (`pageBytes(e)`/`pagedState(e,at)` + the PoolTooSmall
+      admission check), cuda_state.zig (`pagedBytesOf` — our stateSizes
+      signature needs checking — + the init literal's `.kv8/.head` fields),
+      cuda_snapshot_layout.zig, glm_snapshot_host.zig (+81 lines: the E4M3
+      paged keep/restore test), glm_family_host.zig (the test step). The
+      semantics: fp8+pages goes from refused-by-name to paged (one shared
+      pool: a stream takes the pages its request needs; 6,380 bytes/token
+      E4M3 beside DFlash2 vs 13,056 bf16).
 - [x] **ABSORB_MMA — ADOPTED AND CLOSED** (round 133, cont. 21): the
       hardmode re-take on the ABSORB-only shipping config reads **95/104**
       (campaign-20261105-003101 — the 95 was not the tables' artifact; the
