@@ -1093,7 +1093,7 @@ if want poolcanary3 && ! phase_done poolcanary3; then
   echo "# poolcanary3 (the canary on paged bf16 vs paged fp8)" >> "$P"
   for mode in bf16 fp8; do
     if [ "$mode" = bf16 ]; then
-      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=bf16 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
     else
       restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
     fi

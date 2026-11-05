@@ -6068,3 +6068,14 @@ structure) beside the fp8 control, five rounds each. bf16 fails too ⇒ the
 base's shared multi-chunk machinery (the finding goes upstream as data);
 bf16 clean ⇒ E4M3-specific and the kernel hunt narrows to the
 scales/quantize path.
+
+## (round 133, cont. 43) THE BISECT'S FIRST ATTEMPT DIED AT START.SH'S VALIDATION (KV_CACHE=bf16 is not an accepted value — empty is bf16); fixed and relaunched (2026-11-05)
+
+**campaign-20261105-172441**: the poolcanary3 bf16 leg passed
+`KV_CACHE=bf16` — start.sh refuses it ("KV_CACHE must be empty (bf16, the
+engine default) or fp8") — the restart died, set -e took the campaign, and
+the quiet-age poke caught it (the completed-window marker path only fires
+on windows that reach the summary). FIXED: the bf16 leg passes `KV_CACHE=`
+(empty — the engine default). The windowed-fp8 serve line in the log was
+the framework reading a stale serve line after the failed restart, not a
+boot. Relaunched unchanged otherwise.
