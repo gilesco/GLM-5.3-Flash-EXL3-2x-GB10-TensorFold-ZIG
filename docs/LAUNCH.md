@@ -6178,3 +6178,15 @@ prove themselves) — bf16 control + fp8, early/late split. fp8 answering
 MKR-{i}QX under poison ⇒ the fix holds; then the battery re-run
 (pagedquality2) is the adoption judgment. The dumppages debug patch
 RETIRES (the file removed; the diagnosis closed).
+
+## (round 133, cont. 48) THE BUILD'S ALPHABETICAL STAGING CAUGHT THE MIS-NAMED FIX (the skill's first gotcha, self-inflicted); renamed and relaunched (2026-11-05)
+
+**campaign-20261105-190228**: the build FAILED — "PATCH FAILED:
+glm-mia-fp8-pages-pagerows.patch (cuda_dsa_block.zig:137 does not apply)" —
+**the fix patch's name sorted BEFORE the marriage's** ("…-pagerows.patch" <
+"….patch" since '-' < '.'), so the build's alphabetical apply ran the fix
+on the absorb-only tree where its context doesn't exist. The
+tensorfold-patch-craft skill's first gotcha, self-inflicted. RENAMED:
+glm-mia-pagerows-fix.patch (sorts after both). The README carries the fix's
+entry (the root cause + the staging note). Relaunched: poolcanary4 under
+absorb + marriage + pagerows-fix.

@@ -135,6 +135,23 @@ serves: the paged cold fill 38.1 s ≈ marriage-unpaged 37.9 s at 46k
 (paging adds ~nil); the standing config's 35.3 s carries absorb's −7%.
 config.sh defaults unchanged pending the quality receipt.
 
+## glm-mia-pagerows-fix.patch — THE CONTAMINATION FIX (staged, 2026-11-05; judged by the canary + the battery re-run)
+
+The E4M3 Tables' page_rows was `c.ps/(l.lw*2)` — the WHOLE-page stride over
+the bf16 row bytes = 3,481 instead of 512. The selection kernel indexes
+`pt[row/page_rows]`: with 3,481 every row below 3,481 read PAGE 0's pooled
+keys, the token selection scored against rows 0-511's keys, and the sparse
+lists were garbage — the model attended to the wrong tokens (the hardmode
+battery's cross-request-content signature, 74 vs the >=94 bar; the canary
+receipts; the CudaContextLost crash under poison = the selection's garbage
+indexes). The contract tests passed because their FIXTURES use per-layer
+ps, where the formula coincidentally yields 512; the engine's Caches carry
+the whole-page ps. THE FIX: the three Table sites take `latent.chunk` (512)
+for E4M3; bf16 keeps its formula (its lists are page rows, a different
+unit; its path is receipted correct — the poolcanary3 bisect). STAGING:
+sorts AFTER glm-mia-fp8-pages.patch (the first name sorted before it and
+the build's alphabetical apply failed — the rename is the receipt).
+
 ## glm-zz-debug-tokenunits.patch — RETIRED (2026-11-05, the file removed)
 
 Logged the exact mismatch inputs at the TokenUnits return in cuda_latent.zig
