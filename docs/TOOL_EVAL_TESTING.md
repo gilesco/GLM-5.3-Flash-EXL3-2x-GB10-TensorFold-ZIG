@@ -397,8 +397,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       lines): E4M3 page_rows = latent.chunk (512) at the three Table
       sites; bf16 keeps its formula (its lists are page rows).** The
       CudaContextLost crash: the selection's garbage indexes under poison.
-      poolcanary4 re-running under the fix (the poison run = the harshest
-      validation); the battery re-run next. **poolcanary v1 (campaign-20261105-163035):
+      poolcanary4 under the fix (campaign-20261105-192124): **fp8 round-1
+      early CORRECT under poison (MKR-1QX — before the fix, code-blind) —
+      the page_rows fix cures the selection**; the CudaContextLost crash
+      REMAINS poison-specific (the NaN in the unwritten KV region breaks
+      the E4M3 selection's index output; the bf16+poison control clean —
+      the E4M3 selection path is the NaN-fragile one: a separate
+      robustness gap, upstream-relevant). **poolcanary5 in flight** (the
+      no-poison fix validation: chunk1 + chunk2 codes × 5 rounds).
+      **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
       path never fired). **poolcanary2 in flight**: grid-crossing prompts

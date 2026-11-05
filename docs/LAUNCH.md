@@ -6190,3 +6190,23 @@ tensorfold-patch-craft skill's first gotcha, self-inflicted. RENAMED:
 glm-mia-pagerows-fix.patch (sorts after both). The README carries the fix's
 entry (the root cause + the staging note). Relaunched: poolcanary4 under
 absorb + marriage + pagerows-fix.
+
+## (round 133, cont. 49) THE FIX VALIDATED UNDER POISON FOR THE MIS-READ (fp8 round-1 early CORRECT — before the fix, code-blind); the crash is a SEPARATE NaN-robustness gap; the no-poison validation launched (2026-11-05)
+
+**campaign-20261105-192124 (poolcanary4 under the fix)**:
+- **bf16 + poison: 6/6 exact** (the control, again).
+- **fp8 + poison: round-1 early = MKR-1QX — CORRECT** (before the fix, the
+  same request was code-blind) — **the page_rows fix cures the selection**.
+- **fp8 round-1 late + everything after: the CudaContextLost crash AGAIN** —
+  poison-specific (the no-poison v3 canary ran 10 rounds crash-free): the
+  poison's NaN in the UNWRITTEN KV region feeds the E4M3 selection, whose
+  NaN comparisons break the index output → the sparse fetch's illegal
+  access. The bf16+poison control is clean (the bf16 selection = the
+  page-row-list path, NaN-tolerant) — **the E4M3 selection path is the
+  NaN-fragile one: a separate robustness gap, upstream-relevant, NOT the
+  contamination bug**.
+
+**LAUNCHED: poolcanary5** — the no-poison fix validation: five rounds, the
+code at chunk 1 AND chunk 2, on the fixed fp8-paged serve. Ten exact
+MKR-{i}QX replies ⇒ the mis-read is fixed ⇒ the battery re-run
+(pagedquality2) is the adoption judgment. ~10 min.
