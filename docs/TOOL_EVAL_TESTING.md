@@ -403,8 +403,13 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       REMAINS poison-specific (the NaN in the unwritten KV region breaks
       the E4M3 selection's index output; the bf16+poison control clean —
       the E4M3 selection path is the NaN-fragile one: a separate
-      robustness gap, upstream-relevant). **poolcanary5 in flight** (the
-      no-poison fix validation: chunk1 + chunk2 codes × 5 rounds).
+      robustness gap, upstream-relevant). **poolcanary5 (campaign-
+      20261105-194159): 10/10 EXACT CODES — chunk 1 and chunk 2, five
+      rounds of recycling, no crashes: THE MIS-READ IS FIXED.**
+      **pagedquality2 in flight** — the battery + the vision suite on the
+      fixed composed paged stack (absorb + marriage + pagerows-fix,
+      TF_KV_PAGES=on): the adoption judgment (the bar: hardmode ≥ 94 +
+      the vision 4/4).
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
