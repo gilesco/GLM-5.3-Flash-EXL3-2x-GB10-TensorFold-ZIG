@@ -360,10 +360,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       pressure); per-turn latency improved. This REINTERPRETS the v3
       bitwise mismatch (cont. 35/36): serve-history-dependent
       contamination, not kernel tiling — the correction is logged. The
-      marriage is DISQUALIFIED for serving pending the pool-bug fix;
-      **treequality in flight** (the same battery, the marriage tree
-      UNPAGED — pool vs tree disambiguation); Mia's un-ported 0026-0033
-      get re-read for a pool fix.
+      marriage is DISQUALIFIED for serving pending the pool-bug fix.
+      **treequality (campaign-20261105-152436): 95 on the UNPAGED marriage
+      tree — IDENTICAL to the standing config's 95; the tree's kernels are
+      quality-neutral and the bug is exclusively the paged pool's
+      recycling.** Mia's 0026-0033 carry no pool fix (re-read); the base's
+      bf16 paged path passed the gates historically — the bug is E4M3-page-
+      state-specific. PRIME SUSPECT: the keep/restore state-slicing math
+      (stateSizes/pagedBytesOf/the snapshot host's E4M3 keep test); second:
+      the prompt-cache eviction on paged states. Next: a code-reading
+      session on those paths; the battery re-runs as pagedquality2 once a
+      fix candidate exists.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460

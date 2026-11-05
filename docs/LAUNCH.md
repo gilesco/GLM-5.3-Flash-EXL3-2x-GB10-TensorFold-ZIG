@@ -5903,3 +5903,33 @@ set ⇒ the cached image, no rebuild). ~95 ⇒ the pool recycling is the bug
 "optimizations"); ~74 ⇒ the tree's KV handling is broken deeper and the
 marriage parks permanently. The battery's perf sub-instrument was fine
 (pp ~1000-1100 tok/s, tg within noise) — perf was never the issue.
+
+## (round 133, cont. 38) THE DISAMBIGUATION IS DECISIVE: the unpaged marriage tree scores 95 — the tree's kernels are quality-neutral; the bug is the E4M3 paged-state lifecycle; Mia's 0026-0033 carry no pool fix (2026-11-05)
+
+**campaign-20261105-152436 (treequality)**: the SAME hardmode battery on
+the marriage tree UNPAGED (absorb+marriage, TF_KV_PAGES off, the cached
+image): **final_score 95 — identical to the standing config's 95** — and
+the vision suite 4/4 (all 8 probes). The marriage tree's kernels are
+QUALITY-NEUTRAL. Combined with the pagedquality receipt (74 on the same
+tree WITH the pool): **the bug is exclusively in the paged pool's
+recycling path — stale E4M3 pages handed to new requests.**
+
+**The bug-hunt scope narrows**: Mia's 0026-0033 (re-read this sitting) are
+genuinely load-ahead/trellis/broadcast optimizations plus comms robustness
+and TP3 tests — NO pool fix rides in them. And the BASE's bf16 paged path
+passed the gates historically (kvqual4P, campaign-20261023-165319) — the
+base pool recycling works for bf16. So the bug is specific to the E4M3
+page-STATE lifecycle. **The prime suspect: the keep/restore state-slicing
+math** (stateSizes' 5-param adaptation, pagedBytesOf, the snapshot host's
+E4M3 paged keep/restore test) — a size/slice mismatch there leaks exactly
+this stale material into resumed states. Second suspect: the prompt-cache
+eviction path on paged states ("evicted 2" under pressure).
+
+**The arc state**: the marriage PARKS as a serving candidate on the pool
+bug (correctness — disqualifying); the TREE is validated quality-neutral
+(95) and its unpaged numerics differ but harmlessly. The next session is a
+CODE-READING session on the port's E4M3 keep/restore + eviction paths (no
+GPU needed), against the contamination evidence. The pagedquality and
+treequality session phases retire (their receipts landed; git history
+carries the re-run patterns — the quality battery re-runs as pagedquality2
+once a fix candidate exists).

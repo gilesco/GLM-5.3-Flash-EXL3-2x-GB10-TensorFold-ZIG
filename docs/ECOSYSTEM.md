@@ -629,9 +629,15 @@ stack's prefill work is the gap.
    133550: standing ≠ marriage-unpaged ≠ marriage-paged with a matching
    determinism control — the paged fetch and the windowed load tile the
    reductions differently; the same class as absorb's adopted fp32-summation
-   change). The composed candidate (absorb + marriage) re-anchored onto the
-   absorb tree (cuda_glue.zig ×2 hunks; applies AFTER absorb only); the
-   quality window (hardmode + vision on the paged composed stack) in flight.
+   change — and the bitwise mismatch itself re-interpreted as pool
+   contamination, not tiling). The composed candidate (absorb + marriage)
+   re-anchored onto the absorb tree (cuda_glue.zig ×2 hunks; applies AFTER
+   absorb only). QUALITY DISAMBIGUATED (2026-11-05): the battery scores 95
+   on the UNPAGED tree (== the standing config's 95) and 74 PAGED — the
+   tree's kernels are quality-neutral; the bug is the paged pool's stale-
+   page recycling (cross-request content contamination in the raw logs).
+   PARKED as a serving candidate on that correctness bug; the fix hunt is
+   in the E4M3 keep/restore + eviction paths.
 4. **~~The restart wedge guard~~ — DONE this sitting**: their campaign
    **power-cycled a host** (`docker rm -f` returning with the old ~100 GiB
    task still dying; `docker run` over it wedged the box). Our three removal

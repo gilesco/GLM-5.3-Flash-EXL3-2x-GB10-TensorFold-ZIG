@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality treequality knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1029,49 +1029,7 @@ fi
 
 
 
-# ---------------------------------------------------------------------------
-# phase: pagedquality (SESSION-SPECIFIC; retires with the receipt). The
-# fp8+pages marriage's quality certification on the COMPOSED candidate stack
-# (absorb + marriage, TF_KV_PAGES=on): the control-verified bitwise cross-check
-# (campaign-20261105-133550) REFUTED byte-identity — the paged fetch kernels
-# and the windowed load path tile the reductions differently — so the judgment
-# is the hardmode battery + the vision suite, the ABSORB precedent (adopted at
-# 95 >= production's 94 despite its own fp32-summation numerics change).
-# Retires with the receipt.
-# ---------------------------------------------------------------------------
-if want pagedquality && ! phase_done pagedquality; then
-  log "=== pagedquality (hardmode on the composed paged stack)"
-  P="$OUT/92-pagedquality.md"; : > "$P"
-  echo "# pagedquality (hardmode on absorb+marriage, TF_KV_PAGES=on)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  bench_cell hm-paged "$OUT/hm-paged" >> "$P"
-  echo "- the vision suite:" >> "$P"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
-  touch "$OUT/.pagedquality.done"
-fi
 
-# ---------------------------------------------------------------------------
-# phase: treequality (SESSION-SPECIFIC; retires with the receipt). The
-# pagedquality receipt (campaign-20261105-141241, hardmode 74 vs the >=94 bar)
-# showed CROSS-REQUEST CONTENT CONTAMINATION in the raw logs (TC-104's VPN
-# answer contains TC-103's cart analysis verbatim; </think> literals leak
-# mid-content) - the paged pool serves recycled pages carrying stale KV rows.
-# This phase runs the SAME battery on the marriage tree UNPAGED (no pool, same
-# patch set => the cached image): ~95 => the pool recycling is the bug; ~74 =>
-# the tree's KV handling is broken deeper. Retires with the receipt.
-# ---------------------------------------------------------------------------
-if want treequality && ! phase_done treequality; then
-  log "=== treequality (hardmode on the marriage tree UNPAGED)"
-  P="$OUT/93-treequality.md"; : > "$P"
-  echo "# treequality (hardmode on absorb+marriage, TF_KV_PAGES off - the pool disambiguation)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  bench_cell hm-tree "$OUT/hm-tree" >> "$P"
-  echo "- the vision suite:" >> "$P"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-tree.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
-  touch "$OUT/.treequality.done"
-fi
 
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
