@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary poolcanary2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1031,50 +1031,54 @@ fi
 
 
 
+
 # ---------------------------------------------------------------------------
-# phase: poolcanary (SESSION-SPECIFIC; retires with the receipt). The
-# pagedquality battery showed cross-request content contamination on the paged
-# pool (TC-104's answer contained TC-103's material). This canary reproduces
-# the cycle in miniature: per round, a long prompt carrying a unique vault
-# code, a 46k-token churn fill (forcing store evictions), then a short prompt
-# asking for the code - the short prompt shares ONLY the ~1,530-token preamble
-# with the long ones, so an honest serve answers NONE. The paged serve first,
-# then the unpaged control. Retires with the receipt.
+# phase: poolcanary2 (SESSION-SPECIFIC; retires with the receipt). The canary
+# redesigned after poolcanary v1 came back clean-but-inconclusive (its ~790-token
+# prompts never crossed the store's 2,048-row keep grid, so resumed-at stayed 0
+# and the adopt path never fired). v2: the shared preamble is ~2,100 tokens
+# (harbor x28) so BOTH prompts keep/adopt the 2,048 state, and the long (carrying
+# vault code MKR-{i}QX past the prefix) and the short (asking for the code) fire
+# CONCURRENTLY on separate streams - the battery's regime. Three serves: paged,
+# paged with the store off (TF_GLM_KV_SHARE=0), unpaged. Retires with the receipt.
 # ---------------------------------------------------------------------------
-if want poolcanary && ! phase_done poolcanary; then
-  log "=== poolcanary (the stale-page canary: paged, then unpaged)"
-  P="$OUT/94-poolcanary.md"; : > "$P"
-  echo "# poolcanary (cross-request contamination: the code canary, paged then unpaged)" >> "$P"
-  for mode in paged unpaged; do
+if want poolcanary2 && ! phase_done poolcanary2; then
+  log "=== poolcanary2 (the concurrent canary: paged / paged store-off / unpaged)"
+  P="$OUT/95-poolcanary2.md"; : > "$P"
+  echo "# poolcanary2 (the concurrent code canary: the store's keep/adopt path under parallel streams)" >> "$P"
+  for mode in paged pagednoshare unpaged; do
     if [ "$mode" = paged ]; then
       restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+    elif [ "$mode" = pagednoshare ]; then
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 PATCHES="${RC_PATCHES-${PATCHES-}}"
     else
       restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
     fi
-    echo "- serve $mode: $(serve_line)" >> "$P"
+    echo "- serve $mode: $(serve_line | cut -c1-120)" >> "$P"
     for i in 1 2 3 4 5; do
       bf=$(mktemp /tmp/pcl.XXXXXX.json)
-      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 10 + ' The vault access code is MKR-' + sys.argv[2] + 'QX. Reply with just the code.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
-      R=$(curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
-try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:60].replace(chr(10)," "))
-except Exception as e: print("PARSE-FAILED")' 2>/dev/null)
-      echo "  $mode long$i reply: $R" >> "$P"; rm -f "$bf"
-      bf=$(mktemp /tmp/pcf.XXXXXX.json)
-      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Deep paged fill mia-d32768 - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' * 1213}],'max_tokens':1,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
-      curl -s -m 300 -o /dev/null "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null
+      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 28 + ' The vault access code is MKR-' + sys.argv[2] + 'QX. Reply with just the code.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
+      curl -s -m 120 -o /tmp/pclong.$i.out "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null &
       rm -f "$bf"
       bf=$(mktemp /tmp/pcs.XXXXXX.json)
-      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 10 + ' What vault access code were you given earlier in this conversation? Reply with just the code you were given, or NONE.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
-      R=$(curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
-try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:60].replace(chr(10)," "))
-except Exception as e: print("PARSE-FAILED")' 2>/dev/null)
-      echo "  $mode short$i reply: $R" >> "$P"; rm -f "$bf"
+      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 28 + ' What vault access code were you given in this conversation? Reply with just the code you were given, or NONE.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
+      curl -s -m 120 -o /tmp/pcshort.$i.out "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null
+      rm -f "$bf"
+      wait
+      RL=$(python3 -c 'import json
+try: print(json.load(open("/tmp/pclong.'$i'.out"))["choices"][0]["message"]["content"][:60].replace(chr(10)," "))
+except Exception: print("PARSE-FAILED")' 2>/dev/null)
+      RS=$(python3 -c 'import json
+try: print(json.load(open("/tmp/pcshort.'$i'.out"))["choices"][0]["message"]["content"][:60].replace(chr(10)," "))
+except Exception: print("PARSE-FAILED")' 2>/dev/null)
+      echo "  $mode round$i long: $RL | short: $RS" >> "$P"
+      rm -f /tmp/pclong.$i.out /tmp/pcshort.$i.out
     done
-    echo "- $mode engine lines (the resumed-at evidence):" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "prompt cache:|done chatcmpl" | tail -30 | sed 's/^/  /' >> "$P"
+    echo "- $mode engine lines (the resumed-at + keep evidence):" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "prompt cache:" | tail -16 | sed 's/^/  /' >> "$P"
   done
-  echo "- VERDICT: a short reply naming any MKR- code, or a short request's resumed-at past the ~1,530-token preamble, is contamination" >> "$P"
-  touch "$OUT/.poolcanary.done"
+  echo "- VERDICT: a short reply naming any MKR- code is contamination on that serve; paged-vs-pagednoshare splits the store's role from the pool's" >> "$P"
+  touch "$OUT/.poolcanary2.done"
 fi
 
 # ---------------------------------------------------------------------------

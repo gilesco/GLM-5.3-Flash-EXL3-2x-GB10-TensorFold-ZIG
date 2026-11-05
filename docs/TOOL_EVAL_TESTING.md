@@ -370,7 +370,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (stateSizes/pagedBytesOf/the snapshot host's E4M3 keep test); second:
       the prompt-cache eviction on paged states. Next: a code-reading
       session on those paths; the battery re-runs as pagedquality2 once a
-      fix candidate exists.
+      fix candidate exists. **poolcanary v1 (campaign-20261105-163035):
+      clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
+      store's 2,048-row keep grid (every request resumed at 0; the adopt
+      path never fired). **poolcanary2 in flight**: grid-crossing prompts
+      (~2,100-token preamble), the long+short fired CONCURRENTLY, three
+      serves (paged / paged store-off / unpaged) — a short reply naming a
+      prior round's code is contamination, and the store-off split
+      identifies the channel. The code reading: the pool is refcounted
+      (leases + the store as holders), leaving a RANK DIVERGENCE in the
+      store lifecycle (rank 1 has no pool, never reclaims) as the prime
+      suspect — only concurrent traffic exercises it.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460

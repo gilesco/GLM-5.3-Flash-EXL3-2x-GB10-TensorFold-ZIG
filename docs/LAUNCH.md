@@ -5962,3 +5962,36 @@ NONE. Five rounds on the paged serve, then the same on the unpaged
 control; the engine's resumed-at lines captured per round (a short
 request's resumed-at past the preamble is the numeric smoking gun). Same
 patch set ⇒ the cached image; the window is ~15 min.
+
+## (round 133, cont. 40) poolcanary v1 CLEAN BUT INCONCLUSIVE (the prompts never crossed the keep grid — the adopt path never fired); poolcanary2 launched (concurrent, grid-crossing, three serves) (2026-11-05)
+
+**campaign-20261105-163035 (poolcanary v1)**: all ten short replies (paged
+AND unpaged) answered NONE — but the engine lines expose the design flaw:
+every request shows **resumed at 0** — my prompts were ~790 tokens, BELOW
+the store's 2,048-row keep grid ("states on the 2,048-row prompt grid"),
+so no state was ever kept from them ("kept 0"), the adopt path never
+fired, and the canary tested nothing. The only kept state was the 46k
+fill's (kept at 45,056, a grid multiple) which resumed honestly from
+itself.
+
+**The code reading advanced anyway**: the core pool is REFCOUNTED
+("holders a page: each lease that maps it once, the store once") — a page
+frees only when every holder releases, so the naive double-ownership leak
+is designed against. What remains: **rank 1 has no pool and nothing
+promises pages there — its store never reclaims** — a potential rank
+divergence in the store lifecycle that only CONCURRENT multi-turn traffic
+exercises (the battery ran 4 streams; every prior paged instrument ran
+sequential probes). The battery's chain pattern (each scenario's answer
+carrying the previous scenario's material) fits a lifecycle divergence
+under concurrency.
+
+**LAUNCHED: poolcanary2** — the canary redesigned: the shared preamble is
+~2,100 tokens (harbor ×28) so BOTH prompts cross the keep grid and the
+2,048 state is genuinely kept/adopted; the long (carrying vault code
+MKR-{i}QX PAST the shared prefix) and the short (asking for the code) fire
+CONCURRENTLY on separate streams; five rounds. THREE serves: paged (the
+battery's config), paged with TF_GLM_KV_SHARE=0 (the store off — splits
+the store's role from the pool's), and unpaged (the control). A short
+reply naming any MKR- code is contamination on that serve; the
+paged-vs-pagednoshare split identifies the channel. Same patch set ⇒ the
+cached image; ~20 min.
