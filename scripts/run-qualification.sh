@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedecode knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,26 +1192,131 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagedquality2 (SESSION-SPECIFIC; retires with the receipt). The
-# adoption judgment on the FIXED composed paged stack: the page_rows fix
-# cured the mis-read (poolcanary5: 10/10 exact codes, chunk 1 and chunk 2,
-# five rounds of recycling). The hardmode battery + the vision suite on
-# absorb + marriage + pagerows-fix, TF_KV_PAGES=on. The bar: hardmode >= 94
-# (production parity; absorb set 95) + the vision 4/4. Retires with the
-# receipt.
+# phase: pagedecode (SESSION-SPECIFIC; retires with the receipt). The
+# decode-time loop hunt: pagedquality2's 75 shows degenerate token loops in
+# long generations (TC-62 "...calendar, calendar..."; TC-49 " " to the cap)
+# that the canary's 12-token decodes never exercised (dense_limit = i_topk +
+# kpool - 1: the canary sat ON the dense/sparse boundary; the battery lives
+# almost entirely beyond it). Greedy (temperature 0, seed 42) generations on
+# the SAME binary with TF_KV_PAGES=on vs off: G1 tiny prompt -> 2k decode,
+# L1 3.3k prompt -> 2k decode, L2 16k prompt -> 2k decode (TC-62's depth
+# regime), T1 thinking-ON 16k context -> 4k decode (the battery's mode), M1 a
+# ~2.3k turn-1 conversation (the resume path fires) + recall. LOOP on pages
+# where pages-off is clean = the decode-time paged path diverges (bisect the
+# onset next); LOOP on BOTH = the marriage's non-paging changes; CLEAN both =
+# the trigger is the battery's multi-turn/tool structure (instrument TC-62
+# next).
 # ---------------------------------------------------------------------------
-if want pagedquality2 && ! phase_done pagedquality2; then
-  log "=== pagedquality2 (the battery on the fixed composed paged stack)"
-  P="$OUT/99-pagedquality2.md"; : > "$P"
-  echo "# pagedquality2 (hardmode + vision on absorb+marriage+pagerows-fix, TF_KV_PAGES=on)" >> "$P"
+if want pagedecode && ! phase_done pagedecode; then
+  log "=== pagedecode (the greedy-decode comparison: pages on vs off)"
+  P="$OUT/99-pagedecode.md"; : > "$P"
+  cat > /tmp/pdan.py <<'PDAN'
+import sys, json, hashlib, re
+try:
+    d = json.load(sys.stdin)
+    msg = d["choices"][0]["message"]
+    c = ((msg.get("reasoning_content") or "") + "\n" + (msg.get("content") or ""))
+    u = d.get("usage") or {}
+    t = re.findall(r"\S+", c)
+    loop = ""
+    for i in range(1, len(t)):
+        if t[i] == t[i-1]:
+            j = i
+            while j < len(t) and t[j] == t[i]:
+                j += 1
+            if j - i >= 10:
+                loop = "RUN%d@tok%d" % (j - i, i)
+                break
+    if not loop:
+        m2 = re.search(r"(\S+)(\s*\1){9,}", c)
+        if m2:
+            loop = "TOKRUN:%s@%d" % (m2.group(1)[:20], m2.start())
+    if not loop and len(t) > 12:
+        from collections import Counter
+        g = Counter(tuple(t[i:i+3]) for i in range(len(t)-2))
+        k, mc = g.most_common(1)[0]
+        if mc >= 8:
+            first = min(i for i in range(len(t)-2) if tuple(t[i:i+3]) == k)
+            loop = "3GRAMx%d@tok%d:%s" % (mc, first, " ".join(k)[:28])
+    if not loop:
+        m2 = re.search(r"\s{20,}", c)
+        if m2:
+            loop = "WS-RUN@%d" % m2.start()
+    flat = c.replace("\n", " ")
+    print(flat[:86] + " .. " + flat[-56:] + " || sha=" + hashlib.sha256(c.encode()).hexdigest()[:14] + " || ctok=" + str(u.get("completion_tokens", -1)) + " || " + (loop or "CLEAN"))
+except Exception as e:
+    print("PARSE-FAILED:%r" % e)
+PDAN
+  pd_one() {
+    R=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$1" 2>/dev/null | python3 /tmp/pdan.py 2>/dev/null || true)
+    echo "  $2: $R" >> "$P"
+  }
+  pd_probes() {
+    tag="$1"
+    bf=$(mktemp /tmp/pd.XXXXXX.json)
+    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+import json, sys
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": "Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    pd_one "$bf" "$tag G1 tiny-prompt 2k-decode"
+    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+import json, sys
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 46 + "Ignore the word lists above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    pd_one "$bf" "$tag L1 3.3k-prompt 2k-decode"
+    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+import json, sys
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 230 + "Ignore the word lists above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    pd_one "$bf" "$tag L2 16k-prompt 2k-decode"
+    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+import json, sys
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 230 + "Using the context above as background, plan a 12-step research procedure for cataloging tidal pools. Think step by step, then give the numbered list."}], "max_tokens": 4096, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": True}}))
+PDB
+    pd_one "$bf" "$tag T1 16k-prompt thinking 4k-decode"
+    rm -f "$bf"
+    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+import json, sys
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}], "max_tokens": 48, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    r1=$(mktemp /tmp/pd.XXXXXX.json); r2=$(mktemp /tmp/pd.XXXXXX.json); r3=$(mktemp /tmp/pd.XXXXXX.json)
+    curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf" > "$r1" 2>/dev/null || true
+    echo "  $tag M1 turn1 remember (~2.3k prompt): $(python3 /tmp/pdan.py < "$r1" 2>/dev/null || true)" >> "$P"
+    python3 - "$SERVED_NAME" "$r1" > "$bf" <<'PDB'
+import json, sys
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+a1 = json.load(open(sys.argv[2]))["choices"][0]["message"].get("content") or ""
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}, {"role": "assistant", "content": a1}, {"role": "user", "content": "What is 17*23? Answer with just the number."}], "max_tokens": 48, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf" > "$r2" 2>/dev/null || true
+    echo "  $tag M1 turn2 math (resume fires): $(python3 /tmp/pdan.py < "$r2" 2>/dev/null || true)" >> "$P"
+    python3 - "$SERVED_NAME" "$r1" "$r2" > "$bf" <<'PDB'
+import json, sys
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+a1 = json.load(open(sys.argv[2]))["choices"][0]["message"].get("content") or ""
+a2 = json.load(open(sys.argv[3]))["choices"][0]["message"].get("content") or ""
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}, {"role": "assistant", "content": a1}, {"role": "user", "content": "What is 17*23? Answer with just the number."}, {"role": "assistant", "content": a2}, {"role": "user", "content": "What word did I ask you to remember? Answer with just the word."}], "max_tokens": 48, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf" > "$r3" 2>/dev/null || true
+    echo "  $tag M1 turn3 recall: $(python3 /tmp/pdan.py < "$r3" 2>/dev/null || true)" >> "$P"
+    RC=$(python3 -c "import sys,json; c=json.load(open(sys.argv[1]))[\"choices\"][0][\"message\"].get(\"content\") or \"\"; print(\"RECALL-OK\" if \"FALCON\" in c.upper() else \"RECALL-MISS: \" + c[:60])" "$r3" 2>/dev/null || true)
+    echo "  $tag M1 recall check: $RC" >> "$P"
+    rm -f "$bf" "$r1" "$r2" "$r3"
+    echo "  $tag engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -9 | sed 's/^/    /' >> "$P"
+  }
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  bench_cell hm-paged2 "$OUT/hm-paged2" >> "$P"
-  echo "- the vision suite:" >> "$P"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged2.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
-  echo "- the engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
-  touch "$OUT/.pagedquality2.done"
+  echo "- pages ON: $(serve_line | cut -c1-120)" >> "$P"
+  pd_probes on
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES= PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- pages OFF: $(serve_line | cut -c1-120)" >> "$P"
+  pd_probes off
+  echo "- VERDICT: LOOP on pages with pages-off clean = the decode-time paged path diverges (bisect the onset next); LOOP on BOTH = the marriage's non-paging changes (diff its decode hunks next); CLEAN both = the greedy decode is pages-clean at this depth and the battery's trigger is the multi-turn/tool structure (instrument TC-62 next)" >> "$P"
+  touch "$OUT/.pagedecode.done"
 fi
 
 # ---------------------------------------------------------------------------

@@ -406,10 +406,22 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       robustness gap, upstream-relevant). **poolcanary5 (campaign-
       20261105-194159): 10/10 EXACT CODES — chunk 1 and chunk 2, five
       rounds of recycling, no crashes: THE MIS-READ IS FIXED.**
-      **pagedquality2 in flight** — the battery + the vision suite on the
-      fixed composed paged stack (absorb + marriage + pagerows-fix,
-      TF_KV_PAGES=on): the adoption judgment (the bar: hardmode ≥ 94 +
-      the vision 4/4).
+      **pagedquality2 (campaign-20261105-195559): hardmode 75** (the bar
+      ≥ 94; the pre-fix 74) + **the vision 4/4** — the mis-read is cured
+      but a NEW failure mode: **degenerate token loops in long
+      generations** (TC-62: 51,967 tokens ending "…alendar, calendar…"
+      — 79,525 chars of reasoning, no answer; TC-49: " " to the 16,384
+      cap; finish=length at 99% draft acceptance). total_tokens +60%
+      (662k→1,064k), token_efficiency 0.30→0.15, the multi-turn
+      capabilities collapsed (constraints 10→3, state-tracking 5→1,
+      concurrency 6→3) — while median_turn_ms IMPROVED (6,830→5,993 ms).
+      The audit: not a page_rows repeat; pks≠0 only under TF_GLM_KV_HOST
+      (inert here); the decode Tables are covered by the fix;
+      dense_limit = i_topk+kpool-1 — the canary's decodes sat ON the
+      dense/sparse boundary, the battery lives beyond it.
+      **pagedecode in flight** — the greedy-decode comparison (pages on
+      vs off, same binary: tiny/3.3k/16k prompts × 2k decodes + a
+      thinking-ON 4k decode + a resume-path recall turn).
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

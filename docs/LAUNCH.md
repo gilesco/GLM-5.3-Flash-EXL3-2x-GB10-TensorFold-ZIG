@@ -6225,3 +6225,38 @@ blocking anything here.
 the FIXED composed paged stack (absorb + marriage + pagerows-fix,
 TF_KV_PAGES=on). The adoption bar: hardmode ≥ 94 (production parity; absorb
 set 95) + the vision 4/4. The battery is ~50 min; the window ~60 min.
+
+## (round 133, cont. 51) pagedquality2 = 75: the mis-read is cured, a NEW failure mode — degenerate token loops; the decode-time hunt opens (2026-11-05)
+
+**campaign-20261105-195559 (pagedquality2, the fixed composed paged
+stack)**: hardmode **75** (bar ≥94; the pre-fix 74 — barely moved), the
+vision **4/4**. The contamination is GONE (poolcanary5 10/10) — the
+failure mode is DIFFERENT: **degenerate token loops in long generations**.
+TC-62 emitted 51,967 tokens ending "…alendar, calendar, calendar, …"
+(79,525 chars of reasoning, no answer); TC-49 repeated " " to the 16,384
+cap. Engine lines: finish=length at tokens=16384 with the draft acceptance
+99% (a repeating token is trivial to draft; a normal short reply shows
+~80%). The shape: total_tokens +60% (662k→1,064k), token_efficiency
+halved (0.30→0.15), deployability 73→60, the multi-turn capabilities
+collapsed (constraints 10→3, state-tracking 5→1, concurrency 6→3) — while
+**median_turn_ms IMPROVED (6,830→5,993 ms; the pages' speed win is real)**.
+
+**Why the canary missed it**: dense_limit = keyWidth = i_topk + kpool - 1
+— the canary's 12-token decodes sat ON the dense/sparse boundary; the
+battery lives almost entirely beyond it (prompts 3k-20k, decodes to 16k).
+The static audit closed the easy suspects: NOT a page_rows repeat (no
+unfixed ps/(l.lw*2) formula remains; cuda_sparse.zig:131 consumes the
+fixed Table); the decode path's t-vs-tk Table difference is inert (pks≠0
+only under TF_GLM_KV_HOST — never set here); the MTP drafter's caches are
+paged by the marriage (mtp_caches at kv.ptr+part, the same page table) and
+covered by the fix's three sites.
+
+**LAUNCHED: pagedecode** — the greedy-decode comparison, pages on vs off,
+SAME binary (absorb + marriage + pagerows-fix): G1 tiny prompt → 2k
+decode, L1 3.3k → 2k, L2 16k → 2k (TC-62's depth regime), T1 thinking-ON
+16k → 4k decode (the battery's mode: the loops lived in the reasoning
+channel), M1 a ~2.3k turn-1 conversation (the resume path fires) + recall.
+LOOP on pages with pages-off clean ⇒ the decode-time paged path diverges
+(bisect the onset next); LOOP on BOTH ⇒ the marriage's non-paging changes;
+CLEAN both ⇒ the trigger is the battery's multi-turn/tool structure
+(instrument TC-62 directly next). ~20 min.
