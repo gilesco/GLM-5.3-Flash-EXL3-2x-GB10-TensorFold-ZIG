@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs deepfills visioncheck hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1026,75 +1026,6 @@ fi
 # was TP=3; we are TP=2). The identical-fill comparison is self-consistent
 # (both legs' prompt_tokens match exactly). Receipts: results/deepdelta/.
 # Re-run patterns: git history.)
-# ---------------------------------------------------------------------------
-# phase: deepfills (SESSION-SPECIFIC; retires with the receipt). The Mia-1104
-# fold-in stack's prefill receipt: the SAME instrument as deepdelta (the fox
-# sentence repeated, the tag inside the content so every fill stays cold, the
-# receipt's prompt_tokens is the truth) on the patched serve — chunk4096 +
-# dflash2-ingest claim +7% (0.785 -> ~0.73 ms/tok expected), the cost tables
-# are output-neutral (the content gate in preflight/resumecost is the ship
-# check). Also the g3 /metrics cache-counter capture, done cleanly this time:
-# curl to a file, then grep (two heredoc captures landed nothing).
-# ---------------------------------------------------------------------------
-if want deepfills && ! phase_done deepfills; then
-  log "=== deepfills (the Mia stack's deep fills)"
-  P="$OUT/deepfills.md"; : > "$P"
-  echo "# deepfills (the window's RC_PATCHES stack)" >> "$P"
-  echo "- RC_PATCHES: ${RC_PATCHES:-unset}" >> "$P"
-  # the g3 capture BEFORE the restart: resumecost's resume traffic is what
-  # moves the counter, and this phase's own restart resets the serve
-  curl -s -m 10 "http://127.0.0.1:$PORT/metrics" -o "$OUT/g3-resumecost.txt" || true
-  # self-contained (the deepdelta pattern): this phase restarts the serve itself
-  # so it never depends on phase order or a prior phase's boot — and a restart
-  # only carries what it is handed (the gotcha: RC_PATCHES does NOT propagate),
-  # so the patch env and the window's opt-in knobs are passed explicitly
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_ABSORB_MMA=1 PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- the g3 counter after resumecost's traffic (pre-restart): $(grep -o "tensorfold:prompt_tokens_cached_total [0-9]*" "$OUT/g3-resumecost.txt" 2>/dev/null | tail -1 || echo absent)" >> "$P"
-  echo "- engine: $(grep "TensorFold commit" "$LOG" 2>/dev/null | tail -1)" >> "$P"
-  echo "- patches staged: $(grep -o "glm-mia-[a-z0-9-]*\.patch" "$LOG" 2>/dev/null | sort -u | tr '\n' ' ')" >> "$P"
-  echo "- server: $(serve_line)" >> "$P"
-  for d in 32768 65536 131072; do
-    n=$((d / 27))
-    bf=$(mktemp /tmp/deepfill.XXXXXX.json)
-    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':('Deep fill mia-d%s — the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[2]) * int(sys.argv[3])}],'max_tokens':1}))" "$SERVED_NAME" "$d" "$n" > "$bf"
-    curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      -d @"$bf" 2>/dev/null | python3 -c '
-import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-d = json.loads(body)
-m = re.search(r"ttft=([0-9.]+) total=([0-9.]+)", tim)
-print("cold fill @ d%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], d["usage"]["prompt_tokens"], m.group(1)))' "$d" >> "$P" 2>/dev/null || echo "cold fill @ d$d: FAILED" >> "$P"
-    rm -f "$bf"
-  done
-  echo "- the last serve lines (the resume evidence):" >> "$P"
-  grep -E "prompt cache:|done chatcmpl" "$LOG" 2>/dev/null | tail -6 | sed 's/^/  /' >> "$P" || true
-  curl -s -m 10 "http://127.0.0.1:$PORT/metrics" -o "$OUT/g3-metrics.txt" || true
-  {
-    echo "- the g3 hygiene: cached-counter lines in /metrics ($(wc -l < "$OUT/g3-metrics.txt" 2>/dev/null || echo 0) total lines):"
-    grep -i "cached" "$OUT/g3-metrics.txt" 2>/dev/null | head -5 || echo "  (no cached* lines — the counter is absent/unwired)"
-  } >> "$P"
-  touch "$OUT/.deepfills.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: visioncheck (SESSION-SPECIFIC; retires with the receipt). The
-# vision suite on the ADOPTED stack: the ABSORB_MMA kernels engage on the
-# vision tower's prompt passes too (rows >= 64), so the standing 4/4
-# receipt needs a re-take on the adopted config. The repo's own assets via
-# the repoed runner; the answers saved raw for the side-by-side digest.
-# ---------------------------------------------------------------------------
-if want visioncheck && ! phase_done visioncheck; then
-  log "=== visioncheck (the vision suite on the adopted stack)"
-  P="$OUT/visioncheck.md"; : > "$P"
-  echo "# visioncheck (the adopted stack)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "- server: $(serve_line)" >> "$P"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/vision-answers.json" >> "$P" 2>&1 || echo "- the probe FAILED" >> "$P"
-  echo "- the answers: $OUT/vision-answers.json (the digest compares against the manifest's ground truth)" >> "$P"
-  touch "$OUT/.visioncheck.done"
-fi
 
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production

@@ -5474,3 +5474,17 @@ decision re-weighs.
 "hmcheck summary"` — the hardmode re-take on the ABSORB-only default (the 95
 receipt ran on both-patches; the 94 control is the floor; the battery
 settles the quality receipt on the shipping config).
+
+## (round 133, cont. 21) THE ADOPTION CLOSED: hardmode 95 on the shipping config; the session phases retired (2026-11-05)
+
+**campaign-20261105-003101 (the re-take)**: hardmode on the ABSORB-only
+shipping config reads **95/104** — the 95 was not the tables' artifact (the
+serve line's ABSORB-ON shape; the wall flat at 103 s). The adoption is fully
+receipted on every axis: the deep fills −6.8/−7.0/−6.9%, the small prompts
+−5-6%, greedy byte-identical everywhere, the vision 4/4, the duel fronts
+solo 110% / c2 ~99% / c4 98% / cold 334% / ITL ~107%, hardmode 95, memory
+−0.1 GiB, the wall 103 s. The README's quality row settles at 95; the
+ledger's ABSORB item closes. **The deepfills and visioncheck session phases
+retired** (their receipts complete; the registry notes live in this log and
+the ledger). One tooling slip during the retirement (the "fi"-substring
+match in the cut helper) caught by bash -n and fixed before commit.

@@ -306,18 +306,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
-- [ ] **ABSORB_MMA — ADOPTED ALONE; the hardmode re-take running** (round
-      133, cont. 20): the attribution duel (campaign-20261105-000521,
-      ABSORB-only) returned c2 to **110.4** (its band; with the tables 93.1)
-      and kept every gain — solo **110%** (65.1/59.0), the 8k slope 0.602 /
-      d8192 5,122 (identical to the both-patch duel — the tables contributed
-      nothing to prefill), c4 98% of production's floor-of-range pair, ITL
-      unchanged, the cold front **334%**. **The cost tables DROPPED**
-      (config.sh's PATCHES default → absorb-only; the ECOSYSTEM item 5
-      dispositioned; patches/README carries the verdict). The anchors/chart
-      re-paired on the ABSORB-only duel. The hardmode re-take on ABSORB-only
-      rides the running window (the 95 receipt ran on both-patches; the 94
-      control is the floor).
+- [x] **ABSORB_MMA — ADOPTED AND CLOSED** (round 133, cont. 21): the
+      hardmode re-take on the ABSORB-only shipping config reads **95/104**
+      (campaign-20261105-003101 — the 95 was not the tables' artifact; the
+      serve line's ABSORB-ON shape, the wall flat at 103 s). The full
+      receipt chain: the deep fills −6.8/−7.0/−6.9% (campaign-20261104-
+      213422), the small prompts −5-6% (campaign-20261104-233541), greedy
+      byte-identical everywhere, the vision 4/4 (campaign-20261104-234405),
+      the duel fronts solo 110% / c2 ~99% / c4 98% / cold 334% / ITL ~107%
+      (campaign-20261105-000521), hardmode 95 (campaign-20261105-003101).
+      The cost tables dropped in the attribution (see the ECOSYSTEM item).
+      The deepfills and visioncheck session phases retire.
 - [x] **The ABSORB_MMA confirmation window** (round 133, cont. 17): hardmode
       on the full stack (the first boot inherited the adopted config — the
       serve line's 13.9 GiB / 2.6 GiB cache is the ABSORB-ON shape):
