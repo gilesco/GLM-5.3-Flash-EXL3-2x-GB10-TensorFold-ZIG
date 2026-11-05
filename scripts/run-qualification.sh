@@ -1136,9 +1136,11 @@ try:
 except Exception:
     print("serve %s fill x1213: FAILED" % sys.argv[1])' "$_tag" >> "$P" 2>/dev/null || echo "serve $_tag fill x1213: FAILED" >> "$P"
   rm -f "$bf"
-  grep -E "done chatcmpl" "$LOG" 2>/dev/null | tail -3 > "$_eng" || true
+  sleep 1
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -F "done chatcmpl" | tail -3 > "$_eng" || true
   echo "- serve $_tag engine lines (the authoritative shas):" >> "$P"
   sed 's/^/  /' "$_eng" >> "$P"
+  [ -s "$_eng" ] || echo "  WARNING: no engine lines captured for serve $_tag" >> "$P"
 }
 if want windowedsha && ! phase_done windowedsha; then
   log "=== windowedsha (the bitwise cross-check: three serves, greedy shas)"
@@ -1154,9 +1156,9 @@ if want windowedsha && ! phase_done windowedsha; then
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- serve A (the marriage unpaged, same image): $(serve_line)" >> "$P"
   windowedsha_probes A
-  _bb=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B 2>/dev/null | sed 's/sha=//' | paste -sd, -)
-  _bp=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.P 2>/dev/null | sed 's/sha=//' | paste -sd, -)
-  _ba=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.A 2>/dev/null | sed 's/sha=//' | paste -sd, -)
+  _bb=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
+  _bp=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.P 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
+  _ba=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.A 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
   echo "- serve B shas: ${_bb:-none}" >> "$P"
   echo "- serve P shas: ${_bp:-none}" >> "$P"
   echo "- serve A shas: ${_ba:-none}" >> "$P"

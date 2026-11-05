@@ -5745,3 +5745,37 @@ receipt. RC_PATCHES="glm-mia-fp8-pages.patch,glm-zz-debug-tokenunits.patch"
 head↔worker link is a POINT-TO-POINT fabric — the worker's fabric address
 is reachable from the head only; the agent host reaches the worker by its
 routable name (the cont. 29 misdiagnosis came from exactly this).
+
+## (round 133, cont. 34) windowedsha's CAPTURE BUG (the shas lost; the phase died at the verdict block); the ttft no-regression receipt stands; the fixed re-run launched (2026-11-05)
+
+**campaign-20261105-123923 (windowedsha v1)**: all THREE serves booted and
+answered — B standing / P marriage-paged / A marriage-unpaged, three probes
+each, no deaths, no TokenUnits. The receipt's ttfts are a no-regression
+receipt on their own: the cold 46,109-token fill 35.49 s (B) / 38.21 s (P)
+/ 38.03 s (A) — the paged serve matches the marriage-unpaged serve (paging
+adds ~nil at depth) and both sit at the base tree's deep-prefill rate (the
+marriage tree lacks absorb by construction; base ≈ 38 s here follows from
+absorb's −7% deep-fill receipt); B's 35.49 s is absorb's front.
+
+**The shas are LOST and the phase died**: the per-serve capture grepped
+"$LOG" — which is $OUT/campaign.log (run-qualification.sh line 64), NOT the
+engine's log; campaign.log never carries per-request engine lines (the
+pagedchecks receipts' done-lines actually came from their docker-logs
+captures). The captures were empty, and the verdict block's
+`_bb=$(grep ... | paste)` assignment then killed the script under
+`set -euo pipefail` (grep finds nothing → the pipeline's rc 1 → the
+assignment fails set -e) — the campaign died after serve A with no summary
+and no " done." marker; the quiet-age poke caught it (third verified
+firing). The rank-log saves hold no rank-0 request lines for the serving
+boots (only the death boots' banners were ever saved) — the B/P/A shas are
+not recoverable; the rm -f'd containers' docker logs are gone.
+
+**FIXED and relaunched**: the phase captures per serve from
+`docker logs "$CONTAINER_NAME"` (the live container, before the next
+restart rotates it) with a flush pause; every sha-extraction assignment is
+pipefail-guarded (`|| true` inside the substitution); an empty capture
+prints a loud warning into the receipt instead of dying. Same probe shapes
+(7,666 / 15,316 / 46,109 tokens — the harbor sentence is ~75 tok/rep, not
+150; the receipt's prompt_tokens is the truth), same three serves, same
+cached image (the debug patch stays in RC_PATCHES for the fingerprint and
+retires at the verdict).

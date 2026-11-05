@@ -321,9 +321,13 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       not depth signatures (9e04a49e5786 dominates across depths and seeds;
       the unique shas are sampling flakes). The bitwise instrument
       redesigned — greedy + thinking-off + 64-token chains (deterministic
-      logits fingerprints); **windowedsha in flight**: three serves in one
-      window (B standing / P marriage-paged / A marriage-unpaged), the same
-      three prompts each, pairwise sha verdicts in the receipt.
+      logits fingerprints); **windowedsha v1 (campaign-20261105-123923):
+      the serves all passed and the ttfts are a no-regression receipt
+      (the cold 46,109-token fill 35.49/38.21/38.03 s on B/P/A — paging
+      adds ~nil), but the sha capture grepped $LOG (= campaign.log, which
+      never carries engine request lines) and the verdict block died under
+      set -euo pipefail — the shas are lost, not recoverable.** The fixed
+      phase (docker-logs capture, pipefail-guarded assignments) re-runs.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460
