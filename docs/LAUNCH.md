@@ -5559,3 +5559,33 @@ scripts/autonomous-launch.sh "preflight resumecost summary"` — the
 judgment: the boot's pool shape (the serve line), the gates (Mia's paged
 chunks are bitwise the window's — the sha must hold), the resumecost rows,
 the memory. The kernel recompile makes the window ~35-45 min.
+
+## (round 133, cont. 26) THE MARRIAGE'S FIRST WINDOW: the port compiles+boots — the pool is EXACTLY Mia's (2.1M tokens); a prof-gated crash found at the second chunk; the discriminator launched (2026-11-05)
+
+**campaign-20261105-101240**:
+- **The port COMPILED AND BOOTED** — the biggest compile-risk check of the
+  arc passed. The serve line: "4 streams at once, the engine's own and 3
+  more taking **4100 pages of 512 rows (13.61 GiB) as they need them**
+  (enough for one at a 524288-token window), **220 MiB fixed each**, of
+  **17.6 GiB left**" — **the pool is exactly Mia's 2.1M tokens**, the fixed
+  per-stream cost collapsed from ~3.75 GiB to 220 MiB, and the elastic pool
+  frees ~3.5 GiB at the same 512K×4 spec.
+- **The sha is bitwise on the single-chunk probes** (9e04a49e5786, the
+  d2048s) — Mia's "the paged chunks are bitwise the window's" verified.
+- **THE CRASH**: the d4096 warm shots and d8192 all failed — the rank died
+  at the SECOND chunk of a multi-chunk paged prompt:
+  `glm prompt invalid ... reason=InvalidPromptProfile`. The guard is
+  **prof-gated** (cuda_prompt_trace's collect runs only under TF_GLM_PROF=1;
+  the resumecost boot instruments) — the second paged chunk's trace comes
+  up empty and the validation kills the rank. **The served config has no
+  prof** — this is a debug-instrument interaction, not (yet proven) a
+  serving-path bug.
+- The rank-0 docker logs were lost (the stop's save skips dead containers);
+  rank-1's log carried the trace.
+
+**LAUNCHED (the discriminator)**: a `pagedchecks` session phase — the SAME
+probes (d2048/4096/8192 cold+warm, then the d32k/d64k deep fills — all
+multi-chunk at depth) with **no TF_GLM_PROF**. Pass → the crash is a
+debug-instrument interaction, the serving path is sound, the adoption
+judgment proceeds (the prof interaction documented as a known limitation).
+Fail → the port has a real bug and the marriage parks.

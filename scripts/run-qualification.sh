@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedchecks knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1026,6 +1026,65 @@ fi
 # was TP=3; we are TP=2). The identical-fill comparison is self-consistent
 # (both legs' prompt_tokens match exactly). Receipts: results/deepdelta/.
 # Re-run patterns: git history.)
+
+# ---------------------------------------------------------------------------
+# phase: pagedchecks (SESSION-SPECIFIC; retires with the receipt). The
+# fp8+pages marriage's discriminator: the campaign-20261105-101240 window
+# died at the SECOND chunk of a multi-chunk paged prompt under TF_GLM_PROF=1
+# (InvalidPromptProfile - the trace/collect path is prof-gated; the served
+# config has no prof). This phase runs the SAME probes with no prof: if they
+# pass, the crash is a debug-instrument interaction and the marriage's
+# serving path is sound; if they fail, the port has a real bug.
+# ---------------------------------------------------------------------------
+if want pagedchecks && ! phase_done pagedchecks; then
+  log "=== pagedchecks (the paged serve, no prof)"
+  P="$OUT/pagedchecks.md"; : > "$P"
+  echo "# pagedchecks (the fp8+pages serve, TF_GLM_PROF unset)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- server: $(serve_line)" >> "$P"
+  for d in 2048 4096 8192; do
+    for shot in 1 2 3; do
+      bf=$(mktemp /tmp/pagedprobe.XXXXXX.json)
+      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * (int(sys.argv[2]) // 20)}],'max_tokens':1}))" "$SERVED_NAME" "$d" > "$bf"
+      curl -s -m 120 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
+        "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+        -d @"$bf" 2>/dev/null | python3 -c '
+import sys, json, re
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+try:
+    d = json.loads(body)
+    m = re.search(r"ttft=([0-9.]+)", tim)
+    print("probe d%s shot%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[2], sys.argv[3], d["usage"]["prompt_tokens"], m.group(1)))
+except Exception:
+    print("probe d%s shot%s: FAILED" % (sys.argv[2], sys.argv[3]))' "$d" "$shot" >> "$P" 2>/dev/null || echo "probe d$d shot$shot: FAILED" >> "$P"
+      rm -f "$bf"
+    done
+  done
+  echo "- the engine lines (the sha + the resume evidence):" >> "$P"
+  grep -E "done chatcmpl|prompt cache:" "$LOG" 2>/dev/null | tail -12 | sed 's/^/  /' >> "$P" || true
+  echo "- the deep fills (multi-chunk paged prompts at depth):" >> "$P"
+  for d in 32768 65536; do
+    n=$((d / 27))
+    bf=$(mktemp /tmp/pagedfill.XXXXXX.json)
+    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':('Deep paged fill mia-d%s - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[2]) * int(sys.argv[3])}],'max_tokens':1}))" "$SERVED_NAME" "$d" "$n" > "$bf"
+    curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
+      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
+      -d @"$bf" 2>/dev/null | python3 -c '
+import sys, json, re
+t = sys.stdin.read()
+body, _, tim = t.rpartition("TTFTMARK")
+try:
+    d = json.loads(body)
+    m = re.search(r"ttft=([0-9.]+)", tim)
+    print("paged fill @ d%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[2], d["usage"]["prompt_tokens"], m.group(1)))
+except Exception:
+    print("paged fill @ d%s: FAILED" % sys.argv[2])' "$d" >> "$P" 2>/dev/null || echo "paged fill @ d$d: FAILED" >> "$P"
+    rm -f "$bf"
+  done
+  echo "- the serve still alive: $(serve_line | cut -c1-80)" >> "$P"
+  touch "$OUT/.pagedchecks.done"
+fi
 
 # ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
