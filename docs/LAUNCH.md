@@ -5669,3 +5669,21 @@ poke (the second fix verified); the guard's fold-in rule caught the
 un-digested 105143 (the pipe-masked guard failure taught the command
 pattern: `./scripts/docs-guard.sh 2>&1 | tail -1` eats the exit code —
 check the output, not the rc).
+
+## (round 133, cont. 30) THE WEDGE DIAGNOSIS CORRECTED: the worker was never wedged — the guard's semantics fixed; the pagedchecks re-run launched (2026-11-05)
+
+**Correction to cont. 29**: the worker was NEVER wedged. The "Network is
+unreachable" came from the AGENT host (no route to the private 192.168.2.x
+subnet — only the head sits on it); (user) ssh'd from the head fine. The
+worker's rank-1 container had **Exited (1)** 35 minutes prior — a dead
+husk, not a wedge. **The real bug was the wedge guard's semantics**:
+`docker inspect NAME` succeeds for exited containers too, so the guard
+refused to launch over a dead husk that the launch's own `docker rm -f`
+would have cleared — the guard blocked its own self-healing. **Fixed**:
+both polls check `{{.State.Running}}` — an Exited husk passes, only a
+container that will not stop running is the wedge. The husk removed on the
+worker; production's rank 1 confirmed up.
+
+**LAUNCHED**: the pagedchecks re-run (the logical-fixed patch, no prof) —
+the first request's DSA sparse launch should now clear TokenUnits, and the
+probes + the deep fills judge the marriage's serving path at last.
