@@ -6210,3 +6210,18 @@ absorb + marriage + pagerows-fix.
 code at chunk 1 AND chunk 2, on the fixed fp8-paged serve. Ten exact
 MKR-{i}QX replies ⇒ the mis-read is fixed ⇒ the battery re-run
 (pagedquality2) is the adoption judgment. ~10 min.
+
+## (round 133, cont. 50) THE MIS-READ IS FIXED: poolcanary5 = 10/10 EXACT CODES (chunk 1 and chunk 2, five rounds of recycling, no crashes); pagedquality2 launched — the adoption judgment (2026-11-05)
+
+**campaign-20261105-194159 (poolcanary5, the no-poison fix validation)**:
+**ten out of ten exact MKR-{i}QX replies** — the code at chunk 1 (~row
+1,520) AND chunk 2 (~row 2,110), five rounds of page recycling, no crashes,
+no failures. The page_rows fix completely cures the E4M3 paged mis-read.
+The poison-only CudaContextLost crash stands as a separate E4M3-selection
+NaN-robustness gap (upstream-relevant; the bf16 path tolerates NaN), not
+blocking anything here.
+
+**LAUNCHED: pagedquality2** — the hardmode battery + the vision suite on
+the FIXED composed paged stack (absorb + marriage + pagerows-fix,
+TF_KV_PAGES=on). The adoption bar: hardmode ≥ 94 (production parity; absorb
+set 95) + the vision 4/4. The battery is ~50 min; the window ~60 min.

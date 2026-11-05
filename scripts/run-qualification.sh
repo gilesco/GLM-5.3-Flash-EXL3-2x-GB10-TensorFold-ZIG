@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary5 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1189,6 +1189,29 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
   docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -12 | sed 's/^/  /' >> "$P"
   echo "- VERDICT: ten exact MKR-{i}QX replies = the mis-read is fixed; the battery re-run is the adoption judgment" >> "$P"
   touch "$OUT/.poolcanary5.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: pagedquality2 (SESSION-SPECIFIC; retires with the receipt). The
+# adoption judgment on the FIXED composed paged stack: the page_rows fix
+# cured the mis-read (poolcanary5: 10/10 exact codes, chunk 1 and chunk 2,
+# five rounds of recycling). The hardmode battery + the vision suite on
+# absorb + marriage + pagerows-fix, TF_KV_PAGES=on. The bar: hardmode >= 94
+# (production parity; absorb set 95) + the vision 4/4. Retires with the
+# receipt.
+# ---------------------------------------------------------------------------
+if want pagedquality2 && ! phase_done pagedquality2; then
+  log "=== pagedquality2 (the battery on the fixed composed paged stack)"
+  P="$OUT/99-pagedquality2.md"; : > "$P"
+  echo "# pagedquality2 (hardmode + vision on absorb+marriage+pagerows-fix, TF_KV_PAGES=on)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- server: $(serve_line)" >> "$P"
+  bench_cell hm-paged2 "$OUT/hm-paged2" >> "$P"
+  echo "- the vision suite:" >> "$P"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged2.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+  echo "- the engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
+  touch "$OUT/.pagedquality2.done"
 fi
 
 # ---------------------------------------------------------------------------
