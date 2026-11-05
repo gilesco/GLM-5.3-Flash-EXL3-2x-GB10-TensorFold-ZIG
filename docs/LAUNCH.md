@@ -6079,3 +6079,25 @@ on windows that reach the summary). FIXED: the bf16 leg passes `KV_CACHE=`
 (empty — the engine default). The windowed-fp8 serve line in the log was
 the framework reading a stale serve line after the failed restart, not a
 boot. Relaunched unchanged otherwise.
+
+## (round 133, cont. 44) THE BISECT IS DECISIVE: bf16-paged PERFECT (5/5 exact codes) — the bug is E4M3-SPECIFIC, and the failure follows the PHYSICAL PAGE history; the poison discriminator launched (2026-11-05)
+
+**campaign-20261105-173936 (poolcanary3, the format bisect)**:
+- **bf16-paged (the base's path): PERFECT** — all five longs reply their
+  own exact code (MKR-1QX → MKR-5QX). The base's shared paged multi-chunk
+  machinery is CORRECT, and the gates-coverage worry dissolves.
+- **fp8-paged: broken, page-history-dependent**: round 1 (fresh pages)
+  hallucinated digits ("Vault Access Code: 7-14-19-"); rounds 3/5 surfaced
+  PREAMBLE tokens ("cistern-10", "gravel-2") as the code — the previous
+  rounds' rows; round 4 was CORRECT (the recycled pages held near-identical
+  rows from round 3's almost-identical prompt). **The read path returns
+  PHYSICAL PAGE CONTENT rather than the written rows** — a write-visibility
+  or write-address failure in the E4M3 paged path specifically.
+
+**LAUNCHED: poolcanary4** — the poison discriminator:
+TF_KV_POISON=1 NaN-fills every request's fresh pages at map time, erasing
+stale content — uniform garbling under poison means the reads miss the
+writes (write visibility); an unchanged pattern means the reads hit the
+written rows but the stored content is wrong (quantize/scales). Each round
+also splits the code position: chunk 1 (~row 1,520) vs chunk 2 (~row
+2,110). The window is ~10 min.

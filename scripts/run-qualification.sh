@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP poolcanary4 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1112,6 +1112,41 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null)
   done
   echo "- VERDICT: a long reply that is not exactly its own MKR-{i}QX is the mis-read; bf16 failing too means the base's shared paged multi-chunk machinery" >> "$P"
   touch "$OUT/.poolcanary3.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: poolcanary4 (SESSION-SPECIFIC; retires with the receipt). The poison
+# discriminator for the E4M3-specific mis-read: TF_KV_POISON=1 NaN-fills fresh
+# pages at map time, so stale content cannot masquerade - a garbled reply means
+# the reads miss the writes; an unchanged pattern means the stored content is
+# wrong. The code position splits chunk 1 (~row 1,520) against chunk 2
+# (~row 2,110). Retires with the receipt.
+# ---------------------------------------------------------------------------
+if want poolcanary4 && ! phase_done poolcanary4; then
+  log "=== poolcanary4 (the poison discriminator, fp8 paged)"
+  P="$OUT/97-poolcanary4.md"; : > "$P"
+  echo "# poolcanary4 (TF_KV_POISON=1: write-visibility vs content-wrongness; chunk1 vs chunk2)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 TF_KV_POISON=1 PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- serve: $(serve_line | cut -c1-130)" >> "$P"
+  for i in 1 2 3; do
+    for spot in early late; do
+      bf=$(mktemp /tmp/pc4.XXXXXX.json)
+      if [ "$spot" = early ]; then
+        python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 20 + ' The vault access code is MKR-' + sys.argv[2] + 'QX. ' + 'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 10 + 'Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
+      else
+        python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * 28 + ' The vault access code is MKR-' + sys.argv[2] + 'QX. Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
+      fi
+      R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
+except Exception: print("PARSE-FAILED")' 2>/dev/null)
+      echo "  round$i $spot reply: $R" >> "$P"
+      rm -f "$bf"
+    done
+  done
+  echo "- engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl" | tail -8 | sed 's/^/  /' >> "$P"
+  echo "- VERDICT: uniform garbling under poison = the reads miss the writes (write visibility); the v3 pattern unchanged = the stored content is wrong (quantize/scales); early-vs-late splits the chunk the loss lives in" >> "$P"
+  touch "$OUT/.poolcanary4.done"
 fi
 
 # ---------------------------------------------------------------------------

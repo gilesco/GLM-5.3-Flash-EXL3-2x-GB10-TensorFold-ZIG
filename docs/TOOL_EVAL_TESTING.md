@@ -370,7 +370,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (stateSizes/pagedBytesOf/the snapshot host's E4M3 keep test); second:
       the prompt-cache eviction on paged states. Next: a code-reading
       session on those paths; the battery re-runs as pagedquality2 once a
-      fix candidate exists. **poolcanary v1 (campaign-20261105-163035):
+      fix candidate exists. **poolcanary3 (campaign-20261105-173936): the
+      format bisect DECISIVE — bf16-paged PERFECT (5/5 exact codes; the
+      base's shared paged multi-chunk machinery is correct), fp8-paged
+      broken page-history-dependently (fresh pages: hallucination; recycled:
+      previous rounds' rows surfacing; one round correct where the recycled
+      rows were near-identical) — THE READ PATH RETURNS PHYSICAL PAGE
+      CONTENT rather than the written rows: an E4M3-specific write-visibility
+      or write-address failure. poolcanary4 in flight: TF_KV_POISON=1 (the
+      NaN refill erases stale content — uniform garbling = the reads miss
+      the writes; an unchanged pattern = the stored content is wrong) plus
+      the chunk-1-vs-chunk-2 code-position split. **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
       path never fired). **poolcanary2 in flight**: grid-crossing prompts
