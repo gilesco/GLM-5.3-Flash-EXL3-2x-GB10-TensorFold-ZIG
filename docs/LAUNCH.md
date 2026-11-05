@@ -5529,3 +5529,33 @@ E4M3 beside DFlash2 vs 13,056 bf16), unknown TF_KV_PAGES values refused
 every-other-stream-done cannot fit). 0017 is committed in the scratch repo
 (b592905); 0018's adaptation is the next sitting's work block — the
 KV-pool core deserves fresh context, not a drained one.
+
+## (round 133, cont. 25) THE MARRIAGE PORTED: all nine patches adapted, the combined patch verified, the judgment window launched (2026-11-05)
+
+**The fp8+pages marriage (patches 0017-0025) is fully adapted** — nine
+scratch commits, the combined `glm-mia-fp8-pages.patch` (1,193 lines, 21
+files, 634 insertions) applies clean on a fresh 00e7ddd tree. The
+adaptation highlights:
+- **0017+0023's fetch kernels** woven onto v1.2.2's restructured `load_kv`
+  (the byte-wise E4M3 decode; 0023's dense-bases-move-once superseding
+  0017's per-key form — the dense chunk loads as the window's, the sparse
+  keys walk the table with the s>>9 / s&(CH-1) arithmetic).
+- **Our KV_HOST branches preserved everywhere** (pkPageBytes, the 6-arg
+  addCache, the p.pk pooled-keys pages, the pkCacheBytes block).
+- **stateSizes kept at our 5-param signature** — the fixed part holds no
+  head-conditional rows on this tree, so pagedBytesOf delegates with the
+  flag documented as inert here.
+- **The registry records** appended to our import-list shape (v1.2.2 moved
+  the exl3_prompt records their base had).
+- The semantics: TF_KV_PAGES=on pages either format (one shared pool,
+  6,380 bytes/token E4M3 beside DFlash2), BadKvPages for unknown values,
+  PoolTooSmall for the elastic exhaustion, BadStep for a foreign page id.
+- The unpaged standing config is preserved by construction (the flags
+  default off; pageBytesOf(false,true) ≡ the old pageBytes; PAGED8=false
+  compiles the unpaged branch).
+
+**LAUNCHED**: `RC_PATCHES="glm-mia-fp8-pages.patch" TF_KV_PAGES=on
+scripts/autonomous-launch.sh "preflight resumecost summary"` — the
+judgment: the boot's pool shape (the serve line), the gates (Mia's paged
+chunks are bitwise the window's — the sha must hold), the resumecost rows,
+the memory. The kernel recompile makes the window ~35-45 min.
