@@ -419,18 +419,22 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (inert here); the decode Tables are covered by the fix;
       dense_limit = i_topk+kpool-1 — the canary's decodes sat ON the
       dense/sparse boundary, the battery lives beyond it.
-      **pagedecode (campaign-20261105-221651): the pages-ON side CLEAN**
-      — the greedy decode ladder (tiny/3.3k/16k prompts × 2k decodes,
-      tok/s 77-89) counted with no loops, and a 16k store-resumed
-      thinking request decoded clean (cached=16384): the battery's loops
-      did NOT reproduce at 2k decode depth. The phase then ABORTED at the
-      pages-off serve: **TF_KV_PAGES= (empty) is refused by the engine**
-      ("give auto, on (or 1, all) or off (or 0)") — no OFF side, no
-      verdict, no done marker (the poke's 10-min-quiet fallback covered
-      it). **pagedecode re-launched** with TF_KV_PAGES=off, a 12k-decode
-      depth probe (count to 20000, max_tokens 12288 — the battery's
-      regime), a thinking-ON count probe (the loops lived in the
-      reasoning channel), and a fixed recall turn (max_tokens 128).
+      **pagedecode re-run (campaign-20261105-223622): CLEAN BOTH SIDES,
+      shas identical** — pages on/off produced BIT-IDENTICAL replies on
+      the tiny/3.3k/16k prompts, the 12k decode (tok/s 94.6 on / 95.3
+      off), M1's turns, and the 16k-resumed thinking request: **the
+      greedy decode is numerically identical on the paged fp8 stack out
+      to 12k depth.** The loop turns alternate (TC-62: turns 2/4/6 blow
+      up ~80K chars, 1/3/5 behave) and run from ~1.4-2K-token prompts
+      whose history carries the PRIOR loop's ~20K tokens of repetitive
+      text (the harness feeds the full output back). **pageloop in
+      flight**: R1 (a ~20K-token repetitive assistant message in history
+      → 2k decode) vs R2 (the same length, varied) on pages on vs off —
+      a tiny reproducer if the paged path chokes on repetitive KV
+      regions. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      cuda_forward): its GLM items are opt-in prefill/serving features —
+      nothing on the selection/loop bug; the rebase waits for the loop
+      verdict.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
