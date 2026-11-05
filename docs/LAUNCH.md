@@ -5866,3 +5866,40 @@ window preamble. The adoption bar: hardmode ≥ 94 (production parity;
 absorb set 95) + the vision 4/4. If it passes, the duel re-pair (the duel
 on the paged composed stack — a session phase, the standing duel does not
 thread TF_KV_PAGES) is the last receipt before the config.sh decision.
+
+## (round 133, cont. 37) THE 74 IS A CORRECTNESS BUG, NOT QUALITY: cross-request CONTENT CONTAMINATION in the raw logs (TC-103's material inside TC-104's answer); the pool recycling is the suspect; treequality launched (2026-11-05)
+
+**campaign-20261105-141241 (pagedquality)**: the composed paged stack
+booted right (the pool line, 15.6 GiB left), the vision suite passed 4/4
+(all 8 probes), and the marker fix is VERIFIED — the summary ran through to
+"done." and the poke arrived on the normal path. **The hardmode score: 74
+vs the >=94 adoption bar** — deployability 73→59, responsiveness unchanged,
+total_tokens −10%, worst_category 89→25%.
+
+**THE FINDING (the raw logs)**: TC-104's final answer — a VPN-certificate
+scenario — contains **TC-103's cart/coupon analysis verbatim** (AeroMesh
+chairs and LiftPro desks tables inside a VPN resolution); TC-103's log
+shows literal `<think>` closing markers leaking mid-content repeatedly;
+TC-102's answer spirals with self-repetition. **The model's context is
+polluted by PRIOR REQUESTS' KV state** — on the paged pool, recycled pages
+hand stale rows to new requests' attention. The collapse concentrates in
+the long-context capabilities (toolset-scale 89→25, state-tracking 6→1/6,
+concurrency 6→3/6 — the classes that churn the pool across 104
+back-to-back scenarios); vision passes (8 short prompts, no pool
+pressure); per-turn latency IMPROVED (it was never speed).
+
+**This REINTERPRETS the v3 bitwise mismatch** (the cont. 35/36 correction):
+the serves' shas differed because their REQUEST HISTORIES differed —
+different contamination — not (only) "different kernel tiling". B==B2
+matched because both boots saw the same history. The windowedsha
+byte-identity instrument was measuring contamination, and the standing
+config (no pool) is immune.
+
+**The marriage is DISQUALIFIED for serving on this receipt** (a correctness
+bug — stale-page reads). The diagnosis continues: **treequality launched**
+— the SAME battery on the marriage tree UNPAGED (no pool; the same patch
+set ⇒ the cached image, no rebuild). ~95 ⇒ the pool recycling is the bug
+(and Mia's un-ported 0026-0033 get re-read for a pool fix we classified as
+"optimizations"); ~74 ⇒ the tree's KV handling is broken deeper and the
+marriage parks permanently. The battery's perf sub-instrument was fine
+(pp ~1000-1100 tok/s, tg within noise) — perf was never the issue.

@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality treequality knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1049,6 +1049,28 @@ if want pagedquality && ! phase_done pagedquality; then
   echo "- the vision suite:" >> "$P"
   python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
   touch "$OUT/.pagedquality.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: treequality (SESSION-SPECIFIC; retires with the receipt). The
+# pagedquality receipt (campaign-20261105-141241, hardmode 74 vs the >=94 bar)
+# showed CROSS-REQUEST CONTENT CONTAMINATION in the raw logs (TC-104's VPN
+# answer contains TC-103's cart analysis verbatim; </think> literals leak
+# mid-content) - the paged pool serves recycled pages carrying stale KV rows.
+# This phase runs the SAME battery on the marriage tree UNPAGED (no pool, same
+# patch set => the cached image): ~95 => the pool recycling is the bug; ~74 =>
+# the tree's KV handling is broken deeper. Retires with the receipt.
+# ---------------------------------------------------------------------------
+if want treequality && ! phase_done treequality; then
+  log "=== treequality (hardmode on the marriage tree UNPAGED)"
+  P="$OUT/93-treequality.md"; : > "$P"
+  echo "# treequality (hardmode on absorb+marriage, TF_KV_PAGES off - the pool disambiguation)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- server: $(serve_line)" >> "$P"
+  bench_cell hm-tree "$OUT/hm-tree" >> "$P"
+  echo "- the vision suite:" >> "$P"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-tree.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+  touch "$OUT/.treequality.done"
 fi
 
 # ---------------------------------------------------------------------------

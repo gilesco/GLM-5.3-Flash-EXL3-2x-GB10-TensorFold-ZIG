@@ -350,9 +350,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       lines; the fresh composed apply-check OK; applies AFTER absorb only,
       alphabetical). The debug patch RETIRED (the file removed); the
       pagedchecks/windowedsha session phases retired per the rule.
-      **pagedquality in flight**: hardmode + the vision suite on
-      absorb+marriage+TF_KV_PAGES=on — the ABSORB precedent (adopted at 95
-      ≥ production's 94 despite its own numerics change).
+      **pagedquality (campaign-20261105-141241): hardmode 74 vs the >=94
+      bar — FAIL, and the raw logs show why: CROSS-REQUEST CONTENT
+      CONTAMINATION** (TC-104's VPN answer contains TC-103's cart analysis
+      verbatim; <think> markers leak mid-content) — the paged pool serves
+      recycled pages carrying stale KV rows to new requests. The collapse
+      concentrates in the long-context capabilities (toolset-scale 89→25,
+      state-tracking 6→1, concurrency 6→3); vision 4/4 (short prompts, no
+      pressure); per-turn latency improved. This REINTERPRETS the v3
+      bitwise mismatch (cont. 35/36): serve-history-dependent
+      contamination, not kernel tiling — the correction is logged. The
+      marriage is DISQUALIFIED for serving pending the pool-bug fix;
+      **treequality in flight** (the same battery, the marriage tree
+      UNPAGED — pool vs tree disambiguation); Mia's un-ported 0026-0033
+      get re-read for a pool fix.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460
