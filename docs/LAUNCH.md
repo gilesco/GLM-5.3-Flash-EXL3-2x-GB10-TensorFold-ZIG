@@ -6101,3 +6101,22 @@ writes (write visibility); an unchanged pattern means the reads hit the
 written rows but the stored content is wrong (quantize/scales). Each round
 also splits the code position: chunk 1 (~row 1,520) vs chunk 2 (~row
 2,110). The window is ~10 min.
+
+## (round 133, cont. 45) poolcanary4 DIED AT ROUND-1 LATE (my cont. 34 pipefail lesson REPEATED in the canary phases); the early data point is confounded; the fixed two-leg relaunch (2026-11-05)
+
+**campaign-20261105-175654**: the phase died at round-1 late — the
+`R=$(curl | python)` assignments were UNGUARDED, the late request's curl
+failed, and pipefail killed the phase (the cont. 34 lesson, repeated in my
+own canary phases — the lessons log gets the recurrence note). The round-1
+EARLY reply under poison ("The user has provided a list of words with
+numbers" — coherent, code-blind) is CONFOUNDED: the early code sits at row
+~1,517 of a 2,267-token repetitive prompt — a hard needle even for a
+correct engine — so it needs a bf16 control to interpret. Coherent (no NaN
+artifacts) suggests the reads hit written rows, but one confounded round
+proves nothing. The engine's fate in round-1 late is unrecoverable (the
+serving boots' rank-0 saves are still not written — the known gap).
+
+**RELAUNCHED (fixed)**: every assignment pipefail-guarded; a bf16-poison
+CONTROL leg added (the early/late split is interpretable only against it);
+per-serve docker-logs captures (the engine's fate in a failing round lands
+in the receipt); the early/late split kept. ~12 min.

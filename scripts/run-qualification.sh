@@ -1125,9 +1125,14 @@ fi
 if want poolcanary4 && ! phase_done poolcanary4; then
   log "=== poolcanary4 (the poison discriminator, fp8 paged)"
   P="$OUT/97-poolcanary4.md"; : > "$P"
-  echo "# poolcanary4 (TF_KV_POISON=1: write-visibility vs content-wrongness; chunk1 vs chunk2)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 TF_KV_POISON=1 PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- serve: $(serve_line | cut -c1-130)" >> "$P"
+  echo "# poolcanary4 (TF_KV_POISON=1: write-visibility vs content-wrongness; chunk1 vs chunk2; the bf16-poison control leg)" >> "$P"
+  for mode in bf16 fp8; do
+    if [ "$mode" = bf16 ]; then
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 TF_KV_POISON=1 PATCHES="${RC_PATCHES-${PATCHES-}}"
+    else
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on TF_GLM_KV_SHARE=0 TF_KV_POISON=1 PATCHES="${RC_PATCHES-${PATCHES-}}"
+    fi
+    echo "- serve $mode: $(serve_line | cut -c1-130)" >> "$P"
   for i in 1 2 3; do
     for spot in early late; do
       bf=$(mktemp /tmp/pc4.XXXXXX.json)
@@ -1138,13 +1143,14 @@ if want poolcanary4 && ! phase_done poolcanary4; then
       fi
       R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
 try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
-except Exception: print("PARSE-FAILED")' 2>/dev/null)
-      echo "  round$i $spot reply: $R" >> "$P"
+except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
+      echo "  $mode round$i $spot reply: $R" >> "$P"
       rm -f "$bf"
     done
+    done
+    echo "- $mode engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
   done
-  echo "- engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl" | tail -8 | sed 's/^/  /' >> "$P"
   echo "- VERDICT: uniform garbling under poison = the reads miss the writes (write visibility); the v3 pattern unchanged = the stored content is wrong (quantize/scales); early-vs-late splits the chunk the loss lives in" >> "$P"
   touch "$OUT/.poolcanary4.done"
 fi
