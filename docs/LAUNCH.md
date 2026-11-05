@@ -5642,3 +5642,30 @@ receipts get read directly when a poke is late).
 **LAUNCHED**: the pagedchecks re-run with the fixed patch — the first
 request should now pass the DSA sparse launch; the probes and the deep
 fills judge the serving path.
+
+## (round 133, cont. 29) THE WEDGE INCIDENT: the worker's ssh down after the paged crash — the marriage parked on hardware; the wedge guard proved itself (2026-11-05)
+
+**campaign-20261105-111256 (the pagedchecks re-run with the logical fix)**:
+the restart hit the wedge guard — **"rank 1's old container is still
+present on the worker after 60 s — refusing to start over it (the
+Mia-1104 wedge)"** — the 105143 rank-1 crash left the worker's container
+wedged. The guard (adopted from Mia's 1104 recipe) did exactly its job:
+die-loud instead of starting the head over a dying worker container.
+**The worker is now unreachable on ssh** (Network is unreachable) while it
+still PINGS (0.6 ms) — the wedge took sshd, not the host; the container
+cannot be cleaned without ssh. **This is Mia's incident profile**: their
+rank crash wedged a host so hard it needed a power cycle. **(user) needed**:
+recover the worker (console/IPMI: kill the wedged container or power-cycle
+it); every window needs its rank 1.
+
+**The marriage PARKS on hardware**: the logical fix is committed and the
+combined patch apply-checks (the TokenUnits root cause is fixed); the
+serving-path validation (the pagedchecks probes) waits for the worker.
+The ABSORB_MMA adoption is unaffected (its own receipts stand; the
+standing config is unpaged and production is untouched on 8000).
+
+**The poke chain works again**: the fixed quiet-age probe fired the 111256
+poke (the second fix verified); the guard's fold-in rule caught the
+un-digested 105143 (the pipe-masked guard failure taught the command
+pattern: `./scripts/docs-guard.sh 2>&1 | tail -1` eats the exit code —
+check the output, not the rc).
