@@ -1083,6 +1083,10 @@ except Exception:
     rm -f "$bf"
   done
   echo "- the serve still alive: $(serve_line | cut -c1-80)" >> "$P"
+  echo "- rank 0's last docker logs at failure:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | tail -40 | sed 's/^/  /' >> "$P" || echo "  (the container is gone)" >> "$P"
+  echo "- rank 1's last docker logs:" >> "$P"
+  worker "docker logs $CONTAINER_NAME 2>&1 | tail -20" 2>/dev/null | sed 's/^/  /' >> "$P" || echo "  (unavailable)" >> "$P"
   touch "$OUT/.pagedchecks.done"
 fi
 

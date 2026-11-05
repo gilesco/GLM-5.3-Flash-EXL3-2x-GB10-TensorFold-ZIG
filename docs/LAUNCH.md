@@ -5589,3 +5589,26 @@ multi-chunk at depth) with **no TF_GLM_PROF**. Pass → the crash is a
 debug-instrument interaction, the serving path is sound, the adoption
 judgment proceeds (the prof interaction documented as a known limitation).
 Fail → the port has a real bug and the marriage parks.
+
+## (round 133, cont. 27) THE PAGED SERVE DIES ON THE FIRST REQUEST WITHOUT PROF; the wake-gap recorded; the failure capture added (2026-11-05)
+
+**campaign-20261105-103431 (the discriminator)**: the paged boot came up
+(TF_KV_PAGES=on ✓ env flowed) and rank 0 died at the FIRST request — every
+probe failed instantly, rank 1 followed with
+`following rank 0 stopped (TokenUnits)` (the follower's error name for a
+dead peer). **No prof in this boot** — so the crash is NOT prof-gated: the
+paged serving path itself dies on the first request. The first window's
+single-chunk success (with prof) vs this: the difference is the prof
+instrument's serialization, masking what looks like a race or an
+uninitialized path in the no-prof paged launch.
+- The root cause is in **rank 0's stderr — which is lost**: the stop's
+  save_log skips dead containers (the second logging gap this arc; the
+  pagedchecks phase now captures `docker logs` for BOTH ranks into the
+  receipt at failure time).
+- **The wake-gap recorded as infrastructure**: the second missed poke (the
+  pagedchecks window completed ~10:38, no poke arrived; (user) noticed
+  production restarted) — the completion→poke chain has now dropped twice
+  (232127, 103431); the receipts get processed directly on pokes' absence.
+
+**LAUNCHED (the diagnostic re-run)**: the same pagedchecks window with the
+failure capture — rank 0's dying words land in the receipt this time.
