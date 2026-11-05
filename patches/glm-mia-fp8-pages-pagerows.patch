@@ -1,0 +1,47 @@
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Subject: glm-cuda: the E4M3 Tables' page_rows = 512, not the whole-page-stride formula (the contamination root cause)
+
+PROVENANCE: this line's fix, 2026-11-05, on the marriage port. The Table
+sites computed page_rows = c.ps/(l.lw*2) - the WHOLE-page stride over the
+bf16 row bytes - 3,481 for E4M3 instead of 512. The selection kernel
+indexes pt[row/page_rows]: with 3,481 every row below 3,481 reads page 0's
+pooled keys, the token selection scores against rows 0-511's keys, and the
+sparse lists are garbage (the hardmode battery's cross-request-content
+signature; the canary receipts). The contract tests passed because their
+fixtures use per-layer ps, where the formula coincidentally yields 512; the
+engine's Caches carry the whole-page ps. bf16 keeps its formula (its lists
+are page rows, a different unit; its path is receipted correct).
+OWNER: this line; STATUS: the contamination fix, judged by the canary +
+the battery re-run.
+
+diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
+index efc2675..f143179 100644
+--- a/zig/src/families/glm/cuda_dsa_block.zig
++++ b/zig/src/families/glm/cuda_dsa_block.zig
+@@ -137,7 +137,7 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
+     v.qi += r0 * ix.heads * ix.d * 2;
+     try writeKeys(k, stream, l, c, v, rows, pos);
+     // an E4M3 cache's sparse lists stay positions (its chunks take each key through the table); BF16's are page rows
+-    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
++    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = if (c.ls != 0) latent.chunk else c.ps / (l.lw * 2), .logical = c.ls != 0 };
+     const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
+     const scale: f32 = @floatCast(std.math.pow(f64, @floatFromInt(l.qk), -0.5));
+     if (host_pos < l.dense_limit) {
+@@ -165,7 +165,7 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
+ pub fn blockLastRow(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, x: u64, x_stride: usize, rows: usize, pos: u64, host_pos: usize, nch: usize, out: u64) !void {
+     if (rows == 0) return error.BadWindow;
+     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
+-    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
++    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = if (c.ls != 0) latent.chunk else c.ps / (l.lw * 2), .logical = c.ls != 0 };
+     const ix = l.index;
+     const kw_rows = ix.d + ix.heads;
+     try prepareProfile(k.set, stream, l, s, x, x_stride, rows, sparseRows(l, host_pos, rows), k.prof); // every row keeps its query, its latent, its keys
+@@ -240,7 +240,7 @@ fn writeKeys(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, r
+     const ix = l.index;
+     const kw_rows = ix.d + ix.heads;
+     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
+-    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
++    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = if (c.ls != 0) latent.chunk else c.ps / (l.lw * 2), .logical = c.ls != 0 };
+     const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
+     var stamp = prof.span(k.prof, stream, .cache_write);
+     try latent.latentWriteFormat(set, stream, s.lat, l.lw, c.lc, c.ls, t, pos, rows, l.lw);

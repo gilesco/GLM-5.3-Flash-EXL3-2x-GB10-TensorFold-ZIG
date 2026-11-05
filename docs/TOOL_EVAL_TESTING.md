@@ -386,9 +386,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       content is wrong-but-finite: the quantize/scales/write-content path,
       NOT write visibility; AND the engine CRASHED (rank 1
       CudaContextLost, round-1 late, the recycled+poisoned pages).**
-      glm-zz-dumppages in flight: the write kernel printfs its written
-      scale+code for row 2,100 and the read kernel printfs what it sees —
-      the byte-level write-vs-read split. **poolcanary v1 (campaign-20261105-163035):
+      glm-zz-dumppages ran (the dense reads sane; the write printf silent
+      — which exposed the real bug): **THE ROOT CAUSE — the DSA Tables'
+      page_rows = c.ps/(l.lw*2) = 3,481 instead of 512** (the whole-page
+      stride over the bf16 row bytes; the formula assumes a per-layer ps
+      and the tests' fixtures use one, masking it): the selection kernel
+      indexed pt[row/3481] and read PAGE 0's pooled keys for every row
+      below 3,481 — the sparse lists garbage, the model attending to the
+      wrong tokens. **THE FIX (glm-mia-fp8-pages-pagerows.patch, 47
+      lines): E4M3 page_rows = latent.chunk (512) at the three Table
+      sites; bf16 keeps its formula (its lists are page rows).** The
+      CudaContextLost crash: the selection's garbage indexes under poison.
+      poolcanary4 re-running under the fix (the poison run = the harshest
+      validation); the battery re-run next. **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
       path never fired). **poolcanary2 in flight**: grid-crossing prompts

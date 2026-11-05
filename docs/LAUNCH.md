@@ -6146,3 +6146,35 @@ garbage ⇒ the quantize/scales path. The debug patch is 30 lines, applies
 on the full stack (the per-patch-commit discipline held this time — the
 first two generation attempts captured the whole stack diff), and the
 fingerprint change rides a rebuild (~15-25 min) in the window preamble.
+
+## (round 133, cont. 47) THE ROOT CAUSE FOUND: the E4M3 Tables' page_rows = 3,481 instead of 512 — the selection scored every token against page 0's pooled keys; the fix staged; the validation launched (2026-11-05)
+
+**The dumppages receipt (campaign-20261105-183615)**: the READ kernel's
+GLMDUMP lines show the dense path sane (scale 0.003017, a well-formed row)
+— the dense reads are fine (the kernel hardcodes CH=512) — and **the WRITE
+kernel's printf never fired**, which led to the dispatch audit and then to
+the real bug: **the DSA Tables' page_rows = c.ps/(l.lw*2) — the WHOLE-page
+stride (3,565,440) over the bf16 row bytes (1,024) = 3,481 instead of
+512.** The selection kernel (selectTokensProfile) indexes the pooled keys
+pt[row/page_rows]: with 3,481, EVERY row below 3,481 reads PAGE 0's pooled
+keys — all tokens score against rows 0-511's keys — the sparse lists are
+garbage — **the model attends to the wrong tokens and mis-reads its own
+prompt**. The dense path is exonerated (the kernel hardcodes CH=512; the
+sane dense read in the receipt). The contract tests passed because their
+FIXTURES use per-layer ps, where the formula coincidentally yields 512;
+the engine's Caches carry the whole-page ps — the port's semantic
+mismatch. The CudaContextLost crash: the selection's garbage indexes under
+poison — consistent.
+
+**THE FIX (glm-mia-fp8-pages-pagerows.patch, 47 lines)**: the three Table
+sites in cuda_dsa_block.zig — `.page_rows = if (c.ls != 0) latent.chunk
+else c.ps / (l.lw * 2)` — E4M3 gets the true 512; bf16 keeps its formula
+(its lists are page rows, a different unit, and its path is receipted
+correct). Applies on absorb+marriage; verified.
+
+**LAUNCHED: poolcanary4 under the fix** (the poison discriminator is the
+harshest validation: the NaN refill forces the writes and the selection to
+prove themselves) — bf16 control + fp8, early/late split. fp8 answering
+MKR-{i}QX under poison ⇒ the fix holds; then the battery re-run
+(pagedquality2) is the adoption judgment. The dumppages debug patch
+RETIRES (the file removed; the diagnosis closed).
