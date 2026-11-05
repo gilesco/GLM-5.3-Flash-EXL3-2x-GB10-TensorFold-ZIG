@@ -6285,3 +6285,45 @@ to ~12k, into the battery's regime** (the runaway decodes ran to the
 16,384 cap); T1 now forces the reasoning channel deep (thinking ON + a
 count task — the battery's loops lived in reasoning); M1 gets 128 tokens
 and a sterner recall instruction. Same verdict branches; ~20 min.
+
+## (round 133, cont. 53) pagedecode's verdict: CLEAN BOTH SIDES with IDENTICAL SHAS — plain decode is exonerated to 12k depth; the loops need a repetitive KV region; pageloop launched; v1.2.3 scanned (2026-11-05)
+
+**campaign-20261105-223622 (pagedecode, both sides — the poke fired
+normally: the re-run wrote its done marker)**: pages ON vs OFF, SAME
+binary — G1/G2/L1/L2/M1 replies **BIT-IDENTICAL** (the same shas per
+probe on both serves), T1 CLEAN on both (the ON side declined the task,
+the OFF side counted to its cap — the thinking probe's numerics differ
+legitimately). **The greedy decode on the paged fp8 stack is numerically
+identical to unpaged: 12k decode depth (G2, tok/s 94.6 on / 95.3 off),
+16k prompts, 16k store-resumed thinking, the resume path, recall exact
+("FALCON-7")**. The battery's loops did not reproduce with any plain
+request.
+
+**The new lead**: TC-62's raw log shows the loop turns ALTERNATE (turns
+2/4/6 ≈ 80K chars each, turns 1/3/5 normal) and run from ~1.4-2K-token
+prompts (the engine lines). The harness (tool-eval-bench orchestrator,
+_assistant_message) feeds the FULL assistant output back — **each loop
+turn's history carried the PRIOR loop's ~20K tokens of highly repetitive
+text**, a KV region the pagedecode probes never had.
+
+**LAUNCHED: pageloop** — the minimal pair, pages ON vs OFF, same binary:
+R1 a ~20K-token repetitive assistant message ("calendar, "×6000) in
+history → 2k decode; R2 the same length, varied (numbers 1..8000) → 2k
+decode. R1 loops with R2 clean ⇒ the paged path chokes on repetitive KV
+regions — a tiny reproducer, the bisect is on. Both clean ⇒ the battery
+composition holds the trigger (the faithful TC-62 replay next). R1 loops
+on BOTH ⇒ not paged (the standing 95 contradicts).
+
+**v1.2.3 scanned (the user asked: this track, or v1.2.3?)**: the tag
+exists, **425 commits**, and it TOUCHES our patch sites (cuda_dsa_block.zig,
+cuda_forward.zig — the CHUNK_SOLO plumbing). Its GLM/CUDA changelog is
+opt-in prefill/serving features — TF_GLM_CHUNK_SOLO=4096 beside --drafter
+(~7% TTFT at TP=2), TF_GLM_COPIES=1, TF_GLM_ROCE_MULTI 8-piece at TP=3 —
+plus the KV-pages --prompt-cache-gib sizing fix (#2220, no change with
+the flag unset). **Nothing on the DSA selection, the paged fp8 decode,
+or loops — not a shortcut around the bug.** The agent's recommendation
+(executed under the standing directive): FINISH the loop track — one
+window from a verdict — then rebase onto v1.2.3 as its own arc
+(re-anchor the three patches, canary + battery re-validate ONCE on the
+new base, the perf items feed PERF_PLAN). Rebasing now would run the
+same validation twice.
