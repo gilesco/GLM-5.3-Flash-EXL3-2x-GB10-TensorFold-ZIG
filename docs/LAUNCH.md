@@ -5419,3 +5419,33 @@ passes too, so the standing 4/4 receipt needs a re-take. **LAUNCHED**:
 `scripts/autonomous-launch.sh "visioncheck duel summary"` — the vision
 re-take, then the duel re-pair (the fronts vs production-for-testing → the
 anchors/chart update), then the digest.
+
+## (round 133, cont. 19) THE VISION RE-TAKE 4/4 ON THE STACK; THE DUEL IS MIXED — the prefill fronts improved, c2 REGRESSED; the ABSORB-only attribution launched (2026-11-04 → 11-05)
+
+**campaign-20261104-234405 (visioncheck + duel)**:
+- **The vision suite on the adopted stack: 4/4 verified** (Red / Golden Gate
+  International Orange / the zebra at the waterhole / STOP — all match the
+  manifest's agent-verified ground truth; 8/8 requests ok, the raw answers
+  saved). The ABSORB_MMA kernels engaging on the vision tower's prompt
+  passes changed nothing.
+- **The duel (both engines, the same instruments)** — production 59.0 solo /
+  110.8 c2 / 192.4 c4 / slope 0.265; ours 64.5 / 93.1 / 143.9 / slope 0.602:
+  - IMPROVED: the 8k slope **0.657 → 0.602 (−8.4%)** and d8192 5,570 →
+    5,126 ms (the ABSORB effect on prefill); solo 109% (was 108%); the cold
+    front vs production's cold slope 2.026 widens to ~337%; ITL per-token
+    unchanged (~16 ms, the chunked rhythm); d0 94%.
+  - **REGRESSED: c2 125% → 84%** (ours 93.1 vs its stable 109-110 band
+    across two windows; production volleyed to the top of its 87-111 range).
+    c4 75% (was 78%, marginal). **The suspect is the cost tables** — the only
+    decode-path change adopted: the un-starved overhead learner feeds
+    allocateDrafts, and on our shape the new allocation costs the c2
+    aggregate (Mia's "throughput effect is their noise" does not hold here).
+- The anchors/chart HOLD until the attribution lands (one update, not two).
+
+**LAUNCHED (the attribution)**: `PATCHES="glm-mia-absorb-mma.patch"
+scripts/autonomous-launch.sh "duel summary"` — the duel on ABSORB-only (the
+env-set PATCHES beats config.sh's default; TF_GLM_ABSORB_MMA=1 still flows).
+If c2 returns to ~109-110: the cost tables DROP (a round entry), the
+ABSORB-only stack becomes the qualified optimum, and the anchors/chart
+update once. If c2 stays low: the drop is ABSORB's (or variance) and the
+decision re-weighs.
