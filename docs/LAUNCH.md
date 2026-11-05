@@ -5449,3 +5449,28 @@ If c2 returns to ~109-110: the cost tables DROP (a round entry), the
 ABSORB-only stack becomes the qualified optimum, and the anchors/chart
 update once. If c2 stays low: the drop is ABSORB's (or variance) and the
 decision re-weighs.
+
+## (round 133, cont. 20) THE ATTRIBUTION SETTLED: c2 returns on ABSORB-only — the cost tables DROPPED; the ABSORB-only optimum re-paired into the anchors (2026-11-05)
+
+**campaign-20261105-000521 (the ABSORB-only duel)**:
+- **c2: ours 110.4** — back in its stable 109-110 band (93.1 with the
+  tables). Production 111.0 (again its top-of-range volley). **The cost
+  tables were the c2 regression.**
+- **Every gain is ABSORB's**: the 8k slope 0.602 / d8192 5,122 — identical
+  to the both-patch duel (the tables contributed nothing to prefill, as
+  their output-neutrality promised); solo 65.1/59.0 = **110%**; c4 151.3 vs
+  production's floor-of-range 154.7 (98%); ITL unchanged; the cold front
+  **334%** (17,129/5,122).
+- **THE DECISION**: the cost tables DROP (the ~16% c2 cost buys nothing
+  measurable; hardmode 95-with-tables vs the 94 control is within scenario
+  noise). **ABSORB-only is the qualified optimum** — config.sh's PATCHES
+  default updated; the ECOSYSTEM item 5 dispositioned; patches/README
+  carries both verdicts.
+- **The anchors/chart re-paired** on the ABSORB-only duel: solo 110%, c2
+  ~99% (the volley caveats in the notes), c4 98%, overhead 98%, cold 334%,
+  ITL ~107% crossed — the guard's chart check passes.
+
+**LAUNCHED (the last protocol piece)**: `scripts/autonomous-launch.sh
+"hmcheck summary"` — the hardmode re-take on the ABSORB-only default (the 95
+receipt ran on both-patches; the 94 control is the floor; the battery
+settles the quality receipt on the shipping config).

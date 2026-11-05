@@ -65,7 +65,17 @@ OWNER: this line. The stack verdict receipts: results/campaign-20261104-203617/
 and results/campaign-20261104-210211/ (the resumecost rows + the deepfills
 receipts + the g3 counter find: `tensorfold:prompt_tokens_cached_total`).
 
-## glm-mia-absorb-mma.patch (EXPERIMENTAL, 2026-11-04, round 133 cont. 15)
+## glm-mia-cost-tables.patch — DROPPED (2026-11-05, round 133 cont. 20)
+
+The attribution duel settled it: with ABSORB-only, c2 returns to **110.4**
+(its stable 109-110 band) vs **93.1** with the tables — the un-starved
+overhead learner costs our c2 aggregate ~16% and buys nothing measurable
+(the prefill identical: slope 0.602 in both duels; hardmode 95-with-tables
+vs the 94 control is within scenario noise). Mia's "throughput effect is
+their noise" does not hold on our shape. Keep as history; re-run only if
+the draft-rule front ever needs the learner fed (with a c2-first judgment).
+
+## glm-mia-absorb-mma.patch — ADOPTED (the qualified optimum, 2026-11-05)
 
 The ABSORB_MMA port (Mia 0041, Apache-2.0): a prompt pass's absorb_q and
 expand_v MLA matmuls run as head-batched bf16 tensor-core GEMMs with fp32
@@ -83,8 +93,11 @@ SIMT. SHIPPED with glm-mia-cost-tables.patch via
 "preflight resumecost deepfills hmcheck summary" window; judged by the
 content gate (sampled-bit-equal → the greedy sha must hold), the resumecost
 rows (the small-prompt front must NOT regress — the chunk pair's lesson),
-and the deep fills. Graduates into config.sh's env only on
-receipts-equal-or-better.
+and the deep fills. **ADOPTED alone into config.sh's PATCHES default
+(2026-11-05, cont. 20) after the attribution dropped the cost tables** —
+receipts: the deep fills −6.8/−7.0/−6.9%, the small prompts −5-6%, greedy
+byte-identical everywhere, the vision 4/4, the duel fronts solo 110% /
+c2 ~99% of production's top volley / cold 334% / ITL ~107% crossed.
 
 ## Candidates under watch (upstream PR scan, 2026-10-23)
 

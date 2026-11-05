@@ -306,22 +306,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
-- [ ] **ABSORB_MMA (0041) port — ADOPTED, the confirmation window running**
-      (round 133, cont. 16): the verdict receipt (campaign-20261104-213422)
-      — the deep fills on the full stack **−6.8/−7.0/−6.9%** (0.735/0.727/
-      0.738 vs the standing 0.788/0.782/0.793 ms/tok; the fill-rate drop
-      proves the MMA kernels ran), the g3 counter **126,976** after
-      resumecost's traffic (CLOSED — the counter is wired), the fingerprint
-      pairing (layout 17) verified by the healthy boot, memory −0.2 GiB, the
-      warm-cache boot 93.9 s. The boot order decoded: hmcheck ran bare (94 =
-      the standing control) and resumecost ran ABSORB-off (its rows clean:
-      the d4096 warm 1.91 restored, d8192 5.38/1.40 — no regression).
-      **config.sh adopted the stack** (PATCHES default = absorb+cost,
-      TF_GLM_ABSORB_MMA=1; README rows updated). The confirmation window
-      ("preflight resumecost hmcheck summary", bare restarts inherit the
-      stack) receipts the sha + the small-prompt rows on the ABSORB-ON serve
-      and hardmode on the stack; the duel re-pair + the vision re-check
-      follow.
+- [ ] **ABSORB_MMA — ADOPTED ALONE; the hardmode re-take running** (round
+      133, cont. 20): the attribution duel (campaign-20261105-000521,
+      ABSORB-only) returned c2 to **110.4** (its band; with the tables 93.1)
+      and kept every gain — solo **110%** (65.1/59.0), the 8k slope 0.602 /
+      d8192 5,122 (identical to the both-patch duel — the tables contributed
+      nothing to prefill), c4 98% of production's floor-of-range pair, ITL
+      unchanged, the cold front **334%**. **The cost tables DROPPED**
+      (config.sh's PATCHES default → absorb-only; the ECOSYSTEM item 5
+      dispositioned; patches/README carries the verdict). The anchors/chart
+      re-paired on the ABSORB-only duel. The hardmode re-take on ABSORB-only
+      rides the running window (the 95 receipt ran on both-patches; the 94
+      control is the floor).
 - [x] **The ABSORB_MMA confirmation window** (round 133, cont. 17): hardmode
       on the full stack (the first boot inherited the adopted config — the
       serve line's 13.9 GiB / 2.6 GiB cache is the ABSORB-ON shape):

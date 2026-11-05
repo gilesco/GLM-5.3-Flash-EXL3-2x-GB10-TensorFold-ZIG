@@ -593,14 +593,17 @@ aggregate) — our v1.2.2 base decodes ~65% faster. **Their prefill wins:
 stack's prefill work is the gap.
 
 **The fold-in list, ranked**:
-1. **ABSORB_MMA — DISPOSITIONED (cont. 16): ADOPTED.** Ported (0041, all 17
-   hunks re-anchored onto v1.2.2; the diffstat identical to the original)
-   and measured: **the deep fills −6.8/−7.0/−6.9%** (0.735/0.727/0.738 vs
-   the standing 0.788/0.782/0.793 ms/tok — the +7-8% claim lands on our
-   shape), greedy byte-identical, hardmode **95 on the stack** (≥ the 94
-   tie), the small-prompt front clean, memory −0.2 GiB, the fingerprint
-   layout 16→17 pairing verified. Adopted into config.sh (PATCHES default +
-   TF_GLM_ABSORB_MMA=1). Receipts: campaign-20261104-213422 and -224230.
+1. **ABSORB_MMA — DISPOSITIONED (cont. 16/20): ADOPTED ALONE.** Ported (0041,
+   all 17 hunks re-anchored onto v1.2.2; the diffstat identical to the
+   original) and measured: **the deep fills −6.8/−7.0/−6.9%** (0.735/0.727/
+   0.738 vs the standing 0.788/0.782/0.793 ms/tok — the +7-8% claim lands on
+   our shape), the small prompts −5-6% (the MMA kernels engage at rows ≥ 64),
+   greedy byte-identical, the vision 4/4, hardmode 95 (on the both-patch
+   stack; the ABSORB-only re-take rides), the duel fronts **solo 110% /
+   cold 334% / c2 ~99% of production's top volley**. Adopted alone into
+   config.sh after the attribution dropped the cost tables (their un-starved
+   learner cost the c2 aggregate 110→93 — see item 5). Receipts:
+   campaign-20261104-213422, -224230, -233541, -234405, -000521.
 2. **~~The 4,096-row prompt chunk~~ — DISPOSITIONED (cont. 12-13): REJECTED
    for our line.** Ported (0094 adapted + 0095) and measured in two windows:
    builds/boots healthy, replies byte-identical, loading fine (94.6 s
@@ -621,14 +624,15 @@ stack's prefill work is the gap.
    points (rank 1's remote launch, rank 0's local launch, stop.sh's worker
    removal) now poll `docker inspect` until the name is genuinely absent and
    die-loud/warn if it lingers.
-5. **The cost-table correctness (0096/0097)**: the engine's verify-cost
-   tables were +34%/+60% wrong on the intercepts, starving the adaptive
-   draft-allocation learner; the fix is output-neutral with an unmeasurable
-   throughput effect (their noise). **Ported (cont. 11) as
-   glm-mia-cost-tables.patch — applies clean, proving v1.2.2 still carries
-   the over-priced tables (52.0+6.8 / 76.0+4.1). STAGED for the ABSORB_MMA
-   window's loaded phases** (sha-identical everywhere; its effect shows only
-   under loaded draft scheduling).
+5. **~~The cost-table correctness~~ — DISPOSITIONED (cont. 20): DROPPED.**
+   Ported (0096 verbatim, applies clean — v1.2.2 does carry the over-priced
+   tables) and adopted alongside ABSORB_MMA; the attribution duel then
+   isolated it: **the un-starved overhead learner costs our c2 aggregate
+   110.4 → 93.1 (~16%)** while buying nothing measurable (the prefill
+   identical, hardmode within noise). The tables' fit was two-lane data on
+   their stack; on ours the fed `allocateDrafts` re-allocates against the
+   aggregate. Keep as history (patches/README); re-run only with a
+   c2-first judgment if the draft-rule front ever needs it.
 6. **Methodology adoptions**: the fixed-prompt decode gate (ours already
    matches), **per-passage NLL for numerics A/Bs — never the aggregate mean**
    (their W8A8/q6 trap: the aggregate said better while the passages said
