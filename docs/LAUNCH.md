@@ -5812,3 +5812,57 @@ quality instruments on the paged config (hardmode + the gates + the duel
 re-pair with TF_KV_PAGES=on; the ABSORB precedent: hardmode ≥ production's
 94). The ttft receipt stands (no perf surprise: the paged fill 38.12 s ≈
 marriage-unpaged 37.94 s; standing 35.39 s carries absorb's −7%).
+
+## (round 133, cont. 36) THE BITWISE VERDICT: byte-identity REFUTED (control-verified); the compose re-anchored onto absorb; the poke-marker root cause fixed; pagedquality launched (2026-11-05)
+
+**campaign-20261105-133550 (windowedsha v3)**: the determinism CONTROL
+matched — B and B2 (the standing config booted twice) produced identical
+shas AND identical drafter profiles (20/43-of-52, 21/42-of-49, 20/43-of-51
+twice), and B's shas reproduced across windows (v3's B == v2's B). The
+instrument is deterministic, so the verdict is REAL: **standing ≠
+marriage-unpaged ≠ marriage-paged — BYTE-IDENTITY REFUTED on both
+comparisons** (paging on the marriage tree; the marriage tree vs the
+standing config). The drafter conditions on the target's state (the
+verify profiles differ across configs, are identical within one), which
+corroborates independently. **This is not a defect**: the paged E4M3
+fetch kernels and the windowed load path tile the reductions differently —
+same stored values, different fp accumulation order — the same class as
+ABSORB's own adopted fp32-summation change. The judgment moves to the
+quality instruments on the composed paged stack. The ttft receipt stands
+(P 38.08 ≈ A 37.84 at 46k — paging adds ~nil; B 35.25 carries absorb's
+−7%).
+
+**(user) asked why campaigns stopped finishing with " done." and the pokes
+lagged — ROOT CAUSED**: the summary phase ends with `log "done."` (the
+marker the poke greps), but its CAMPAIGN.md section globs
+`"$OUT"/[0-9]*.md` — the numbered-receipt convention. My session phases
+wrote UN-numbered names (pagedchecks.md, windowedsha.md) → the glob stayed
+literal → `cat` died under set -e right after "=== summary" → "done."
+never ran → EVERY poke since campaign-20261105-114648 took the 10-minute
+quiet-age path (114648 +12 min, 130738 +14 min, 123923 +10 min on a
+crashed window). FIXED both ways: the summary glob guards each file
+(`[ -f "$f" ] || continue` — any future un-numbered receipt can't kill
+it), and the session phases retire (pagedquality writes 92-pagedquality.md
+— the numbered convention). Completed windows now poke on the normal path
+within one cron tick of production's restore.
+
+**The compose receipt + the re-anchor**: absorb + marriage FAILED to apply
+(cuda_glue.zig:58 ×2 Kernels hunks — absorb's latent_mma fields drifted
+the hunks' trailing context). RE-ANCHORED on the scratch repo with the
+per-patch commit discipline (absorb committed, then the marriage): the
+paged fields sit before `merge`, the init calls after `chunks_32_fp8`,
+absorb's lines untouched; the fresh composed apply-check passes (1,217
+lines); the patch now applies AFTER absorb only (alphabetical staging).
+The paged-field sites: 2 in cuda_glue.zig, 5 files total.
+
+**Retired this sitting**: the debug patch (the file removed; the README
+entry is the history) and the pagedchecks/windowedsha session phases (the
+receipts landed; git history carries the re-run patterns).
+
+**LAUNCHED: pagedquality** — the hardmode battery + the vision suite on
+the COMPOSED candidate (absorb + marriage + TF_KV_PAGES=on, nested
+PATCHES). The fingerprint change rides a rebuild (~15-25 min) in the
+window preamble. The adoption bar: hardmode ≥ 94 (production parity;
+absorb set 95) + the vision 4/4. If it passes, the duel re-pair (the duel
+on the paged composed stack — a session phase, the standing duel does not
+thread TF_KV_PAGES) is the last receipt before the config.sh decision.

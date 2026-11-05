@@ -624,8 +624,14 @@ stack's prefill work is the gap.
    latent.Table site, v1.2.2 has three; fixed at all three. **The serving
    path VALIDATED** (campaign-20261105-114648: 11 requests, 512-row
    page-level resume, the cold 46,108-token fill 0.82 ms/tok and 92,240
-   0.80 ms/tok — the windowed rate unchanged at depth); the greedy bitwise
-   cross-check (windowedsha) in flight.
+   0.80 ms/tok — the windowed rate unchanged at depth); the control-verified
+   bitwise cross-check then **REFUTED byte-identity** (campaign-20261105-
+   133550: standing ≠ marriage-unpaged ≠ marriage-paged with a matching
+   determinism control — the paged fetch and the windowed load tile the
+   reductions differently; the same class as absorb's adopted fp32-summation
+   change). The composed candidate (absorb + marriage) re-anchored onto the
+   absorb tree (cuda_glue.zig ×2 hunks; applies AFTER absorb only); the
+   quality window (hardmode + vision on the paged composed stack) in flight.
 4. **~~The restart wedge guard~~ — DONE this sitting**: their campaign
    **power-cycled a host** (`docker rm -f` returning with the old ~100 GiB
    task still dying; `docker run` over it wedged the box). Our three removal

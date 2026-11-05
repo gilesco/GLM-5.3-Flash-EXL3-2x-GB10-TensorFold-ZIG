@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedchecks windowedsha knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1027,155 +1027,28 @@ fi
 # (both legs' prompt_tokens match exactly). Receipts: results/deepdelta/.
 # Re-run patterns: git history.)
 
-# ---------------------------------------------------------------------------
-# phase: pagedchecks (SESSION-SPECIFIC; retires with the receipt). The
-# fp8+pages marriage's discriminator: the campaign-20261105-101240 window
-# died at the SECOND chunk of a multi-chunk paged prompt under TF_GLM_PROF=1
-# (InvalidPromptProfile - the trace/collect path is prof-gated; the served
-# config has no prof). This phase runs the SAME probes with no prof: if they
-# pass, the crash is a debug-instrument interaction and the marriage's
-# serving path is sound; if they fail, the port has a real bug.
-# ---------------------------------------------------------------------------
-if want pagedchecks && ! phase_done pagedchecks; then
-  log "=== pagedchecks (the paged serve, no prof)"
-  P="$OUT/pagedchecks.md"; : > "$P"
-  echo "# pagedchecks (the fp8+pages serve, TF_GLM_PROF unset)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  for d in 2048 4096 8192; do
-    for shot in 1 2 3; do
-      bf=$(mktemp /tmp/pagedprobe.XXXXXX.json)
-      python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * (int(sys.argv[2]) // 20)}],'max_tokens':1}))" "$SERVED_NAME" "$d" > "$bf"
-      curl -s -m 120 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-        "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-        -d @"$bf" 2>/dev/null | python3 -c '
-import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-try:
-    d = json.loads(body)
-    m = re.search(r"ttft=([0-9.]+)", tim)
-    print("probe d%s shot%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[2], sys.argv[3], d["usage"]["prompt_tokens"], m.group(1)))
-except Exception:
-    print("probe d%s shot%s: FAILED" % (sys.argv[2], sys.argv[3]))' "$d" "$shot" >> "$P" 2>/dev/null || echo "probe d$d shot$shot: FAILED" >> "$P"
-      rm -f "$bf"
-    done
-  done
-  echo "- the engine lines (the sha + the resume evidence):" >> "$P"
-  grep -E "done chatcmpl|prompt cache:" "$LOG" 2>/dev/null | tail -12 | sed 's/^/  /' >> "$P" || true
-  echo "- the deep fills (multi-chunk paged prompts at depth):" >> "$P"
-  for d in 32768 65536; do
-    n=$((d / 27))
-    bf=$(mktemp /tmp/pagedfill.XXXXXX.json)
-    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':('Deep paged fill mia-d%s - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' % sys.argv[2]) * int(sys.argv[3])}],'max_tokens':1}))" "$SERVED_NAME" "$d" "$n" > "$bf"
-    curl -s -m 600 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      -d @"$bf" 2>/dev/null | python3 -c '
-import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-try:
-    d = json.loads(body)
-    m = re.search(r"ttft=([0-9.]+)", tim)
-    print("paged fill @ d%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[2], d["usage"]["prompt_tokens"], m.group(1)))
-except Exception:
-    print("paged fill @ d%s: FAILED" % sys.argv[2])' "$d" >> "$P" 2>/dev/null || echo "paged fill @ d$d: FAILED" >> "$P"
-    rm -f "$bf"
-  done
-  echo "- the serve still alive: $(serve_line | cut -c1-80)" >> "$P"
-  echo "- rank 0's last docker logs at failure:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | tail -40 | sed 's/^/  /' >> "$P" || echo "  (the container is gone)" >> "$P"
-  echo "- rank 1's last docker logs:" >> "$P"
-  worker "docker logs $CONTAINER_NAME 2>&1 | tail -20" 2>/dev/null | sed 's/^/  /' >> "$P" || echo "  (unavailable)" >> "$P"
-  touch "$OUT/.pagedchecks.done"
-fi
+
 
 # ---------------------------------------------------------------------------
-# phase: windowedsha (SESSION-SPECIFIC; retires with the receipt). The bitwise
-# cross-check for the fp8+pages marriage. The campaign-20261105-114648 receipt
-# showed max_tokens=1 shas are seed jitter (one sha dominates across depths
-# and seeds; the unique ones are sampling flakes) — unusable as a numerics
-# reference. Redesigned: greedy (temperature 0), thinking off, max_tokens=64 —
-# a deterministic 64-token chain, so the sha is a logits fingerprint. Three
-# serves, the same three prompts each (fresh cache, same order => the same
-# resume pattern): B standing / P marriage-paged / A marriage-unpaged.
-# P==A => paging byte-identical; A==B => the marriage's unpaged path matches
-# the shipping model. Retires with the receipt.
+# phase: pagedquality (SESSION-SPECIFIC; retires with the receipt). The
+# fp8+pages marriage's quality certification on the COMPOSED candidate stack
+# (absorb + marriage, TF_KV_PAGES=on): the control-verified bitwise cross-check
+# (campaign-20261105-133550) REFUTED byte-identity — the paged fetch kernels
+# and the windowed load path tile the reductions differently — so the judgment
+# is the hardmode battery + the vision suite, the ABSORB precedent (adopted at
+# 95 >= production's 94 despite its own fp32-summation numerics change).
+# Retires with the receipt.
 # ---------------------------------------------------------------------------
-windowedsha_probes() { # $1 = serve tag
-  _tag="$1"; _eng="/tmp/wsha.eng.$_tag"; : > "$_eng"
-  for d in 102 204; do
-    bf=$(mktemp /tmp/wsha.XXXXXX.json)
-    python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 ' * int(sys.argv[2])}],'max_tokens':64,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$d" > "$bf"
-    curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-      "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-      -d @"$bf" 2>/dev/null | python3 -c '
-import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-try:
-    d = json.loads(body)
-    m = re.search(r"ttft=([0-9.]+)", tim)
-    print("serve %s harbor x%s: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], sys.argv[2], d["usage"]["prompt_tokens"], m.group(1)))
-except Exception:
-    print("serve %s harbor x%s: FAILED" % (sys.argv[1], sys.argv[2]))' "$_tag" "$d" >> "$P" 2>/dev/null || echo "serve $_tag harbor x$d: FAILED" >> "$P"
-    rm -f "$bf"
-  done
-  bf=$(mktemp /tmp/wsha.XXXXXX.json)
-  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Deep paged fill mia-d32768 - the quick brown fox jumps over the lazy dog near the riverbank at dawn while the village sleeps quietly under a thin blanket of morning mist. ' * 1213}],'max_tokens':64,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
-  curl -s -m 300 -w '\nTTFTMARK ttft=%{time_starttransfer} total=%{time_total}' \
-    "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' \
-    -d @"$bf" 2>/dev/null | python3 -c '
-import sys, json, re
-t = sys.stdin.read()
-body, _, tim = t.rpartition("TTFTMARK")
-try:
-    d = json.loads(body)
-    m = re.search(r"ttft=([0-9.]+)", tim)
-    print("serve %s fill x1213: prompt_tokens=%s ttft_s=%s" % (sys.argv[1], d["usage"]["prompt_tokens"], m.group(1)))
-except Exception:
-    print("serve %s fill x1213: FAILED" % sys.argv[1])' "$_tag" >> "$P" 2>/dev/null || echo "serve $_tag fill x1213: FAILED" >> "$P"
-  rm -f "$bf"
-  sleep 1
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -F "done chatcmpl" | tail -3 > "$_eng" || true
-  echo "- serve $_tag engine lines (the authoritative shas):" >> "$P"
-  sed 's/^/  /' "$_eng" >> "$P"
-  [ -s "$_eng" ] || echo "  WARNING: no engine lines captured for serve $_tag" >> "$P"
-}
-if want windowedsha && ! phase_done windowedsha; then
-  log "=== windowedsha (the bitwise cross-check: three serves, greedy shas)"
-  P="$OUT/windowedsha.md"; : > "$P"
-  echo "# windowedsha (the bitwise cross-check for the fp8+pages marriage)" >> "$P"
-  echo "- instrument: greedy (temperature 0), thinking off, max_tokens=64, seed pinned 42 - a deterministic chain is a logits fingerprint (v2 lesson: the unseeded DFlash2 drafter varies the verify-batch shapes per request, and verify-batch numerics make even a greedy target's chain seed-dependent; the control serve B2 gates every verdict)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "- serve B (the standing config): $(serve_line)" >> "$P"
-  windowedsha_probes B
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "- serve B2 (the determinism control: the standing config again): $(serve_line)" >> "$P"
-  windowedsha_probes B2
+if want pagedquality && ! phase_done pagedquality; then
+  log "=== pagedquality (hardmode on the composed paged stack)"
+  P="$OUT/92-pagedquality.md"; : > "$P"
+  echo "# pagedquality (hardmode on absorb+marriage, TF_KV_PAGES=on)" >> "$P"
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- serve P (the marriage paged, the 114648 serve): $(serve_line)" >> "$P"
-  windowedsha_probes P
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- serve A (the marriage unpaged, same image): $(serve_line)" >> "$P"
-  windowedsha_probes A
-  _bb=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
-  _bp=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.P 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
-  _ba=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.A 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
-  _bb2=$(grep -oE 'sha=[0-9a-f]+' /tmp/wsha.eng.B2 2>/dev/null | sed 's/sha=//' | paste -sd, - || true)
-  echo "- serve B shas: ${_bb:-none}" >> "$P"
-  echo "- serve B2 shas: ${_bb2:-none}" >> "$P"
-  echo "- serve P shas: ${_bp:-none}" >> "$P"
-  echo "- serve A shas: ${_ba:-none}" >> "$P"
-  if [ -n "$_bb" ] && [ "$_bb" = "$_bb2" ]; then echo "- CONTROL B vs B2 (same config, fresh serve): MATCH - the instrument is deterministic" >> "$P"; else echo "- CONTROL B vs B2: MISMATCH or missing ($_bb vs $_bb2) - the instrument is NOT deterministic; the verdicts below are uninterpretable" >> "$P"; fi
-  if [ -n "$_bp" ] && [ "$_bp" = "$_ba" ]; then echo "- VERDICT paged vs marriage-unpaged: MATCH (paging is byte-identical)" >> "$P"; else echo "- VERDICT paged vs marriage-unpaged: MISMATCH ($_bp vs $_ba)" >> "$P"; fi
-  if [ -n "$_bb" ] && [ "$_ba" = "$_bb" ]; then echo "- VERDICT marriage-unpaged vs standing: MATCH (the marriage path is byte-identical to the shipping model)" >> "$P"; else echo "- VERDICT marriage-unpaged vs standing: MISMATCH ($_ba vs $_bb)" >> "$P"; fi
-  rm -f /tmp/wsha.eng.*
-  echo "- rank 0's last docker logs:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | tail -25 | sed 's/^/  /' >> "$P" || echo "  (the container is gone)" >> "$P"
-  echo "- rank 1's last docker logs:" >> "$P"
-  worker "docker logs $CONTAINER_NAME 2>&1 | tail -15" 2>/dev/null | sed 's/^/  /' >> "$P" || echo "  (unavailable)" >> "$P"
-  touch "$OUT/.windowedsha.done"
+  echo "- server: $(serve_line)" >> "$P"
+  bench_cell hm-paged "$OUT/hm-paged" >> "$P"
+  echo "- the vision suite:" >> "$P"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+  touch "$OUT/.pagedquality.done"
 fi
 
 # ---------------------------------------------------------------------------
@@ -3639,7 +3512,7 @@ if want summary; then
     grep -hE "^- (PASS|FAIL|NOTE|depth|batch|usage|server|RoCE|PARALLEL|.*refused)" "$OUT"/[0-9]*.md 2>/dev/null | head -60 || true
     echo
     echo "## Phase receipts"
-    for f in "$OUT"/[0-9]*.md; do echo "### $(basename "$f")"; cat "$f"; echo; done
+    for f in "$OUT"/[0-9]*.md; do [ -f "$f" ] || continue; echo "### $(basename "$f")"; cat "$f"; echo; done
     echo "## Way forward"
     echo "- Content-form gates (VALIDATION §2 receipt, 2026-10-23): PASS = content-identical;"
     echo "  raw-byte differences are the engine's documented nondeterminism, not a cache fault."

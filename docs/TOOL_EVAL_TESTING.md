@@ -333,10 +333,26 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       DFlash2 drafter's per-request sampling varied the verify-batch shapes
       (rounds/accepted wildly different on identical prompts), and
       verify-batch numerics make even a greedy target's chain
-      seed-dependent. v3 pins seed=42 everywhere + a determinism control
-      serve (B2); if the mismatch survives clean profiles, byte-identity is
-      not a property the marriage can claim and the judgment moves to the
-      quality instruments on the paged config.
+      seed-dependent. v3 (campaign-20261105-133550) pinned seed=42 + a
+      determinism control serve (B2): **the control MATCHED (identical shas
+      AND identical drafter profiles) and B reproduced across windows — the
+      instrument is deterministic, and the verdict is REAL: standing ≠
+      marriage-unpaged ≠ marriage-paged. BYTE-IDENTITY REFUTED on both
+      comparisons** (the paged fetch kernels and the windowed load path
+      tile the reductions differently — same stored values, different fp
+      accumulation order; the drafter conditions on the target's state,
+      corroborating independently). NOT a defect — the same class as
+      absorb's adopted fp32-summation change. The composed candidate
+      (absorb + marriage) initially FAILED to apply (cuda_glue.zig ×2
+      Kernels hunks — absorb's latent_mma fields drifted the trailing
+      context); RE-ANCHORED (2026-11-05: the paged fields before merge, the
+      init calls after chunks_32_fp8, absorb's lines untouched; 1,217
+      lines; the fresh composed apply-check OK; applies AFTER absorb only,
+      alphabetical). The debug patch RETIRED (the file removed); the
+      pagedchecks/windowedsha session phases retired per the rule.
+      **pagedquality in flight**: hardmode + the vision suite on
+      absorb+marriage+TF_KV_PAGES=on — the ABSORB precedent (adopted at 95
+      ≥ production's 94 despite its own numerics change).
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460

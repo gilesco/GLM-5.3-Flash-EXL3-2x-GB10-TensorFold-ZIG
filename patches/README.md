@@ -99,34 +99,48 @@ receipts: the deep fills −6.8/−7.0/−6.9%, the small prompts −5-6%, greed
 byte-identical everywhere, the vision 4/4, the duel fronts solo 110% /
 c2 ~99% of production's top volley / cold 334% / ITL ~107% crossed.
 
-## glm-mia-fp8-pages.patch — EXPERIMENTAL (the serving path validated; the bitwise cross-check in flight)
+## glm-mia-fp8-pages.patch — PORTED + RE-ANCHORED ONTO ABSORB (the composed candidate); byte-identity REFUTED (control-verified) — the judgment is the quality instruments
 
 The fp8+pages marriage (Mia 1104 0017-0025, Apache-2.0, adapted to v1.2.2;
 0026-0033 are separate optimizations, not ported): E4M3 latent caches on the
 KV page pool — 6,380 bytes/token beside DFlash2 vs 13,056 bf16, one shared
-elastic pool (4,100 pages × 512 rows ≈ 2.1M tokens, 13.61 GiB/rank), the
-unpaged config preserved by construction. Port history: the first window died
-TokenUnits at the first DSA sparse launch (campaign-20261105-105143) — ROOT
-CAUSE: 0022's `Table.logical` port covered ONE latent.Table site (their base
-had one; v1.2.2 has three) while 0021's dispatch routes E4M3 to the _paged
-kernels at every site; FIXED at all three (`.logical = c.ls != 0`,
-cuda_dsa_block.zig). The re-run (campaign-20261105-114648): **the serving
-path WORKS** — 11 requests, no TokenUnits (the debug stack never fired),
-page-level 512-row resume (ttft 0.898/0.862 s on resumed 15,315-token
-prompts), the cold 46,108-token fill 37.95 s = 0.82 ms/tok and 92,240 →
-74.21 s = 0.80 ms/tok (the windowed rate, unchanged at depth), the pool
-pressure mechanics live. The max_tokens=1 engine shas proved seed jitter
-(withdrawn as references); the greedy bitwise cross-check (the windowedsha
-session phase: standing vs paged vs marriage-unpaged, deterministic 64-token
-chains) judges byte-identity. Not adopted; config.sh defaults unchanged.
+elastic pool (4,100 pages × 512 rows ≈ 2.1M tokens, 13.61 GiB/rank). Port
+history: the first window died TokenUnits at the first DSA sparse launch
+(campaign-20261105-105143) — ROOT CAUSE: 0022's `Table.logical` port covered
+ONE latent.Table site (their base had one; v1.2.2 has three) while 0021's
+dispatch routes E4M3 to the _paged kernels at every site; FIXED at all three
+(`.logical = c.ls != 0`, cuda_dsa_block.zig). The serving path then
+VALIDATED (campaign-20261105-114648: 11 requests, page-level 512-row
+resume, the cold 46,108-token fill 0.82 ms/tok and 92,240 → 0.80 ms/tok —
+the windowed rate unchanged at depth).
 
-## glm-zz-debug-tokenunits.patch — DEBUG, TEMPORARY (retires with the diagnosis)
+**The bitwise cross-check REFUTED byte-identity** (the windowedsha arc,
+control-verified): greedy + thinking-off + 64-token chains with the seed
+pinned — the determinism control (the standing config booted twice) MATCHED
+with identical drafter profiles, and the standing config's shas reproduced
+across windows — yet standing ≠ marriage-unpaged ≠ marriage-paged. The
+paged fetch kernels and the windowed load path tile the reductions
+differently: same stored values, different fp accumulation order. NOT a
+defect — the same class as ABSORB's own adopted fp32-summation change; the
+judgment moves to the quality instruments (hardmode + the vision suite) on
+the composed paged stack.
 
-Logs the exact mismatch inputs at the TokenUnits return in cuda_latent.zig
-chunks() (sparse, t.pt, t.logical, paged8, kv8, rows/heads/lw/nch/hb) into
-the dying rank's docker logs. Sorts after the marriage (glm-zz-*). Fired
-never on campaign-20261105-114648 (the logical fix held); retires once the
-bitwise receipt lands.
+**STAGING: applies AFTER glm-mia-absorb-mma.patch only** (alphabetical:
+absorb-mma < fp8-pages). The compose initially FAILED (cuda_glue.zig:58 ×2
+Kernels hunks — absorb's latent_mma fields drifted the trailing context);
+RE-ANCHORED (2026-11-05): the paged fields sit before `merge`, the init
+calls after `chunks_32_fp8`, absorb's lines untouched; the fresh composed
+apply-check passes (1,217 lines). The ttft receipt on the composed-relevant
+serves: the paged cold fill 38.1 s ≈ marriage-unpaged 37.9 s at 46k
+(paging adds ~nil); the standing config's 35.3 s carries absorb's −7%.
+config.sh defaults unchanged pending the quality receipt.
+
+## glm-zz-debug-tokenunits.patch — RETIRED (2026-11-05, the file removed)
+
+Logged the exact mismatch inputs at the TokenUnits return in cuda_latent.zig
+chunks(). Fired never (the logical fix at the three latent.Table sites held —
+campaign-20261105-114648); the bitwise receipt landed (campaign-20261105-
+133550) and the diagnosis closed. This entry is the history.
 
 ## Candidates under watch (upstream PR scan, 2026-10-23)
 

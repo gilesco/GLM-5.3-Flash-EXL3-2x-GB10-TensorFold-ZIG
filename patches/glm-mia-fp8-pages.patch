@@ -28,6 +28,22 @@ OWNER: this line; STATUS: EXPERIMENTAL, judged by the fp8-pages window
 (the boot pool shape, the gates, the instruments). Mia original reasoning
 follows.
 
+STAGING: applies AFTER glm-mia-absorb-mma.patch (alphabetical:
+absorb-mma < fp8-pages). The cuda_glue.zig Kernels hunks re-anchored onto
+the absorb tree (2026-11-05 - the compose receipt: absorb's latent_mma
+fields drifted the hunks trailing context; the paged fields sit before
+merge, the init calls after chunks_32_fp8, absorb's lines untouched). The
+patch no longer applies standalone - the composed candidate is absorb +
+marriage.
+
+STAGING: applies AFTER glm-mia-absorb-mma.patch (alphabetical:
+absorb-mma < fp8-pages). The cuda_glue.zig Kernels hunks re-anchored onto
+the absorb tree (2026-11-05 - the compose receipt: absorb's latent_mma
+fields drifted the hunks trailing context; the paged fields sit before
+merge, the init calls after chunks_32_fp8, absorb's lines untouched). The
+patch no longer applies standalone - the composed candidate is absorb +
+marriage.
+
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 index 3f179ab..72b748d 100644
 --- a/zig/build/glm_family_host.zig
@@ -426,10 +442,10 @@ index 05a0f7a..efc2675 100644
      var stamp = prof.span(k.prof, stream, .cache_write);
      try latent.latentWriteFormat(set, stream, s.lat, l.lw, c.lc, c.ls, t, pos, rows, l.lw);
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 4250f64..cf30724 100644
+index 2f416cf..f932a6f 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
-@@ -42,6 +42,7 @@ pub const Kernels = struct {
+@@ -43,6 +43,7 @@ pub const Kernels = struct {
      expand_v: cuda.Function,
      lat_write: cuda.Function,
      lat_write_fp8: cuda.Function,
@@ -437,7 +453,7 @@ index 4250f64..cf30724 100644
      index_write: cuda.Function,
      pool_keys: cuda.Function,
      select_rows: cuda.Function,
-@@ -58,6 +59,8 @@ pub const Kernels = struct {
+@@ -59,6 +60,8 @@ pub const Kernels = struct {
      chunks_32: cuda.Function,
      chunks_16_fp8: cuda.Function,
      chunks_32_fp8: cuda.Function,
@@ -445,16 +461,16 @@ index 4250f64..cf30724 100644
 +    chunks_32_fp8_paged: cuda.Function,
      merge: cuda.Function,
      scores: cuda.Function,
- 
-@@ -70,6 +73,8 @@ pub const Kernels = struct {
+     latent_mma_kn: cuda.Function, // TF_GLM_ABSORB_MMA (glm_glue_num.cuh): absorb_q's head-batched GEMM, B as [K][N]
+@@ -73,6 +76,8 @@ pub const Kernels = struct {
          try k.chunks_32.allowDynamicShared(chunksSmem(32));
          try k.chunks_16_fp8.allowDynamicShared(chunksSmem(16));
          try k.chunks_32_fp8.allowDynamicShared(chunksSmem(32));
 +        try k.chunks_16_fp8_paged.allowDynamicShared(chunksSmem(16));
 +        try k.chunks_32_fp8_paged.allowDynamicShared(chunksSmem(32));
+         try k.latent_mma_kn.allowDynamicShared(latent_mma_smem[0]);
+         try k.latent_mma_nk.allowDynamicShared(latent_mma_smem[1]);
          return k;
-     }
- };
 diff --git a/zig/src/families/glm/cuda_kv8_test.zig b/zig/src/families/glm/cuda_kv8_test.zig
 index 5b7102d..2337d1e 100644
 --- a/zig/src/families/glm/cuda_kv8_test.zig
@@ -705,10 +721,10 @@ index 6bcd436..7f3a0b3 100644
      }
  
 diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
-index 8cc7b2e..9544a07 100644
+index d04bdaa..7b6d7d5 100644
 --- a/zig/src/families/glm/cuda_latent.zig
 +++ b/zig/src/families/glm/cuda_latent.zig
-@@ -54,16 +54,23 @@ pub fn cacheBytes(capacity: usize, lw: usize, kv8: bool) !usize {
+@@ -72,16 +72,23 @@ pub fn cacheBytes(capacity: usize, lw: usize, kv8: bool) !usize {
  }
  
  /// On pages: the stream's table (i32 page ids) and the step from page to page in bytes and latent rows; 0: in order.
@@ -736,7 +752,7 @@ index 8cc7b2e..9544a07 100644
  }
  
  /// latent.latent_write: rows of `lat` (stride `lat_stride`) into slots pos .. pos + rows - 1 (pos an i32 on device).
-@@ -87,20 +94,24 @@ pub fn attentionFormat(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64,
+@@ -105,20 +112,24 @@ pub fn attentionFormat(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64,
  }
  
  /// latent._dense_chunks (sparse false: keys through pos + r) and _sparse_chunks (row r's `counts` tokens of `tokens`).
