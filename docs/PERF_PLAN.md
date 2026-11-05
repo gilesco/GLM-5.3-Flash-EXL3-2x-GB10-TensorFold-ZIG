@@ -8,6 +8,18 @@
 
 ## The status (round 123, 2026-10-30 — the consolidation)
 
+> **UPDATED round 133 (2026-11-05, the ABSORB_MMA adoption — the Mia fold-in
+> arc closed)**: the chunk pair REJECTED (the warm-front granularity cost),
+> the cost tables DROPPED (the c2 attribution), **ABSORB_MMA ADOPTED** —
+> the deep fills −6.8/−7.0/−6.9% (0.727-0.738 ms/tok), the small prompts
+> −5-6%, hardmode **95** on the shipping config, and the duel re-paired:
+> solo **110%**, cold **334%**, c2 ~99% of production's top-of-range volley,
+> c4 98%, ITL ~107% crossed, the 8k slope 0.657 → **0.602 ms/tok**. The
+> decode fronts' structural pieces (the batched-launch pattern, the
+> concurrent resume's 4× serialization) remain upstream-gated/parked; the
+> warm front stays 70%; the loading wall is flat (103 s). Receipts:
+> campaigns 20261104-213422 → 20261105-003101.
+
 Every named lever is now **adopted, measured out, parked with a price, or
 upstream-gated**:
 
