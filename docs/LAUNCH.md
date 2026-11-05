@@ -6327,3 +6327,33 @@ window from a verdict — then rebase onto v1.2.3 as its own arc
 (re-anchor the three patches, canary + battery re-validate ONCE on the
 new base, the perf items feed PERF_PLAN). Rebasing now would run the
 same validation twice.
+
+## (round 133, cont. 54) pageloop: the repetitive-KV hypothesis DIES (clean both sides, R1 bit-identical); the last untested difference is the battery's CONCURRENCY; pageconc launched — the synthetic concurrent pair + the FAITHFUL harness replay (2026-11-05)
+
+**campaign-20261105-230200 (pageloop, both sides)**: R1 (a ~12K-token
+repetitive assistant message in history → 2k decode) CLEAN on both
+serves with **identical shas** (and identical to the ladder's count
+output) — the paged path handles a large repetitive KV region fine.
+R2 (the same length, varied) CLEAN but the pages-ON reply **flipped one
+token** ("28 28 29…" vs OFF's "28 29…") — the first reply-level
+divergence seen in the whole investigation, benign (a greedy numerics
+flip, then coherent to the cap). Verdict: the repetitive-history
+hypothesis is dead.
+
+**What remains**: the battery runs **--parallel 2 — concurrent scenarios
+sharing the page pool** — every probe so far was sequential. And the
+standing run's TC-62 **passed** (12 turns, 5,043 completion tokens, no
+loop) — the control expectation for the replay. TC-62's alternating
+loop turns (2/4/6) are consistent with a concurrency-dependent pool
+state.
+
+**LAUNCHED: pageconc** (~40 min) — pages ON vs OFF, same binary:
+(1) the synthetic concurrent pair — a tiny 12k-decode count ∥ a
+16k-prompt 2k-decode count fired simultaneously (isolates the
+concurrency variable); (2) **the faithful harness replay** —
+tool-eval-bench run --scenarios TC-62 TC-49 --hardmode --parallel 2
+(the battery's exact flags and budget; the harness has a --scenarios
+filter). Loops on pages-ON with OFF passing ⇒ reproduced. All clean ⇒
+the trigger needs the full 104-scenario pool state — next: the
+marriage-unpaged battery as the fork (95 ⇒ pages×battery; 75 ⇒ the
+marriage's non-paging changes).

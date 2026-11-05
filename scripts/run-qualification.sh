@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pageloop knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pageconc knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,20 +1192,20 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pageloop (SESSION-SPECIFIC; retires with the receipt). The loop
-# reproducer: pagedecode exonerated plain decode (pages on/off bit-identical
-# to 12k depth) but TC-62's loop turns alternate and the harness feeds the
-# FULL assistant output back — each loop turn's history carried the prior
-# loop's ~20K tokens of repetitive text, a region the probes never had. R1: a
-# ~20K-token repetitive assistant message in history -> 2k decode. R2: the
-# same length, varied content -> 2k decode. Pages ON vs OFF, same binary.
-# R1 loops with R2 clean = the paged path chokes on repetitive KV regions (a
-# tiny reproducer); both clean = the battery composition holds the trigger
-# (next: the faithful TC-62 replay); R1 loops on BOTH = not paged.
+# phase: pageconc (SESSION-SPECIFIC; retires with the receipt). Concurrency +
+# the faithful replay: pageloop killed the repetitive-KV hypothesis (clean
+# both sides); the battery's untested difference is --parallel 2 (concurrent
+# scenarios sharing the page pool). On pages ON vs OFF: (1) the synthetic
+# concurrent pair (a tiny 12k-decode count || a 16k-prompt 2k-decode count,
+# fired simultaneously); (2) the faithful harness replay (--scenarios TC-62
+# TC-49 --hardmode --parallel 2 — the battery's exact flags; the standing run
+# passed TC-62 with 12 turns / 5,043 tokens). Loops on pages-ON with OFF
+# passing = reproduced; all clean = the trigger needs the full battery's pool
+# state (next: the marriage-unpaged battery as the fork).
 # ---------------------------------------------------------------------------
-if want pageloop && ! phase_done pageloop; then
-  log "=== pageloop (the repetitive-KV reproducer: pages on vs off)"
-  P="$OUT/99-pageloop.md"; : > "$P"
+if want pageconc && ! phase_done pageconc; then
+  log "=== pageconc (concurrency + the faithful TC replay: pages on vs off)"
+  P="$OUT/99-pageconc.md"; : > "$P"
   cat > /tmp/pdan.py <<'PDAN'
 import sys, json, hashlib, re
 try:
@@ -1243,37 +1243,62 @@ try:
 except Exception as e:
     print("PARSE-FAILED:%r" % e)
 PDAN
-  pd_one() {
-    R=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$1" 2>/dev/null | python3 /tmp/pdan.py 2>/dev/null || true)
-    echo "  $2: $R" >> "$P"
-  }
-  pl_probes() {
+  pc_probes() {
     tag="$1"
-    bf=$(mktemp /tmp/pl.XXXXXX.json)
-    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+    bf1=$(mktemp /tmp/pc.XXXXXX.json); bf2=$(mktemp /tmp/pc.XXXXXX.json)
+    o1=$(mktemp /tmp/pc.XXXXXX); o2=$(mktemp /tmp/pc.XXXXXX)
+    python3 - "$SERVED_NAME" > "$bf1" <<'PDB'
 import json, sys
-hist = "calendar, " * 6000
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": "Hello."}, {"role": "assistant", "content": hist}, {"role": "user", "content": "Ignore the text above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": "Write the numbers from 1 to 20000, one per line, nothing else."}], "max_tokens": 12288, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
 PDB
-    pd_one "$bf" "$tag R1 repetitive-20k-history 2k-decode"
-    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+    python3 - "$SERVED_NAME" > "$bf2" <<'PDB'
 import json, sys
-hist = "\n".join(str(i) for i in range(1, 8001))
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": "Hello."}, {"role": "assistant", "content": hist}, {"role": "user", "content": "Ignore the text above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 230 + "Ignore the word lists above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
 PDB
-    pd_one "$bf" "$tag R2 varied-20k-history 2k-decode"
-    rm -f "$bf"
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf1" > "$o1" 2>/dev/null &
+    J1=$!
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf2" > "$o2" 2>/dev/null &
+    J2=$!
+    wait "$J1" || true
+    wait "$J2" || true
+    echo "  $tag C1 concurrent tiny 12k-decode: $(python3 /tmp/pdan.py < "$o1" 2>/dev/null || true)" >> "$P"
+    echo "  $tag C2 concurrent 16k-prompt 2k-decode: $(python3 /tmp/pdan.py < "$o2" 2>/dev/null || true)" >> "$P"
+    rm -f "$bf1" "$bf2" "$o1" "$o2"
+    echo "  $tag the faithful harness replay (TC-62 + TC-49, the battery's flags):" >> "$P"
+    mkdir -p "$OUT/tc-$tag"
+    PYTHONUNBUFFERED=1 "$BENCH" run \
+      --base-url "http://127.0.0.1:$PORT/v1" \
+      --model "$SERVED_NAME" \
+      --format openai \
+      --tokenizer "$MODEL_ID" \
+      --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
+      --label "tc-$tag" --output-dir "$OUT/tc-$tag" --json-file "$OUT/tc-$tag/result.json" \
+      > "$OUT/tc-$tag/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-$tag/bench.log)" >> "$P"
+    python3 - "$OUT/tc-$tag/result.json" <<'PDE'
+import json, sys, re
+try:
+    d = json.load(open(sys.argv[1]))
+    for s in d["scores"]["scenario_results"]:
+        log = s.get("raw_log", "")
+        trunc = re.findall(r"truncated=(.{0,90})", log)
+        print("  %s | status=%s | completion=%s | turns=%s | truncated_notes=%d" % (s.get("scenario_id"), s.get("status"), s.get("completion_tokens"), s.get("turn_count"), len(trunc)))
+        for t in trunc[:3]:
+            print("     ", t)
+except Exception as e:
+    print("  EXTRACT-FAILED:%r" % e)
+PDE
     echo "  $tag engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -4 | sed 's/^/    /' >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -6 | sed 's/^/    /' >> "$P"
   }
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- pages ON: $(serve_line | cut -c1-120)" >> "$P"
-  pl_probes on
+  pc_probes on
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=off PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- pages OFF: $(serve_line | cut -c1-120)" >> "$P"
-  pl_probes off
-  echo "- VERDICT: R1 loops on pages with OFF clean and R2 clean = the paged path chokes on repetitive KV regions (a tiny reproducer — bisect the onset and read the selection over near-identical rows next); both clean = the battery composition holds the trigger (the faithful TC-62 replay next); R1 loops on BOTH = not paged (the standing 95 contradicts — investigate the marriage's non-paging changes)" >> "$P"
-  touch "$OUT/.pageloop.done"
+  pc_probes off
+  echo "- VERDICT: the harness replay loops on pages-ON (truncated notes, huge turns) with OFF passing = REPRODUCED (the synthetic wave isolates concurrency as the co-trigger); all clean = the trigger needs the full 104-scenario pool state (next: the marriage-unpaged battery as the fork: 95 = pages x battery, 75 = the marriage's non-paging changes)" >> "$P"
+  touch "$OUT/.pageconc.done"
 fi
 
 # ---------------------------------------------------------------------------

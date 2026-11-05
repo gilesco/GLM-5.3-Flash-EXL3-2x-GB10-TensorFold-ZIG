@@ -427,14 +427,14 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       to 12k depth.** The loop turns alternate (TC-62: turns 2/4/6 blow
       up ~80K chars, 1/3/5 behave) and run from ~1.4-2K-token prompts
       whose history carries the PRIOR loop's ~20K tokens of repetitive
-      text (the harness feeds the full output back). **pageloop in
-      flight**: R1 (a ~20K-token repetitive assistant message in history
-      → 2k decode) vs R2 (the same length, varied) on pages on vs off —
-      a tiny reproducer if the paged path chokes on repetitive KV
-      regions. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
-      cuda_forward): its GLM items are opt-in prefill/serving features —
-      nothing on the selection/loop bug; the rebase waits for the loop
-      verdict.
+      text (the harness feeds the full output back).**pageconc
+      in flight**: the synthetic concurrent pair + the FAITHFUL harness
+      replay (--scenarios TC-62 TC-49 --hardmode --parallel 2) on pages
+      on vs off; pageloop was CLEAN both sides (the repetitive-KV
+      hypothesis dies). v1.2.3 scanned (425 commits, touches
+      cuda_dsa_block/cuda_forward): its GLM items are opt-in prefill/
+      serving features — nothing on the selection/loop bug; the rebase
+      waits for the loop verdict.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
