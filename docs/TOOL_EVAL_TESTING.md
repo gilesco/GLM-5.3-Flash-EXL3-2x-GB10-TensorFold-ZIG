@@ -419,9 +419,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (inert here); the decode Tables are covered by the fix;
       dense_limit = i_topk+kpool-1 — the canary's decodes sat ON the
       dense/sparse boundary, the battery lives beyond it.
-      **pagedecode in flight** — the greedy-decode comparison (pages on
-      vs off, same binary: tiny/3.3k/16k prompts × 2k decodes + a
-      thinking-ON 4k decode + a resume-path recall turn).
+      **pagedecode (campaign-20261105-221651): the pages-ON side CLEAN**
+      — the greedy decode ladder (tiny/3.3k/16k prompts × 2k decodes,
+      tok/s 77-89) counted with no loops, and a 16k store-resumed
+      thinking request decoded clean (cached=16384): the battery's loops
+      did NOT reproduce at 2k decode depth. The phase then ABORTED at the
+      pages-off serve: **TF_KV_PAGES= (empty) is refused by the engine**
+      ("give auto, on (or 1, all) or off (or 0)") — no OFF side, no
+      verdict, no done marker (the poke's 10-min-quiet fallback covered
+      it). **pagedecode re-launched** with TF_KV_PAGES=off, a 12k-decode
+      depth probe (count to 20000, max_tokens 12288 — the battery's
+      regime), a thinking-ON count probe (the loops lived in the
+      reasoning channel), and a fixed recall turn (max_tokens 128).
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

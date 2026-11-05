@@ -1193,19 +1193,19 @@ fi
 
 # ---------------------------------------------------------------------------
 # phase: pagedecode (SESSION-SPECIFIC; retires with the receipt). The
-# decode-time loop hunt: pagedquality2's 75 shows degenerate token loops in
-# long generations (TC-62 "...calendar, calendar..."; TC-49 " " to the cap)
-# that the canary's 12-token decodes never exercised (dense_limit = i_topk +
-# kpool - 1: the canary sat ON the dense/sparse boundary; the battery lives
-# almost entirely beyond it). Greedy (temperature 0, seed 42) generations on
-# the SAME binary with TF_KV_PAGES=on vs off: G1 tiny prompt -> 2k decode,
-# L1 3.3k prompt -> 2k decode, L2 16k prompt -> 2k decode (TC-62's depth
-# regime), T1 thinking-ON 16k context -> 4k decode (the battery's mode), M1 a
-# ~2.3k turn-1 conversation (the resume path fires) + recall. LOOP on pages
-# where pages-off is clean = the decode-time paged path diverges (bisect the
-# onset next); LOOP on BOTH = the marriage's non-paging changes; CLEAN both =
-# the trigger is the battery's multi-turn/tool structure (instrument TC-62
-# next).
+# decode-time loop hunt, re-run: the first window proved the pages-ON greedy
+# decode ladder CLEAN at 2k depth (tiny/3.3k/16k prompts, tok/s 77-89, plus a
+# 16k store-resumed thinking request, cached=16384) but aborted at the
+# pages-off serve — TF_KV_PAGES= (empty) is refused by the engine; it demands
+# an explicit off. This run: TF_KV_PAGES=off explicitly; G2 walks decode
+# depth to ~12k (count to 20000, max_tokens 12288 — the battery's runaway
+# decodes ran to the 16,384 cap); T1 forces the reasoning channel deep
+# (thinking ON + a count task — the battery's loops lived in reasoning); M1
+# gets 128 tokens and a sterner recall instruction (the old 48-token cap cut
+# the answer off). LOOP on pages with pages-off clean = the decode-time paged
+# path diverges (bisect the onset next); LOOP on BOTH = the marriage's
+# non-paging changes; CLEAN both = the trigger is the battery's multi-turn/
+# tool structure (instrument TC-62 next).
 # ---------------------------------------------------------------------------
 if want pagedecode && ! phase_done pagedecode; then
   log "=== pagedecode (the greedy-decode comparison: pages on vs off)"
@@ -1261,6 +1261,11 @@ PDB
     pd_one "$bf" "$tag G1 tiny-prompt 2k-decode"
     python3 - "$SERVED_NAME" > "$bf" <<'PDB'
 import json, sys
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": "Write the numbers from 1 to 20000, one per line, nothing else."}], "max_tokens": 12288, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+PDB
+    pd_one "$bf" "$tag G2 tiny-prompt 12k-decode"
+    python3 - "$SERVED_NAME" > "$bf" <<'PDB'
+import json, sys
 unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
 print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 46 + "Ignore the word lists above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
 PDB
@@ -1274,14 +1279,14 @@ PDB
     python3 - "$SERVED_NAME" > "$bf" <<'PDB'
 import json, sys
 unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 230 + "Using the context above as background, plan a 12-step research procedure for cataloging tidal pools. Think step by step, then give the numbered list."}], "max_tokens": 4096, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": True}}))
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 230 + "Think step by step, then write the numbers from 1 to 3000, one per line, nothing else."}], "max_tokens": 4096, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": True}}))
 PDB
     pd_one "$bf" "$tag T1 16k-prompt thinking 4k-decode"
     rm -f "$bf"
     python3 - "$SERVED_NAME" > "$bf" <<'PDB'
 import json, sys
 unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}], "max_tokens": 48, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}], "max_tokens": 128, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
 PDB
     r1=$(mktemp /tmp/pd.XXXXXX.json); r2=$(mktemp /tmp/pd.XXXXXX.json); r3=$(mktemp /tmp/pd.XXXXXX.json)
     curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf" > "$r1" 2>/dev/null || true
@@ -1290,7 +1295,7 @@ PDB
 import json, sys
 unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
 a1 = json.load(open(sys.argv[2]))["choices"][0]["message"].get("content") or ""
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}, {"role": "assistant", "content": a1}, {"role": "user", "content": "What is 17*23? Answer with just the number."}], "max_tokens": 48, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}, {"role": "assistant", "content": a1}, {"role": "user", "content": "What is 17*23? Answer with just the number."}], "max_tokens": 128, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
 PDB
     curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf" > "$r2" 2>/dev/null || true
     echo "  $tag M1 turn2 math (resume fires): $(python3 /tmp/pdan.py < "$r2" 2>/dev/null || true)" >> "$P"
@@ -1299,7 +1304,7 @@ import json, sys
 unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
 a1 = json.load(open(sys.argv[2]))["choices"][0]["message"].get("content") or ""
 a2 = json.load(open(sys.argv[3]))["choices"][0]["message"].get("content") or ""
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}, {"role": "assistant", "content": a1}, {"role": "user", "content": "What is 17*23? Answer with just the number."}, {"role": "assistant", "content": a2}, {"role": "user", "content": "What word did I ask you to remember? Answer with just the word."}], "max_tokens": 48, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
+print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 32 + "Remember the word FALCON-7."}, {"role": "assistant", "content": a1}, {"role": "user", "content": "What is 17*23? Answer with just the number."}, {"role": "assistant", "content": a2}, {"role": "user", "content": "Do not describe the list. What single word did I ask you to remember at the end of my first message? Answer with just that word."}], "max_tokens": 128, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
 PDB
     curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf" > "$r3" 2>/dev/null || true
     echo "  $tag M1 turn3 recall: $(python3 /tmp/pdan.py < "$r3" 2>/dev/null || true)" >> "$P"
@@ -1307,15 +1312,15 @@ PDB
     echo "  $tag M1 recall check: $RC" >> "$P"
     rm -f "$bf" "$r1" "$r2" "$r3"
     echo "  $tag engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -9 | sed 's/^/    /' >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -10 | sed 's/^/    /' >> "$P"
   }
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- pages ON: $(serve_line | cut -c1-120)" >> "$P"
   pd_probes on
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES= PATCHES="${RC_PATCHES-${PATCHES-}}"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=off PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- pages OFF: $(serve_line | cut -c1-120)" >> "$P"
   pd_probes off
-  echo "- VERDICT: LOOP on pages with pages-off clean = the decode-time paged path diverges (bisect the onset next); LOOP on BOTH = the marriage's non-paging changes (diff its decode hunks next); CLEAN both = the greedy decode is pages-clean at this depth and the battery's trigger is the multi-turn/tool structure (instrument TC-62 next)" >> "$P"
+  echo "- VERDICT: LOOP on pages with pages-off clean = the decode-time paged path diverges (bisect the onset next); LOOP on BOTH = the marriage's non-paging changes (diff its decode hunks next); CLEAN both = the greedy decode is pages-clean to ~12k depth and the battery's trigger is the multi-turn/tool structure (instrument TC-62 next)" >> "$P"
   touch "$OUT/.pagedecode.done"
 fi
 

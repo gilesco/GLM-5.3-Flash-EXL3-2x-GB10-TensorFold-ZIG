@@ -6260,3 +6260,28 @@ LOOP on pages with pages-off clean ⇒ the decode-time paged path diverges
 (bisect the onset next); LOOP on BOTH ⇒ the marriage's non-paging changes;
 CLEAN both ⇒ the trigger is the battery's multi-turn/tool structure
 (instrument TC-62 directly next). ~20 min.
+
+## (round 133, cont. 52) pagedecode's first window: the pages-ON greedy decode ladder CLEAN at 2k depth (the loops did not reproduce); the phase aborted at the pages-off serve — TF_KV_PAGES= (empty) is REFUSED by the engine; re-launched with off + a 12k-decode probe (2026-11-05)
+
+**campaign-20261105-221651 (pagedecode, the ON side only)**: G1/L1/L2
+(tiny/3.3k/16k prompts × 2k decodes) all CLEAN — counts 1..~770 perfect,
+no loops, tok/s 77-89 — and **T1 (thinking ON, 16k prompt) decoded clean
+on a 16k STORE-RESUMED prefix (cached=16384)**: the battery's loops did
+not reproduce at 2k decode depth. M1 turn2 = "391" correct with the
+resume fired (cached=2048); the turn3 RECALL-MISS is a probe flaw (the
+48-token cap cut the answer mid-description), not evidence.
+
+**The abort**: the phase demanded `TF_KV_PAGES=` (empty) for the off side
+— **the engine refuses empty** ("TF_KV_PAGES: give auto, on (or 1, all)
+or off (or 0)") — the serve died at validation, the phase stopped before
+the OFF side and the verdict, and the `.done` marker was never written.
+The poke chain is intact: with no ` done.` marker the poke correctly fell
+back to the 10-min-quiet rule; it was fired manually at 22:33 (the marker
+set) — the fallback latency is the round-132 design working, not a bug.
+
+**RE-LAUNCHED: pagedecode (fixed)** — `TF_KV_PAGES=off` explicitly;
+**G2: tiny prompt, count to 20000, max_tokens 12288 — walks decode depth
+to ~12k, into the battery's regime** (the runaway decodes ran to the
+16,384 cap); T1 now forces the reasoning channel deep (thinking ON + a
+count task — the battery's loops lived in reasoning); M1 gets 128 tokens
+and a sterner recall instruction. Same verdict branches; ~20 min.
