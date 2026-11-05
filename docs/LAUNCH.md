@@ -5933,3 +5933,32 @@ GPU needed), against the contamination evidence. The pagedquality and
 treequality session phases retire (their receipts landed; git history
 carries the re-run patterns — the quality battery re-runs as pagedquality2
 once a fix candidate exists).
+
+## (round 133, cont. 39) THE CONTAMINATION MECHANISM HUNT: the radix store's matching is token-exact; the suspect is the adopt→close→re-adopt cycle; the poolcanary launched (2026-11-05)
+
+**The code-reading session** (the composed tree on the scratch repo): the
+marriage touches NEITHER pool.zig NOR cuda_prefix.zig NOR kept.zig — the
+pool/eviction/kept machinery is the base's. The state-size math
+(pageCacheBytes/pageBytesOf/onPages/stateSizes/pagedBytesOf) is
+self-consistent for E4M3 (codes+fp32 scales; the pk region after the
+scales; the fixed bytes head-independent as documented). The radix store
+(prompt_radix.zig) matches TOKEN-EXACTLY — the lookahead row even
+differentiates branches (a page past which the lookahead differs is
+another page) — so a false MATCH is unlikely. **The suspect window is the
+adopt→close→re-adopt cycle**: a resume adopts the tree's pages into a
+stream's lease; the stream closes (finish releases them); if the tree's
+node reference is not dropped in step, the NEXT resume of that node reads
+the INTERMEDIATE request's rows — exactly the battery's one-step-back
+chain (TC-103's answer carried TC-102's material; TC-104's carried
+TC-103's). The radix-adopt path is exercised ONLY on the paged serve
+(the standing config's cache keeps full states, no pool pages) — which is
+why the battery caught it and nothing before did.
+
+**LAUNCHED: poolcanary** — the cycle in miniature, per round: a long prompt
+carrying a unique vault code (MKR-{i}QX), a 46k-token churn fill (forcing
+store evictions), then a short prompt asking for the code — the short
+prompt shares ONLY the ~1,530-token preamble, so an honest serve answers
+NONE. Five rounds on the paged serve, then the same on the unpaged
+control; the engine's resumed-at lines captured per round (a short
+request's resumed-at past the preamble is the numeric smoking gun). Same
+patch set ⇒ the cached image; the window is ~15 min.
