@@ -380,7 +380,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       or write-address failure. poolcanary4 in flight: TF_KV_POISON=1 (the
       NaN refill erases stale content — uniform garbling = the reads miss
       the writes; an unchanged pattern = the stored content is wrong) plus
-      the chunk-1-vs-chunk-2 code-position split. **poolcanary v1 (campaign-20261105-163035):
+      the chunk-1-vs-chunk-2 code-position split. **poolcanary4
+      (campaign-20261105-181641): bf16+poison 6/6 exact (the design
+      validated); fp8+poison COHERENT garbles, never NaN-mush — the stored
+      content is wrong-but-finite: the quantize/scales/write-content path,
+      NOT write visibility; AND the engine CRASHED (rank 1
+      CudaContextLost, round-1 late, the recycled+poisoned pages).**
+      glm-zz-dumppages in flight: the write kernel printfs its written
+      scale+code for row 2,100 and the read kernel printfs what it sees —
+      the byte-level write-vs-read split. **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
       path never fired). **poolcanary2 in flight**: grid-crossing prompts

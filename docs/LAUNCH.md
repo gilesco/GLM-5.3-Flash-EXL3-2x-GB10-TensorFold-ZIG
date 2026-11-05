@@ -6120,3 +6120,29 @@ serving boots' rank-0 saves are still not written — the known gap).
 CONTROL leg added (the early/late split is interpretable only against it);
 per-serve docker-logs captures (the engine's fate in a failing round lands
 in the receipt); the early/late split kept. ~12 min.
+
+## (round 133, cont. 46) THE POISON VERDICT: the stored content is WRONG-BUT-FINITE (coherent garbles, never NaN-mush) — the quantize/scales/write path; AND the engine CRASHED (rank 1 CudaContextLost); the byte-level write-vs-read dump launched (2026-11-05)
+
+**campaign-20261105-181641 (poolcanary4, the fixed two-leg run)**:
+- **bf16 + poison: 6/6 exact codes** (early AND late) — the canary design
+  validated end to end; the poison doesn't perturb a correct engine; the
+  early needle (row ~1,517) is retrievable when the engine works.
+- **fp8 + poison: coherent garbles, NEVER NaN-mush** (round-1 early
+  code-blind-coherent, then PARSE-FAILEDs) — under poison a read of
+  unwritten rows returns NaN and the output would be NaN mush. Coherent
+  garbles mean **the reads hit finite, written-but-wrong content: the
+  quantize/scales/write-content path, not write visibility**.
+- **THE ENGINE CRASHED**: "rank 1 stopped (CudaContextLost)" during
+  round-1 late (the recycled+poisoned pages) — a hard CUDA context loss,
+  possibly page-id-dependent (round-1 early on fresh pages survived).
+
+**LAUNCHED: glm-zz-dumppages** — the byte-level write-vs-read dump: the
+write kernel printfs its own written scale+code for global row 2,100
+(inside the code sentence); the read kernel printfs what it sees for the
+same row. Write-vs-read at the byte level splits the path definitively:
+write says X / read says X ⇒ the content is right and the loss is
+elsewhere; write says X / read says Y ⇒ the read addressing; write says
+garbage ⇒ the quantize/scales path. The debug patch is 30 lines, applies
+on the full stack (the per-patch-commit discipline held this time — the
+first two generation attempts captured the whole stack diff), and the
+fingerprint change rides a rebuild (~15-25 min) in the window preamble.

@@ -1149,7 +1149,7 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
     done
     done
     echo "- $mode engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped|GLMDUMP" | tail -14 | sed 's/^/  /' >> "$P"
   done
   echo "- VERDICT: uniform garbling under poison = the reads miss the writes (write visibility); the v3 pattern unchanged = the stored content is wrong (quantize/scales); early-vs-late splits the chunk the loss lives in" >> "$P"
   touch "$OUT/.poolcanary4.done"
