@@ -306,6 +306,10 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
+- [ ] **campaign-20261105-113129 — the marriage's second pagedchecks**: the
+      logical fix did NOT resolve the death (identical TokenUnits, rank-1
+      first, all three sites fixed); the debug patch (glm-zz-debug-
+      tokenunits) launched to log the exact mismatch inputs.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460

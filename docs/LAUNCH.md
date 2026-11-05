@@ -5690,7 +5690,7 @@ probes + the deep fills judge the marriage's serving path at last.
 
 ## (round 133, cont. 31) THE 113129 POKE (the fixed quiet-age probe verified) + the TokenUnits debug patch shipped (2026-11-05)
 
-**The 113129 poke arrived** via the fixed quiet-age probe (10 min of quiet
+**The campaign-20261105-113129 poke arrived** via the fixed quiet-age probe (10 min of quiet
 on a crashed window — the catch path working as designed; the receipt was
 already digested in cont. 27/28). **The logical fix did NOT resolve the
 death**: the pagedchecks re-run (113129) died identically — rank 1 first
