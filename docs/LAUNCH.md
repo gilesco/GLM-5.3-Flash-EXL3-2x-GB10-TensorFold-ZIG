@@ -5612,3 +5612,33 @@ uninitialized path in the no-prof paged launch.
 
 **LAUNCHED (the diagnostic re-run)**: the same pagedchecks window with the
 failure capture — rank 0's dying words land in the receipt this time.
+
+## (round 133, cont. 28) THE MARRIAGE BUG ROOT-CAUSED AND FIXED: TokenUnits = the one-site logical port; the poke-chain script fixed; the re-run launched (2026-11-05)
+
+**The 105143 poke arrived late** (the poke script's broken quiet-age probe —
+see below) and its receipt was already digested directly. **The root cause
+of the paged-serve death**: the marriage's `chunks()` dispatch sets
+`paged8 = kv8 and t.pt != 0` and enforces the contract
+`t.logical == paged8` on every paged sparse call (error.TokenUnits). Mia's
+0022 set `Table.logical` on **one** latent.Table site — **their base had
+one; v1.2.2 has three**. My port adapted the attend site only; the other
+two (blockLastRow, the window fn — the first request's DSA sparse launch)
+passed `logical=false` while 0021's dispatch routed E4M3 to the _paged
+kernels → the mismatch → both ranks died ~1 s after the health check,
+before any request. **FIXED**: `.logical = c.ls != 0` at all three sites;
+the combined patch rebuilt (1,201 lines) and apply-checked on fresh
+00e7ddd; staged as patches/glm-mia-fp8-pages.patch.
+
+**The poke chain fixed** (the second gap's root): autonomous-poke.sh's
+quiet-age probe was malformed — it stat'ed the .md mtimes then re-stat'ed
+the TIMESTAMPS as files → always empty → `integer expected` → silent exit
+for any campaign that failed the completion-marker gate (a crashed window
+never poked). Fixed to stat the campaign.log. The user's manual cron run
+was correct behavior (the crash-net guards production only; production was
+up). The single-marker design still only tracks the newest campaign — a
+campaign superseded before a tick skips its poke (103431's fate; the
+receipts get read directly when a poke is late).
+
+**LAUNCHED**: the pagedchecks re-run with the fixed patch — the first
+request should now pass the DSA sparse launch; the probes and the deep
+fills judge the serving path.

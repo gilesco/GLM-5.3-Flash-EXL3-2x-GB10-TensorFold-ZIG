@@ -43,7 +43,7 @@ if ! ssh -o BatchMode=yes "$SSH_TARGET" "tail -1 '$NEW/campaign.log' 2>/dev/null
   # 10 minutes while production is up is done-or-dead: poke anyway (the
   # last-poked marker keeps this single-shot), so a crashed window can never
   # sit silently (round 132: the MIA window died mid-phase and poked nothing).
-  NEW_AGE=$(ssh -o BatchMode=yes "$SSH_TARGET" "echo \$(( \$(date +%s) - \$(stat -c %Y '$NEW/bpw4sweep.md' '$NEW'/*.md 2>/dev/null | xargs stat -c %Y 2>/dev/null | sort -n | tail -1) ))" 2>/dev/null)
+  NEW_AGE=$(ssh -o BatchMode=yes "$SSH_TARGET" "echo \$(( \$(date +%s) - \$(stat -c %Y '$NEW/campaign.log' 2>/dev/null || echo 0) ))" 2>/dev/null)
   case "${NEW_AGE:-99999}" in
     ''|*[!0-9]*) exit 0 ;;
     *) [ "$NEW_AGE" -gt 600 ] || exit 0 ;;

@@ -13,30 +13,20 @@ branches preserved (pkPageBytes, the 6-arg addCache, the p.pk pooled-keys
 pages); stateSizes keeps our 5-param signature (the fixed part holds no
 head-conditional rows on this tree); cuda.zig/cuda_start/cuda_native/
 cuda_pages/snapshot_layout adapted to our shapes; the registry records
-appended to our import lists. SEMANTICS: TF_KV_PAGES=on pages either
-format (one shared pool, 6,380 bytes/token E4M3 beside DFlash2 vs 13,056
-bf16), unknown values refused (BadKvPages), the pool admits elastically
-(PoolTooSmall), every mapped page id checked on every rank (BadStep).
-The unpaged standing config is preserved by construction (the flags
-default off; pageBytesOf(false,true) = the old pageBytes).
+appended to our import lists. **0022's Table.logical extended to ALL
+THREE latent.Table sites on v1.2.2 (their base had one)** - the TokenUnits
+contract in chunks() demands t.logical == paged8 at every paged sparse
+call, and 0021's dispatch routes E4M3 to the _paged kernels at every
+site; the one-site port died at the first DSA sparse launch (both ranks,
+campaign-20261105-105143 - the receipt). SEMANTICS: TF_KV_PAGES=on pages
+either format (one shared pool, 6,380 bytes/token E4M3 beside DFlash2 vs
+13,056 bf16), unknown values refused (BadKvPages), the pool admits
+elastically (PoolTooSmall), every mapped page id checked on every rank
+(BadStep). The unpaged standing config is preserved by construction (the
+flags default off; pageBytesOf(false,true) = the old pageBytes).
 OWNER: this line; STATUS: EXPERIMENTAL, judged by the fp8-pages window
 (the boot pool shape, the gates, the instruments). Mia original reasoning
 follows.
-
-  + (at % 512) * 4. `cache` and `scales` are this layer's codes and scales in page 0.
-- tf_glm_chunks_{16,32}_fp8_paged(..., sparse, pt, pstep): chunks_wide<HB, true, true>. A dense chunk is
-  one page (its base found once); a sparse key's token list entry is the logical position, translated
-  through the table per key. Codes and scales then load and convert as on a window: the arithmetic and
-  every partial are the window's (opt/mem2-wt/check_paged_fp8.cu: bitwise at 513 to 30,000 keys, dense and
-  sparse, 4 rows x 16 heads and 64 rows x 32 heads, a shuffled table, ten other layers' parts untouched).
-
-ptxas sm_120 (nvcc 13): chunks_32_fp8_paged 159 registers, chunks_16_fp8_paged 128, lat_write_fp8_paged 27;
-no spills. The window's: 167, 125, 25.
-
----
- zig/kernels/cuda/glm_glue_attn.cuh   | 34 +++++++++++++++++++++++++---
- zig/kernels/cuda/glm_glue_latent.cuh | 13 +++++++++++
- 2 files changed, 44 insertions(+), 3 deletions(-)
 
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 index 3f179ab..72b748d 100644
@@ -404,7 +394,7 @@ index 99aa58e..2ab17cd 100644
  pub const config = @import("config.zig");
  pub const quant = @import("cuda_quant.zig");
 diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
-index 05a0f7a..83c9288 100644
+index 05a0f7a..efc2675 100644
 --- a/zig/src/families/glm/cuda_dsa_block.zig
 +++ b/zig/src/families/glm/cuda_dsa_block.zig
 @@ -136,7 +136,8 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
@@ -417,6 +407,24 @@ index 05a0f7a..83c9288 100644
      const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
      const scale: f32 = @floatCast(std.math.pow(f64, @floatFromInt(l.qk), -0.5));
      if (host_pos < l.dense_limit) {
+@@ -164,7 +165,7 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
+ pub fn blockLastRow(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, x: u64, x_stride: usize, rows: usize, pos: u64, host_pos: usize, nch: usize, out: u64) !void {
+     if (rows == 0) return error.BadWindow;
+     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
+-    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2) };
++    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
+     const ix = l.index;
+     const kw_rows = ix.d + ix.heads;
+     try prepareProfile(k.set, stream, l, s, x, x_stride, rows, sparseRows(l, host_pos, rows), k.prof); // every row keeps its query, its latent, its keys
+@@ -239,7 +240,7 @@ fn writeKeys(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, r
+     const ix = l.index;
+     const kw_rows = ix.d + ix.heads;
+     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
+-    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2) };
++    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
+     const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
+     var stamp = prof.span(k.prof, stream, .cache_write);
+     try latent.latentWriteFormat(set, stream, s.lat, l.lw, c.lc, c.ls, t, pos, rows, l.lw);
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
 index 4250f64..cf30724 100644
 --- a/zig/src/families/glm/cuda_glue.zig
