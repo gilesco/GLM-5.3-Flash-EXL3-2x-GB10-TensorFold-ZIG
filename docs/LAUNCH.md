@@ -6728,3 +6728,28 @@ ONLY the structural pairs (every serving default from config.sh), the
 serve line verified (the 4-patch list + the pages pool), one greedy
 probe. ~10 min. THEN DARK. Next arc: the v1.2.3 rebase (re-anchor the
 four patches, re-validate), per the (user) directive.
+
+## (round 133, cont. 66) THE SMOKE TEST CAUGHT A REAL ADOPTION GAP: config.sh's TF_KV_PAGES was an unexported shell variable — env_args() forwards TF_KV_* from the ENVIRONMENT (env | grep), so the bare start ran window-mode; the export fix; the smoke re-launched (2026-11-06)
+
+**campaign-20261106-061130 (adoptsmoke, the first run)**: the probe
+answered OK, but the serve line was **window-mode fp8** (3.75 GiB per
+stream, model 84.75 GiB — the paged serves all read 81.35 GiB with the
+pages pool line): **TF_KV_PAGES=on never reached the engine.**
+
+**The root cause**: env_args() (config.sh) forwards the engine's
+TF_KV_* variables **from the environment** — `env | grep -E
+'^(TENSORFOLD|TF_GLM|TF_HEAT|TF_ROCE|TF_KV|NCCL)_...'` — and `env`
+lists only EXPORTED variables. config.sh's
+`TF_KV_PAGES="${TF_KV_PAGES-on}"` set an unexported shell variable:
+it reaches the arg builder (nothing to build — the engine reads the
+env), never the container. The paged phases worked because
+`env TF_KV_PAGES=on ./scripts/start.sh` EXPORTS. The bare start
+(the adoption's whole point) did not.
+
+**THE FIX**: `export TF_KV_PAGES="${TF_KV_PAGES-on}"` in config.sh —
+the exported variable lands in start.sh's environment (config.sh is
+sourced at start.sh:20), env_args() forwards it to both ranks, and the
+explicit `TF_KV_PAGES=off` pins override it (env's override semantics).
+
+**RE-LAUNCHED: adoptsmoke** — the same bare-config smoke test; the
+serve line must now carry the pages pool. ~10 min. THEN DARK.

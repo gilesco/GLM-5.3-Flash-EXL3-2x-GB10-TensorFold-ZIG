@@ -205,7 +205,11 @@ KV_CACHE="${KV_CACHE-fp8}"
 # standing run's exact token profile, median turns 6.5% faster). The
 # ${VAR-default} form: unset → on (the adopted mode); TF_KV_PAGES=off → the
 # window-mode KV (the engine refuses an EMPTY value — always pass off).
-TF_KV_PAGES="${TF_KV_PAGES-on}"
+# EXPORTED: env_args() forwards TF_KV_* from the ENVIRONMENT (env | grep) — an
+# unexported shell assignment reaches the arg builder but never the container
+# (the adoptsmoke smoke test caught exactly that: the bare start ran
+# window-mode while config.sh said on).
+export TF_KV_PAGES="${TF_KV_PAGES-on}"
 
 # PROMPT_K: v1.1.1 regroups prompt-projection K slices (one K slice at every operator row
 # count), which can change replies versus 1.1.0 — including long or resumed prompts. "shape"
