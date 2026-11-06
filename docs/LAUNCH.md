@@ -7425,3 +7425,30 @@ restart), the content-sha cross-arm gate (three prompt sizes) + the pp
 rows twice per arm. The bar: content IDENTICAL + a sharp pp gain → the
 battery + the duel re-pair; a content DIFFERENT or pp parity retires.
 ~50 min (the rebuild included). THEN DARK.
+
+## (round 133, cont. 88) THE exl3call A/B CLEARS EVERY BAR AND EXCEEDS THE CLAIM (campaign-20261106-201824): content IDENTICAL, pp +24.5/+22.7/+23.3% — the prefill front 76% → 94.5%; the adoption judgment + the duel re-pair launched (2026-11-06)
+
+**The A/B's receipt** (arm off = the standing 5-patch stack, arm on =
++glm-mia-exl3prompt.patch; the rebuild rode arm on's restart, load
+558 s):
+- **The content gate: IDENTICAL on all three prompt sizes** — the
+  bit-exactness claim verified through the one-call rewrite (the
+  trellis-decode halving, the slot-row write, the MTP skip).
+- **The pp rows: +24.5% (d0, 1151→1434), +22.7% (d4096, 1099→1348),
+  +23.3% (d8192, 1129→1392)** — two runs per arm with near-zero spread
+  (off 1151/1151, on 1437/1430). **It EXCEEDS Mia's +12.6-16% combined
+  claim** — the GB10 converts better than their sm_120 (the dropped
+  copy + the halved trellis decodes + the MTP-pass skip land harder
+  here).
+- **The prefill front: 1,150 → 1,434 tok/s = 94.5% of production's
+  1,518** — from 76% in one patch.
+
+**THE PATCH ADVANCES TO THE ADOPTION JUDGMENT.**
+
+**LAUNCHED: exl3qual + duel + summary** (one window, ~1.5 h): exl3qual —
+the §2 gates + a fresh restart + the hardmode battery + the vision on
+the 6-patch stack (the bar: §2 PASS + ≥94 + 4/4 = ADOPT) — then the
+standing duel phase re-paired with the duel's ours arm riding
+MMS2_DUEL_PATCHES (the 6-patch candidate; its image is a cache hit on
+exl3qual's build). The duel receipt gives the anchors' prefill + cold
+rows on the candidate for the adoption digest. THEN DARK.

@@ -597,3 +597,16 @@ combined claim WITH 0009 (our adopted packed-s2): cold prefill
 window launched**: the mms2 A/B pattern (arm off = the 5-patch stack, arm
 on = + the patch), the content-sha cross-arm gate + the pp rows twice per
 arm. The target: the prefill front's 76% → the low 80s.
+
+**The exl3call A/B cleared every bar (campaign-20261106-201824) — the
+front's biggest move yet**: the content shas IDENTICAL across arms (the
+bit-exactness claim verified through the one-call rewrite), pp
+**+24.5/+22.7/+23.3%** at d0/d4096/d8192 — two runs per arm with
+near-zero spread (off 1151/1151, on 1437/1430) — **exceeding Mia's own
++12.6-16% combined claim** (the GB10 converts better than their sm_120:
+the dropped copy + the halved trellis decodes + the MTP-pass skip land
+harder here). **The prefill front: 1,150 → 1,434 tok/s = 94.5% of
+production's 1,518** — from 76% in one patch. The exl3qual window
+launched: the gates + the battery + the vision on the 6-patch candidate,
+then the duel re-pair (the duel's ours arm rides MMS2_DUEL_PATCHES with
+the 6-patch list; its image is a cache hit on exl3qual's build).

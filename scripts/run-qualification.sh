@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep exl3call knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep exl3call exl3qual knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1345,6 +1345,40 @@ for d in ("d0", "d4096", "d8192"):
 PME
   echo "- VERDICT: the content shas IDENTICAL + a sharp pp gain = the patch advances to the battery + the duel re-pair (the adoption judgment); a content DIFFERENT retires it outright; pp parity retires it" >> "$P"
   touch "$OUT/.exl3call.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: exl3qual (SESSION-SPECIFIC; retires with the receipt). The adoption
+# judgment for glm-mia-exl3prompt.patch: the exl3call A/B (campaign-
+# 20261106-201824) cleared every bar — the content shas IDENTICAL across
+# arms on three prompt sizes (the bit-exactness claim verified), pp
+# +24.5/+22.7/+23.3% at d0/d4096/d8192 (two runs per arm, near-zero spread;
+# it EXCEEDS Mia's +12.6-16% combined claim — the GB10 converts better than
+# their sm_120). The gates + the battery + the vision decide; the duel
+# re-pair follows in the same window (PHASES="exl3qual duel summary" — the
+# duel's ours arm rides MMS2_DUEL_PATCHES, the 6-patch candidate; its image
+# is a cache hit on exl3qual's build). The bar: §2 PASS + hardmode >= 94 +
+# the vision 4/4 = ADOPT (config.sh's PATCHES gains the exl3prompt patch);
+# any miss = retire.
+# ---------------------------------------------------------------------------
+if want exl3qual && ! phase_done exl3qual; then
+  log "=== exl3qual (the exl3prompt adoption judgment: the gates + the battery + the vision)"
+  P="$OUT/20-exl3qual.md"; : > "$P"
+  echo "# exl3qual (glm-mia-exl3prompt.patch: VALIDATION §2 + hardmode + the vision)" >> "$P"
+  if run_gates exl3g DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch"; then
+    echo "- the §2 gates on the 6-patch stack: the receipt above" >> "$P"
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch"
+    echo "- server: $(serve_line)" >> "$P"
+    bench_cell hm-exl3 "$OUT/hm-exl3" >> "$P"
+    echo "- the vision suite:" >> "$P"
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-exl3.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+    echo "- the engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -8 | sed 's/^/  /' >> "$P"
+    echo "- VERDICT: §2 PASS + hardmode >= 94 + the vision 4/4 = ADOPT (config.sh's PATCHES gains glm-mia-exl3prompt.patch); any miss = retire" >> "$P"
+    touch "$OUT/.exl3qual.done"
+  else
+    echo "- exl3qual incomplete (a restart was refused) — rerun this phase" >> "$P"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
