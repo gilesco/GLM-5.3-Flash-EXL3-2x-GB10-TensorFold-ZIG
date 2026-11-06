@@ -1220,7 +1220,8 @@ if want resweep && ! phase_done resweep; then
     echo "## cell $tag ($*)" >> "$P"
     local S=$(date +%s)
     if ! restart "$@" DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
-      echo "- FAIL: the server refused the pack" >> "$P"
+      echo "- FAIL: the server refused the pack (the prepare/start log's tail):" >> "$P"
+      tail -6 "$LOG" | sed 's/^/  /' >> "$P"
       return 0
     fi
     echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-170)" >> "$P"
@@ -1256,10 +1257,13 @@ if reps:
 print("TSVROW|%s|%s|%s|%s|%s|%s|%s" % (tag, hm, vals.get("pp_d0", "NA"), vals.get("tg_d0", "NA"), vals.get("tg_d4096", "NA"), vals.get("tg_d8192", "NA"), vals.get("tg_c4_d8192", "NA")))
 PWE
   }
-  resweep_cell tr3 "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main"
-  resweep_cell mia "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main"
-  resweep_cell focus "MODEL_ID=local/GLM-5.3-Flash-AZ-Focus-EXL3 MODEL_REVISION=main"
-  resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
+  # each env pair its OWN quoted argument — one string with spaces becomes
+  # ONE env var (the cont. 78 window burned on exactly that: MODEL_ID
+  # swallowed "MODEL_REVISION=main" and prepare looked for a mangled hub dir)
+  resweep_cell tr3 "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw" "MODEL_REVISION=main"
+  resweep_cell mia "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold" "MODEL_REVISION=main"
+  resweep_cell focus "MODEL_ID=local/GLM-5.3-Flash-AZ-Focus-EXL3" "MODEL_REVISION=main"
+  resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
   echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
   touch "$OUT/.resweep.done"
 fi

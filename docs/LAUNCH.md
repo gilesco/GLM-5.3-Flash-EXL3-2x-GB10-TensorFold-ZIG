@@ -7189,3 +7189,24 @@ round-132 sweep and its annotation move to history: LAUNCH +
 results/bpw4sweep/). A FAIL cell keeps its round-132 row with a note.
 
 THEN DARK.
+
+## (round 133, cont. 79) THE RESWEEP WINDOW BURNED ON MY QUOTING BUG — every cell's env pairs passed as ONE argument (MODEL_ID swallowed "MODEL_REVISION=main"; prepare looked for a mangled hub dir); fixed (one arg per pair + the log-tail on refusal) and relaunched (2026-11-06)
+
+**campaign-20261106-110937: all four cells FAIL in ~1 s each.** The
+receipt's prepare error named the tell:
+`checkpoint snapshot missing ... models--Mia-AiLab--GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main`
+— the pair text embedded in the hub dir name. My resweep_cell call
+passed each cell's env pairs as ONE quoted argument; the restart helper
+forwards `"$@"` to `env`, which set MODEL_ID to the whole string. The
+original round-132 sweep phase avoided it with `$ENVPAIRS` unquoted
+(word-splitting); my kvshare/v123perf phases passed one quoted arg per
+pair. The resweep was the first to join pairs into one string.
+
+**The fix**: one quoted argument per K=V pair, a comment at the call
+site, and the phase now prints the prepare/start log's tail on a
+refusal (the first run's phase didn't self-diagnose — the error hid in
+the campaign log). The lesson logged (read error text for embedded pair
+syntax before suspecting the cache).
+
+**RE-LAUNCHED: resweep + summary** — the same four cells on the
+shipping stack (~3.5 h). THEN DARK.
