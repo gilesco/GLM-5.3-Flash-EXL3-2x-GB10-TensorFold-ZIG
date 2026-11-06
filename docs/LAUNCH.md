@@ -6681,3 +6681,50 @@ too). The remaining gate: **VALIDATION §2 on the final stack** —
 **LAUNCHED: pagedgates** (run_gates on fp8-paged, dense4, 512K,
 TF_KV_PAGES=on, the 4-patch build; PATCHES threaded explicitly). The
 config.sh adoption decision follows its receipt. ~15 min. THEN DARK.
+
+## (round 133, cont. 65) THE ADOPTION: config.sh defaults to TF_KV_PAGES=on + the 4-patch stack — the receipts-equal-or-better protocol satisfied on all four gate families; the bare-config smoke test launched (2026-11-06)
+
+**pagedgates (campaign-20261106-054902): ALL §2 GATES PASS on the
+fp8-paged final stack** — g1 determinism (content), g2 drafted=plain,
+g3 resumed=fresh (the cache-hit reply identical — the resume path
+correct), g4 concurrent=solo (4/4), g5 sampled determinism. The last
+pre-adoption gate clears.
+
+**THE ADOPTION DECISION (the receipts-equal-or-better protocol)**: the
+four gate families all hold receipts-equal-or-better on the final stack
+(absorb + marriage + pagerows-fix + selist-fix, TF_KV_PAGES=on):
+- **Gates**: §2 ALL PASS (pagedgates, campaign-20261106-054902).
+- **Depth**: the 512K window gates ran at CONTEXT=524288 on the paged
+  stack ✓ (the marriage's 512-row page-level resume validated earlier;
+  the depth ladder re-qualification on the paged stack is queued as the
+  post-adoption re-run).
+- **Duel**: mixed-favorable (duelpaged, campaign-20261106-052114 — solo
+  108.5%, c2 above production's floor and ~parity with its top, c4
+  parity, ITL crossed 15.7 vs 17.1 ms/token, the cold depth crossed
+  3.3×; the pages' overhead vs absorb ~+1.8% on the cold prefill).
+- **Hardmode**: 95 + the vision 4/4 (pagedquality3,
+  campaign-20261106-043015 — the standing run's exact token profile,
+  median turns 6.5% faster).
+
+**THE EDITS**:
+- **config.sh**: `TF_KV_PAGES="${TF_KV_PAGES-on}"` (the adopted default;
+  unset → on, `off` → the window-mode KV; the engine refuses an EMPTY
+  value), `PATCHES` → the four patches (absorb + fp8-pages +
+  pagerows-fix + selist-fix), and the stale "fp8 KV and TF_KV_PAGES are
+  mutually exclusive" comment corrected (the marriage made the
+  combination the point).
+- **run-qualification.sh**: seven unpaged-semantics sites pinned
+  `TF_KV_PAGES=off` explicitly (kvqual's and kvqual4's run_gates, the
+  throughput phase's both cells, kvqual4P's window-mode control, the
+  parity reference cell, the depth ladder's dense8 arm) — their
+  historical unpaged semantics preserved; the serve-default phases
+  (prefill/depth's dense4fp8 arm/hmcheck/confirm) inherit the adopted
+  default.
+- **README**: the `TF_KV_PAGES` env row added (the default `on`).
+- **DELTAS.md**: the engine row updated to the adopted state.
+
+**LAUNCHED: adoptsmoke** — the bare-config smoke test: a restart with
+ONLY the structural pairs (every serving default from config.sh), the
+serve line verified (the 4-patch list + the pages pool), one greedy
+probe. ~10 min. THEN DARK. Next arc: the v1.2.3 rebase (re-anchor the
+four patches, re-validate), per the (user) directive.

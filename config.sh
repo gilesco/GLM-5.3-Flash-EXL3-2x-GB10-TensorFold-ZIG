@@ -185,15 +185,27 @@ PDL="${PDL:-0}"
 # v1.1.2's prepared fp8 latent cache and now the DEFAULT: the §2 exactness gates PASSED on
 # it at 524288 (dense8+fp8 and dense4fp8, content form — VALIDATION §2 receipt), it halves
 # per-stream KV bytes (the 512K ladder fits at 4–5 streams on it), and dense4fp8 is the
-# qualified serving config. NOTE: fp8 KV and TF_KV_PAGES are mutually exclusive
-# on the KV-pages branch (bf16 is its only paged path — docs/ECOSYSTEM.md), and
-# as of round 132 (cont. 26) ON MAINLINE TOO (the engine's admission line, the
-# 233025 receipt). The ${VAR-default} form (no colon) makes the EMPTY spelling
+# qualified serving config. NOTE: fp8 KV + TF_KV_PAGES=on is the ADOPTED serving
+# mode (the 1106 marriage + the pagerows/selist fixes — the elastic paged pool;
+# hardmode 95 + the vision 4/4, the duel cleared, §2 gates PASS —
+# campaign-20261106-043015/-052114/-054902). The ${VAR-default} form (no colon) makes the EMPTY spelling
 # reachable: unset → fp8 (the standing default); KV_CACHE= (empty) → bf16
 # explicitly (start.sh omits --kv-cache on empty — the "bf16" literal is not a
 # legal value). The 233025/235800 windows burned on the ${:-} form treating
 # empty as unset.
 KV_CACHE="${KV_CACHE-fp8}"
+
+# TF_KV_PAGES: the elastic paged KV pool (512-row pages shared across the
+# streams — ~2.1M tokens at the 512K window). ADOPTED as the default (2026-11-06,
+# round 133 cont. 65): the receipts-equal-or-better protocol satisfied on the
+# 4-patch stack — the §2 gates (pagedgates, campaign-20261106-054902), the duel
+# (duelpaged, campaign-20261106-052114: solo 108.5%, c2 above production's
+# floor, c4 parity, ITL crossed 15.7 vs 17.1 ms/token, the cold depth 3.3×),
+# hardmode 95 + the vision 4/4 (pagedquality3, campaign-20261106-043015 — the
+# standing run's exact token profile, median turns 6.5% faster). The
+# ${VAR-default} form: unset → on (the adopted mode); TF_KV_PAGES=off → the
+# window-mode KV (the engine refuses an EMPTY value — always pass off).
+TF_KV_PAGES="${TF_KV_PAGES-on}"
 
 # PROMPT_K: v1.1.1 regroups prompt-projection K slices (one K slice at every operator row
 # count), which can change replies versus 1.1.0 — including long or resumed prompts. "shape"
@@ -210,7 +222,7 @@ PROMPT_K="${PROMPT_K:-}"
 # the top4cfg checkpoint requires. Receipts: perf campaign-20261024-135458 (solo 108% of
 # production, c2 103%, c4 78%, slope 0.593) and the battery campaign-20261024-142659
 # (§2 gates ALL PASS, tool-eval 93/100 above stock's 92, hardmode 89 vs production's 91).
-PATCHES="${PATCHES-glm-mia-absorb-mma.patch}"   # the qualified optimum (2026-11-05, round 133 cont. 20): the Mia-1104 ABSORB_MMA port ONLY — the cost tables DROPPED: the attribution duel campaign-20261105-000521 puts c2 at 110.4 with ABSORB-only vs 93.1 with the tables (campaign-20261104-234405) — the un-starved overhead learner costs the c2 aggregate ~16% on our shape and buys nothing measurable (the prefill identical: slope 0.602 in both duels; hardmode 95-with-tables vs the 94 control is within the instrument's scenario noise). ABSORB receipts: the deep fills -6.8/-7.0/-6.9% (campaign-20261104-213422), the small prompts -5-6% (campaign-20261104-233541), greedy byte-identical everywhere, the vision 4/4 (campaign-20261104-234405), the duel fronts solo 110% / cold 334% (campaign-20261105-000521). ${PATCHES-} (no colon): unset -> this default, EMPTY -> no patches (the opt-out; glm-topk4b.patch stays opt-in for the top4cfg/AZ cells)
+PATCHES="${PATCHES-glm-mia-absorb-mma.patch glm-mia-fp8-pages.patch glm-mia-pagerows-fix.patch glm-mia-selist-fix.patch}"   # the adopted optimum (2026-11-06, round 133 cont. 65): the Mia-1104 ABSORB_MMA port + the fp8-pages marriage + the pagerows fix (the E4M3 Tables' page_rows) + the selist fix (the prefill's token lists stay logical — the loop bug; hardmode 95 + the vision 4/4, campaign-20261106-043015) — the cost tables DROPPED: the attribution duel campaign-20261105-000521 puts c2 at 110.4 with ABSORB-only vs 93.1 with the tables (campaign-20261104-234405) — the un-starved overhead learner costs the c2 aggregate ~16% on our shape and buys nothing measurable (the prefill identical: slope 0.602 in both duels; hardmode 95-with-tables vs the 94 control is within the instrument's scenario noise). ABSORB receipts: the deep fills -6.8/-7.0/-6.9% (campaign-20261104-213422), the small prompts -5-6% (campaign-20261104-233541), greedy byte-identical everywhere, the vision 4/4 (campaign-20261104-234405), the duel fronts solo 110% / cold 334% (campaign-20261105-000521). ${PATCHES-} (no colon): unset -> this default, EMPTY -> no patches (the opt-out; glm-topk4b.patch stays opt-in for the top4cfg/AZ cells)
 
 # TEMPERATURE: the server's default sampling temperature (stock default 1.0). TensorFold
 # drafts with DFlash2 on greedy (temperature 0) requests only — agent frameworks that send

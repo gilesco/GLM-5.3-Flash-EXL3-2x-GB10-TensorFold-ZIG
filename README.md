@@ -151,6 +151,7 @@ The ones that matter:
 | `CONTEXT` / `PARALLEL` | `524288` / `4` | window and streams — the qualified optimum |
 | `DRAFTS` | `1` | `0` → `--no-drafts` (the serial reference); `1` drafts with DFlash2 (else the MTP head) |
 | `KV_CACHE` | `fp8` | `--kv-cache fp8`: halves per-token latent cache bytes; all §2 gates PASS on it at 524,288. Combined with `TF_KV_PAGES=on` since the 1106 marriage (the fp8-paged elastic pool; the 4-patch stack: hardmode 95 + the vision 4/4, campaign-20261106-043015). `KV_CACHE=` (**empty**) is the explicit bf16 spelling — start.sh then omits `--kv-cache` (the engine default); the literal `bf16` is refused |
+| `TF_KV_PAGES` | `on` | the elastic paged KV pool (512-row pages shared across streams, ~2.1M tokens at the 512K window) — the adopted serving mode (2026-11-06: §2 gates PASS, the duel cleared, hardmode 95 + the vision 4/4); `off` reverts to the window-mode KV; an EMPTY value is refused by the engine |
 | `DENSE_BITS` / `HEAD_BITS` | `4` / `4` | pack the dense linears / head at load: the measured speed leader (monotonic 4<6<8<16); with fp8 KV this is the qualified serving config |
 | `VISION` | `1` | `--vision --vision-image-tokens 2048` — the standing default (the round-51 (user) call); `0` serves text-only. The vision test assets: `assets/vision/` via `scripts/vision-suite-probe.py` |
 | `TF_GLM_INDEX_CUDA` | `1` | the DSA indexer's dedicated CUDA kernels — the depth-ladder TTFT gains grow with depth; set `0` to compare |

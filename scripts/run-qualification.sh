@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedgates knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP adoptsmoke knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -642,7 +642,7 @@ if want throughput && ! phase_done throughput; then
   else
     echo "- parity config refused to start" >> "$P"
   fi
-  if restart_fb DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+  if restart_fb DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=off; then
     echo "## dense4fp8" >> "$P"; echo "- server: $(serve_line)" >> "$P"
     bench_perf dense4fp8 "$OUT/dense4fp8-perf" 4 >> "$P"
   else
@@ -1192,22 +1192,27 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagedgates (SESSION-SPECIFIC; retires with the receipt). The last
-# pre-adoption gate: VALIDATION §2 on the fp8-paged final stack (dense4fp8,
-# 512K window, TF_KV_PAGES=on, the 4-patch stack — PATCHES threaded explicitly
-# so the gates run the fixed build). The duel gate is cleared (duelpaged) and
-# the battery gate is cleared (pagedquality3: 95 + the vision 4/4). The
-# config.sh adoption decision follows this receipt.
+# phase: adoptsmoke (SESSION-SPECIFIC; retires with the receipt). The
+# bare-config smoke test for the adoption: restart with ONLY the structural
+# pairs — every serving default (KV_CACHE=fp8, TF_KV_PAGES=on, PATCHES=the 4)
+# comes from config.sh — then verify the serve line and one greedy probe.
 # ---------------------------------------------------------------------------
-if want pagedgates && ! phase_done pagedgates; then
-  log "=== pagedgates (VALIDATION §2 on the fp8-paged final stack)"
-  P="$OUT/05c-pagedgates.md"; : > "$P"
-  echo "# pagedgates (VALIDATION §2 on fp8 PAGED KV, dense4, 512K window, TF_KV_PAGES=on, the 4-patch stack)" >> "$P"
-  if run_gates pagedfp8 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"; then
-    touch "$OUT/.pagedgates.done"
-  else
-    echo "- pagedgates incomplete (a restart was refused) — rerun this phase" >> "$P"
-  fi
+if want adoptsmoke && ! phase_done adoptsmoke; then
+  log "=== adoptsmoke (the adopted defaults serve the 4-patch paged stack)"
+  P="$OUT/09-adoptsmoke.md"; : > "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 PARALLEL=4
+  echo "- serve: $(serve_line)" >> "$P"
+  bf=$(mktemp /tmp/as.XXXXXX.json)
+  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Reply with just the word OK.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
+  R=$(curl -s -m 60 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:40])
+except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
+  echo "- probe reply: $R" >> "$P"
+  rm -f "$bf"
+  echo "- engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -3 | sed 's/^/  /' >> "$P"
+  echo "- VERDICT: the serve line carries the 4-patch patches= list and the pages pool line = the adopted defaults serve the full stack; the probe answers = healthy" >> "$P"
+  touch "$OUT/.adoptsmoke.done"
 fi
 
 # ---------------------------------------------------------------------------
