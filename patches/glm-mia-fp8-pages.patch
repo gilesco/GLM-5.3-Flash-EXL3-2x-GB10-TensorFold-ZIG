@@ -1,5 +1,5 @@
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
-Subject: glm-cuda: E4M3 latent caches on KV pages - the fp8+pages marriage (Mia 1104 0017-0025, adapted to v1.2.2)
+Subject: glm-cuda: E4M3 latent caches on KV pages - the fp8+pages marriage (Mia 1104 0017-0025, adapted to v1.2.3)
 
 PROVENANCE: ported from MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104,
 patches/engine/0017-0025 (Apache-2.0, (c) MiaAI Lab) against TensorFold
@@ -36,19 +36,24 @@ merge, the init calls after chunks_32_fp8, absorb's lines untouched). The
 patch no longer applies standalone - the composed candidate is absorb +
 marriage.
 
-STAGING: applies AFTER glm-mia-absorb-mma.patch (alphabetical:
-absorb-mma < fp8-pages). The cuda_glue.zig Kernels hunks re-anchored onto
-the absorb tree (2026-11-05 - the compose receipt: absorb's latent_mma
-fields drifted the hunks trailing context; the paged fields sit before
-merge, the init calls after chunks_32_fp8, absorb's lines untouched). The
-patch no longer applies standalone - the composed candidate is absorb +
-marriage.
+RE-ANCHORED onto v1.2.3+absorb (6ec5fa4cb + the re-anchored absorb),
+2026-11-06: v1.2.3 consolidated the three inline latent.Table sites
+(attend/blockLastRow/writeKeys) into the tables() helper - this port's
+.logical = c.ls != 0 on t now lands there (one site; tk still defaults
+false until the selist fix); the LatentShape guards moved into the helper
+by the refactor and are preserved. cuda_native.zig's explain() table
+re-anchored (v1.2.3 dropped GlmSoloWithDrafter and added BadCopyPolicy/
+GlmKvHostNeedsPages; BadKvPages + PoolTooSmall still insert after
+Fp8OnPages). cuda_glue.zig applies verbatim (the file is unchanged
+between v1.2.2 and v1.2.3). NOTE: v1.2.3 threads tk into blockLastRow's
+indexUpdate and attendLastRow's selectTokensProfile - with the selist fix
+below, the MTP prompt-chunk path is covered too.
 
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
-index 3f179ab..72b748d 100644
+index bb92d482e..7cde4542f 100644
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
-@@ -40,6 +40,7 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
+@@ -48,6 +48,7 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
      const copies = b.createModule(.{ .root_source_file = b.path("zig/src/native/cuda_snaps.zig"), .target = host, .optimize = .debug, .imports = &.{.{ .name = "engine_api", .module = api }} });
      const snapshots = b.createModule(.{ .root_source_file = b.path("zig/glm_snapshot_host.zig"), .target = host, .optimize = .debug, .link_libc = true, .imports = &.{ .{ .name = "glm", .module = glm }, .{ .name = "cuda", .module = cuda }, .{ .name = "core", .module = mods.core }, .{ .name = "engine_api", .module = api }, .{ .name = "copies", .module = copies } } });
      b.step("test-glm-snapshots-host", "Prompt-sized GLM state copies, page budgets and rank ordering without devices").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = snapshots })).step);
@@ -57,7 +62,7 @@ index 3f179ab..72b748d 100644
      const mm_record = b.createModule(.{ .root_source_file = b.path("zig/test_support/glm_mm_cuda.zig"), .target = host, .optimize = .debug });
      const mm_actual = b.createModule(.{ .root_source_file = b.path("zig/src/families/glm/cuda_mm.zig"), .target = host, .optimize = .debug, .imports = &.{.{ .name = "cuda", .module = mm_record }} });
 diff --git a/zig/glm_snapshot_host.zig b/zig/glm_snapshot_host.zig
-index 2a83b3f..1488a86 100644
+index 2a83b3f43..1488a863f 100644
 --- a/zig/glm_snapshot_host.zig
 +++ b/zig/glm_snapshot_host.zig
 @@ -592,3 +592,144 @@ test "GLM snapshots: with the engine's own sequence on pages too, a prefix's siz
@@ -206,7 +211,7 @@ index 2a83b3f..1488a86 100644
 +    f.e.cur = &f.seq;
 +}
 diff --git a/zig/kernels/cuda/glm_glue_attn.cuh b/zig/kernels/cuda/glm_glue_attn.cuh
-index 1a4363b..9794746 100644
+index 1a4363b15..979474683 100644
 --- a/zig/kernels/cuda/glm_glue_attn.cuh
 +++ b/zig/kernels/cuda/glm_glue_attn.cuh
 @@ -42,7 +42,9 @@ constexpr int wide_smem() {
@@ -282,7 +287,7 @@ index 1a4363b..9794746 100644
  extern "C" __global__ void __launch_bounds__(128)
      tf_glm_merge(const float* po, const float* pm, const float* pl, __nv_bfloat16* out, const int* cnt, int64_t rows,
 diff --git a/zig/kernels/cuda/glm_glue_latent.cuh b/zig/kernels/cuda/glm_glue_latent.cuh
-index 2abdd96..ba91db6 100644
+index 2abdd9610..ba91db6f9 100644
 --- a/zig/kernels/cuda/glm_glue_latent.cuh
 +++ b/zig/kernels/cuda/glm_glue_latent.cuh
 @@ -93,3 +93,16 @@ extern "C" __global__ void __launch_bounds__(512)
@@ -304,7 +309,7 @@ index 2abdd96..ba91db6 100644
 +}
 diff --git a/zig/src/core/contract/glm_kv_paged_records.zig b/zig/src/core/contract/glm_kv_paged_records.zig
 new file mode 100644
-index 0000000..f86953a
+index 000000000..f86953ac5
 --- /dev/null
 +++ b/zig/src/core/contract/glm_kv_paged_records.zig
 @@ -0,0 +1,52 @@
@@ -361,7 +366,7 @@ index 0000000..f86953a
 +    for (cuda) |r| _ = try twin(r);
 +}
 diff --git a/zig/src/core/contract/measurements/pending_133.zig b/zig/src/core/contract/measurements/pending_133.zig
-index 35a222d..6d574dc 100644
+index bd21f7a0c..79d8a5b0d 100644
 --- a/zig/src/core/contract/measurements/pending_133.zig
 +++ b/zig/src/core/contract/measurements/pending_133.zig
 @@ -34,8 +34,11 @@ pub const records = [_]Override{
@@ -377,7 +382,7 @@ index 35a222d..6d574dc 100644
      .{ .name = "norms tf_slerp_rows", .usage = .{ .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 } } },
      .{ .name = "qk_rows tf_qk_rows at dim 256", .usage = .{ .{ .regs = 30, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 } } },
 diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry.zig
-index 66cab0e..a6a7274 100644
+index 9bc2a02ec..b6ebc328e 100644
 --- a/zig/src/core/contract/registry.zig
 +++ b/zig/src/core/contract/registry.zig
 @@ -351,7 +351,7 @@ pub fn usageFor(r: CudaRecord, release: ?limits.Nvcc) [limits.sms.len]U {
@@ -398,7 +403,7 @@ index 66cab0e..a6a7274 100644
  }
  test "unmeasured CUDA records cannot pass a compiled resource check" {
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
-index 99aa58e..2ab17cd 100644
+index 0676a9b12..ca4bf7d72 100644
 --- a/zig/src/families/glm/cuda.zig
 +++ b/zig/src/families/glm/cuda.zig
 @@ -22,6 +22,7 @@ pub const shard = @import("cuda_shard.zig");
@@ -410,39 +415,21 @@ index 99aa58e..2ab17cd 100644
  pub const config = @import("config.zig");
  pub const quant = @import("cuda_quant.zig");
 diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
-index 05a0f7a..efc2675 100644
+index 57c8c5d20..2bbe864f0 100644
 --- a/zig/src/families/glm/cuda_dsa_block.zig
 +++ b/zig/src/families/glm/cuda_dsa_block.zig
-@@ -136,7 +136,8 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
-     v.ol += r0 * l.heads * l.lw * 2;
-     v.qi += r0 * ix.heads * ix.d * 2;
-     try writeKeys(k, stream, l, c, v, rows, pos);
+@@ -235,7 +235,8 @@ fn denseAttention(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scrat
+ /// A cache's tables: latent rows `t`, and pooled keys `tk` (on their own device pages under TF_GLM_KV_HOST).
+ fn tables(l: Layer, c: Caches) !struct { latent.Table, latent.Table } {
+     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
 -    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2) };
 +    // an E4M3 cache's sparse lists stay positions (its chunks take each key through the table); BF16's are page rows
 +    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
-     const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
-     const scale: f32 = @floatCast(std.math.pow(f64, @floatFromInt(l.qk), -0.5));
-     if (host_pos < l.dense_limit) {
-@@ -164,7 +165,7 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
- pub fn blockLastRow(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, x: u64, x_stride: usize, rows: usize, pos: u64, host_pos: usize, nch: usize, out: u64) !void {
-     if (rows == 0) return error.BadWindow;
-     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
--    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2) };
-+    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
-     const ix = l.index;
-     const kw_rows = ix.d + ix.heads;
-     try prepareProfile(k.set, stream, l, s, x, x_stride, rows, sparseRows(l, host_pos, rows), k.prof); // every row keeps its query, its latent, its keys
-@@ -239,7 +240,7 @@ fn writeKeys(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, r
-     const ix = l.index;
-     const kw_rows = ix.d + ix.heads;
-     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
--    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2) };
-+    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
-     const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
-     var stamp = prof.span(k.prof, stream, .cache_write);
-     try latent.latentWriteFormat(set, stream, s.lat, l.lw, c.lc, c.ls, t, pos, rows, l.lw);
+     return .{ t, .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows } };
+ }
+ 
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 2f416cf..f932a6f 100644
+index 2f416cf04..f932a6f19 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
 @@ -43,6 +43,7 @@ pub const Kernels = struct {
@@ -472,10 +459,10 @@ index 2f416cf..f932a6f 100644
          try k.latent_mma_nk.allowDynamicShared(latent_mma_smem[1]);
          return k;
 diff --git a/zig/src/families/glm/cuda_kv8_test.zig b/zig/src/families/glm/cuda_kv8_test.zig
-index 5b7102d..2337d1e 100644
+index da202196d..7a91561f9 100644
 --- a/zig/src/families/glm/cuda_kv8_test.zig
 +++ b/zig/src/families/glm/cuda_kv8_test.zig
-@@ -128,22 +128,222 @@ test "GLM FP8 KV: real launchers preserve BF16 ABI and pass FP8 scale pointers f
+@@ -136,22 +136,222 @@ test "GLM FP8 KV: real launchers preserve BF16 ABI and pass FP8 scale pointers f
      try t.expectEqual(@as(u64, 400), Launch.scales[0]);
  }
  
@@ -708,7 +695,7 @@ index 5b7102d..2337d1e 100644
  
  const Ops = struct {
 diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
-index 6bcd436..7f3a0b3 100644
+index 89155cf94..6da3ed68d 100644
 --- a/zig/src/families/glm/cuda_lanes.zig
 +++ b/zig/src/families/glm/cuda_lanes.zig
 @@ -348,7 +348,7 @@ pub const Lanes = struct {
@@ -721,7 +708,7 @@ index 6bcd436..7f3a0b3 100644
      }
  
 diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
-index d04bdaa..7b6d7d5 100644
+index d04bdaae5..7b6d7d59f 100644
 --- a/zig/src/families/glm/cuda_latent.zig
 +++ b/zig/src/families/glm/cuda_latent.zig
 @@ -72,16 +72,23 @@ pub fn cacheBytes(capacity: usize, lw: usize, kv8: bool) !usize {
@@ -783,10 +770,10 @@ index d04bdaa..7b6d7d5 100644
          a.add(@as(i64, @intCast(t.ps)));
      }
 diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_native.zig
-index b3d4b2f..f2de3fd 100644
+index f64566398..c423b5ecd 100644
 --- a/zig/src/families/glm/cuda_native.zig
 +++ b/zig/src/families/glm/cuda_native.zig
-@@ -457,6 +457,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
+@@ -453,6 +453,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
          error.NoCommId => "GLM-5.3-Flash's ranks meet over NCCL: with TF_GLM_WORLD 2 or more, set NCCL_COMM_ID to rank 0's address:port on every host",
          error.RankMismatch => "the ranks' settings differ (each rank's log names the one): start them alike",
          error.Fp8OnPages => "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to auto or off",
@@ -794,8 +781,8 @@ index b3d4b2f..f2de3fd 100644
 +        error.PoolTooSmall => "this request's prompt and max_tokens need more KV pages than the whole pool holds, even with every other stream done: shorten the prompt or lower max_tokens",
          error.BadGlmKvShare => "TF_GLM_KV_SHARE: give how many states the prompt cache over the KV pages keeps, or 0 or unset for off",
          error.GlmShareNeedsPages => "TF_GLM_KV_SHARE keeps prompts as KV pool pages: set TF_KV_PAGES=on as well",
-         error.GlmSoloWithDrafter => "TF_GLM_CHUNK_SOLO=4096 holds buffers no pass uses beside --drafter: unset it, or leave out --drafter",
-@@ -482,7 +484,7 @@ test "a checkpoint refused for its format, at the entry or by the loader, is exp
+         error.BadCopyPolicy => "TF_GLM_COPIES: expected 0 or 1 for verified root/context copies",
+@@ -478,7 +480,7 @@ test "a checkpoint refused for its format, at the entry or by the loader, is exp
      for ([_]anyerror{ error.NotModelOpt, error.UnsupportedQuant, error.UnreadableFormat }) |e| try std.testing.expect(explain(null, e) != null);
  }
  
@@ -804,7 +791,7 @@ index b3d4b2f..f2de3fd 100644
      try std.testing.expect(!try paging(null, 1, false));
      try std.testing.expect(!try paging("auto", 1, false));
      for ([_]usize{ 2, 3, 16 }) |w| {
-@@ -495,18 +497,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
+@@ -491,18 +493,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
          try std.testing.expect(!try paging("off", w, false));
          try std.testing.expect(!try paging("0", w, false));
          try std.testing.expect(try paging("all", w, false));
@@ -829,7 +816,7 @@ index b3d4b2f..f2de3fd 100644
  }
  
 diff --git a/zig/src/families/glm/cuda_pages.zig b/zig/src/families/glm/cuda_pages.zig
-index 7cbb56f..923e38e 100644
+index 7cbb56f0c..923e38e70 100644
 --- a/zig/src/families/glm/cuda_pages.zig
 +++ b/zig/src/families/glm/cuda_pages.zig
 @@ -13,14 +13,25 @@ pub fn tableLen(capacity: usize) usize {
@@ -943,7 +930,7 @@ index 7cbb56f..923e38e 100644
          const page = p.page;
          if (p.poison) for (ids[kept..]) |id| try p.e.d.check(p.e.d.api.cuMemsetD32Async(p.base() + id * page, 0xFFFF_FFFF, page / 4, p.e.stream.handle), "cuMemsetD32Async");
 diff --git a/zig/src/families/glm/cuda_pages_test.zig b/zig/src/families/glm/cuda_pages_test.zig
-index ee01998..cac988b 100644
+index ee0199839..cac988bd8 100644
 --- a/zig/src/families/glm/cuda_pages_test.zig
 +++ b/zig/src/families/glm/cuda_pages_test.zig
 @@ -86,6 +86,7 @@ const Fake = struct {
@@ -996,7 +983,7 @@ index ee01998..cac988b 100644
 +    try expect(p.fits(600, 100));
 +}
 diff --git a/zig/src/families/glm/cuda_snapshot_layout.zig b/zig/src/families/glm/cuda_snapshot_layout.zig
-index 8a25313..be91034 100644
+index 8a2531324..be91034e9 100644
 --- a/zig/src/families/glm/cuda_snapshot_layout.zig
 +++ b/zig/src/families/glm/cuda_snapshot_layout.zig
 @@ -51,11 +51,13 @@ pub const Plan = struct {
@@ -1017,7 +1004,7 @@ index 8a25313..be91034 100644
          try p.add(st, st.rings[2 * j + 1], ring);
          try p.addCache(st, x, x.pk, pooled, page_rows / sparse.pool * @as(usize, c.i_dim) * 2, if (x.pks != 0) x.pks else x.ps);
 diff --git a/zig/src/families/glm/cuda_sparse.zig b/zig/src/families/glm/cuda_sparse.zig
-index 2952192..e35d8aa 100644
+index 29521924a..e35d8aa61 100644
 --- a/zig/src/families/glm/cuda_sparse.zig
 +++ b/zig/src/families/glm/cuda_sparse.zig
 @@ -65,7 +65,8 @@ pub fn splitAt(start: usize, from: usize, world: usize) bool {
@@ -1040,7 +1027,7 @@ index 2952192..e35d8aa 100644
      try cuda.launch.launch(assemble, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 256 } }, stream, &args);
  }
 diff --git a/zig/src/families/glm/cuda_start.zig b/zig/src/families/glm/cuda_start.zig
-index cc9ede7..8f87ff1 100644
+index cc9ede7f6..8f87ff117 100644
 --- a/zig/src/families/glm/cuda_start.zig
 +++ b/zig/src/families/glm/cuda_start.zig
 @@ -43,11 +43,12 @@ pub const Report = struct {
@@ -1060,7 +1047,7 @@ index cc9ede7..8f87ff1 100644
 +    return error.BadKvPages; // refused on every rank by name, not read as on
  }
 diff --git a/zig/src/families/glm/cuda_start_test.zig b/zig/src/families/glm/cuda_start_test.zig
-index 3b7fff9..54341b9 100644
+index 3b7fff9f2..54341b9f0 100644
 --- a/zig/src/families/glm/cuda_start_test.zig
 +++ b/zig/src/families/glm/cuda_start_test.zig
 @@ -62,13 +62,13 @@ fn run(w: *World, rank: usize, world: usize, text: ?[]const u8, kv8: bool) !void
@@ -1103,7 +1090,7 @@ index 3b7fff9..54341b9 100644
          try std.testing.expect(w.connected[0]);
          try std.testing.expect(w.constructed[0]);
 diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_state.zig
-index ff3983f..c32cb70 100644
+index ff3983f0f..c32cb7037 100644
 --- a/zig/src/families/glm/cuda_state.zig
 +++ b/zig/src/families/glm/cuda_state.zig
 @@ -65,9 +65,10 @@ pub fn mlaLayers(w: *const weights.Weights) usize {

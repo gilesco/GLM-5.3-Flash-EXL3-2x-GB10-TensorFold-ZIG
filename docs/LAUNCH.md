@@ -6753,3 +6753,58 @@ explicit `TF_KV_PAGES=off` pins override it (env's override semantics).
 
 **RE-LAUNCHED: adoptsmoke** — the same bare-config smoke test; the
 serve line must now carry the pages pool. ~10 min. THEN DARK.
+
+## (round 133, cont. 67) THE v1.2.3 REBASE: the four patches re-anchored onto v1.2.3 (6ec5fa4cb), verified byte-identical on a fresh checkout; v123qual launched (2026-11-06)
+
+The adoption was smoke-verified first (campaign-20261106-062829: the bare
+config serves the paged pool — model 81.35 GiB, **4100 pages of 512 rows
+(13.61 GiB)**, probe OK, deterministic sha — the export fix works; the
+fp8+pages marriage is the line's default, fully receipted).
+
+**THE DRIFT MAP** (all four patches DRIFT on v1.2.3 — the rebase work):
+- **absorb**: only the cuda_engine.zig:181 hunk — v1.2.3 logs a prompt
+  chunk's exchange row pieces at TP>1, and the new line sits in the
+  hunk's trailing context (the insertion point itself unchanged). The
+  re-anchored hunk carries the pieces line; the diffstat still matches
+  the original exactly (9 files, 247 insertions, 7 deletions).
+- **the marriage (fp8-pages)**: v1.2.3 CONSOLIDATED the three inline
+  `latent.Table` sites (attend/blockLastRow/writeKeys) into a
+  `tables(l, c)` helper — the port's `.logical = c.ls != 0` on `t` now
+  lands there (one site; the LatentShape guards moved into the helper by
+  the refactor and are preserved). cuda_native.zig's explain() table
+  re-anchored: v1.2.3 dropped GlmSoloWithDrafter and added
+  BadCopyPolicy/GlmKvHostNeedsPages — BadKvPages + PoolTooSmall still
+  insert after Fp8OnPages. cuda_glue.zig applies VERBATIM (the file is
+  unchanged between v1.2.2 and v1.2.3 — the hunk was anchored on the
+  absorb tree and absorb re-anchored identically).
+- **pagerows-fix**: one site in the helper (was three); tk inherits
+  t.page_rows there as before.
+- **selist-fix**: one site in the helper (was attend only). v1.2.3
+  ALREADY threads tk into blockLastRow's indexUpdate and
+  attendLastRow's selectTokensProfile — with the fix, the MTP
+  prompt-chunk path is covered too (on v1.2.2 it rode t). Upstream's
+  refactor converged toward our fix's semantics (selection via tk,
+  attention via t).
+
+**THE VERIFICATION**: the four patches applied in sequence on a rebase
+branch (bbed940e → 1ce28d3c → a5f80170 → abb6bb90), regenerated as the
+same-named patch files with v1.2.3 headers (the marriage's duplicated
+STAGING paragraph deduped), then applied on a FRESH v1.2.3 worktree —
+**byte-identical to the branch tip**. `latent.chunk = 512` exists on
+clean v1.2.3; the Table line is untouched by v1.2.3.
+
+**THE PIN**: scripts/local.sh TF_COMMIT → 6ec5fa4cb233f3606acbdad5bec433f0f8758f96
+(the COMMIT sha — `git rev-parse v1.2.3` returns the annotated tag
+object abcdefb5…, not the commit; the pin must checkout the commit).
+v1.2.2 remains the qualified default until the receipt; the pin reverts
+if the window fails.
+
+**LAUNCHED: v123qual** — the full instrument set in the sparsefix order:
+the harness replay (TC-62 TC-49, the loop discriminator on churned
+pages), the sparse-prefill code probe (5 rounds MKR-{i}QX at ~row 3,650),
+a FRESH restart, the hardmode battery + the vision suite. The bar: the
+replay stops looping + the probe 5/5 exact + hardmode ≥ 94 + the vision
+4/4. ~50 min (the image rebuild for the new ref included). THEN DARK.
+If it clears: the v1.2.3 adoption digest (the pin stays, config.sh
+comments) + v1.2.3's perf items (TF_GLM_CHUNK_SOLO=4096 ~7% TTFT at
+TP=2, TF_GLM_COPIES=1) go on the perf plan.

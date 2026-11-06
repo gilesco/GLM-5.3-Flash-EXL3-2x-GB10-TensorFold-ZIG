@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP adoptsmoke knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP v123qual knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,27 +1192,72 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: adoptsmoke (SESSION-SPECIFIC; retires with the receipt). The
-# bare-config smoke test for the adoption: restart with ONLY the structural
-# pairs — every serving default (KV_CACHE=fp8, TF_KV_PAGES=on, PATCHES=the 4)
-# comes from config.sh — then verify the serve line and one greedy probe.
+# phase: v123qual (SESSION-SPECIFIC; retires with the receipt). The v1.2.3
+# rebase validation: the four patches re-anchored onto v1.2.3 (6ec5fa4cb —
+# v1.2.3 added the prompt-pieces log line in absorb's engine:181 context,
+# consolidated the three latent.Table sites into the tables() helper, and
+# reworked cuda_native's explain() table; the rebased stack verified
+# byte-identical to the rebase branch on a fresh checkout). The full
+# instrument set in the sparsefix order: the harness replay FIRST (TC-62
+# TC-49 — it churns the pages non-identity, the loop discriminator), the
+# sparse-prefill code probe (~row 3,650, beyond dense_limit, on recycled
+# pages), then a FRESH restart and the hardmode battery + the vision suite
+# (pagedquality3's exact conditions). The bar: the replay stops looping +
+# the probe 5/5 exact + hardmode >= 94 (production parity; the standing
+# paged run set 95) + the vision 4/4. TF_COMMIT=v1.2.3 rides scripts/local.sh
+# (the pin, never the session env — the round-7 lesson). Retires with the
+# receipt.
 # ---------------------------------------------------------------------------
-if want adoptsmoke && ! phase_done adoptsmoke; then
-  log "=== adoptsmoke (the adopted defaults serve the 4-patch paged stack)"
-  P="$OUT/09-adoptsmoke.md"; : > "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 PARALLEL=4
-  echo "- serve: $(serve_line)" >> "$P"
-  bf=$(mktemp /tmp/as.XXXXXX.json)
-  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Reply with just the word OK.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
-  R=$(curl -s -m 60 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
-try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:40])
+if want v123qual && ! phase_done v123qual; then
+  log "=== v123qual (the v1.2.3 rebase validation: replay, probe, battery, vision)"
+  P="$OUT/10-v123qual.md"; : > "$P"
+  echo "# v123qual (the rebased 4-patch stack on v1.2.3 = 6ec5fa4cb, TF_KV_PAGES=on)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- server: $(serve_line)" >> "$P"
+  mkdir -p "$OUT/tc-v123"
+  echo "- the harness replay FIRST (it churns the pages non-identity):" >> "$P"
+  PYTHONUNBUFFERED=1 "$BENCH" run \
+    --base-url "http://127.0.0.1:$PORT/v1" \
+    --model "$SERVED_NAME" \
+    --format openai \
+    --tokenizer "$MODEL_ID" \
+    --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
+    --label "tc-v123" --output-dir "$OUT/tc-v123" --json-file "$OUT/tc-v123/result.json" \
+    > "$OUT/tc-v123/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-v123/bench.log)" >> "$P"
+  python3 - "$OUT/tc-v123/result.json" >> "$P" <<'PDE'
+import json, sys, re
+try:
+    d = json.load(open(sys.argv[1]))
+    print("  final_score:", d["scores"].get("final_score"))
+    for s in d["scores"]["scenario_results"]:
+        log = s.get("raw_log", "")
+        trunc = re.findall(r"truncated=(.{0,90})", log)
+        print("  %s | status=%s | completion=%s | turns=%s | truncated=%d" % (s.get("scenario_id"), s.get("status"), s.get("completion_tokens"), s.get("turn_count"), len(trunc)))
+        for t in trunc[:2]:
+            print("     ", t)
+except Exception as e:
+    print("  EXTRACT-FAILED:%r" % e)
+PDE
+  echo "- the sparse-prefill code probe (the code at ~row 3,650 of ~4.5k, on recycled pages, five rounds):" >> "$P"
+  for i in 1 2 3 4 5; do
+    bf=$(mktemp /tmp/vq.XXXXXX.json)
+    python3 -c "import json,sys; unit='harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 '; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':unit*52+' The vault access code is MKR-'+sys.argv[2]+'QX. '+unit*12+' Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
+    R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
 except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
-  echo "- probe reply: $R" >> "$P"
-  rm -f "$bf"
-  echo "- engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -3 | sed 's/^/  /' >> "$P"
-  echo "- VERDICT: the serve line carries the 4-patch patches= list and the pages pool line = the adopted defaults serve the full stack; the probe answers = healthy" >> "$P"
-  touch "$OUT/.adoptsmoke.done"
+    echo "  round$i reply: $R" >> "$P"
+    rm -f "$bf"
+  done
+  echo "- a FRESH restart for the battery (pagedquality3's exact conditions):" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- server: $(serve_line)" >> "$P"
+  bench_cell hm-v123 "$OUT/hm-v123" >> "$P"
+  echo "- the vision suite:" >> "$P"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-v123.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+  echo "- the engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
+  echo "- VERDICT: the replay stops looping (no truncated notes) + five exact MKR-{i}QX + hardmode >= 94 + the vision 4/4 = the v1.2.3 rebase VALIDATED (the v1.2.3 adoption digest follows: config.sh comments, the pin stays on the tag); a loop or a vision miss = back to the instrument" >> "$P"
+  touch "$OUT/.v123qual.done"
 fi
 
 # ---------------------------------------------------------------------------

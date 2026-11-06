@@ -1,5 +1,5 @@
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
-Subject: glm-cuda: TF_GLM_ABSORB_MMA=1, a prompt absorb_q/expand_v as tensor-core GEMMs (Mia 1104 0041, adapted to v1.2.2)
+Subject: glm-cuda: TF_GLM_ABSORB_MMA=1, a prompt absorb_q/expand_v as tensor-core GEMMs (Mia 1104 0041, adapted to v1.2.3)
 
 PROVENANCE: ported from MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104,
 patches/engine/0041-glm-cuda-TF_GLM_ABSORB_MMA-1-a-prompt-s-absorb_q-and.patch
@@ -38,8 +38,15 @@ disagree refuse to start.
  9 files changed, 247 insertions(+), 7 deletions(-)
  create mode 100644 zig/kernels/cuda/glm_glue_num.cuh
 
+RE-ANCHORED onto v1.2.3 (6ec5fa4cb), 2026-11-06: only the cuda_engine.zig
+hunk at 181 moved - v1.2.3 logs a prompt chunk's exchange row pieces at
+TP>1 (the new line sits in the hunk's trailing context); the insertion
+(e.initNumerics after e.bp's errdefer) and every other hunk are verbatim
+(the diffstat still matches the original exactly: 9 files, 247 insertions,
+7 deletions). Applies on clean v1.2.3.
+
 diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
-index 06f2ba9..e602795 100644
+index 06f2ba94c..e602795c6 100644
 --- a/zig/kernels/cuda/glm_glue.cu
 +++ b/zig/kernels/cuda/glm_glue.cu
 @@ -8,3 +8,4 @@
@@ -49,7 +56,7 @@ index 06f2ba9..e602795 100644
 +#include "glm_glue_num.cuh"
 diff --git a/zig/kernels/cuda/glm_glue_num.cuh b/zig/kernels/cuda/glm_glue_num.cuh
 new file mode 100644
-index 0000000..557fb16
+index 000000000..557fb16d4
 --- /dev/null
 +++ b/zig/kernels/cuda/glm_glue_num.cuh
 @@ -0,0 +1,156 @@
@@ -210,18 +217,18 @@ index 0000000..557fb16
 +}
 +
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 5eea26c..b7d54dd 100644
+index 561978699..5271d0b07 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -181,6 +181,7 @@ pub const Engine = struct {
+@@ -182,6 +182,7 @@ pub const Engine = struct {
          }
          e.bp = try fw.Buffers.init(d, &e.w, prompt_solo.bufferRows(o.settings.solo), true, o.capacity);
          errdefer e.bp.deinit();
 +        e.initNumerics();
          if (o.settings.solo and rank == 0) std.log.info("glm: prompt passes of {d} rows, {d} while another stream decodes", .{ fw.solo_rows, fw.prefill_rows });
+         if (world > 1 and rank == 0) std.log.info("glm: a prompt chunk's exchanges in {d} row pieces", .{o.settings.pieces});
          e.bd = try fw.Buffers.init(d, &e.w, fw.window_rows, false, o.capacity);
-         errdefer e.bd.deinit();
-@@ -244,6 +245,13 @@ pub const Engine = struct {
+@@ -246,6 +247,13 @@ pub const Engine = struct {
  
      const freeProfs = @import("cuda_engine_prof.zig").freeProfs;
  
@@ -235,7 +242,7 @@ index 5eea26c..b7d54dd 100644
      pub fn exchange(e: *const Engine) fw.Exchange {
          return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .group = e.group } };
      }
-@@ -251,7 +259,7 @@ pub const Engine = struct {
+@@ -253,7 +261,7 @@ pub const Engine = struct {
      fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
          out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
          const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
@@ -244,7 +251,7 @@ index 5eea26c..b7d54dd 100644
      }
  
      /// Binds slot `slot`'s sequence for the steps that follow, making it (a zeroed state) on first use.
-@@ -497,7 +505,7 @@ pub const Engine = struct {
+@@ -500,7 +508,7 @@ pub const Engine = struct {
              rows += p.ids.len;
          }
          var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
@@ -254,10 +261,10 @@ index 5eea26c..b7d54dd 100644
          if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
          for (parts, segs[0..parts.len]) |p, g| {
 diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
-index 85427f0..a61b292 100644
+index b957fabae..87cb52377 100644
 --- a/zig/src/families/glm/cuda_forward.zig
 +++ b/zig/src/families/glm/cuda_forward.zig
-@@ -194,9 +194,10 @@ pub const Forward = struct {
+@@ -195,9 +195,10 @@ pub const Forward = struct {
      prof: ?*prof_mod.Prof = null, // TF_GLM_PROF=1: events between the sections
      taps: ?taps_mod.Taps = null, // DFlash2 (--drafter): the tapped layers' rows, after each such layer
      index_split: bool = false, // TF_GLM_INDEX_SPLIT: this prompt chunk's indexer rows split across the ranks (rank 0's choice)
@@ -270,7 +277,7 @@ index 85427f0..a61b292 100644
  
      /// reduce.sums' gather: every rank's partial of `rows` rows into every rank's gathered buffer, rank order.
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 4250f64..2f416cf 100644
+index 4250f64f1..2f416cf04 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
 @@ -6,7 +6,8 @@ const mm_mod = @import("cuda_mm.zig");
@@ -312,7 +319,7 @@ index 4250f64..2f416cf 100644
  pub fn rankSum(set: Set, stream: cuda.Stream, own: u64, peers: u64, peer_stride: usize, out: u64, me: usize, rows: usize, d: usize, world: usize) !void {
      var a: cuda.Args = .{};
 diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
-index 8cc7b2e..d04bdaa 100644
+index 8cc7b2eeb..d04bdaae5 100644
 --- a/zig/src/families/glm/cuda_latent.zig
 +++ b/zig/src/families/glm/cuda_latent.zig
 @@ -29,9 +29,26 @@ fn cdiv(a: usize, b: usize) u32 {
@@ -351,7 +358,7 @@ index 8cc7b2e..d04bdaa 100644
  }
  
 diff --git a/zig/src/families/glm/cuda_prompts.zig b/zig/src/families/glm/cuda_prompts.zig
-index b66392f..9303167 100644
+index b66392f44..93031677e 100644
 --- a/zig/src/families/glm/cuda_prompts.zig
 +++ b/zig/src/families/glm/cuda_prompts.zig
 @@ -38,7 +38,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
@@ -364,7 +371,7 @@ index b66392f..9303167 100644
      if (e.drafter) |dr| for (parts, segs[0..parts.len]) |p, g|
          try dr.promptSegment(e, p.slot, 0, g.rows, p.ids.len, g.row0);
 diff --git a/zig/src/families/glm/cuda_ranks.zig b/zig/src/families/glm/cuda_ranks.zig
-index c899fe5..145add1 100644
+index b847983f1..ab30106f5 100644
 --- a/zig/src/families/glm/cuda_ranks.zig
 +++ b/zig/src/families/glm/cuda_ranks.zig
 @@ -22,6 +22,7 @@ pub const Settings = struct {
@@ -375,7 +382,7 @@ index c899fe5..145add1 100644
      roce_multi: bool = false, // TF_GLM_ROCE_MULTI: 1 (three ranks or more: small all-gathers on fabric/tp's multirank RoCE beside NCCL) or 0
      kv_host: u8 = 0, // TF_GLM_KV_HOST=1: KV pages in host memory (1); with TF_GLM_KV_HOST_SHARED=1, one copy a host (2)
      kv_host_gib: f64 = 0, // TF_GLM_KV_HOST_GIB: the host pages' GiB (0: one full window)
-@@ -108,6 +109,12 @@ pub const Settings = struct {
+@@ -110,6 +111,12 @@ pub const Settings = struct {
                  },
              };
          };
@@ -388,7 +395,7 @@ index c899fe5..145add1 100644
          s.heat = heat.bandsFrom(get("TF_HEAT_HIGH"), get("TF_HEAT_LOW")) catch {
              problem.* = "TF_HEAT_HIGH and TF_HEAT_LOW: both or neither, in degrees, with low at or under high";
              return error.BadSetting;
-@@ -148,6 +155,16 @@ pub const Settings = struct {
+@@ -150,6 +157,16 @@ pub const Settings = struct {
      }
  };
  
@@ -405,7 +412,7 @@ index c899fe5..145add1 100644
  /// The most ranks a world holds: rank 0's greedy pick gathers every rank's top-1 into one host array of this size.
  pub const max_world = 16;
  
-@@ -158,7 +175,7 @@ pub fn environment(name: [:0]const u8) ?[]const u8 {
+@@ -166,7 +183,7 @@ fn wireOpens(get: *const fn ([:0]const u8) ?[]const u8) bool {
  
  /// What every rank must agree on, as bytes the communicator carries.
  pub const Fingerprint = extern struct {
@@ -414,7 +421,7 @@ index c899fe5..145add1 100644
      world: u32,
      rank: u32,
      kv8: u32 = 0,
-@@ -180,6 +197,7 @@ pub const Fingerprint = extern struct {
+@@ -188,6 +205,7 @@ pub const Fingerprint = extern struct {
      kv_host: u32 = 0, // TF_GLM_KV_HOST(_SHARED): every rank sizes the pool alike and maps the shared file, or none does
      solo: u32 = 0, // TF_GLM_CHUNK_SOLO: rank 0's solo passes need the wider prompt buffers on every rank
      bits: u32 = 16 << 8 | 16, // TF_GLM_DENSE_BITS << 8 | TF_GLM_HEAD_BITS: every rank's matmuls read the same codes
@@ -422,7 +429,7 @@ index c899fe5..145add1 100644
      capacity: u64, // tokens a sequence holds
      heat_high: f64, // the heat bands in degrees (0 and 0: off): every rank must wait alike
      heat_low: f64,
-@@ -211,6 +229,7 @@ pub const Fingerprint = extern struct {
+@@ -219,6 +237,7 @@ pub const Fingerprint = extern struct {
          kv_host,
          solo,
          bits,
@@ -430,7 +437,7 @@ index c899fe5..145add1 100644
          capacity,
          heat_high,
          heat_low,
-@@ -248,6 +267,7 @@ pub const Fingerprint = extern struct {
+@@ -256,6 +275,7 @@ pub const Fingerprint = extern struct {
              .kv_host_gib = s.kv_host_gib,
              .solo = @intFromBool(s.solo),
              .bits = @as(u32, s.dense_bits) << 8 | s.head_bits,
@@ -438,7 +445,7 @@ index c899fe5..145add1 100644
              .capacity = capacity,
              .heat_high = if (s.heat) |b| b.high_c else 0,
              .heat_low = if (s.heat) |b| b.low_c else 0,
-@@ -287,6 +307,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
+@@ -295,6 +315,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
              "kv_host",
              "solo",
              "bits",
@@ -446,7 +453,7 @@ index c899fe5..145add1 100644
              "capacity",
              "heat_high",
              "heat_low",
-@@ -401,6 +422,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
+@@ -416,6 +437,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
          .kv_host_gib => "TF_GLM_KV_HOST_GIB",
          .solo => "TF_GLM_CHUNK_SOLO",
          .bits => "TF_GLM_DENSE_BITS or TF_GLM_HEAD_BITS",
@@ -455,10 +462,10 @@ index c899fe5..145add1 100644
          .heat_high => "TF_HEAT_HIGH",
          .heat_low => "TF_HEAT_LOW",
 diff --git a/zig/src/families/glm/cuda_ranks_test.zig b/zig/src/families/glm/cuda_ranks_test.zig
-index fe45caa..8594f34 100644
+index 64af676e5..bc2144fdb 100644
 --- a/zig/src/families/glm/cuda_ranks_test.zig
 +++ b/zig/src/families/glm/cuda_ranks_test.zig
-@@ -186,7 +186,7 @@ test "every media limit is part of the ranks' agreement" {
+@@ -190,7 +190,7 @@ test "every media limit is part of the ranks' agreement" {
  test "every scheduling and identity field that differs stops the ranks" {
      const zero = Fingerprint.of(2, 0, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
      const one = Fingerprint.of(2, 1, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
@@ -467,7 +474,7 @@ index fe45caa..8594f34 100644
          var all = [_]Fingerprint{ zero, one };
          @field(all[1], name) += 1;
          try std.testing.expectEqual(@field(Fingerprint.Field, name), mismatch(&all).?.field);
-@@ -413,3 +413,29 @@ test "TF_GLM_KV_HOST, _SHARED and _GIB: off by default, the choices, and refusal
+@@ -455,3 +455,29 @@ test "TF_GLM_KV_HOST, _SHARED and _GIB: off by default, the choices, and refusal
      var all = [_]Fingerprint{ f, Fingerprint.of(2, 1, .{ .kv_host = 1 }, 8192, true, h, h, h) };
      try std.testing.expectEqual(Fingerprint.Field.kv_host, mismatch(&all).?.field);
  }

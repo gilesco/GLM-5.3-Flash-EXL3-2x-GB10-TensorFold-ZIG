@@ -559,10 +559,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       from the ENVIRONMENT (env | grep) — the bare start never carried
       it (the phases' env-var form exports, which is why they worked).
       THE FIX: export TF_KV_PAGES in config.sh (one word; the explicit
-      off pins override it). The smoke re-launched. The v1.2.3 rebase is the next arc. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
-      cuda_forward): its GLM items are opt-in prefill/serving features —
-      nothing on the selection/loop bug; the rebase waits for the loop
-      verdict.
+      off pins override it). The smoke re-launched. The v1.2.3 rebase is the next arc. **THE v1.2.3 REBASE IS DONE
+      (cont. 67)**: all four patches re-anchored onto v1.2.3 (6ec5fa4cb)
+      — v1.2.3's tables() helper consolidation absorbed the marriage's 3
+      Table sites + pagerows' 3 + selist's 1 into one helper edit each;
+      the native explain() table re-anchored; glue unchanged between
+      tags. Verified byte-identical on a fresh v1.2.3 checkout. The pin
+      (local.sh TF_COMMIT) bumped to the commit sha for the window;
+      v1.2.2 stays the qualified default until the receipt.
+      **v123qual in flight** — the replay, the sparse-prefill probe, the
+      battery + the vision (the bar: no loops + 5/5 + ≥94 + 4/4).
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
