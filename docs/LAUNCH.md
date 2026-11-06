@@ -6602,3 +6602,25 @@ the code at ~row 3,650 of a ~4.5k prompt, beyond dense_limit, on
 recycled pages: the path the original canary never touched. The replay
 stops looping + five exact codes ⇒ the mechanism confirmed ⇒ the
 battery re-run is the adoption judgment. ~20 min. THEN DARK.
+
+## (round 133, cont. 62) THE FIX VALIDATES COMPLETELY: the replay 100 (TC-62 passes with the standing run's exact profile — 5,043 tokens / 12 turns) + the sparse-prefill probe 5/5 exact on recycled pages; the battery re-run launched — the adoption judgment (2026-11-06)
+
+**campaign-20261106-035856 (sparsefix, the tk.logical fix stack)**:
+- **The harness replay: final_score 100** — TC-62 **passes** (5,043
+  completion tokens, 12 turns — **byte-for-byte the standing run's
+  profile**), TC-49 passes (751), **zero truncated notes**. The loops
+  are GONE on the recycled-page churn that reproduced them 4/4 runs
+  before.
+- **The sparse-prefill code probe: 5/5 exact MKR-{i}QX** — the code at
+  ~row 3,650 of a ~4.5k prompt, beyond dense_limit, on recycled pages:
+  the prefill's sparse path, exercised explicitly for the first time,
+  reads perfectly under the fix.
+- The mechanism stands confirmed: the prefill's E4M3 token lists were
+  physical (tk without .logical) and the prefill's sparse attention
+  double-mapped them through the page table — idempotent on identity
+  mappings, corrupting on recycled ones.
+
+**LAUNCHED: pagedquality3** — the adoption judgment: the hardmode
+battery + the vision suite on absorb + marriage + pagerows-fix +
+selist-fix, TF_KV_PAGES=on. The bar: **hardmode ≥ 94** (production
+parity; absorb set 95) + the vision 4/4. ~50 min. THEN DARK.

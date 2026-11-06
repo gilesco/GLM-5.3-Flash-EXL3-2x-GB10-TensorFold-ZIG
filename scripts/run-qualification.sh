@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP sparsefix knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,60 +1192,26 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: sparsefix (SESSION-SPECIFIC; retires with the receipt). Validating
-# the tk.logical fix: the prefill's selection Table lacked .logical, so the
-# prefill's E4M3 token lists were physical while the prefill's sparse
-# attention mapped them through the table again (pt[pt[page]] — idempotent on
-# identity mappings, corrupting once pages recycle). On fp8-paged with the
-# fix: (1) the harness replay FIRST (it churns the pages non-identity),
-# (2) THEN the sparse-prefill code probe — the code at ~row 3,650 of a ~4.5k
-# prompt, beyond dense_limit, on recycled pages (the path the original canary
-# never touched). The replay stops looping + the probe exact = the mechanism
-# confirmed (the battery re-run next).
+# phase: pagedquality3 (SESSION-SPECIFIC; retires with the receipt). The
+# adoption judgment on the fully-fixed composed paged stack: the tk.logical
+# fix validated completely (the replay 100 with the standing run's exact
+# profile; the sparse-prefill probe 5/5 on recycled pages). The hardmode
+# battery + the vision suite on absorb + marriage + pagerows-fix + selist-fix,
+# TF_KV_PAGES=on. The bar: hardmode >= 94 (production parity; absorb set 95)
+# + the vision 4/4. Retires with the receipt.
 # ---------------------------------------------------------------------------
-if want sparsefix && ! phase_done sparsefix; then
-  log "=== sparsefix (the tk.logical fix: the replay then the sparse-prefill probe on recycled pages)"
-  P="$OUT/99-sparsefix.md"; : > "$P"
+if want pagedquality3 && ! phase_done pagedquality3; then
+  log "=== pagedquality3 (the battery on the fully-fixed composed paged stack)"
+  P="$OUT/99-pagedquality3.md"; : > "$P"
+  echo "# pagedquality3 (hardmode + vision on absorb+marriage+pagerows-fix+selist-fix, TF_KV_PAGES=on)" >> "$P"
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- fp8 paged (the fix stack): $(serve_line | cut -c1-120)" >> "$P"
-  mkdir -p "$OUT/tc-fp8"
-  echo "- the harness replay FIRST (it churns the pages non-identity):" >> "$P"
-  PYTHONUNBUFFERED=1 "$BENCH" run \
-    --base-url "http://127.0.0.1:$PORT/v1" \
-    --model "$SERVED_NAME" \
-    --format openai \
-    --tokenizer "$MODEL_ID" \
-    --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
-    --label "tc-fp8" --output-dir "$OUT/tc-fp8" --json-file "$OUT/tc-fp8/result.json" \
-    > "$OUT/tc-fp8/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-fp8/bench.log)" >> "$P"
-  python3 - "$OUT/tc-fp8/result.json" >> "$P" <<'PDE'
-import json, sys, re
-try:
-    d = json.load(open(sys.argv[1]))
-    print("  final_score:", d["scores"].get("final_score"))
-    for s in d["scores"]["scenario_results"]:
-        log = s.get("raw_log", "")
-        trunc = re.findall(r"truncated=(.{0,90})", log)
-        print("  %s | status=%s | completion=%s | turns=%s | truncated=%d" % (s.get("scenario_id"), s.get("status"), s.get("completion_tokens"), s.get("turn_count"), len(trunc)))
-        for t in trunc[:2]:
-            print("     ", t)
-except Exception as e:
-    print("  EXTRACT-FAILED:%r" % e)
-PDE
-  echo "- the sparse-prefill code probe (the code at ~row 3,650 of ~4.5k, on recycled pages, five rounds):" >> "$P"
-  for i in 1 2 3 4 5; do
-    bf=$(mktemp /tmp/sf.XXXXXX.json)
-    python3 -c "import json,sys; unit='harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 '; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':unit*52+' The vault access code is MKR-'+sys.argv[2]+'QX. '+unit*12+' Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
-    R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
-try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
-except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
-    echo "  round$i reply: $R" >> "$P"
-    rm -f "$bf"
-  done
-  echo "- engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -8 | sed 's/^/  /' >> "$P"
-  echo "- VERDICT: the replay stops looping (no truncated notes, healthy completions) + five exact MKR-{i}QX replies = the mechanism confirmed (the prefill's physical lists double-mapped on recycled pages; the tk.logical fix closes it) — the battery re-run is the adoption judgment; loops persist = the fix is insufficient (back to the instrument with the PICK data in hand)" >> "$P"
-  touch "$OUT/.sparsefix.done"
+  echo "- server: $(serve_line)" >> "$P"
+  bench_cell hm-paged3 "$OUT/hm-paged3" >> "$P"
+  echo "- the vision suite:" >> "$P"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged3.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+  echo "- the engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
+  touch "$OUT/.pagedquality3.done"
 fi
 
 # ---------------------------------------------------------------------------
