@@ -1,75 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1226" height="350" viewBox="0 0 1226 350" font-family="DejaVu Sans, sans-serif">
 <rect width="100%" height="100%" fill="#fafafa"/>
-<text x="16" y="28" font-size="17" font-weight="bold" fill="#212121">GLM-5.3-Flash 4bpw sweep — v1.2.1, dense4fp8, fp8 KV, 512K×4, vision</text>
+<text x="16" y="28" font-size="17" font-weight="bold" fill="#212121">GLM-5.3-Flash 4bpw sweep — v1.2.3 + the 4-patch stack, paged KV + KV_SHARE=8, dense4fp8, 512K×4, vision</text>
 <text x="16" y="48" font-size="12" fill="#616161">hardmode = the 104-scenario battery (bench v3.0.1) · pp = llama-benchy pp2048 @ d0 tok/s · tg = solo tg128 tok/s at depth · c4 = 4 streams at d8192</text>
-<text x="16" y="66" font-size="11" fill="#9e9e9e">the round-132 fixed-engine ranking (the (user) swap's basis, 2026-11-02, window-mode KV) — the served TR3 cell's CURRENT score on the shipping stack (v1.2.3 + the 4-patch paged KV + KV_SHARE=8): hardmode 95, receipted three times with byte-identical token profiles</text>
+<text x="16" y="66" font-size="11" fill="#9e9e9e">the re-sweep (2026-11-06, the (user) ask): every pack on the SHIPPING stack — these cards are the CURRENT ranking; the served TR3 pack's standing receipts: hardmode 95 three times, byte-identical token profiles. The round-132 v1.2.1 sweep (94/93/94/90) is history: docs/LAUNCH.md</text>
 <g><rect x="16" y="86" width="285" height="240" rx="10" fill="#ffffff" stroke="#e0e0e0"/>
-<rect x="16" y="86" width="285" height="6" rx="3" fill="#1565c0"/>
+<rect x="16" y="86" width="285" height="6" rx="3" fill="#b26a00"/>
 <text x="30" y="116" font-size="14" font-weight="bold" fill="#212121">Focus</text>
-<text x="30" y="156" font-size="34" font-weight="bold" fill="#1565c0">93</text>
+<text x="30" y="156" font-size="34" font-weight="bold" fill="#b26a00">92</text>
 <text x="102" y="156" font-size="12" fill="#757575">/104 hardmode</text>
 <text x="30" y="180" font-size="11.5" fill="#424242">prefill pp2048 @ d0</text>
-<text x="287" y="180" font-size="11.5" text-anchor="end" fill="#212121">1036</text>
+<text x="287" y="180" font-size="11.5" text-anchor="end" fill="#212121">1116</text>
 <text x="30" y="201" font-size="11.5" fill="#424242">tg128 solo @ d0</text>
-<text x="287" y="201" font-size="11.5" text-anchor="end" fill="#212121">40.6</text>
+<text x="287" y="201" font-size="11.5" text-anchor="end" fill="#212121">48.4</text>
 <text x="30" y="222" font-size="11.5" fill="#424242">tg128 solo @ d4096</text>
-<text x="287" y="222" font-size="11.5" text-anchor="end" fill="#212121">46.0</text>
+<text x="287" y="222" font-size="11.5" text-anchor="end" fill="#212121">47.3</text>
 <text x="30" y="243" font-size="11.5" fill="#424242">tg128 solo @ d8192</text>
-<text x="287" y="243" font-size="11.5" text-anchor="end" fill="#212121">40.7</text>
+<text x="287" y="243" font-size="11.5" text-anchor="end" fill="#212121">43.4</text>
 <text x="30" y="264" font-size="11.5" fill="#424242">tg128 c4 @ d8192</text>
-<text x="287" y="264" font-size="11.5" text-anchor="end" fill="#212121">12.9</text>
+<text x="287" y="264" font-size="11.5" text-anchor="end" fill="#212121">14.2</text>
 <text x="30" y="281" font-size="10" font-style="italic" fill="#9e9e9e">local/GLM-5.3-Flash-AZ-Focus-EXL3</text>
 </g>
 <g><rect x="319" y="86" width="285" height="240" rx="10" fill="#ffffff" stroke="#e0e0e0"/>
-<rect x="319" y="86" width="285" height="6" rx="3" fill="#2e7d32"/>
+<rect x="319" y="86" width="285" height="6" rx="3" fill="#b26a00"/>
 <text x="333" y="116" font-size="14" font-weight="bold" fill="#212121">Mia-AiLab 4bpw</text>
-<text x="333" y="156" font-size="34" font-weight="bold" fill="#2e7d32">94</text>
+<text x="333" y="156" font-size="34" font-weight="bold" fill="#b26a00">92</text>
 <text x="405" y="156" font-size="12" fill="#757575">/104 hardmode</text>
 <text x="333" y="180" font-size="11.5" fill="#424242">prefill pp2048 @ d0</text>
-<text x="590" y="180" font-size="11.5" text-anchor="end" fill="#212121">1031</text>
+<text x="590" y="180" font-size="11.5" text-anchor="end" fill="#212121">1114</text>
 <text x="333" y="201" font-size="11.5" fill="#424242">tg128 solo @ d0</text>
-<text x="590" y="201" font-size="11.5" text-anchor="end" fill="#212121">39.2</text>
+<text x="590" y="201" font-size="11.5" text-anchor="end" fill="#212121">46.7</text>
 <text x="333" y="222" font-size="11.5" fill="#424242">tg128 solo @ d4096</text>
-<text x="590" y="222" font-size="11.5" text-anchor="end" fill="#212121">45.3</text>
+<text x="590" y="222" font-size="11.5" text-anchor="end" fill="#212121">47.8</text>
 <text x="333" y="243" font-size="11.5" fill="#424242">tg128 solo @ d8192</text>
-<text x="590" y="243" font-size="11.5" text-anchor="end" fill="#212121">41.5</text>
+<text x="590" y="243" font-size="11.5" text-anchor="end" fill="#212121">49.0</text>
 <text x="333" y="264" font-size="11.5" fill="#424242">tg128 c4 @ d8192</text>
-<text x="590" y="264" font-size="11.5" text-anchor="end" fill="#212121">13.1</text>
+<text x="590" y="264" font-size="11.5" text-anchor="end" fill="#212121">14.3</text>
 <text x="333" y="281" font-size="10" font-style="italic" fill="#9e9e9e">production's own pack family</text>
 </g>
 <g><rect x="622" y="86" width="285" height="240" rx="10" fill="#ffffff" stroke="#e0e0e0"/>
 <rect x="622" y="86" width="285" height="6" rx="3" fill="#2e7d32"/>
 <text x="636" y="116" font-size="14" font-weight="bold" fill="#212121">TR3-4bpw (the served default)</text>
-<text x="636" y="156" font-size="34" font-weight="bold" fill="#2e7d32">94</text>
+<text x="636" y="156" font-size="34" font-weight="bold" fill="#2e7d32">95</text>
 <text x="708" y="156" font-size="12" fill="#757575">/104 hardmode</text>
 <text x="636" y="180" font-size="11.5" fill="#424242">prefill pp2048 @ d0</text>
-<text x="893" y="180" font-size="11.5" text-anchor="end" fill="#212121">1039</text>
+<text x="893" y="180" font-size="11.5" text-anchor="end" fill="#212121">1115</text>
 <text x="636" y="201" font-size="11.5" fill="#424242">tg128 solo @ d0</text>
-<text x="893" y="201" font-size="11.5" text-anchor="end" fill="#212121">46.0</text>
+<text x="893" y="201" font-size="11.5" text-anchor="end" fill="#212121">48.8</text>
 <text x="636" y="222" font-size="11.5" fill="#424242">tg128 solo @ d4096</text>
-<text x="893" y="222" font-size="11.5" text-anchor="end" fill="#212121">46.2</text>
+<text x="893" y="222" font-size="11.5" text-anchor="end" fill="#212121">50.0</text>
 <text x="636" y="243" font-size="11.5" fill="#424242">tg128 solo @ d8192</text>
-<text x="893" y="243" font-size="11.5" text-anchor="end" fill="#212121">45.2</text>
+<text x="893" y="243" font-size="11.5" text-anchor="end" fill="#212121">43.0</text>
 <text x="636" y="264" font-size="11.5" fill="#424242">tg128 c4 @ d8192</text>
-<text x="893" y="264" font-size="11.5" text-anchor="end" fill="#212121">13.1</text>
-<text x="636" y="281" font-size="10" font-style="italic" fill="#9e9e9e">best decode at top-8 quality</text>
+<text x="893" y="264" font-size="11.5" text-anchor="end" fill="#212121">14.2</text>
+<text x="636" y="281" font-size="10" font-style="italic" fill="#9e9e9e">the quality leader on the current stack — 3 points clear</text>
 </g>
 <g><rect x="925" y="86" width="285" height="240" rx="10" fill="#ffffff" stroke="#e0e0e0"/>
 <rect x="925" y="86" width="285" height="6" rx="3" fill="#b26a00"/>
 <text x="939" y="116" font-size="14" font-weight="bold" fill="#212121">AZ top-4</text>
-<text x="939" y="156" font-size="34" font-weight="bold" fill="#b26a00">90</text>
+<text x="939" y="156" font-size="34" font-weight="bold" fill="#b26a00">87</text>
 <text x="1011" y="156" font-size="12" fill="#757575">/104 hardmode</text>
 <text x="939" y="180" font-size="11.5" fill="#424242">prefill pp2048 @ d0</text>
-<text x="1196" y="180" font-size="11.5" text-anchor="end" fill="#212121">1184 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
+<text x="1196" y="180" font-size="11.5" text-anchor="end" fill="#212121">1295 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
 <text x="939" y="201" font-size="11.5" fill="#424242">tg128 solo @ d0</text>
-<text x="1196" y="201" font-size="11.5" text-anchor="end" fill="#212121">57.7 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
+<text x="1196" y="201" font-size="11.5" text-anchor="end" fill="#212121">60.8 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
 <text x="939" y="222" font-size="11.5" fill="#424242">tg128 solo @ d4096</text>
-<text x="1196" y="222" font-size="11.5" text-anchor="end" fill="#212121">52.5 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
+<text x="1196" y="222" font-size="11.5" text-anchor="end" fill="#212121">65.7 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
 <text x="939" y="243" font-size="11.5" fill="#424242">tg128 solo @ d8192</text>
-<text x="1196" y="243" font-size="11.5" text-anchor="end" fill="#212121">61.4 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
+<text x="1196" y="243" font-size="11.5" text-anchor="end" fill="#212121">54.8 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
 <text x="939" y="264" font-size="11.5" fill="#424242">tg128 c4 @ d8192</text>
-<text x="1196" y="264" font-size="11.5" text-anchor="end" fill="#212121">15.1 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
-<text x="939" y="281" font-size="10" font-style="italic" fill="#9e9e9e">the perf leader (glm-topk4b.patch)</text>
+<text x="1196" y="264" font-size="11.5" text-anchor="end" fill="#212121">17.0 <tspan fill="#2e7d32" font-weight="bold">★</tspan></text>
+<text x="939" y="281" font-size="10" font-style="italic" fill="#9e9e9e">the perf leader (glm-topk4b.patch on the 4-patch stack)</text>
 </g>
 <text x="16" y="336" font-size="11" fill="#616161">★ = the sweep's best value in its column · production's hardmode on this bench version is owed (a solo prodqual window) · receipts: results/bpw4sweep/ on the head</text>
 </svg>

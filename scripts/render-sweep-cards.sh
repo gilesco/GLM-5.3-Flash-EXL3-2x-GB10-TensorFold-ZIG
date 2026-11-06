@@ -33,13 +33,13 @@ parts = [
     f'viewBox="0 0 {W} {H}" font-family="DejaVu Sans, sans-serif">',
     '<rect width="100%" height="100%" fill="#fafafa"/>',
     '<text x="16" y="28" font-size="17" font-weight="bold" fill="#212121">'
-    'GLM-5.3-Flash 4bpw sweep — v1.2.1, dense4fp8, fp8 KV, 512K×4, vision</text>',
+    'GLM-5.3-Flash 4bpw sweep — v1.2.3 + the 4-patch stack, paged KV + KV_SHARE=8, dense4fp8, 512K×4, vision</text>',
     '<text x="16" y="48" font-size="12" fill="#616161">'
     'hardmode = the 104-scenario battery (bench v3.0.1) · pp = llama-benchy pp2048 @ d0 tok/s · '
     'tg = solo tg128 tok/s at depth · c4 = 4 streams at d8192</text>',
     '<text x="16" y="66" font-size="11" fill="#9e9e9e">'
-    'the round-132 fixed-engine ranking (the (user) swap\'s basis, 2026-11-02, window-mode KV) — the served TR3 cell\'s CURRENT score on the shipping stack'
-    ' (v1.2.3 + the 4-patch paged KV + KV_SHARE=8): hardmode 95, receipted three times with byte-identical token profiles</text>',
+    'the re-sweep (2026-11-06, the (user) ask): every pack on the SHIPPING stack — these cards are the CURRENT ranking; the served TR3 pack\'s standing receipts: hardmode 95 three times, byte-identical token profiles.'
+    ' The round-132 v1.2.1 sweep (94/93/94/90) is history: docs/LAUNCH.md</text>',
 ]
 x = PAD
 for r in rows:

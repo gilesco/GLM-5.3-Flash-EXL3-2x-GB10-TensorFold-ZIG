@@ -7210,3 +7210,39 @@ syntax before suspecting the cache).
 
 **RE-LAUNCHED: resweep + summary** — the same four cells on the
 shipping stack (~3.5 h). THEN DARK.
+
+## (round 133, cont. 80) THE RE-SWEEP LANDED (campaign-20261106-112022): the served pack 3 POINTS CLEAR on the shipping stack — TR3 95, production's stock 92, the Focus 92, the AZ top-4 87; the cards re-rendered as the CURRENT ranking (2026-11-06)
+
+**The four cells' receipt** (the shipping stack: v1.2.3 + the 4-patch
+paged KV + TF_GLM_KV_SHARE=8, every serving default from config.sh; g1
+determinism PASS per cell; RoCE up per cell):
+
+| pack | hardmode | pp_d0 | tg_d0 | tg_d4096 | tg_d8192 | tg_c4_d8192 |
+| --- | --- | --- | --- | --- | --- | --- |
+| **TR3-4bpw (the served default)** | **95** | 1115 | 48.8 | 50.0 | 43.0 | 14.2 |
+| Mia-AiLab 4bpw (production's stock) | 92 | 1114 | 46.7 | 47.8 | 49.0 | 14.3 |
+| Focus | 92 | 1116 | 48.4 | 47.3 | 43.4 | 14.2 |
+| AZ top-4 (glm-topk4b on the 4-patch stack) | 87 | **1295** | **60.8** | **65.7** | 54.8 | **17.0** |
+
+**The ranking held and STRENGTHENED**: the round-132 v1.2.1 sweep chose
+TR3 at 94 vs the field's 93/94/90; on the current stack the served pack
+is **95** (matching its three standing receipts byte-for-byte in score)
+while production's stock and the Focus both slipped to 92 and the AZ
+top-4 to 87 — **the served pack is 3 points clear of everything**. The
+(user)'s round-132 choice is validated more strongly on the current
+engine. The AZ top-4 stays the perf leader (pp 1,295, tg_d0 60.8,
+tg_d4096 65.7 — +25% over the sweep era) at a now-larger quality cost.
+
+**The boot notes**: tr3 loaded in 103 s (cache hit); mia and az4 took
+517/501 s (the fingerprint change rebuilt the image inside their
+restarts); focus 127 s. The serve lines carried the pool-pages store on
+every cell; the boot-time page arithmetic varied (4100 vs 3075 — the
+cont. 75 variance, receipted as such).
+
+**THE TRANSPLANT**: docs/bpw4-sweep.tsv's data rows replaced with the
+re-sweep's values (the header: the current era + the round-132 sweep as
+history); render-sweep-cards.sh's subtitle moved to the current stack;
+**the cards re-rendered as the CURRENT ranking**; the README (the
+Quality row, the embedded alt text, the AZ-EXL3 revisions row's numbers)
+and DELTAS' header re-framed — the embedded scorecards now show what a
+user gets on this version. No window — desk work.

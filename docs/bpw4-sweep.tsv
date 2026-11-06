@@ -1,18 +1,19 @@
-# docs/bpw4-sweep.tsv — the 4bpw local-pack sweep's scorecard data (round 132).
-# The receipts: results/bpw4sweep/ on the head (the hardmode batteries' bench
-# logs + the perf tables) and campaign-20261102-095700's dense4fp8 cell for the
-# Focus. Instrument: hardmode-inclusive battery (104 scenarios, bench v3.0.1) +
-# llama-benchy pp2048/tg128 at the standing config (dense4fp8, fp8 KV, 512K x4,
-# vision, TF v1.2.1). Rendered by scripts/render-sweep-cards.sh into
-# docs/bpw4-sweep-cards.svg — the SVG is generated, never hand-edited.
-# NOTE (cont. 76): the sweep is the round-132 FIXED-ENGINE ranking (the (user)
-# swap's basis — all four packs on TF v1.2.1, window-mode KV); its scores do
-# not update with engine bumps. The served TR3 pack's CURRENT score on the
-# shipping stack (v1.2.3 + the 4-patch paged KV + TF_GLM_KV_SHARE=8) is
-# hardmode 95, receipted three times with byte-identical token profiles
-# (campaign-20261106-043015/-065920/-093921) — the cards carry the annotation.
+# docs/bpw4-sweep.tsv — the 4bpw local-pack sweep's scorecard data.
+# CURRENT: the re-sweep (2026-11-06, the (user) ask — "the readme should
+# reflect what a user gets if they download and use the current version"):
+# all four packs on the SHIPPING stack (TF v1.2.3 + the 4-patch stack, paged
+# KV + TF_GLM_KV_SHARE=8, dense4fp8, 512K x4, vision, DFlash2 drafts — every
+# serving default from config.sh; the AZ top-4 cell adds glm-topk4b.patch).
+# Receipts: results/resweep/ on the head (campaign-20261106-112022 — the
+# resweep phase: g1 determinism per cell, the 104-scenario battery (bench
+# v3.0.1), the benchy matrix). Rendered by scripts/render-sweep-cards.sh
+# into docs/bpw4-sweep-cards.svg — the SVG is generated, never hand-edited.
+# HISTORY: the round-132 sweep (all four packs on TF v1.2.1, window-mode KV —
+# hardmode 93/94/94/90, pp 1036/1031/1039/1184, tg_d0 40.6/39.2/46.0/57.7)
+# lives in results/bpw4sweep/ on the head and docs/LAUNCH.md (cont. 74-77);
+# the ranking it chose (TR3) held and STRENGTHENED on the current stack.
 # Columns: pack|hardmode|pp_d0|tg_d0|tg_d4096|tg_d8192|tg_c4_d8192|note
-Focus|93|1036|40.6|46.0|40.7|12.9|local/GLM-5.3-Flash-AZ-Focus-EXL3
-Mia-AiLab 4bpw|94|1031|39.2|45.3|41.5|13.1|production's own pack family
-TR3-4bpw (the served default)|94|1039|46.0|46.2|45.2|13.1|best decode at top-8 quality
-AZ top-4|90|1184|57.7|52.5|61.4|15.1|the perf leader (glm-topk4b.patch)
+Focus|92|1116|48.4|47.3|43.4|14.2|local/GLM-5.3-Flash-AZ-Focus-EXL3
+Mia-AiLab 4bpw|92|1114|46.7|47.8|49.0|14.3|production's own pack family
+TR3-4bpw (the served default)|95|1115|48.8|50.0|43.0|14.2|the quality leader on the current stack — 3 points clear
+AZ top-4|87|1295|60.8|65.7|54.8|17.0|the perf leader (glm-topk4b.patch on the 4-patch stack)

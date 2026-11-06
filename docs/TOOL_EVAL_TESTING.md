@@ -614,7 +614,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       ACTIVE in the bare config (the pool-pages store signature, the
       probe OK — the export fix verified), the pool arithmetic matching
       the receipted kvshare2 shape (4100 total, dynamic carving) —
-      **THE KV_SHARE ARC CLOSED END TO END**. The 0010 fetch corrected
+      **THE KV_SHARE ARC CLOSED END TO END**. **THE RE-SWEEP
+      (campaign-20261106-112022, the (user) ask): all four packs on the
+      SHIPPING stack — TR3 95 (the served pack, 3 points clear),
+      production's stock 92, the Focus 92, the AZ top-4 87 at the top
+      perf (pp 1,295, tg_d0 60.8, tg_d4096 65.7); the round-132
+      v1.2.1 ranking (94/93/94/90) held and STRENGTHENED — the tsv
+      transplanted, the cards re-rendered as the CURRENT ranking, the
+      README/DELTAS re-framed (the first resweep window burned on an
+      env-pair quoting bug, cont. 79).** The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design
