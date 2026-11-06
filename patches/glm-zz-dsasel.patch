@@ -1,30 +1,36 @@
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
-Subject: glm-cuda: debug - the DSA selection assembler prints row 0's selections (the loop hunt's instrument)
+Subject: glm-cuda: debug v2 - the DSA assembler's VIOL detector (the loop hunt's refined instrument)
 
-PROVENANCE: this line's debug instrument, 2026-11-06, on the composed
-stack (absorb + fp8-pages + pagerows-fix). tf_glm_dsa_tokens prints
-row 0's first eight selected positions and the count every 64th
-position (E4M3 lists are logical positions - pt=0 here - so the
-numbers are positions). Purpose: under the 5-minute TC-62 replay, show
-whether the decode-time selection COLLAPSES (the same positions every
-step / frozen) or slides healthily when the degenerate loop starts.
-Read-only printf with a __syncwarp before the reads; no addressing
-change. Sorts last (glm-zz-*). OWNER: this line; STATUS: the loop
-hunt's instrument, retires with the mechanism receipt.
+PROVENANCE: this line's debug instrument v2, 2026-11-06, on the composed
+stack (absorb + fp8-pages + pagerows-fix). v1's SEL dump caught the fp8
+selection's page-start attractor but its lines mixed stale scratch
+(count=0 dense rows) with sparse rows and carried no causal horizon.
+v2: print only count>0 rows, tag npool, and fire a VIOL line whenever
+an E4M3 selection (pt==0, logical positions) contains a token beyond
+the row's own causal limit (row[0] > q) - mechanically impossible
+unless something selects beyond the scored range. bf16 (physical
+page-row values) keeps the periodic SEL print only. Read-only printf
+with a __syncwarp; no addressing change. Sorts last (glm-zz-*).
+OWNER: this line; STATUS: the loop hunt's instrument v2.
 
 diff --git a/zig/kernels/cuda/glm_ops.cu b/zig/kernels/cuda/glm_ops.cu
-index b2fbee106..c6431b485 100644
+index b2fbee106..4c8205953 100644
 --- a/zig/kernels/cuda/glm_ops.cu
 +++ b/zig/kernels/cuda/glm_ops.cu
-@@ -25,6 +25,11 @@ extern "C" __global__ void tf_glm_dsa_tokens(const long long* __restrict__ pools
+@@ -25,6 +25,16 @@ extern "C" __global__ void tf_glm_dsa_tokens(const long long* __restrict__ pools
          int tail = 0;
          for (int t = 0; t < 3; ++t) tail += npool * 4 + t <= q;
          counts[r] = npool > K ? 4 * K + tail : 0;
 +        __syncwarp();
-+        if (r == 0 && ((*pos) % 64) == 0)
-+            printf("SEL pos=%d cnt=%d t=[%d %d %d %d %d %d %d %d]\n",
-+                   *pos, counts[r], row[0], row[1], row[2], row[3],
-+                   row[4], row[5], row[6], row[7]);
++        if (r == 0 && counts[r] > 0) {
++            if (pt == 0 && row[0] > (int)q)
++                printf("VIOL pos=%d npool=%d t0=%d t1=%d cnt=%d\n",
++                       *pos, (int)npool, row[0], row[1], counts[r]);
++            else if (((*pos) & 63) == 0)
++                printf("SEL pos=%d npool=%d cnt=%d t=[%d %d %d %d %d %d %d %d]\n",
++                       *pos, (int)npool, counts[r], row[0], row[1], row[2],
++                       row[3], row[4], row[5], row[6], row[7]);
++        }
      }
  }
  

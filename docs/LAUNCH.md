@@ -6455,3 +6455,44 @@ SEL dumps save whole with a per-position distinct-top-4 summary in the
 receipt. FREEZE on fp8 with a healthy slide on bf16 ⇒ the selection is
 the site; both slide ⇒ the sparse attention's gather/read is the site.
 ~25 min.
+
+## (round 133, cont. 58) pagehunt's instrument receipt: the fp8 selection's page-start attractor AND causally impossible selections; the refined VIOL detector launched; (user) the workflow directive (2026-11-06)
+
+**(user, 2026-11-06)**: "do not launch tests until all tasks have
+completed. You will go dark after launching a test. And not come back
+until they are complete." — adopted as the standing workflow: every
+sitting completes ALL tasks (digests, analysis, docs), launches at most
+one window LAST, and goes dark until its poke. Logged in the lessons
+file.
+
+**campaign-20261106-004057 (pagehunt, the selection instrument)**: the
+loop reproduced under the debug build (fp8: TC-62 fail, turn 3 → the
+16,384 ceiling, 72,000 chars of reasoning; final_score 25; bf16:
+final_score 100 ✓ the control). The SEL dump (4,037 fp8 lines):
+- **The page-start attractor**: every dominant top-4 across the run
+  starts at a 512-multiple — (5120..5123)=page 10, (2048..)=page 4,
+  (10240..)=page 20 — with (5120..5123) recurring at pos 2,048/4,096/
+  6,144/8,192/10,240/10,368 for ~18% of layer launches. The bf16
+  control's dominants vary per position (physical pages 5, 3, 65, 34 —
+  content-tracking) ✓ healthy.
+- **Causally impossible selections**: (17408..17415) selected at
+  pos=2240, (26112..) at 6,272, (21504..) at 8,192 — no request in the
+  replay had 17K tokens of history, so pool 4352 could never be legally
+  scored. But the scores kernel's per-pool mask reads correct
+  (`p < npool ? s : -INFINITY`, per-row) and the pooled-key writer/
+  reader addressing agrees exactly (`at<128>(pt, ps/2, p, 128)` both
+  sides — glm_pages + key_at).
+- **Instrument artifacts identified**: the pos=2048 lines (n=968) were
+  STALE SCRATCH (count=0 — dense rows printing unused pools buffers);
+  both dumps stop at ~4,000 lines (the CUDA printf FIFO cap).
+
+**The refined instrument (glm-zz-dsasel v2, 36 lines, staged)**: gate on
+count>0, tag npool (each line's causal horizon), and a mechanical VIOL
+detector — for E4M3 lists (pt==0, logical positions) a selected token
+beyond the row's own limit (row[0] > q) fires a VIOL line per instance.
+**LAUNCHED: pagehunt2** — the replay on fp8-paged AND bf16-paged: VIOL
+on fp8 with bf16 silent ⇒ the selection reads beyond the scored range
+(the leak is real; the next sit digs select_rows' scan range vs the
+written range); no VIOL anywhere ⇒ the impossible positions were stale
+scratch and the fixation is real attention (dig the pooled keys'
+content). ~25 min. THEN DARK per the user's directive.

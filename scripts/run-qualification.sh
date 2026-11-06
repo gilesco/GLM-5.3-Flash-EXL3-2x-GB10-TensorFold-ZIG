@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,20 +1192,18 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagehunt (SESSION-SPECIFIC; retires with the mechanism receipt). The
-# selection instrument: the bisection is complete (fp8 AND pages together =
-# the loop; either alone = clean) and the ~5-minute harness replay is the
-# reproducer. The glm-zz-dsasel debug patch makes the selection assembler
-# print row 0's first eight selected logical positions every 64th position.
-# This phase replays TC-62+TC-49 on fp8-paged (loops) and bf16-paged (clean
-# control), saves the SEL dumps whole, and summarizes per-position: the count
-# of DISTINCT top-4 tuples across layers. FREEZE on fp8 with a healthy slide
-# on bf16 = the selection is the site; both slide = the gather/read is the
-# site (the next instrument).
+# phase: pagehunt2 (SESSION-SPECIFIC; retires with the mechanism receipt). The
+# refined selection instrument: the glm-zz-dsasel v2 debug patch gates on
+# count>0, tags npool, and fires VIOL lines when an E4M3 selection exceeds the
+# row's causal limit (mechanically impossible unless something selects beyond
+# the scored range). The replay (TC-62+TC-49, the battery's flags) runs on
+# fp8-paged (loops) and bf16-paged (clean control). VIOL on fp8 with bf16
+# silent = the leak is real (dig select_rows next); no VIOL anywhere = the
+# artifacts were stale scratch and the fixation is real attention.
 # ---------------------------------------------------------------------------
-if want pagehunt && ! phase_done pagehunt; then
-  log "=== pagehunt (the selection instrument: fp8-paged vs bf16-paged under the replay)"
-  P="$OUT/99-pagehunt.md"; : > "$P"
+if want pagehunt2 && ! phase_done pagehunt2; then
+  log "=== pagehunt2 (the VIOL detector: fp8-paged vs bf16-paged under the replay)"
+  P="$OUT/99-pagehunt2.md"; : > "$P"
   ph_run() {
     tag="$1"; kv="$2"
     if [ -n "$kv" ]; then restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
@@ -1234,35 +1232,38 @@ try:
 except Exception as e:
     print("  EXTRACT-FAILED:%r" % e)
 PDE
-    docker logs "$CONTAINER_NAME" 2>&1 | grep "SEL pos=" > "$OUT/sel-$tag.log" 2>/dev/null || true
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "VIOL pos=|SEL pos=" > "$OUT/sel-$tag.log" 2>/dev/null || true
     python3 - "$OUT/sel-$tag.log" >> "$P" <<'PDS'
 import sys, re, collections
 try:
-    rows = []
+    viol, sels = [], []
     for l in open(sys.argv[1]):
-        m = re.match(r"SEL pos=(\d+) cnt=(-?\d+) t=\[(-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\]", l)
-        if m:
-            rows.append((int(m.group(1)), int(m.group(2)), tuple(int(m.group(i)) for i in range(3, 11))))
-    print("  SEL lines: %d | pos range: %s..%s" % (len(rows), rows[0][0] if rows else "-", rows[-1][0] if rows else "-"))
+        if l.startswith("VIOL "):
+            m = re.match(r"VIOL pos=(\d+) npool=(\d+) t0=(\d+) t1=(\d+) cnt=(\d+)", l)
+            if m: viol.append(tuple(int(m.group(i)) for i in range(1, 6)))
+        elif l.startswith("SEL "):
+            m = re.match(r"SEL pos=(\d+) npool=(\d+) cnt=(-?\d+) t=\[(-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\]", l)
+            if m: sels.append((int(m.group(1)), int(m.group(2)), int(m.group(3)), tuple(int(m.group(i)) for i in range(4, 12))))
+    print("  VIOL lines: %d%s" % (len(viol), (" | pos range: %d..%d" % (min(v[0] for v in viol), max(v[0] for v in viol))) if viol else ""))
+    for v in viol[:10]:
+        print("    VIOL pos=%d npool=%d t0=%d t1=%d cnt=%d" % v)
+    print("  SEL lines: %d | pos range: %s..%s" % (len(sels), sels[0][0] if sels else "-", sels[-1][0] if sels else "-"))
     g = collections.defaultdict(list)
-    for pos, cnt, toks in rows:
-        g[pos].append((cnt, toks))
-    poses = sorted(g)
-    for pos in poses[::8]:
-        tops = [t for _, t in g[pos]]
-        distinct = len(set(tops))
-        common, n = collections.Counter(tops).most_common(1)[0]
-        print("  pos=%5d layers=%2d distinct_top4=%2d most_common(%d/%d)=%s" % (pos, len(tops), distinct, n, len(tops), str(common[:4])))
+    for pos, npool, cnt, toks in sels:
+        g[pos].append(toks)
+    for pos in sorted(g)[::6]:
+        tops = collections.Counter(g[pos])
+        print("  pos=%5d n=%3d top2=%s" % (pos, len(g[pos]), tops.most_common(2)))
 except Exception as e:
     print("  SEL-ANALYZE-FAILED:%r" % e)
 PDS
     echo "  engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -6 | sed 's/^/    /' >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -5 | sed 's/^/    /' >> "$P"
   }
   ph_run fp8 ""
   ph_run bf16 kv
-  echo "- VERDICT: the fp8 selections FREEZE (distinct_top4 near 1 across positions, or the same tuple repeating step after step) while bf16 slides = the selection is the loop's site (dig the scores/pools kernels' E4M3 paged reads); both slide = the sparse attention's gather/read is the site (instrument it next)" >> "$P"
-  touch "$OUT/.pagehunt.done"
+  echo "- VERDICT: VIOL lines on fp8 with bf16 silent = the selection reads beyond the scored range (the leak is real — the next sit digs select_rows' scan range vs the written range and the scores buffer's unwritten slots); no VIOL anywhere = the v1 impossible positions were stale scratch and the fixation is real attention (dig the pooled keys' content next)" >> "$P"
+  touch "$OUT/.pagehunt2.done"
 fi
 
 # ---------------------------------------------------------------------------

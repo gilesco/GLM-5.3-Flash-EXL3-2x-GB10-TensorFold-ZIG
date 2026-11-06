@@ -457,11 +457,24 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       no common boundary, the loop token is a prompt's tool-schema name,
       and the replay's runaway is a SOFT loop (72.8% acceptance) vs the
       battery's hard loops (99%) — one disease, a severity spectrum.
-      **pagehunt in flight** — the selection instrument (the
-      glm-zz-dsasel debug patch prints row 0's selections every 64th
-      position; the replay on fp8-paged vs bf16-paged): a freeze on
-      fp8 with a healthy slide on bf16 = the selection is the site;
-      both slide = the gather/read. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      **pagehunt
+      (campaign-20261106-004057): the instrument receipt** — the loop
+      reproduced under the debug build (fp8: TC-62 fail, turn 3 → the
+      ceiling, 72,000 chars of reasoning; bf16: final_score 100 ✓). The
+      SEL dump: **the fp8 selection's page-start attractor** (every
+      dominant top-4 at a 512-multiple; (5120..5123)=page 10 recurring
+      across pos 2,048-10,368 for ~18% of layer launches; the bf16
+      control's dominants vary per position ✓) **AND causally impossible
+      selections** ((17408..) at pos 2240 — no request had 17K tokens of
+      history) — while the scores kernel's per-pool mask reads correct
+      and the pooled-key writer/reader addressing agrees. Instrument
+      artifacts identified (stale scratch at count=0; the ~4,000-line
+      printf FIFO cap). (user) workflow directive: all tasks first, one
+      launch last, dark until complete. **pagehunt2 in flight** — the
+      refined VIOL detector (count>0 gate, npool tag, per-instance
+      causal-violation lines) on fp8-paged AND bf16-paged: VIOL on fp8
+      with bf16 silent = the leak is real (dig select_rows next); no
+      VIOL = stale scratch, the fixation is real attention. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
