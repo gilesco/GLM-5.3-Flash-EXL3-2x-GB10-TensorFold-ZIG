@@ -6384,3 +6384,37 @@ decodes — the fix hunt digs the fp8 path). TC-62 passes ⇒ **paging
 itself** degrades long thinking chains (the Table/mapping layer —
 format-independent). The same bisect that cracked the original
 contamination, at the loop level.
+
+## (round 133, cont. 56) THE BISECTION IS COMPLETE: bf16-paged is CLEAN (final_score 100, no loops) — the loop needs fp8 AND pages TOGETHER; the user HALTS new launches pending the explanation (2026-11-06)
+
+**campaign-20261106-000548 (pagebisect, bf16-paged)**: the faithful
+harness replay (TC-62 + TC-49, the battery's exact flags) on bf16-paged:
+**final_score 100** — TC-62 **passes** (5,188 completion tokens, 12
+turns, zero truncated notes), TC-49 passes (783). Every generation
+finish=stop. **The loop is E4M3-specific.**
+
+**The completed bisection** (each cell a receipt):
+- fp8 + pages = **LOOPS** (the battery 75; the replay fails, turn 8 →
+  the 16,384 ceiling, 72,502 chars of reasoning).
+- bf16 + pages = **CLEAN** (this receipt).
+- fp8 + no pages (the marriage) = **CLEAN** (the replay = the standing
+  run's numbers exactly).
+- bf16 + no pages (the standing stack) = **CLEAN** (the battery 95).
+**The loop is an INTERACTION bug: the E4M3 quantized format × the paged
+read/selection path, manifesting only in long thinking decodes** — the
+same family as the page_rows bug (also E4M3×pages-specific), a second
+member. The fix hunt's target: the E4M3 paged latent read / sparse
+selection under long decodes; the instrument: the ~5-min harness replay.
+
+Phase-code note: the receipt's extraction section is empty — the block
+printed to the console, not $P (cosmetic; the numbers come from reading
+tc-bf16/result.json directly; the console carries the lines).
+
+**(user, 2026-11-06)**: no new tests are launched until the user says
+so — the user asked for the complete high-level explanation first. The
+stack holds: production up on 8000, the testing stack down, everything
+digested. The queued options for the user: (a) dig the fp8×pages
+interaction with a debug instrument on the cheap reproducer; (b) park
+the marriage and rebase onto v1.2.3 (its GLM items are prefill/serving
+features; the loops stay unfixed — upstream-relevant data either way);
+(c) the user's own direction.

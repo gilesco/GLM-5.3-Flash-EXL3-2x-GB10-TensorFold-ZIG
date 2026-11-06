@@ -438,10 +438,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       non-paging changes are exonerated**; final_score 100). The
       synthetic concurrent pair was bit-clean — concurrency is NOT the
       co-trigger. The reproducer is cheap now (one harness command, ~5
-      min). **pagebisect in flight** — the same replay on bf16-paged:
-      loops = E4M3-specific (the quantized read/selection on long
-      thinking decodes); passes = paging itself (the Table/mapping
-      layer). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      min). **pagebisect
+      (campaign-20261106-000548): bf16-paged CLEAN — final_score 100,
+      TC-62 passes (5,188 tokens / 12 turns, zero truncated notes). THE
+      BISECTION IS COMPLETE: fp8+pages LOOPS; bf16+pages, fp8+no-pages
+      (marriage, = standing numbers), and the standing stack are all
+      CLEAN — **the loop is an INTERACTION bug: the E4M3 format × the
+      paged read/selection path, only on long thinking decodes** (the
+      same family as the page_rows bug, a second member). The fix
+      target: the E4M3 paged latent read / sparse selection under long
+      decodes; the instrument: the ~5-min harness replay. (user) no new
+      launches until the user says so — the explanation first. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
