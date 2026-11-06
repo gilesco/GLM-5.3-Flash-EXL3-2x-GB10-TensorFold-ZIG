@@ -6905,3 +6905,42 @@ gates on fp8 + pages + dense4 + 512K on the rebased stack. ~15 min.
 THEN DARK. This completes the v1.2.3 arc's receipt set; the perf plan's
 next step is the Front 2 overlap class (the fork's 0010/0033 HC-split/
 overlap set or PDL on the finish launch) — the next arc.
+
+## (round 133, cont. 71) THE v1.2.3 ARC COMPLETE: pagedgatesv123 (campaign-20261106-084338) — ALL §2 gates PASS on the fp8-paged rebased stack; the session phases retired; the next arc opens on #1732's KV_SHARE warm-resume mechanism (2026-11-06)
+
+**pagedgatesv123's receipt** (fp8 + pages + dense4 + 512K on the rebased
+stack): PASS g1 determinism (content), g2 drafted=plain, g3
+resumed=fresh (the same answer tokens as the v1.2.2 run: alpha-7391,
+bravo-2250, charlie-8118), g4 concurrent=solo (4/4), g5 sampled
+identical-in-content. Identical receipt shape to the v1.2.2 pagedgates
+run.
+
+**THE v1.2.3 RECEIPT SET IS FULLY SYMMETRIC** — every family re-
+receipted on the new ref: §2 gates (fp8-paged ALL PASS + the bf16-
+paged cell ALL PASS), depth 12/12, hardmode 95 + the vision 4/4, the
+replay 100 + the probe 5/5, the perf parity (the copies1 arm within
+~1% of the v1.2.2 absolutes on every instrument). The arc closes:
+pagedgatesv123 + v123perf + v123qual retired from
+run-qualification.sh (all receipted; the discipline).
+
+**THE NEXT ARC (the perf plan's Front 2)**: the survey of the two
+remaining overlap candidates — the PERF_PLAN's ".pdl flag" reference
+turned out to be the FORK's field (their 0033 test shows their
+mm.Kernels carries .pdl/.pair/.packed_prompt; OUR tree has zero PDL
+plumbing — building it is a from-scratch job with a modest expected
+win, the round-116 finding being that the hc chain's launch gaps are
+already hidden behind the queue depth), and the fork's 0010 (the
+HC-split/overlap implementation) was never fetched — 0033 is its TEST,
+targeting their kernel set (a foreign-base port). **The chosen next
+step: the plan's own listed next A/B — #1732's KV_SHARE+pages pair,
+the warm-resume mechanism** (the concurrent resume's 4× serialization
+is a priced, parked gap; the knob remaps the resume onto pool pages).
+
+**LAUNCHED: kvshare + summary** — two arms (the standing host store vs
+TF_GLM_KV_SHARE=4): the g3-style content check per arm (the resume
+path changed — the content must not), the resumecost volley instrument
+(d2048/4096/8192 × 3 shots, the ttft walls), and the concurrent
+4-prefix volley (cold sequential, then all four resumed in parallel —
+the 4× serialization probe). The <4-states refusal is a receipt. A
+sharp warm/concurrent-resume win advances the knob to the gates + the
+battery; parity or a regression retires it. ~25 min. THEN DARK.

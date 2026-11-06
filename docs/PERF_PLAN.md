@@ -34,7 +34,16 @@ upstream-gated**:
   androidli pack is TensorFold-native mcg and still gated — it served on the
   python-era 0.6.0 only). Sub-4bpw on this line waits on upstream (the CUDA
   family's reader), not on quantizers.
-- **Concurrency (Front 2)**: fully decomposed (rounds 114-123). The hc fusion:
+- **Concurrency (Front 2)**: fully decomposed (rounds 114-123). UPDATED
+  round 133 (cont. 71): the v1.2.3 arc closed with the receipt set fully
+  symmetric on the new ref (pagedgatesv123: §2 ALL PASS fp8-paged; depth
+  12/12; hardmode 95 + the vision 4/4; the perf parity). The next A/B is
+  #1732's KV_SHARE+pages pair (the warm-resume mechanism — the concurrent
+  resume's 4× serialization is the priced gap it targets); the PDL-on-the-
+  finish route was surveyed and priced: OUR tree has no PDL plumbing (the
+  plan's earlier ".pdl flag" reference was the fork's field), so it is a
+  from-scratch build with a modest expected win (round 116: the hc chain's
+  launch gaps are already queue-hidden). The hc fusion:
   built, bit-safe, NOT adopted (the occupancy trade — round 116). The depth census:
   the attention path is ~1% of the decode token cost (round 122) — no depth
   pathology. The cache churn: no evictions at probe scale, but the concurrent

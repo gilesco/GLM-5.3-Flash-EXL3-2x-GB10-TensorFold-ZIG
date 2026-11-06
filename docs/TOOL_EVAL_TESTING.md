@@ -584,8 +584,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       paged v1.2.3 stack — the post-adoption re-qualification COMPLETE;
       the §2 gates ALL PASS on kvqual4P's original bf16-paged cell (it
       predates the marriage — not the adopted fp8 cell's receipt).
-      **pagedgatesv123 in flight** — the fp8-paged §2 on v1.2.3, the
-      last piece of the symmetric receipt set.
+      **pagedgatesv123 (campaign-20261106-084338): ALL §2 GATES
+      PASS on the fp8-paged rebased stack** (the same answer tokens in
+      g3 as the v1.2.2 run) — **THE v1.2.3 ARC IS COMPLETE: the
+      receipt set fully symmetric** (gates fp8-paged + bf16-paged ALL
+      PASS, depth 12/12, hardmode 95 + the vision 4/4, the replay 100
+      + the probe 5/5, the perf parity). The session phases retired.
+      **kvshare in flight** — the perf plan's next A/B (Front 2:
+      #1732's KV_SHARE warm-resume mechanism; the PDL route surveyed
+      and priced — our tree has no PDL plumbing, the plan's flag
+      reference was the fork's field — and 0010 was never fetched).
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

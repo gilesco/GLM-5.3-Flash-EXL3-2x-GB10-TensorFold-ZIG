@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP v123qual v123perf pagedgatesv123 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP kvshare knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,128 +1192,100 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: v123qual (SESSION-SPECIFIC; retires with the receipt). The v1.2.3
-# rebase validation: the four patches re-anchored onto v1.2.3 (6ec5fa4cb —
-# v1.2.3 added the prompt-pieces log line in absorb's engine:181 context,
-# consolidated the three latent.Table sites into the tables() helper, and
-# reworked cuda_native's explain() table; the rebased stack verified
-# byte-identical to the rebase branch on a fresh checkout). The full
-# instrument set in the sparsefix order: the harness replay FIRST (TC-62
-# TC-49 — it churns the pages non-identity, the loop discriminator), the
-# sparse-prefill code probe (~row 3,650, beyond dense_limit, on recycled
-# pages), then a FRESH restart and the hardmode battery + the vision suite
-# (pagedquality3's exact conditions). The bar: the replay stops looping +
-# the probe 5/5 exact + hardmode >= 94 (production parity; the standing
-# paged run set 95) + the vision 4/4. TF_COMMIT=v1.2.3 rides scripts/local.sh
-# (the pin, never the session env — the round-7 lesson). Retires with the
-# receipt.
+# phase: kvshare (SESSION-SPECIFIC; retires with the receipt). The perf
+# plan's next A/B (Front 2): #1732's KV_SHARE+pages pair — the warm-resume
+# mechanism. TF_GLM_KV_SHARE=4 keeps 4 prompt states as POOL PAGES (the
+# host store off): a resume re-binds pages instead of copying from the host
+# store — the warm solo resume and the CONCURRENT resume (receipted 4x
+# serialized, round 123) are the instruments. Two arms on the resumecost
+# volley instrument (d2048/4096/8192 x 3 shots, the ttft walls) + a
+# concurrent 4-prefix volley (cold sequential, then all four resumed in
+# parallel) + a g3-style content check per arm (the resume path changed;
+# the content must not). The <4-states refusal at PARALLEL=4 is a receipt.
+# A sharp win advances to the gates + the battery (the protocol); parity
+# or a regression retires the knob.
 # ---------------------------------------------------------------------------
-if want v123qual && ! phase_done v123qual; then
-  log "=== v123qual (the v1.2.3 rebase validation: replay, probe, battery, vision)"
-  P="$OUT/10-v123qual.md"; : > "$P"
-  echo "# v123qual (the rebased 4-patch stack on v1.2.3 = 6ec5fa4cb, TF_KV_PAGES=on)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  mkdir -p "$OUT/tc-v123"
-  echo "- the harness replay FIRST (it churns the pages non-identity):" >> "$P"
-  PYTHONUNBUFFERED=1 "$BENCH" run \
-    --base-url "http://127.0.0.1:$PORT/v1" \
-    --model "$SERVED_NAME" \
-    --format openai \
-    --tokenizer "$MODEL_ID" \
-    --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
-    --label "tc-v123" --output-dir "$OUT/tc-v123" --json-file "$OUT/tc-v123/result.json" \
-    > "$OUT/tc-v123/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-v123/bench.log)" >> "$P"
-  python3 - "$OUT/tc-v123/result.json" >> "$P" <<'PDE'
-import json, sys, re
-try:
-    d = json.load(open(sys.argv[1]))
-    print("  final_score:", d["scores"].get("final_score"))
-    for s in d["scores"]["scenario_results"]:
-        log = s.get("raw_log", "")
-        trunc = re.findall(r"truncated=(.{0,90})", log)
-        print("  %s | status=%s | completion=%s | turns=%s | truncated=%d" % (s.get("scenario_id"), s.get("status"), s.get("completion_tokens"), s.get("turn_count"), len(trunc)))
-        for t in trunc[:2]:
-            print("     ", t)
-except Exception as e:
-    print("  EXTRACT-FAILED:%r" % e)
-PDE
-  echo "- the sparse-prefill code probe (the code at ~row 3,650 of ~4.5k, on recycled pages, five rounds):" >> "$P"
-  for i in 1 2 3 4 5; do
-    bf=$(mktemp /tmp/vq.XXXXXX.json)
-    python3 -c "import json,sys; unit='harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 '; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':unit*52+' The vault access code is MKR-'+sys.argv[2]+'QX. '+unit*12+' Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
-    R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
-try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
-except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
-    echo "  round$i reply: $R" >> "$P"
-    rm -f "$bf"
-  done
-  echo "- a FRESH restart for the battery (pagedquality3's exact conditions):" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  bench_cell hm-v123 "$OUT/hm-v123" >> "$P"
-  echo "- the vision suite:" >> "$P"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-v123.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
-  echo "- the engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
-  echo "- VERDICT: the replay stops looping (no truncated notes) + five exact MKR-{i}QX + hardmode >= 94 + the vision 4/4 = the v1.2.3 rebase VALIDATED (the v1.2.3 adoption digest follows: config.sh comments, the pin stays on the tag); a loop or a vision miss = back to the instrument" >> "$P"
-  touch "$OUT/.v123qual.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: v123perf (SESSION-SPECIFIC; retires with the receipt). v1.2.3's two
-# perf knobs, each A/B'd on the duel instruments against the standing paged
-# receipt (duelpaged, campaign-20261106-052114, the ours arm ON v1.2.2:
-# solo 63.5/63.2 t/s, c2 110.6, c4 154.8, ITL p50 55.3 ms, TTFT slope
-# 0.612 ms/token, d0 199 ms):
-#   arm chunksolo: TF_GLM_CHUNK_SOLO=4096 — upstream's ~7% TTFT at TP=2
-#     (the prompt pass doubles to 4096 rows: half the exchange pieces)
-#   arm copies1: TF_GLM_COPIES=1 — verified root/context copies
-# The knob discipline: a knob advances to a confirm window only on a
-# sharp, instrument-consistent win; parity or a regression retires it;
-# adoption additionally wants the quality gates (the receipts protocol).
-# The arms also double as the rebase's perf spot-check (v1.2.3 vs the
-# v1.2.2 absolutes — a wild move is a rebase red flag).
-# ---------------------------------------------------------------------------
-if want v123perf && ! phase_done v123perf; then
-  log "=== v123perf (CHUNK_SOLO=4096 and COPIES=1 on the duel instruments)"
-  P="$OUT/12-v123perf.md"; : > "$P"
-  echo "# v123perf (v1.2.3's two perf knobs, the duel instruments per arm)" >> "$P"
-  echo "- the standing receipt (duelpaged, campaign-20261106-052114, ours ON v1.2.2): solo 63.5/63.2 t/s, c2 110.6, c4 154.8, ITL p50 55.3 ms, TTFT slope 0.612, d0 199 ms" >> "$P"
-  for arm in chunksolo copies1; do
-    K="TF_GLM_CHUNK_SOLO=4096"; [[ $arm == copies1 ]] && K="TF_GLM_COPIES=1"
-    echo "## arm $arm ($K)" >> "$P"
+if want kvshare && ! phase_done kvshare; then
+  log "=== kvshare (TF_GLM_KV_SHARE=4 vs the host store: the warm + concurrent resume)"
+  P="$OUT/13-kvshare.md"; : > "$P"
+  echo "# kvshare (the warm-resume mechanism: the host store vs 4 states as pool pages)" >> "$P"
+  for arm in host share4; do
+    K=""
+    [[ $arm == share4 ]] && K="TF_GLM_KV_SHARE=4"
+    echo "## arm $arm (${K:-the standing host store})" >> "$P"
     S=$(date +%s)
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 "$K"; then
-      echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-150)" >> "$P"
-      duel_arm "$arm" "$SERVED_NAME"
-    else
+    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $K; then
       echo "- REFUSED to start (the refusal is the receipt):" >> "$P"
       docker logs "$CONTAINER_NAME" 2>&1 | tail -3 | sed 's/^/  /' >> "$P"
+      continue
     fi
+    echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-200)" >> "$P"
+    # the g3-style content check: the same body twice — the second resumes; contents must match
+    bf=$(mktemp /tmp/ks.XXXXXX.json)
+    FILL_WORDS="$FILL_WORDS" python3 -c "
+import json, os
+words = os.environ['FILL_WORDS'].split()
+fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(2048 // 4)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 48, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open('$bf', 'w'))
+"
+    for shot in a b; do
+      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks-$arm-$shot.json" || true
+    done
+    python3 - "$OUT" "$arm" >> "$P" <<'PKE'
+import json, sys
+out, arm = sys.argv[1], sys.argv[2]
+try:
+    a = json.load(open(f"{out}/ks-{arm}-a.json"))["choices"][0]["message"]["content"]
+    b = json.load(open(f"{out}/ks-{arm}-b.json"))["choices"][0]["message"]["content"]
+    print("- content check: %s (%d vs %d chars)" % ("IDENTICAL" if a == b else "DIFFERENT - the resume path changed content", len(a), len(b)))
+except Exception as e:
+    print("- content check EXTRACT-FAILED: %r" % e)
+PKE
+    rm -f "$bf"
+    # the solo volleys: 3 depths x 3 shots (shot 1 cold, shots 2-3 resumed)
+    for d in 2048 4096 8192; do
+      bf=$(mktemp /tmp/ksv.XXXXXX.json)
+      FILL_WORDS="$FILL_WORDS" DUEL_PROMPT="$DUEL_PROMPT" python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split(); d = int(sys.argv[1])
+fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(d // 4)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + chr(10) + chr(10) + os.environ['DUEL_PROMPT']}]}, open(sys.argv[2], 'w'))
+" "$d" "$bf"
+      for shot in 1 2 3; do
+        python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+        T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks-$arm-d$d-s$shot.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+        echo "- d$d shot$shot ttft_wall ${T}s" >> "$P"
+      done
+      rm -f "$bf"
+    done
+    # the concurrent 4-prefix volley: cold sequential, then all four resumed in parallel
+    for i in 1 2 3 4; do
+      bf="$OUT/ks-$arm-cc$i.json"
+      FILL_WORDS="$FILL_WORDS" python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split(); off = int(sys.argv[1])
+fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + off) % 89}' for i, w in ((i, words[i % len(words)]) for i in range(4096 // 4)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
+" "$((i * 7))" "$bf"
+      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      S=$(date +%s.%N)
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks-$arm-cc$i-r.json" || true
+      E=$(date +%s.%N); echo "- cc$i cold: $(python3 -c "print(f'{$E-$S:.2f}')") s" >> "$P"
+    done
+    S=$(date +%s.%N)
+    for i in 1 2 3 4; do
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/ks-$arm-cc$i.json" -o "$OUT/ks-$arm-cc$i-w.json" || true
+    done &
+    wait
+    E=$(date +%s.%N)
+    echo "- the 4 concurrent resumes: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate" >> "$P"
+    echo "- the engine's lines (the ttft fields + the cache lines):" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -14 | sed 's/^/  /' >> "$P" || true
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "prompt cache: [0-9]+ tokens.*" | tail -6 | sed 's/^/  /' >> "$P" || true
   done
-  echo "- VERDICT: a knob advances to confirm only on a sharp, instrument-consistent win vs the standing absolutes; parity or a regression retires it; the arms' absolutes also spot-check the v1.2.3 rebase's perf (vs the v1.2.2 receipt above)" >> "$P"
-  touch "$OUT/.v123perf.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: pagedgatesv123 (SESSION-SPECIFIC; retires with the receipt). The
-# fp8-paged cell's VALIDATION §2 on the v1.2.3 rebase — the one receipt the
-# re-anchored stack still lacked for a fully symmetric set (the cont. 69
-# window's kvqual4P ran its original bf16-paged cell — that phase predates
-# the marriage; its receipts stand for the bf16 cell). This is the retired
-# pagedgates phase re-staged under a new name (the instrument rule) with
-# the v1.2.3 pin riding local.sh.
-# ---------------------------------------------------------------------------
-if want pagedgatesv123 && ! phase_done pagedgatesv123; then
-  log "=== pagedgatesv123 (VALIDATION §2 on the fp8-paged stack, v1.2.3)"
-  P="$OUT/05d-pagedgatesv123.md"; : > "$P"
-  echo "# pagedgatesv123 (VALIDATION §2 on fp8 PAGED KV, dense4, 512K window, TF_KV_PAGES=on, the 4-patch stack REBASED onto v1.2.3)" >> "$P"
-  if run_gates pagedfp8v123 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"; then
-    touch "$OUT/.pagedgatesv123.done"
-  else
-    echo "- pagedgatesv123 incomplete (a restart was refused) — rerun this phase" >> "$P"
-  fi
+  echo "- VERDICT: the share4 arm's warm ttft walls + the concurrent aggregate vs the host arm's — a sharp drop advances the knob to the gates + the battery; parity or a regression retires it; a content DIFFERENT retires it outright" >> "$P"
+  touch "$OUT/.kvshare.done"
 fi
 
 # ---------------------------------------------------------------------------
