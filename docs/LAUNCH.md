@@ -7328,3 +7328,29 @@ logged and verify-shell-config-edits extended (end every wrapper with
 `exit "$RC"`).
 
 **RE-LAUNCHED: mms2 + summary** — the same A/B (~50 min). THEN DARK.
+
+## (round 133, cont. 85) THE mms2 A/B CLEARS EVERY BAR (campaign-20261106-174454) — the content shas IDENTICAL, pp +3.4/+5.8/+6.7% growing with depth, tg parity; the adoption judgment + the duel re-pair launched in one window (2026-11-06)
+
+**The A/B's receipt** (arm off = the standing 4-patch stack, arm on =
++glm-mia-packed-s2.patch; the rebuild rode arm on's restart):
+- **The content gate: IDENTICAL on all three prompt sizes** (short/mid/
+  long — the same content sha off and on): **the bit-exactness claim
+  verified on our shape** (the K groups' order argument holds on sm_121).
+- **The pp rows: +3.4% (d0, 1112→1150), +5.8% (d4096, 1043→1104), +6.7%
+  (d8192, 1064→1136)** — two runs per arm, tight spreads (off 1115/1109,
+  on 1140/1159), and the gains GROW with depth: the mechanism's
+  signature (the packed-prompt path fires harder as pieces deepen).
+- **The tg red-flag check: parity** (the d0 means 49.6 off vs 48.6 on,
+  inside the benchy tg128 rows' noise band; the decode path uses
+  by_rows/tile kernels the patch never touches).
+
+**THE PATCH ADVANCES TO THE ADOPTION JUDGMENT.**
+
+**LAUNCHED: mms2qual + duel + summary** (one window, ~1.5 h): mms2qual —
+the §2 gates + a fresh restart + the hardmode battery + the vision on
+the 5-patch stack (the bar: §2 PASS + ≥94 + 4/4 = ADOPT) — then the
+standing duel phase re-paired with the duel's ours arm riding
+**MMS2_DUEL_PATCHES** (the 5-patch candidate; its image is a cache hit
+on mms2qual's build; the empty default keeps the duel backwards
+compatible). The duel receipt gives the anchors' prefill + cold-depth
+rows on the candidate for the adoption digest. THEN DARK.

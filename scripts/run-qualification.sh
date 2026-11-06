@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep mms2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep mms2 mms2qual knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1351,6 +1351,39 @@ PME
 fi
 
 # ---------------------------------------------------------------------------
+# phase: mms2qual (SESSION-SPECIFIC; retires with the receipt). The adoption
+# judgment for glm-mia-packed-s2.patch: the mms2 A/B (campaign-20261106-174454)
+# cleared every bar — the content shas IDENTICAL across arms on three prompt
+# sizes (the bit-exactness claim verified on our shape), pp +3.4/+5.8/+6.7% at
+# d0/d4096/d8192 (the gains GROW with depth — the mechanism's signature), the
+# tg means parity (no red flag). The gates + the battery + the vision decide;
+# the duel re-pair follows in the same window (PHASES="mms2qual duel summary"
+# — the duel's ours arm rides MMS2_DUEL_PATCHES, the 5-patch candidate — and
+# its image is a cache hit on mms2qual's build). The bar: §2 PASS + hardmode
+# >= 94 + the vision 4/4 = ADOPT (config.sh's PATCHES gains the s2 patch);
+# any miss = retire.
+# ---------------------------------------------------------------------------
+if want mms2qual && ! phase_done mms2qual; then
+  log "=== mms2qual (the packed-s2 adoption judgment: the gates + the battery + the vision)"
+  P="$OUT/18-mms2qual.md"; : > "$P"
+  echo "# mms2qual (glm-mia-packed-s2.patch: VALIDATION §2 + hardmode + the vision)" >> "$P"
+  if run_gates mms2g DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch"; then
+    echo "- the §2 gates on the 5-patch stack: the receipt above" >> "$P"
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch"
+    echo "- server: $(serve_line)" >> "$P"
+    bench_cell hm-mms2 "$OUT/hm-mms2" >> "$P"
+    echo "- the vision suite:" >> "$P"
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-mms2.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+    echo "- the engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -8 | sed 's/^/  /' >> "$P"
+    echo "- VERDICT: §2 PASS + hardmode >= 94 + the vision 4/4 = ADOPT (config.sh's PATCHES gains glm-mia-packed-s2.patch); any miss = retire" >> "$P"
+    touch "$OUT/.mms2qual.done"
+  else
+    echo "- mms2qual incomplete (a restart was refused) — rerun this phase" >> "$P"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # phase: duel — the sharp, short head-to-head. The SAME probes on production
 # (read-only, run first while production is up) and on our stack (after one
 # restart). Five instruments, ~4 min per engine, every number a direct
@@ -1401,8 +1434,8 @@ except Exception: print("")') || PROD_MODEL=""
   else
     echo "- production not running: the prod arm skipped (the 8001 start failed — its refusal is the receipt)" >> "$P"
   fi
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
-  echo "## ours (dense4fp8 @ 512K x4)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${MMS2_DUEL_PATCHES-}"
+  echo "## ours (dense4fp8 @ 512K x4${MMS2_DUEL_PATCHES:+, the MMS2_DUEL_PATCHES candidate})" >> "$P"
   duel_arm ours "$SERVED_NAME"
   touch "$OUT/.duel.done"
 fi
