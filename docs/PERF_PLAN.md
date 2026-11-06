@@ -610,3 +610,12 @@ production's 1,518** — from 76% in one patch. The exl3qual window
 launched: the gates + the battery + the vision on the 6-patch candidate,
 then the duel re-pair (the duel's ours arm rides MMS2_DUEL_PATCHES with
 the 6-patch list; its image is a cache hit on exl3qual's build).
+
+**The exl3prompt ADOPTED (cont. 89)**: config.sh's PATCHES is the 6-patch
+stack; the anchors + DELTAS + README re-paired on the EXL3P duel; the
+prefill front stands at **94.4%** — the remaining candidates are thin
+(0033's implementation unlocated; 0011 is contract-hardening, no perf
+claim). The next lever hunt (the fork's later series, the upstream
+watch) or the loading wall's re-take (91%, the other open front) are
+the live options. The bare 6-patch default gets its codified smoke
+(adoptsmoke3) before anything else.
