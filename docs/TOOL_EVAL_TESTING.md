@@ -541,9 +541,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       overhead +1.8% vs the absorb-only 5,122/0.602). The anchors
       re-paired for the paged candidate and the chart re-rendered; the
       README's stale "mutually exclusive" claim corrected.
-      **pagedgates in flight** — the last pre-adoption gate: VALIDATION
-      §2 on the fp8-paged final stack (dense4fp8, 512K, TF_KV_PAGES=on,
-      the 4-patch build). The config.sh adoption decision follows. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      **pagedgates
+      (campaign-20261106-054902): ALL §2 GATES PASS on the fp8-paged
+      final stack** — g1 determinism (content), g2 drafted=plain, g3
+      resumed=fresh (the resume path correct), g4 concurrent=solo (4/4),
+      g5 sampled determinism. The last pre-adoption gate clears. **THE
+      ADOPTION (2026-11-06, the receipts-equal-or-better protocol
+      satisfied on all four gate families: gates §2 all pass, the 512K
+      window on the paged stack, the duel mixed-favorable, hardmode 95 +
+      the vision 4/4): config.sh defaults TF_KV_PAGES=on + the 4-patch
+      PATCHES list; the README carries the TF_KV_PAGES row; seven
+      unpaged-semantics sites pinned TF_KV_PAGES=off explicitly; the
+      DELTAS engine row updated. The adoptsmoke bare-config smoke test
+      in flight. The v1.2.3 rebase is the next arc. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
