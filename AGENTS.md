@@ -80,10 +80,11 @@ Hard boundaries, never crossed:
   exactly this; `local.sh.example` carries the example).
 - **Never edit `scripts/*.sh` or `config.sh` while a campaign is running** — bash
   re-reads scripts lazily, and `config.sh` is re-sourced by every restart.
-- **GPU windows are the user's unless they explicitly hand one over** (the agent used
-  to BE production's served model; since the cloud-model switch the agent may run
-  windows, but only when asked). Long runs go under `nohup` on the head with the
-  console at `/tmp/<name>.console`, not in a foreground ssh.
+- **GPU windows run inside the standing autonomous loop (the next bullet)** — the
+  (user) handover is the loop itself. Outside its shape (a new instrument class, a
+  window the perf plan doesn't state as the next step, anything touching
+  production itself) they are the user's, asked first. Long runs go under `nohup`
+  on the head with the console at `/tmp/<name>.console`, not in a foreground ssh.
 - **The launch is the LAST action of a sitting (user, round 133 — confirmed working:
   no launch has cut a sitting's work off midway since)**. Finish every task first —
   the docs, the digests, the commits, the pushes, the head's ff-only — then launch
@@ -92,6 +93,20 @@ Hard boundaries, never crossed:
   "phase summary"` (space-separated, `summary` last; a `PHASES` env var is silently
   ignored — cont. 69's window ran only part of its list that way). A sitting with
   nothing to test launches nothing.
+- **The autonomous loop is the standing mode (user) — its map, all four scripts in
+  this repo**: `autonomous-launch.sh` (on the head; the ONLY launcher — syncs to
+  origin/main, refuses a double launch via the flag file, starts the window
+  detached) → `autonomous-window.sh` (detached; the only thing allowed to stop
+  production, always through the tip's own stop/start scripts which handle BOTH
+  ranks; runs the phases; restores production on EVERY exit path via the EXIT
+  trap) → `autonomous-cron.sh` (the head's 5-min cron: production down + no
+  window flag → restart; hands off while a window is in flight) →
+  `autonomous-poke.sh` (the agent host's 5-min cron: production up + the newest
+  campaign unpoked → POSTs the wake into this session's durable prompt inbox).
+  The woken sitting digests the receipt the same sitting and launches the next
+  window last — the loop closes itself. The skills `autonomous-agent-wake-loop`
+  and `opencode-agent-wake` carry the mechanism's generic form (the wake vector,
+  the marker discipline, the two-cron split).
 - A round's digest updates **the same sitting**: LAUNCH.md (append), the ledger's
   status items, any affected plan doc, and the README status table when a qualified
   fact changes. When a comparison metric changes, also update its anchors file

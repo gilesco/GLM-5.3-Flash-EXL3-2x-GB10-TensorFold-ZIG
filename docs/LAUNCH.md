@@ -7246,3 +7246,34 @@ history); render-sweep-cards.sh's subtitle moved to the current stack;
 Quality row, the embedded alt text, the AZ-EXL3 revisions row's numbers)
 and DELTAS' header re-framed — the embedded scorecards now show what a
 user gets on this version. No window — desk work.
+
+## (round 133, cont. 82) THE WORKFLOW CONSISTENCY AUDIT ((user) ask): the autonomous loop's definition found scattered and self-contradicting in one place — fixed; AGENTS.md now carries the loop's canonical map (2026-11-06)
+
+**What was audited**: the four autonomous scripts' headers
+(autonomous-launch/window/poke/cron), AGENTS.md, the README's coexistence
+section, and the two wake skills (autonomous-agent-wake-loop,
+opencode-agent-wake).
+
+**Consistent already**: the scripts' headers (the launcher "the ONLY way
+a window is launched... the LAST action of its turn"; the window
+"restarts production on EVERY exit path" through the tip's own scripts;
+the crash-net "hands off while a window is in flight"; the poke's
+health-gate + marker discipline); the README's coexistence section; and
+BOTH skills — accurate generic distillations of this repo's loop (the
+wake vector, the marker format rules, the two-cron split, "finish the
+launch turn before the stop lands") with no drift against the
+implementation.
+
+**THE CONTRADICTION FOUND AND FIXED**: AGENTS.md's old bullet said GPU
+windows run "only when asked" — while the standing mode for the whole
+arc has been the poke-driven loop (the (user) handover). Now:
+- the windows bullet defers to the standing loop (outside its shape —
+  a new instrument class, a window the plan doesn't state, anything
+  touching production — they are the user's, asked first);
+- a NEW bullet carries the loop's canonical map: launcher → window →
+  head cron (crash net) → agent-host cron (poke), each with its
+  one-line contract, closing with the same-sitting digest + the
+  launch-last rule, and pointing at the two skills for the mechanism's
+  generic form.
+
+No window — desk work.
