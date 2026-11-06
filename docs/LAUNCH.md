@@ -6563,3 +6563,42 @@ top-2 outputs) beside the assembler's VIOL/SEL on the fp8-paged replay.
 PICK causal with the assembler out-of-horizon ⇒ the pools scratch /
 aliasing gap; PICK already out-of-horizon ⇒ the scores buffer's stale
 slots win the top-K. ~15 min. THEN DARK.
+
+## (round 133, cont. 61) THE LOOP BUG FOUND: the prefill's E4M3 token lists were PHYSICAL and the prefill's sparse attention double-mapped them (pt[pt[page]]) — harmless on identity page mappings, corrupting once pages recycle; the one-flag fix staged; the validation launched (2026-11-06)
+
+**pagehunt4 (campaign-20261106-031244) — the instrument finally
+delivered (the new file name worked) — and it killed the selection-
+causality hypothesis**: the select kernel's outputs are causal in
+**1,254 of 1,254 samples** (PICK out0 beyond its own horizon: 0), and
+the assembler's VIOL detector (E4M3 logical lists only) printed **0**.
+The "out-of-horizon" SEL lines are launches with pt≠0 — PHYSICAL
+page-row lists — a different token-unit stream. My earlier 47-74%
+"violations" were that stream mixed into the target's logical one.
+
+**The source read found the real bug**: in attend (cuda_dsa_block.zig
+~141), the prefill's sparse selection receives **tk** — whose .logical
+defaults to FALSE — so the prefill's E4M3 token lists were assembled as
+PHYSICAL page-row values, while the prefill's sparse attention receives
+**t** (.logical = c.ls != 0 = TRUE) and maps the token values through
+the page table AGAIN: **pt[pt[page]] — a double lookup.** Idempotent
+while pages are allocated in order (pt[p] == p — which is why the
+canary, the decode ladders and every fresh-serve probe were bit-clean:
+the canary's prompts even sat UNDER dense_limit, never touching the
+sparse prefill at all), corrupting the boundary chunk's attention once
+pages recycle or interleave (the battery's --parallel 2 × 104
+scenarios): the model mis-attends from the first sparse rows onward and
+long thinking generations degenerate into loops. The decode path was
+already self-consistent (t on both sides) — why every decode-only probe
+was bit-perfect. The poison crash (the E4M3 NaN-fragile selection) and
+this share the theme: unwritten/mis-mapped rows entering E4M3 attention.
+
+**THE FIX (glm-mia-selist-fix.patch, 34 lines, staged, applies)**: tk
+carries `.logical = c.ls != 0` — E4M3 lists stay positions end-to-end
+(the design comment's own rule); bf16 keeps physical page rows.
+
+**LAUNCHED: sparsefix** — the validation: the harness replay FIRST (it
+churns the pages non-identity), THEN the **sparse-prefill code probe** —
+the code at ~row 3,650 of a ~4.5k prompt, beyond dense_limit, on
+recycled pages: the path the original canary never touched. The replay
+stops looping + five exact codes ⇒ the mechanism confirmed ⇒ the
+battery re-run is the adoption judgment. ~20 min. THEN DARK.

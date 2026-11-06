@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt4 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP sparsefix knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,22 +1192,24 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagehunt4 (SESSION-SPECIFIC; retires with the mechanism receipt). The
-# hop isolator, re-delivered under a NEW patch file name (the two same-name
-# updates of glm-zz-dsasel.patch were both consumed stale by the cached
-# build). The glm-zz-dsasel3.patch instrument: the select kernel's PICK
-# printf (pos, vis, NP, top-2; sparse launches only) beside the assembler's
-# VIOL/SEL printfs. The replay (TC-62+TC-49, the battery's flags) on
-# fp8-paged: PICK causal with the assembler out-of-horizon = the pools
-# scratch / aliasing gap; PICK already out-of-horizon = the scores buffer's
-# stale slots win the top-K.
+# phase: sparsefix (SESSION-SPECIFIC; retires with the receipt). Validating
+# the tk.logical fix: the prefill's selection Table lacked .logical, so the
+# prefill's E4M3 token lists were physical while the prefill's sparse
+# attention mapped them through the table again (pt[pt[page]] — idempotent on
+# identity mappings, corrupting once pages recycle). On fp8-paged with the
+# fix: (1) the harness replay FIRST (it churns the pages non-identity),
+# (2) THEN the sparse-prefill code probe — the code at ~row 3,650 of a ~4.5k
+# prompt, beyond dense_limit, on recycled pages (the path the original canary
+# never touched). The replay stops looping + the probe exact = the mechanism
+# confirmed (the battery re-run next).
 # ---------------------------------------------------------------------------
-if want pagehunt4 && ! phase_done pagehunt4; then
-  log "=== pagehunt4 (the hop isolator, the instrument finally delivered)"
-  P="$OUT/99-pagehunt4.md"; : > "$P"
+if want sparsefix && ! phase_done sparsefix; then
+  log "=== sparsefix (the tk.logical fix: the replay then the sparse-prefill probe on recycled pages)"
+  P="$OUT/99-sparsefix.md"; : > "$P"
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- fp8 paged: $(serve_line | cut -c1-120)" >> "$P"
+  echo "- fp8 paged (the fix stack): $(serve_line | cut -c1-120)" >> "$P"
   mkdir -p "$OUT/tc-fp8"
+  echo "- the harness replay FIRST (it churns the pages non-identity):" >> "$P"
   PYTHONUNBUFFERED=1 "$BENCH" run \
     --base-url "http://127.0.0.1:$PORT/v1" \
     --model "$SERVED_NAME" \
@@ -1230,45 +1232,20 @@ try:
 except Exception as e:
     print("  EXTRACT-FAILED:%r" % e)
 PDE
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "PICK pos=|VIOL pos=|SEL pos=" > "$OUT/sel-fp8.log" 2>/dev/null || true
-  python3 - "$OUT/sel-fp8.log" >> "$P" <<'PDS'
-import sys, re, collections
-try:
-    picks, viols, sels = [], [], []
-    for l in open(sys.argv[1]):
-        if l.startswith("PICK "):
-            m = re.match(r"PICK pos=(\d+) vis=(\d+) NP=(\d+) out0=(\d+) out1=(\d+)", l)
-            if m: picks.append(tuple(int(m.group(i)) for i in range(1, 6)))
-        elif l.startswith("VIOL "):
-            m = re.match(r"VIOL pos=(\d+) npool=(\d+) t0=(\d+) t1=(\d+) cnt=(\d+)", l)
-            if m: viols.append(tuple(int(m.group(i)) for i in range(1, 6)))
-        elif l.startswith("SEL "):
-            m = re.match(r"SEL pos=(\d+) npool=(\d+) cnt=(-?\d+) t=\[(-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\]", l)
-            if m: sels.append((int(m.group(1)), int(m.group(2)), int(m.group(3)), tuple(int(m.group(i)) for i in range(4, 12))))
-    print("  PICK lines: %d%s" % (len(picks), (" | pos %d..%d" % (picks[0][0], picks[-1][0])) if picks else ""))
-    pv = [(p, v, n, o0) for p, v, n, o0, o1 in picks if o0 > 4 * ((p + 1) // 4)]
-    print("  PICK out0 beyond its own horizon: %d of %d" % (len(pv), len(picks)))
-    for p, v, n, o0 in pv[:8]:
-        print("    PICK-VIOL pos=%d vis=%d NP=%d out0=%d" % (p, v, n, o0))
-    for p, v, n, o0, o1 in picks[:10]:
-        print("    PICK pos=%d vis=%d NP=%d out0=%d out1=%d" % (p, v, n, o0, o1))
-    print("  VIOL lines: %d" % len(viols))
-    for v in viols[:8]:
-        print("    VIOL pos=%d npool=%d t0=%d t1=%d cnt=%d" % v)
-    print("  SEL lines: %d | pos range: %s..%s" % (len(sels), sels[0][0] if sels else "-", sels[-1][0] if sels else "-"))
-    g = collections.defaultdict(list)
-    for pos, npool, cnt, toks in sels:
-        g[pos].append(toks)
-    for pos in sorted(g)[:14]:
-        tops = collections.Counter(g[pos]).most_common(2)
-        print("  pos=%5d n=%3d top2=%s" % (pos, len(g[pos]), [(c, t[:4]) for t, c in tops]))
-except Exception as e:
-    print("  SEL-ANALYZE-FAILED:%r" % e)
-PDS
-  echo "  engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -5 | sed 's/^/    /' >> "$P"
-  echo "- VERDICT: PICK causal with the assembler out-of-horizon = the pools scratch / aliasing gap (the select kernel's outputs never reach the assembler's reads — dig the scratch layout); PICK already out-of-horizon = the scores buffer's stale slots win the top-K (dig the scores kernel's write range vs NP and the np_max stride changes)" >> "$P"
-  touch "$OUT/.pagehunt4.done"
+  echo "- the sparse-prefill code probe (the code at ~row 3,650 of ~4.5k, on recycled pages, five rounds):" >> "$P"
+  for i in 1 2 3 4 5; do
+    bf=$(mktemp /tmp/sf.XXXXXX.json)
+    python3 -c "import json,sys; unit='harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 '; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':unit*52+' The vault access code is MKR-'+sys.argv[2]+'QX. '+unit*12+' Reply with just the code.'}],'max_tokens':12,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" "$i" > "$bf"
+    R=$(curl -s -m 180 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:70].replace(chr(10)," "))
+except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
+    echo "  round$i reply: $R" >> "$P"
+    rm -f "$bf"
+  done
+  echo "- engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -8 | sed 's/^/  /' >> "$P"
+  echo "- VERDICT: the replay stops looping (no truncated notes, healthy completions) + five exact MKR-{i}QX replies = the mechanism confirmed (the prefill's physical lists double-mapped on recycled pages; the tk.logical fix closes it) — the battery re-run is the adoption judgment; loops persist = the fix is insufficient (back to the instrument with the PICK data in hand)" >> "$P"
+  touch "$OUT/.sparsefix.done"
 fi
 
 # ---------------------------------------------------------------------------

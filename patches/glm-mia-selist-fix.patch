@@ -1,0 +1,34 @@
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Subject: glm-cuda: the prefill's selection Table (tk) carries .logical - the E4M3 prefill token lists were physical and the sparse attention double-mapped them (the loop bug)
+
+PROVENANCE: this line's fix, 2026-11-06, on the marriage port. The
+prefill's sparse selection was given tk (no .logical - default false)
+so the assembler emitted PHYSICAL page-row values for E4M3, while the
+prefill's sparse attention receives t (.logical = c.ls != 0 = true) and
+maps token values through the page table: pt[pt[page]] - a double
+lookup. Idempotent while pages are allocated in order (pt[p] == p -
+which is why the canaries, the decode ladders and every fresh-serve
+probe were bit-clean), corrupting the boundary chunk's attention once
+pages recycle or interleave (the hardmode battery's --parallel 2 x 104
+scenarios): the model mis-attends from the first sparse rows onward and
+long thinking generations degenerate into token loops (the battery 75
+vs the >= 94 bar; the harness replay reproduces in ~5 minutes). The
+decode path was already self-consistent (t on both sides). THE FIX: tk
+carries .logical = c.ls != 0 - E4M3 lists stay positions end-to-end
+(the design comment's own rule); bf16 (ls == 0) keeps physical page
+rows unchanged. OWNER: this line; STATUS: judged by the harness replay
++ the battery re-run.
+
+diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
+index f14317908..c8361aa22 100644
+--- a/zig/src/families/glm/cuda_dsa_block.zig
++++ b/zig/src/families/glm/cuda_dsa_block.zig
+@@ -138,7 +138,7 @@ pub fn attend(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch,
+     try writeKeys(k, stream, l, c, v, rows, pos);
+     // an E4M3 cache's sparse lists stay positions (its chunks take each key through the table); BF16's are page rows
+     const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = if (c.ls != 0) latent.chunk else c.ps / (l.lw * 2), .logical = c.ls != 0 };
+-    const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows };
++    const tk: latent.Table = .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows, .logical = c.ls != 0 };
+     const scale: f32 = @floatCast(std.math.pow(f64, @floatFromInt(l.qk), -0.5));
+     if (host_pos < l.dense_limit) {
+         const stamp = prof.span(k.prof, stream, .mla);

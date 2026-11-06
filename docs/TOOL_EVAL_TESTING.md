@@ -494,10 +494,28 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       had 35K tokens of history; the prior run froze on 9,216 — fixed
       stale/unwritten slots at config-deterministic addresses). TC-62's
       loop hit its FIRST generated turn this run; final_score 25; bf16
-      clean 100. **pagehunt4 in flight** — the hop isolator with the
-      instrument finally delivered: PICK causal + assembler
-      out-of-horizon = the pools scratch / aliasing gap; PICK already
-      out-of-horizon = the scores buffer's stale slots. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      clean 100. **pagehunt4
+      (campaign-20261106-031244): the instrument delivered (the new file
+      name worked) — and it KILLED the selection-causality hypothesis:
+      the select kernel's outputs are causal in 1,254/1,254 samples
+      (PICK), the assembler's VIOL detector printed 0 (the E4M3 logical
+      lists are clean) — the out-of-horizon SEL lines are pt≠0 launches
+      (physical page-row lists, a different token-unit stream; the
+      earlier 47-74% "violations" mixed that stream in). THE LOOP BUG
+      FOUND in the source: the prefill's sparse selection receives tk
+      (no .logical — physical lists for E4M3) while the prefill's
+      sparse attention receives t (logical — it table-maps the token
+      values AGAIN: pt[pt[page]]) — idempotent on identity page
+      mappings (every fresh-serve probe bit-clean; the canary's prompts
+      even sat under dense_limit) and corrupting once pages recycle
+      (the battery's churn): the model mis-attends from the first
+      sparse rows and long thinking generations loop. THE FIX:
+      glm-mia-selist-fix.patch (34 lines) — tk carries .logical =
+      c.ls != 0 (E4M3 lists stay positions end-to-end; bf16 unchanged).
+      **sparsefix in flight** — the replay first (churning the pages
+      non-identity), then the sparse-prefill code probe (the code at
+      ~row 3,650, beyond dense_limit, on recycled pages — the path the
+      original canary never touched). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
