@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pageconc knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagebisect knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,93 +1192,36 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pageconc (SESSION-SPECIFIC; retires with the receipt). Concurrency +
-# the faithful replay: pageloop killed the repetitive-KV hypothesis (clean
-# both sides); the battery's untested difference is --parallel 2 (concurrent
-# scenarios sharing the page pool). On pages ON vs OFF: (1) the synthetic
-# concurrent pair (a tiny 12k-decode count || a 16k-prompt 2k-decode count,
-# fired simultaneously); (2) the faithful harness replay (--scenarios TC-62
-# TC-49 --hardmode --parallel 2 — the battery's exact flags; the standing run
-# passed TC-62 with 12 turns / 5,043 tokens). Loops on pages-ON with OFF
-# passing = reproduced; all clean = the trigger needs the full battery's pool
-# state (next: the marriage-unpaged battery as the fork).
+# phase: pagebisect (SESSION-SPECIFIC; retires with the receipt). The FORMAT
+# bisect at the loop level: pageconc reproduced the loops faithfully (the
+# harness replay fails on fp8-paged, is healthy on pages-off with numbers
+# IDENTICAL to the standing run — the marriage's non-paging changes are
+# exonerated; concurrency is not the co-trigger). This phase runs the same
+# replay on bf16-paged (the receipted-correct sibling; KV_CACHE= empty —
+# start.sh refuses the literal "bf16"): TC-62 loops = the loop is E4M3-
+# specific (the quantized read/selection on long thinking decodes); TC-62
+# passes = paging itself degrades long thinking chains.
 # ---------------------------------------------------------------------------
-if want pageconc && ! phase_done pageconc; then
-  log "=== pageconc (concurrency + the faithful TC replay: pages on vs off)"
-  P="$OUT/99-pageconc.md"; : > "$P"
-  cat > /tmp/pdan.py <<'PDAN'
-import sys, json, hashlib, re
-try:
-    d = json.load(sys.stdin)
-    msg = d["choices"][0]["message"]
-    c = ((msg.get("reasoning_content") or "") + "\n" + (msg.get("content") or ""))
-    u = d.get("usage") or {}
-    t = re.findall(r"\S+", c)
-    loop = ""
-    for i in range(1, len(t)):
-        if t[i] == t[i-1]:
-            j = i
-            while j < len(t) and t[j] == t[i]:
-                j += 1
-            if j - i >= 10:
-                loop = "RUN%d@tok%d" % (j - i, i)
-                break
-    if not loop:
-        m2 = re.search(r"(\S+)(\s*\1){9,}", c)
-        if m2:
-            loop = "TOKRUN:%s@%d" % (m2.group(1)[:20], m2.start())
-    if not loop and len(t) > 12:
-        from collections import Counter
-        g = Counter(tuple(t[i:i+3]) for i in range(len(t)-2))
-        k, mc = g.most_common(1)[0]
-        if mc >= 8:
-            first = min(i for i in range(len(t)-2) if tuple(t[i:i+3]) == k)
-            loop = "3GRAMx%d@tok%d:%s" % (mc, first, " ".join(k)[:28])
-    if not loop:
-        m2 = re.search(r"\s{20,}", c)
-        if m2:
-            loop = "WS-RUN@%d" % m2.start()
-    flat = c.replace("\n", " ")
-    print(flat[:86] + " .. " + flat[-56:] + " || sha=" + hashlib.sha256(c.encode()).hexdigest()[:14] + " || ctok=" + str(u.get("completion_tokens", -1)) + " || " + (loop or "CLEAN"))
-except Exception as e:
-    print("PARSE-FAILED:%r" % e)
-PDAN
-  pc_probes() {
-    tag="$1"
-    bf1=$(mktemp /tmp/pc.XXXXXX.json); bf2=$(mktemp /tmp/pc.XXXXXX.json)
-    o1=$(mktemp /tmp/pc.XXXXXX); o2=$(mktemp /tmp/pc.XXXXXX)
-    python3 - "$SERVED_NAME" > "$bf1" <<'PDB'
-import json, sys
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": "Write the numbers from 1 to 20000, one per line, nothing else."}], "max_tokens": 12288, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
-PDB
-    python3 - "$SERVED_NAME" > "$bf2" <<'PDB'
-import json, sys
-unit = "harbor lantern-1 gravel-2 meadow-3 tideline-4 quarry-5 bramble-6 inkwell-7 thicket-8 ferry-9 cistern-10 gable linden-12 sluice-13 cobble-14 rafter-15 minnow-16 heather-17 bracken-18 cellars-19 docks-20 "
-print(json.dumps({"model": sys.argv[1], "messages": [{"role": "user", "content": unit * 230 + "Ignore the word lists above. Write the numbers from 1 to 2000, one per line, nothing else."}], "max_tokens": 2048, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}))
-PDB
-    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf1" > "$o1" 2>/dev/null &
-    J1=$!
-    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H "Content-Type: application/json" -d @"$bf2" > "$o2" 2>/dev/null &
-    J2=$!
-    wait "$J1" || true
-    wait "$J2" || true
-    echo "  $tag C1 concurrent tiny 12k-decode: $(python3 /tmp/pdan.py < "$o1" 2>/dev/null || true)" >> "$P"
-    echo "  $tag C2 concurrent 16k-prompt 2k-decode: $(python3 /tmp/pdan.py < "$o2" 2>/dev/null || true)" >> "$P"
-    rm -f "$bf1" "$bf2" "$o1" "$o2"
-    echo "  $tag the faithful harness replay (TC-62 + TC-49, the battery's flags):" >> "$P"
-    mkdir -p "$OUT/tc-$tag"
-    PYTHONUNBUFFERED=1 "$BENCH" run \
-      --base-url "http://127.0.0.1:$PORT/v1" \
-      --model "$SERVED_NAME" \
-      --format openai \
-      --tokenizer "$MODEL_ID" \
-      --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
-      --label "tc-$tag" --output-dir "$OUT/tc-$tag" --json-file "$OUT/tc-$tag/result.json" \
-      > "$OUT/tc-$tag/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-$tag/bench.log)" >> "$P"
-    python3 - "$OUT/tc-$tag/result.json" <<'PDE'
+if want pagebisect && ! phase_done pagebisect; then
+  log "=== pagebisect (the bf16-paged format bisect on the faithful replay)"
+  P="$OUT/99-pagebisect.md"; : > "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- bf16 paged: $(serve_line | cut -c1-120)" >> "$P"
+  mkdir -p "$OUT/tc-bf16"
+  echo "- the faithful harness replay (TC-62 + TC-49, the battery's flags):" >> "$P"
+  PYTHONUNBUFFERED=1 "$BENCH" run \
+    --base-url "http://127.0.0.1:$PORT/v1" \
+    --model "$SERVED_NAME" \
+    --format openai \
+    --tokenizer "$MODEL_ID" \
+    --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
+    --label "tc-bf16" --output-dir "$OUT/tc-bf16" --json-file "$OUT/tc-bf16/result.json" \
+    > "$OUT/tc-bf16/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-bf16/bench.log)" >> "$P"
+  python3 - "$OUT/tc-bf16/result.json" <<'PDE'
 import json, sys, re
 try:
     d = json.load(open(sys.argv[1]))
+    print("  final_score:", d["scores"].get("final_score"))
     for s in d["scores"]["scenario_results"]:
         log = s.get("raw_log", "")
         trunc = re.findall(r"truncated=(.{0,90})", log)
@@ -1288,17 +1231,10 @@ try:
 except Exception as e:
     print("  EXTRACT-FAILED:%r" % e)
 PDE
-    echo "  $tag engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -6 | sed 's/^/    /' >> "$P"
-  }
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- pages ON: $(serve_line | cut -c1-120)" >> "$P"
-  pc_probes on
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=off PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- pages OFF: $(serve_line | cut -c1-120)" >> "$P"
-  pc_probes off
-  echo "- VERDICT: the harness replay loops on pages-ON (truncated notes, huge turns) with OFF passing = REPRODUCED (the synthetic wave isolates concurrency as the co-trigger); all clean = the trigger needs the full 104-scenario pool state (next: the marriage-unpaged battery as the fork: 95 = pages x battery, 75 = the marriage's non-paging changes)" >> "$P"
-  touch "$OUT/.pageconc.done"
+  echo "- engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -8 | sed 's/^/  /' >> "$P"
+  echo "- VERDICT: TC-62 fails with a ceiling note = the loop is E4M3-specific (the quantized latent read/selection during long thinking decodes — the fix hunt digs the fp8 path); TC-62 passes = paging itself degrades long thinking chains (the page mapping/selection, format-independent — the fix hunt digs the Table/mapping layer)" >> "$P"
+  touch "$OUT/.pagebisect.done"
 fi
 
 # ---------------------------------------------------------------------------

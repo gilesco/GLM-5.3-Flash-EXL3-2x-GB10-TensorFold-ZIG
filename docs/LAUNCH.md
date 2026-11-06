@@ -6357,3 +6357,30 @@ filter). Loops on pages-ON with OFF passing ⇒ reproduced. All clean ⇒
 the trigger needs the full 104-scenario pool state — next: the
 marriage-unpaged battery as the fork (95 ⇒ pages×battery; 75 ⇒ the
 marriage's non-paging changes).
+
+## (round 133, cont. 55) THE LOOPS ARE REPRODUCED FAITHFULLY — the harness replay fails on fp8-paged and is healthy on pages-off (identical to the standing run: the marriage's non-paging changes are exonerated); concurrency exonerated; the bf16-paged format bisect launched (2026-11-05)
+
+**campaign-20261105-231751 (pageconc, both sides)**:
+- The synthetic concurrent pair (a tiny 12k-decode count ∥ a 16k-prompt
+  2k-decode count, fired simultaneously): **CLEAN both sides with shas
+  identical to the sequential runs** — **concurrency is NOT the
+  co-trigger**.
+- **The faithful harness replay (tool-eval-bench --scenarios TC-62
+  TC-49 --hardmode --parallel 2 — the battery's exact flags): REPRODUCED.**
+  fp8-paged: TC-62 **FAILS** — 19,458 completion tokens over 8 turns,
+  **turn 8 hit the 16,384 ceiling with 72,502 chars of reasoning** (the
+  loop, in the reasoning channel); final_score 50. pages-off: TC-62
+  **PASSES** — 5,043 tokens / 12 turns and TC-49 751 / 3 turns —
+  **IDENTICAL to the standing battery run's numbers: the marriage's
+  non-paging changes are exonerated**; final_score 100.
+- **The reproducer is now cheap**: one harness command (~5 min) instead
+  of the 50-min battery — the fix hunt's instrument.
+
+**LAUNCHED: pagebisect** — the same replay on **bf16-paged** (the
+receipted-correct sibling format; KV_CACHE= empty per the start.sh
+convention). TC-62 fails with a ceiling note ⇒ the loop is **E4M3-
+specific** (the quantized latent read/selection during long thinking
+decodes — the fix hunt digs the fp8 path). TC-62 passes ⇒ **paging
+itself** degrades long thinking chains (the Table/mapping layer —
+format-independent). The same bisect that cracked the original
+contamination, at the loop level.
