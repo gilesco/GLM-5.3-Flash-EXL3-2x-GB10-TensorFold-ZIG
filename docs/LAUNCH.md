@@ -7500,3 +7500,32 @@ sitting's full re-pair. The digest discipline going forward: after an
 adoption, grep the docs for the PRIOR adoption's name to find every
 stale mention (the row edits and the prose edits are separate assert
 targets, and only the rows were verified cont. 86).
+
+## (round 133, cont. 90) THE BARE-CONFIG SMOKE: the serve evidence is AFFIRMATIVE but the phase died on its own grep (rc=1); the phase fixed, the rerun launched (campaign-20261106-222939) (2026-11-06)
+
+**What the window proved before it died**: the bare start (no env pairs —
+config.sh's defaults expand) came up in 103 s on the v1.2.3 pin
+(6ec5fa4cb), and the serve line carries both adoption signatures:
+"prompts in passes of up to 2048 rows" (the exl3prompt patch's
+chunk_rows=prefill_rows) and "the prompt cache over the pool's pages"
+(TF_GLM_KV_SHARE=8). RoCE up. The load was a fingerprint CACHE HIT on
+exl3qual's build — and the cache-hit condition is config_line equality,
+so the bare default's patch list expands to exactly the stored prepared
+line: **`$STATE_DIR/prepared` names all SIX patches on the v1.2.3 pin**
+(read directly this sitting).
+
+**Why rc=1**: the phase's first witness grep (`^model=.*patches=` over
+the start log) has no match in the log — the config_line echo lives in
+the prepared marker, and no prepare ran on a cache hit — and
+run-qualification.sh's `set -euo pipefail` turned the missing pattern
+into a campaign kill before the probe. The receipt file truncated at
+the death point; the campaign.log holds the full story.
+
+**The phase fixed**: every receipt-writing grep guarded with
+`|| true`; the fingerprint witness now reads `$STATE_DIR/prepared`
+(the direct evidence) instead of grepping the start log. The probe and
+the serve line unchanged.
+
+**LAUNCHED: adoptsmoke3 + summary** (the rerun — the .done marker was
+never touched, so the phase reruns cleanly): the complete receipt
+expected (the fingerprint line + the serve line + the probe). THEN DARK.
