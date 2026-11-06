@@ -6624,3 +6624,28 @@ battery re-run is the adoption judgment. ~20 min. THEN DARK.
 battery + the vision suite on absorb + marriage + pagerows-fix +
 selist-fix, TF_KV_PAGES=on. The bar: **hardmode ≥ 94** (production
 parity; absorb set 95) + the vision 4/4. ~50 min. THEN DARK.
+
+## (round 133, cont. 63) THE BATTERY GATE CLEARS: pagedquality3 = 95 + the vision 4/4 — production parity with the speed win (median turns 6.5% faster); the duel re-pair launched — the last gate before the config.sh adoption decision (2026-11-06)
+
+**campaign-20261106-043015 (pagedquality3, the adoption judgment on
+absorb + marriage + pagerows-fix + selist-fix, TF_KV_PAGES=on)**:
+- **hardmode final_score: 95** — production parity (the standing 95;
+  absorb set 95; the bar was ≥ 94). The vision suite **4/4**.
+- **total_tokens: 662,693 — byte-identical to the standing run's
+  662,693** (the pre-fix paged run was 1,063,881): the loops are gone,
+  not merely reduced. **Zero scenarios over 8k completion tokens** (the
+  pre-fix run's runaways eliminated).
+- token_efficiency 0.30 (standing 0.30), worst category P Hard Mode 89%
+  (standing 89%), **deployability 74 (standing 73 — a point better)**.
+- **median_turn_ms 6,381.8 vs the standing 6,829.6 — 6.5% faster**: the
+  pages' speed win holds at production quality.
+- The fp8+pages marriage now delivers production-parity quality WITH
+  the speed win. The loop arc is closed: the battery gate is cleared.
+
+**LAUNCHED: duelpaged** — the duel re-pair, the last gate before the
+config.sh adoption decision: the standing duel's five instruments with
+the ours arm on the paged candidate; the production arm unchanged
+(production-for-testing on 8001, the intent-keyed start, read-only;
+restored by the window flow's exit path). ~20 min. THEN DARK. The
+adoption decision follows the duel receipt (the receipts-equal-or-
+better protocol), and the v1.2.3 rebase is the arc after that.

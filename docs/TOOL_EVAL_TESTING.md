@@ -521,10 +521,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       probe 5/5 exact** (the code at ~row 3,650, beyond dense_limit, on
       recycled pages — the prefill's sparse path exercised explicitly
       for the first time reads perfectly). The mechanism stands
-      confirmed. **pagedquality3 in flight** — the adoption judgment:
-      the hardmode battery + the vision suite on absorb + marriage +
-      pagerows-fix + selist-fix, TF_KV_PAGES=on (the bar: hardmode
-      ≥ 94 + the vision 4/4). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      confirmed. **pagedquality3
+      (campaign-20261106-043015): THE BATTERY GATE CLEARS — hardmode
+      **95** (production parity; the bar ≥ 94) + **the vision 4/4**;
+      **total_tokens 662,693 — byte-identical to the standing run's
+      662,693** (the pre-fix paged run was 1,063,881 — the loops gone,
+      zero scenarios over 8k tokens); token_efficiency 0.30, worst
+      category 89% (both standing); **deployability 74 (standing 73)**;
+      **median_turn_ms 6,381.8 vs 6,829.6 — 6.5% faster**: production-
+      parity quality WITH the pages' speed win. The loop arc is closed.
+      **duelpaged in flight** — the duel re-pair (the last gate before
+      the config.sh adoption decision): the standing duel's five
+      instruments, the ours arm on the paged candidate, the production
+      arm unchanged (production-for-testing on 8001, read-only). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.

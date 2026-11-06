@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedquality3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP duelpaged knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,26 +1192,44 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagedquality3 (SESSION-SPECIFIC; retires with the receipt). The
-# adoption judgment on the fully-fixed composed paged stack: the tk.logical
-# fix validated completely (the replay 100 with the standing run's exact
-# profile; the sparse-prefill probe 5/5 on recycled pages). The hardmode
-# battery + the vision suite on absorb + marriage + pagerows-fix + selist-fix,
-# TF_KV_PAGES=on. The bar: hardmode >= 94 (production parity; absorb set 95)
-# + the vision 4/4. Retires with the receipt.
+# phase: duelpaged (SESSION-SPECIFIC; retires with the receipt). The duel
+# re-pair: the standing duel's five instruments with the ours arm on the paged
+# candidate (TF_KV_PAGES=on + the four patches). The production arm is
+# unchanged: production-for-testing on 8001 (the intent-keyed start; read-
+# only), stopped for the ours arm, restored by the window flow's exit path.
+# The battery gate is cleared (pagedquality3: 95 + the vision 4/4) — the duel
+# is the last gate before the config.sh adoption decision.
 # ---------------------------------------------------------------------------
-if want pagedquality3 && ! phase_done pagedquality3; then
-  log "=== pagedquality3 (the battery on the fully-fixed composed paged stack)"
-  P="$OUT/99-pagedquality3.md"; : > "$P"
-  echo "# pagedquality3 (hardmode + vision on absorb+marriage+pagerows-fix+selist-fix, TF_KV_PAGES=on)" >> "$P"
+if want duelpaged && ! phase_done duelpaged; then
+  log "=== duelpaged (the duel re-pair: production-for-testing vs the paged candidate)"
+  P="$OUT/08-duelpaged.md"; : > "$P"
+  echo "# duelpaged (the duel's five direct instruments; production-for-testing on 8001 vs the paged candidate)" >> "$P"
+  if ! prod_running; then
+    log "duelpaged: stopping our testing stack to free 8001"
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    log "duelpaged: production down — starting it FOR TESTING on 8001"
+    PORT=8001 "$HOME/$PROD_TIP/start.sh" </dev/null >>"$LOG" 2>&1 || true
+  fi
+  if prod_running; then
+    PROD_MODEL=$(curl -s -m 10 "http://127.0.0.1:8001/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")') || PROD_MODEL=""
+    PROD_MODEL="${PROD_MODEL:-$SERVED_NAME}"
+    echo "## production (read-only on the testing port 8001; model $PROD_MODEL)" >> "$P"
+    PROD_PORT_SAVE="$PROD_PORT"
+    PROD_PORT=8001 duel_arm prod "$PROD_MODEL"
+    PROD_PORT="$PROD_PORT_SAVE"
+    log "production probed — stopping it for the ours arm (restored by the window flow's exit path)"
+    "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
+    prod_running && die "production still running after the autonomous stop — the ours arm needs the GPUs"
+  else
+    echo "- production not running: the prod arm skipped (the 8001 start failed — its refusal is the receipt)" >> "$P"
+  fi
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- server: $(serve_line)" >> "$P"
-  bench_cell hm-paged3 "$OUT/hm-paged3" >> "$P"
-  echo "- the vision suite:" >> "$P"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-paged3.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
-  echo "- the engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
-  touch "$OUT/.pagedquality3.done"
+  echo "## ours paged (dense4fp8 @ 512K x4, TF_KV_PAGES=on, absorb+marriage+pagerows-fix+selist-fix)" >> "$P"
+  duel_arm ours "$SERVED_NAME"
+  touch "$OUT/.duelpaged.done"
 fi
 
 # ---------------------------------------------------------------------------
