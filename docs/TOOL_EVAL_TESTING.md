@@ -553,7 +553,13 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       PATCHES list; the README carries the TF_KV_PAGES row; seven
       unpaged-semantics sites pinned TF_KV_PAGES=off explicitly; the
       DELTAS engine row updated. The adoptsmoke bare-config smoke test
-      in flight. The v1.2.3 rebase is the next arc. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      CAUGHT A REAL GAP on its first run (campaign-20261106-061130):
+      the serve line was window-mode fp8 — config.sh's TF_KV_PAGES was
+      an unexported shell variable, and env_args() forwards TF_KV_*
+      from the ENVIRONMENT (env | grep) — the bare start never carried
+      it (the phases' env-var form exports, which is why they worked).
+      THE FIX: export TF_KV_PAGES in config.sh (one word; the explicit
+      off pins override it). The smoke re-launched. The v1.2.3 rebase is the next arc. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
