@@ -628,9 +628,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       verified), pp +3.4/+5.8/+6.7% GROWING with depth, tg parity —
       and mms2qual + the duel re-pair (campaign-20261106-185208): §2
       ALL PASS, hardmode 95, the vision 4/4, solo 109.2%, cold d8192
-      5,034 ms (slope 0.591), overhead 96%, prefill 1,150 — **ADOPTED:
-      config.sh's PATCHES is the 5-patch stack; the anchors re-paired
-      and the chart re-rendered.** The 0010 fetch corrected
+      5,034 ms (slope 0.591), overhead 96%, prefill 1,150 — **ADOPTED
+      (config.sh's PATCHES then the 5-patch stack): the anchors
+      re-paired and the chart re-rendered.**
+      **THE EXL3PROMPT ADOPTION (cont. 87-89): the exl3call A/B
+      (campaign-20261106-201824) — the content shas IDENTICAL across
+      arms, pp +24.5/+22.7/+23.3% at d0/d4096/d8192 (two runs per arm,
+      near-zero spread) — EXCEEDING Mia's +12.6-16% combined claim (the
+      GB10 converts better than their sm_120); exl3qual + the duel
+      re-pair (campaign-20261106-212157): §2 ALL PASS, hardmode 95 (the
+      FIFTH consecutive), the vision 4/4, solo 108.9%, cold d8192 4,134
+      ms (slope 0.482), overhead 96%, ITL 15.5, prefill 1,434 (94.4% of
+      production's 1,518 — the front took 76% → 94.4% in one patch) —
+      **ADOPTED: config.sh's PATCHES is the 6-patch stack; the anchors
+      re-paired and the chart re-rendered.** The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design

@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep exl3call exl3qual knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1266,119 +1266,6 @@ PWE
   resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
   echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
   touch "$OUT/.resweep.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: exl3call (SESSION-SPECIFIC; retires with the receipt). The definitive
-# A/B for glm-mia-exl3prompt.patch (Mia 1104 0007+0008 hand-ported — the EXL3
-# prompt path in one call + the slot-row write + no MTP beside a drafter;
-# Mia's combined claim WITH 0009 (our adopted packed-s2): cold prefill
-# +12.6/+15.6/+16.0% at 4K/16K/64K, T=0 replies unchanged). Arm off = the
-# standing 5-patch stack; arm on = + the exl3prompt patch (the fingerprint
-# rebuild rides the restart). Per arm: the greedy content probes (three
-# prompt sizes, the content shas — the cross-arm identity IS the
-# bit-exactness gate) + bench_perf twice (the pp rows). The bar: the content
-# shas IDENTICAL + a sharp pp gain = the patch advances to the battery + the
-# duel re-pair (the adoption judgment); a content DIFFERENT retires it
-# outright; pp parity retires it; the tg rows moving beyond the noise band
-# is an instrument red flag.
-# ---------------------------------------------------------------------------
-if want exl3call && ! phase_done exl3call; then
-  log "=== exl3call (the exl3prompt A/B: the content gate + the pp rows)"
-  P="$OUT/19-exl3call.md"; : > "$P"
-  echo "# exl3call (glm-mia-exl3prompt.patch: one call a pass, the slot-row write, no MTP beside a drafter)" >> "$P"
-  for arm in off on; do
-    if [[ $arm == on ]]; then
-      echo "## arm $arm (+ glm-mia-exl3prompt.patch — the fingerprint rebuild rides the restart)" >> "$P"
-      S=$(date +%s)
-      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch" || { echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"; continue; }
-    else
-      echo "## arm $arm (the standing 5-patch stack)" >> "$P"
-      S=$(date +%s)
-      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"; continue; }
-    fi
-    echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-140)" >> "$P"
-    for pr in short mid long; do
-      case $pr in short) FN=0 ;; mid) FN=1024 ;; long) FN=2048 ;; esac
-      bf=$(mktemp /tmp/ec.XXXXXX.json)
-      FILL_WORDS="$FILL_WORDS" DUEL_PROMPT="$DUEL_PROMPT" FN="$FN" python3 -c "
-import json, os, sys
-words = os.environ['FILL_WORDS'].split(); n = int(os.environ['FN'])
-fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(n // 4))) if n else ''
-json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 48, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': (fill + chr(10) + chr(10) if fill else '') + os.environ['DUEL_PROMPT'] + ' Answer with exactly five words.'}]}, open(sys.argv[1], 'w'))
-" "$bf"
-      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-      curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ec-$arm-$pr.json" || true
-      rm -f "$bf"
-    done
-    for r in a b; do bench_perf "exl3call-$arm-$r" "$OUT/exl3call-$arm-$r" 4 >> "$P" 2>&1; done
-  done
-  python3 - "$OUT" >> "$P" <<'PME'
-import hashlib, json, sys, glob, re
-out = sys.argv[1]
-def sha(p):
-    try:
-        d = json.load(open(p))
-        return hashlib.sha256(json.dumps(d["choices"][0]["message"]["content"], sort_keys=True).encode()).hexdigest()[:16]
-    except Exception:
-        return "ERR"
-for pr in ("short", "mid", "long"):
-    a, b = sha(f"{out}/ec-off-{pr}.json"), sha(f"{out}/ec-on-{pr}.json")
-    print("- content %s: %s (%s vs %s)" % (pr, "IDENTICAL" if a == b else "DIFFERENT - the bit-exactness claim FAILS on our shape", a, b))
-def pp(tag):
-    rows = {}
-    for r in ("a", "b"):
-        reps = sorted(glob.glob(f"{out}/{tag}-{r}/2026/*/*--*.md"))
-        if not reps:
-            continue
-        for line in open(reps[-1], encoding="utf-8"):
-            m = re.match(r"\| pp2048 tg128 @ (d0|d4096|d8192)( c4)? \| ([\d,]+)\*? \| ([\d.]+) ", line)
-            if m and not m.group(2):
-                rows.setdefault(m.group(1), []).append(float(m.group(3).replace(",", "")))
-    return rows
-off, on = pp("exl3call-off"), pp("exl3call-on")
-for d in ("d0", "d4096", "d8192"):
-    o, n = off.get(d, []), on.get(d, [])
-    if o and n:
-        om, nm = sum(o) / len(o), sum(n) / len(n)
-        print("- pp @ %s: off %.0f (%s) vs on %.0f (%s) -> %+.1f%%" % (d, om, "/".join("%.0f" % x for x in o), nm, "/".join("%.0f" % x for x in n), (nm - om) / om * 100))
-PME
-  echo "- VERDICT: the content shas IDENTICAL + a sharp pp gain = the patch advances to the battery + the duel re-pair (the adoption judgment); a content DIFFERENT retires it outright; pp parity retires it" >> "$P"
-  touch "$OUT/.exl3call.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: exl3qual (SESSION-SPECIFIC; retires with the receipt). The adoption
-# judgment for glm-mia-exl3prompt.patch: the exl3call A/B (campaign-
-# 20261106-201824) cleared every bar — the content shas IDENTICAL across
-# arms on three prompt sizes (the bit-exactness claim verified), pp
-# +24.5/+22.7/+23.3% at d0/d4096/d8192 (two runs per arm, near-zero spread;
-# it EXCEEDS Mia's +12.6-16% combined claim — the GB10 converts better than
-# their sm_120). The gates + the battery + the vision decide; the duel
-# re-pair follows in the same window (PHASES="exl3qual duel summary" — the
-# duel's ours arm rides MMS2_DUEL_PATCHES, the 6-patch candidate; its image
-# is a cache hit on exl3qual's build). The bar: §2 PASS + hardmode >= 94 +
-# the vision 4/4 = ADOPT (config.sh's PATCHES gains the exl3prompt patch);
-# any miss = retire.
-# ---------------------------------------------------------------------------
-if want exl3qual && ! phase_done exl3qual; then
-  log "=== exl3qual (the exl3prompt adoption judgment: the gates + the battery + the vision)"
-  P="$OUT/20-exl3qual.md"; : > "$P"
-  echo "# exl3qual (glm-mia-exl3prompt.patch: VALIDATION §2 + hardmode + the vision)" >> "$P"
-  if run_gates exl3g DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch"; then
-    echo "- the §2 gates on the 6-patch stack: the receipt above" >> "$P"
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch"
-    echo "- server: $(serve_line)" >> "$P"
-    bench_cell hm-exl3 "$OUT/hm-exl3" >> "$P"
-    echo "- the vision suite:" >> "$P"
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-exl3.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
-    echo "- the engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -8 | sed 's/^/  /' >> "$P"
-    echo "- VERDICT: §2 PASS + hardmode >= 94 + the vision 4/4 = ADOPT (config.sh's PATCHES gains glm-mia-exl3prompt.patch); any miss = retire" >> "$P"
-    touch "$OUT/.exl3qual.done"
-  else
-    echo "- exl3qual incomplete (a restart was refused) — rerun this phase" >> "$P"
-  fi
 fi
 
 # ---------------------------------------------------------------------------

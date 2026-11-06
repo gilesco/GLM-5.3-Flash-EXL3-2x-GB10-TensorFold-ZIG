@@ -7452,3 +7452,51 @@ standing duel phase re-paired with the duel's ours arm riding
 MMS2_DUEL_PATCHES (the 6-patch candidate; its image is a cache hit on
 exl3qual's build). The duel receipt gives the anchors' prefill + cold
 rows on the candidate for the adoption digest. THEN DARK.
+
+## (round 133, cont. 89) THE EXL3PROMPT ADOPTION: GO — the sixth patch joins the default stack (exl3qual + the duel, campaign-20261106-212157) (2026-11-06)
+
+**The adoption judgment cleared every bar** on the 6-patch candidate:
+- **§2 gates ALL PASS** (g1-g4 PASS, g5's note is the known raw-byte
+  nondeterminism) — exl3qual's receipt.
+- **Hardmode 95** — the FIFTH consecutive receipt on the line's configs
+  (pagedquality3, v123qual, kvsharequal, mms2qual, exl3qual) vs
+  production's current-bench anchor 94.
+- **The vision 4/4** (all eight sub-scores ok).
+- **The duel re-pair** (production-for-testing on 8001, same window):
+  solo 63.9/63.7 vs 58.6/58.7 (**108.9%** — decode untouched, the drift
+  from the s2 pair's 109.2% is instrument noise); c2 110.3 vs 87.3
+  (126% of its floor); c4 153.7 vs 193.1 (production near its TOP this
+  run — its range 155-241; at its floor the pair is parity); ITL 15.5
+  vs 17.0 (109% — crossed); overhead 190 vs 183 ms (96%); **the cold
+  d8192 4,134 ms, slope 0.482 — 414% of production's true cold** (the
+  exl3prompt patch compounding the s2 pair's 5,034 and the paged pair's
+  5,215); **the prefill front 1,434 tok/s = 94.4% of production's
+  1,518** (ours: the exl3call arm-on pair, campaign-20261106-201824).
+
+**DECISION: ADOPT — config.sh's PATCHES is the 6-patch stack** (the
+exl3prompt patch appended after packed-s2; the comment carries the
+cont. 89 receipt chain).
+
+**The digest executed the same sitting**: the anchors' five duel rows +
+the cold row re-paired on the EXL3P duel; **the anchors' header was
+found TWO adoptions stale** (it still said the 4-patch stack + the
+PAGED duel — the s2-era header edit had failed its assert and was never
+retried; this sitting's six-patch rewrite folded the s2 + exl3prompt
+adoptions in) — rewritten and the chart re-rendered; the README's
+serve/Quality/Speed/bars/PATCHES rows re-paired (the quality row now
+cites five 95 receipts, the speed row the EXL3P duel, the bars row
+prefill at 94.4% "nearly closed"); DELTAS's header scoreboard
+re-paired to the EXL3P duel (the S2 + PAGED duels folded into the
+superseded chain — the s2-era DELTAS scoreboard update had also never
+landed) and the engine row now describes the 6-patch stack; the exl3call
++ exl3qual session phases RETIRED from run-qualification.sh (both
+receipted; the duel's MMS2_DUEL_PATCHES override stays as the
+candidate-duel pattern); the ledger's arc block carries the adoption.
+
+**Process note**: two doc-update asserts failed silently across the s2
+digest (the anchors header, the DELTAS scoreboard) — the row updates
+landed but the header/scoreboard prose was left stale until this
+sitting's full re-pair. The digest discipline going forward: after an
+adoption, grep the docs for the PRIOR adoption's name to find every
+stale mention (the row edits and the prose edits are separate assert
+targets, and only the rows were verified cont. 86).
