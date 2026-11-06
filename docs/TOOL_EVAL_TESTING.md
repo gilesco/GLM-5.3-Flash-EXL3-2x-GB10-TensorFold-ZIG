@@ -622,7 +622,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       v1.2.1 ranking (94/93/94/90) held and STRENGTHENED — the tsv
       transplanted, the cards re-rendered as the CURRENT ranking, the
       README/DELTAS re-framed (the first resweep window burned on an
-      env-pair quoting bug, cont. 79).** The 0010 fetch corrected
+      env-pair quoting bug, cont. 79).** **THE PACKED-S2 ADOPTION
+      (cont. 85-86): the mms2 A/B (campaign-20261106-174454) — the
+      content shas IDENTICAL across arms (the bit-exactness claim
+      verified), pp +3.4/+5.8/+6.7% GROWING with depth, tg parity —
+      and mms2qual + the duel re-pair (campaign-20261106-185208): §2
+      ALL PASS, hardmode 95, the vision 4/4, solo 109.2%, cold d8192
+      5,034 ms (slope 0.591), overhead 96%, prefill 1,150 — **ADOPTED:
+      config.sh's PATCHES is the 5-patch stack; the anchors re-paired
+      and the chart re-rendered.** The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design

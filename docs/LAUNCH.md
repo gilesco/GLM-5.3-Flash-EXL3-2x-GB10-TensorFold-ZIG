@@ -7354,3 +7354,41 @@ standing duel phase re-paired with the duel's ours arm riding
 on mms2qual's build; the empty default keeps the duel backwards
 compatible). The duel receipt gives the anchors' prefill + cold-depth
 rows on the candidate for the adoption digest. THEN DARK.
+
+## (round 133, cont. 86) THE PACKED-S2 ADOPTION: mms2qual + the duel re-pair (campaign-20261106-185208) — §2 ALL PASS, hardmode 95, the vision 4/4, solo 109.2%, cold 340%, prefill 76%; config.sh's PATCHES is the 5-patch stack; the anchors + the chart re-paired (2026-11-06)
+
+**mms2qual's receipt** (the 5-patch stack: the 4 patches +
+glm-mia-packed-s2.patch): §2 ALL PASS (g1 determinism, g2 drafted=plain,
+g3 resumed=fresh with the standing answer tokens, g4 concurrent=solo
+4/4, g5 sampled); **the hardmode battery: final_score 95** (the
+standing score — the fourth consecutive 95 on the line's configs); **the
+vision suite: 4/4** (all eight probes ok).
+
+**The duel re-pair** (production-for-testing on 8001, read-only, vs ours
+on the 5-patch candidate — the same window, the same probes):
+- solo: **64.0/64.1 vs 58.6/58.7 — 109.2% CROSSED**
+- c2: **110.3 vs 87.2** (production's floor; its range 87-111 — ~parity
+  with its top)
+- c4: 153.0 vs **193.2** — production near its TOP this run (its range
+  155-241; at its floor the pair is parity; ours holds 151-155 across
+  every duel)
+- ITL: **15.6 vs 17.0 ms/token — 109% crossed**
+- TTFT overhead: **192 vs 185 ms — 96%**
+- the cold depth: **d8192 5,034 ms, slope 0.591** (the paged pair was
+  5,215/0.612 — the s2 gain compounding) vs production's true cold
+  17,129 (the prodcold receipt) → **340% CROSSED**
+
+**THE ADOPTION DECISION (the receipts-equal-or-better protocol)**: the
+correctness gates (§2 ALL PASS), the quality gates (95 + the vision
+4/4), the bit-exactness proof (the content shas identical across arms),
+the instrumented gain (pp +3.4/+5.8/+6.7% twice-receipted: the A/B and
+the duel's slope), the duel fronts all equal-or-better — **ADOPTED:
+config.sh's PATCHES defaults to the 5-patch stack**. The anchors
+re-paired on the S2 duel (solo 64.0, c2 110.3, c4 153.0/193.2 with the
+range note, overhead 192, cold 5,034 → **340%**, ITL 15.6, prefill
+**1,150 → 76%**); **the chart re-rendered** (the prefill bar's first
+structural move: 69% → 76%). The README's Speed/PATCHES/serve rows and
+DELTAS' engine row re-framed. mms2 + mms2qual retired (receipted); the
+duel's MMS2_DUEL_PATCHES override stays (the candidate-duel pattern).
+
+No window — desk work.
