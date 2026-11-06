@@ -7124,3 +7124,35 @@ re-paired the standing docs to them:
   the README's cards paragraph names each card and its receipt.
 
 No window — desk work only.
+
+## (round 133, cont. 77) THE SWEEP CARDS ANNOTATED ((user) ask): bpw4-sweep-cards.svg now carries its fixed-engine framing and the served pack's current score; the SVG verified in sync with its data first (2026-11-06)
+
+The (user) asked after docs/bpw4-sweep-cards.svg (embedded in the README).
+**Verified in sync first**: re-rendering from docs/bpw4-sweep.tsv +
+scripts/render-sweep-cards.sh reproduced the committed SVG byte-for-byte —
+no drift. **The staleness was framing, not data**: the sweep is the
+round-132 FIXED-ENGINE ranking (the (user) swap's basis — all four packs
+on TF v1.2.1, window-mode KV), and its served-pack row shows the
+sweep-era hardmode 94, while the shipping stack (v1.2.3 + the 4-patch
+paged KV + KV_SHARE=8) has receipted **95** three times with
+byte-identical profiles. The sweep's scores stay as measured (changing
+the cell would falsify the sweep receipt; the packs were not re-swept on
+the new engine — that would be its own window).
+
+**The edits**:
+- **render-sweep-cards.sh**: the SVG gains a third header line — "the
+  round-132 fixed-engine ranking (the (user) swap's basis, 2026-11-02,
+  window-mode KV) — the served TR3 cell's CURRENT score on the shipping
+  stack (v1.2.3 + the 4-patch paged KV + KV_SHARE=8): hardmode 95,
+  receipted three times with byte-identical token profiles" — the cards
+  shifted down 24px, the canvas grown to match; re-rendered (4 cards).
+- **bpw4-sweep.tsv**: the header carries the NOTE (the fixed-engine
+  framing + the current-score pointer).
+- **README**: the Quality row and the embedded image's alt text say the
+  cards are the round-132 fixed-engine ranking and that the served
+  pack's current score is the 95 (the row above).
+- **DELTAS' header**: the Focus 93 / AZ 90 figures now carry their
+  provenance (the round-132 sweep on v1.2.1; the served pack's sweep-era
+  row superseded on the shipping stack).
+
+No new measurements; no window — desk work only.

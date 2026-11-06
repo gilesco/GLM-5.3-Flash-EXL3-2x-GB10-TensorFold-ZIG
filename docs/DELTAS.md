@@ -18,7 +18,7 @@ PASS). The served default is the **TR3-4bpw checkpoint** (the round-132
 docs/bpw4-sweep-cards.svg; the AZ-Focus stays receipted at 93) — the **(user) call: hardmode is THE quality
 measure, target = beat production's run-level 94 or come close**. On the
 CURRENT instrument (the 104-scenario hardmode battery): the served config **95** (receipted three
-times: campaign-20261106-043015/-065920/-093921 — byte-identical token profiles), the Focus **93**, the AZ top-4 **90** (docs/bpw4-sweep-cards.svg) — and **production's current-bench anchor: 94/104** (the prodbench
+times: campaign-20261106-043015/-065920/-093921 — byte-identical token profiles), the Focus **93**, the AZ top-4 **90** — those two from the round-132 fixed-engine sweep on TF v1.2.1 (docs/bpw4-sweep-cards.svg; the served pack's sweep-era row shows 94, superseded on the shipping stack by the 95 above) — and **production's current-bench anchor: 94/104** (the prodbench
 receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families

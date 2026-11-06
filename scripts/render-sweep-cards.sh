@@ -27,7 +27,7 @@ def color(score):
 
 CARD_W, CARD_H, GAP, PAD = 285, 240, 18, 16
 W = PAD * 2 + CARD_W * len(rows) + GAP * (len(rows) - 1)
-H = CARD_H + 86
+H = CARD_H + 110
 parts = [
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
     f'viewBox="0 0 {W} {H}" font-family="DejaVu Sans, sans-serif">',
@@ -37,16 +37,19 @@ parts = [
     '<text x="16" y="48" font-size="12" fill="#616161">'
     'hardmode = the 104-scenario battery (bench v3.0.1) · pp = llama-benchy pp2048 @ d0 tok/s · '
     'tg = solo tg128 tok/s at depth · c4 = 4 streams at d8192</text>',
+    '<text x="16" y="66" font-size="11" fill="#9e9e9e">'
+    'the round-132 fixed-engine ranking (the (user) swap\'s basis, 2026-11-02, window-mode KV) — the served TR3 cell\'s CURRENT score on the shipping stack'
+    ' (v1.2.3 + the 4-patch paged KV + KV_SHARE=8): hardmode 95, receipted three times with byte-identical token profiles</text>',
 ]
 x = PAD
 for r in rows:
     pack, hm, pp, tg0, tg4k, tg8k, tgc4, note = r
     c = color(hm)
-    parts.append(f'<g><rect x="{x}" y="62" width="{CARD_W}" height="{CARD_H}" rx="10" fill="#ffffff" stroke="#e0e0e0"/>')
-    parts.append(f'<rect x="{x}" y="62" width="{CARD_W}" height="6" rx="3" fill="{c}"/>')
-    parts.append(f'<text x="{x+14}" y="92" font-size="14" font-weight="bold" fill="#212121">{pack}</text>')
-    parts.append(f'<text x="{x+14}" y="132" font-size="34" font-weight="bold" fill="{c}">{hm}</text>')
-    parts.append(f'<text x="{x+86}" y="132" font-size="12" fill="#757575">/104 hardmode</text>')
+    parts.append(f'<g><rect x="{x}" y="86" width="{CARD_W}" height="{CARD_H}" rx="10" fill="#ffffff" stroke="#e0e0e0"/>')
+    parts.append(f'<rect x="{x}" y="86" width="{CARD_W}" height="6" rx="3" fill="{c}"/>')
+    parts.append(f'<text x="{x+14}" y="116" font-size="14" font-weight="bold" fill="#212121">{pack}</text>')
+    parts.append(f'<text x="{x+14}" y="156" font-size="34" font-weight="bold" fill="{c}">{hm}</text>')
+    parts.append(f'<text x="{x+86}" y="156" font-size="12" fill="#757575">/104 hardmode</text>')
     metric = [
         ("prefill pp2048 @ d0", pp, best["pp_d0"]),
         ("tg128 solo @ d0", tg0, best["tg_d0"]),
@@ -54,7 +57,7 @@ for r in rows:
         ("tg128 solo @ d8192", tg8k, best["tg_d8192"]),
         ("tg128 c4 @ d8192", tgc4, best["tg_c4_d8192"]),
     ]
-    y = 156
+    y = 180
     for label, val, b in metric:
         star = ' <tspan fill="#2e7d32" font-weight="bold">★</tspan>' if float(val) == b else ""
         parts.append(f'<text x="{x+14}" y="{y}" font-size="11.5" fill="#424242">{label}</text>')

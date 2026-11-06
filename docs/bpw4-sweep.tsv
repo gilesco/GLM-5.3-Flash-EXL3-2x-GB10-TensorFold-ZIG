@@ -5,6 +5,12 @@
 # llama-benchy pp2048/tg128 at the standing config (dense4fp8, fp8 KV, 512K x4,
 # vision, TF v1.2.1). Rendered by scripts/render-sweep-cards.sh into
 # docs/bpw4-sweep-cards.svg — the SVG is generated, never hand-edited.
+# NOTE (cont. 76): the sweep is the round-132 FIXED-ENGINE ranking (the (user)
+# swap's basis — all four packs on TF v1.2.1, window-mode KV); its scores do
+# not update with engine bumps. The served TR3 pack's CURRENT score on the
+# shipping stack (v1.2.3 + the 4-patch paged KV + TF_GLM_KV_SHARE=8) is
+# hardmode 95, receipted three times with byte-identical token profiles
+# (campaign-20261106-043015/-065920/-093921) — the cards carry the annotation.
 # Columns: pack|hardmode|pp_d0|tg_d0|tg_d4096|tg_d8192|tg_c4_d8192|note
 Focus|93|1036|40.6|46.0|40.7|12.9|local/GLM-5.3-Flash-AZ-Focus-EXL3
 Mia-AiLab 4bpw|94|1031|39.2|45.3|41.5|13.1|production's own pack family
