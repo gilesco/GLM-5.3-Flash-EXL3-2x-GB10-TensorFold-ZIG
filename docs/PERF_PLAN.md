@@ -488,3 +488,24 @@ direction: the OVERLAP class — the fork's HC-split/overlap set (0010/0033, +36
 prefill) or PDL on the finish launch (the launch site already carries a .pdl flag;
 the finish's x/nw prologue is independent of `part`, so a dependent-launch overlap
 would hide the gap without giving up the grid-y).
+
+**The v1.2.3 perf items (added 2026-11-06, cont. 68 — the rebase validated, the ref adopted)**:
+v1.2.3's changelog carries two opt-in serving knobs relevant at TP=2, both now
+probed by the `v123perf` window on the duel instruments against the standing
+paged absolutes (duelpaged, campaign-20261106-052114: solo 63.5/63.2 t/s, c2
+110.6, c4 154.8, ITL p50 55.3 ms, TTFT slope 0.612, d0 199 ms):
+- **TF_GLM_CHUNK_SOLO=4096** — upstream's ~7% TTFT at TP=2: the prompt pass
+  doubles to 4096 rows, halving the exchange pieces per pass (the engine's
+  "a prompt chunk's exchanges in N row pieces" line shows the piece count).
+  Watch: the TTFT slope + d0 fixed overhead; the c2/c4 prefill interleave.
+- **TF_GLM_COPIES=1** — verified root/context copies (the explain() table's
+  BadCopyPolicy wording). Watch: solo/c2 decode (copy overhead rides the
+  decode path if any) and the prefill.
+The knob discipline applies: a knob advances to a confirm window only on a
+sharp, instrument-consistent win; parity or a regression retires it; adoption
+additionally wants the quality gates (the receipts-equal-or-better protocol).
+The arms double as the v1.2.3 rebase's perf spot-check — a wild move vs the
+v1.2.2 absolutes is a rebase red flag.
+Also in the same window: the depth ladder re-qualification on the adopted
+paged v1.2.3 stack (the standing `depth` phase — the 12/12 bar, the post-
+adoption re-run queued at the adoption digest).

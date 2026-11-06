@@ -44,14 +44,14 @@ NCCL. Everything is Docker; the hosts need nothing but docker, ssh and the NVIDI
   <img src="docs/bpw4-sweep-cards.svg" alt="Scorecards for the 4bpw checkpoint sweep: hardmode (104 scenarios), prefill, and tg at three depths per pack — generated from docs/bpw4-sweep.tsv" width="740">
 </p>
 
-The served default is the **TR3-4bpw checkpoint** (Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw; the round-132 (user) swap after the 4bpw sweep — 94/104 hardmode, the best top-8 decode) on **TensorFold v1.2.2** (the pin in
+The served default is the **TR3-4bpw checkpoint** (Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw; the round-132 (user) swap after the 4bpw sweep — 94/104 hardmode, the best top-8 decode) on **TensorFold v1.2.3** (the pin in
 `scripts/local.sh`; the round-127 tail-release patch retired — #1884 mainlined it). Fully qualified end to end; the receipts live in
 the trackers below. This README carries the current status only — every detail links to
 its tracker.
 
 | question | answer |
 | --- | --- |
-| Does it serve? | Yes — **v1.2.2 + the Mia fold-in stack** on both ranks (the round-133 adoption: ABSORB_MMA + the GB10 cost tables; gates PASS, depth 12/12, hardmode 95 on the stack), RoCE gather up (2 HCAs, RDMA writes, no fallback) |
+| Does it serve? | Yes — **v1.2.3 + the 4-patch stack** on both ranks (the round-133 adoption: absorb + the fp8-pages marriage + the pagerows/selist fixes, TF_KV_PAGES=on; §2 gates PASS on v1.2.2, hardmode 95 + the vision 4/4 and the replay 100 + the probe 5/5 re-receipted on the v1.2.3 rebase — campaign-20261106-065920), RoCE gather up (2 HCAs, RDMA writes, no fallback) |
 | Ports | **This line always serves the testing port 8001** — opencode never connects to it. Production serves opencode on 8000 and testing on 8001 (intent-keyed starts). [AGENTS.md](AGENTS.md) carries the lifecycle rules |
 | Exactness | All §2 gates **PASS** (content form): drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable — [docs/VALIDATION.md](docs/VALIDATION.md) §2 |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder 12/12 at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
@@ -125,7 +125,7 @@ header for the per-phase list.
 ## Versions: how the pin works
 
 The pin lives in `scripts/local.sh` (`TF_REF` or `TF_COMMIT`): the current pin is
-`TF_COMMIT=00e7ddd…` (**v1.2.2**). At prepare time the ref is resolved and **recorded in the prepared
+`TF_COMMIT=6ec5fa4cb…` (**v1.2.3**). At prepare time the ref is resolved and **recorded in the prepared
 marker**, so a running pair never drifts and a restart does not silently upgrade.
 
 > **Pin in `scripts/local.sh`, not in your shell.** `start.sh` re-runs `prepare.sh`
@@ -144,7 +144,7 @@ The ones that matter:
 | `WORKER` | *(required)* | rank 1's ssh target (key-based); set in `scripts/local.sh` |
 | `HEAD_FABRIC_ADDR` / `WORKER_FABRIC_ADDR` | *(required)* | the CX7 rails; NCCL bootstraps on the head's |
 | `NCCL_SOCKET_IFNAME` / `NCCL_IB_HCA` | *(required)* | netdevs NCCL may use; the two cabled RoCE devices for the engine's gather and NCCL RDMA |
-| `TF_REF` / `TF_COMMIT` / `TF_REPO` | `v1.2.2` (via local.sh) / upstream | the TensorFold line to track; pin via `local.sh` (see above) |
+| `TF_REF` / `TF_COMMIT` / `TF_REPO` | `v1.2.3` (via local.sh) / upstream | the TensorFold line to track; pin via `local.sh` (see above) |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint — the TR3 quant (the round-132 (user) swap; 94/104 hardmode, the best top-8 decode); present on both hosts (staged) |
 | `PATCHES` | `glm-mia-absorb-mma.patch` | **the Mia-1104 ABSORB_MMA port (the round-133 adoption)** — a prompt's absorb_q/expand_v as tensor-core GEMMs, opt-out `TF_GLM_ABSORB_MMA=0`; the deep fills −7%, the small prompts −5-6%, the duel fronts solo 110% / cold 334%. The cost tables were DROPPED in the attribution (their un-starved learner cost the c2 aggregate 110→93 on our shape and bought nothing measurable — campaign-20261105-000521 vs -234405); glm-topk4b stays opt-in for the top4cfg/AZ cells — [patches/README.md](patches/README.md) |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` and the snapshot is present (CC BY-NC-ND 4.0, non-commercial) |

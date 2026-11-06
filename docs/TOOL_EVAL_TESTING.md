@@ -567,8 +567,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       tags. Verified byte-identical on a fresh v1.2.3 checkout. The pin
       (local.sh TF_COMMIT) bumped to the commit sha for the window;
       v1.2.2 stays the qualified default until the receipt.
-      **v123qual in flight** — the replay, the sparse-prefill probe, the
-      battery + the vision (the bar: no loops + 5/5 + ≥94 + 4/4).
+      **v123qual (campaign-20261106-065920): THE v1.2.3 REBASE
+      VALIDATES — THE ADOPTION** — the replay 100 with the standing
+      run's exact token profile (TC-62 5,043/12 turns, TC-49 751; zero
+      truncated), the probe 5/5 exact, hardmode **95** + the vision
+      4/4, total_tokens 662,693 BYTE-IDENTICAL to the standing run's.
+      The pin stays on v1.2.3 (6ec5fa4cb); config.sh/README/DELTAS
+      re-based; glm-zz-dsasel3.patch retired (the mechanism receipted
+      twice). **kvqual4P + depth + v123perf in flight** — the §2 gates
+      on the new ref, the depth ladder re-qual, and v1.2.3's two perf
+      knobs (CHUNK_SOLO=4096, COPIES=1) on the duel instruments.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

@@ -6808,3 +6808,43 @@ replay stops looping + the probe 5/5 exact + hardmode ≥ 94 + the vision
 If it clears: the v1.2.3 adoption digest (the pin stays, config.sh
 comments) + v1.2.3's perf items (TF_GLM_CHUNK_SOLO=4096 ~7% TTFT at
 TP=2, TF_GLM_COPIES=1) go on the perf plan.
+
+## (round 133, cont. 68) THE v1.2.3 ADOPTION: v123qual (campaign-20261106-065920) clears every bar — the replay 100 with the standing run's EXACT token profile, the probe 5/5, hardmode 95, the vision 4/4; the pin stays on v1.2.3 (2026-11-06)
+
+**v123qual's receipt** (the rebased 4-patch stack on v1.2.3 = 6ec5fa4cb,
+TF_KV_PAGES=on — the serve line carries the paged pool: model 81.35 GiB,
+4100 pages of 512 rows, 13.61 GiB):
+- **The harness replay: final_score 100** — TC-62 passes 5,043 tokens /
+  12 turns, TC-49 751 / 3 turns — **byte-for-byte the standing run's
+  profile**, zero truncated notes: the loops GONE on v1.2.3's rebased
+  stack (the churn discriminator).
+- **The sparse-prefill code probe: 5/5 exact** MKR-{i}QX (the code at
+  ~row 3,650, beyond dense_limit, on recycled pages).
+- **The hardmode battery: final_score 95** (production parity; the bar
+  ≥ 94; the standing paged run's 95 exactly) — **total_tokens 662,693,
+  BYTE-IDENTICAL to the standing run's**; token_efficiency 0.30 and
+  deployability 74 (both standing); median_turn_ms 6,405.5 (the standing
+  window-mode 6,829.6 — 6.2% faster; the paged receipt's 6,381.8 within
+  instrument noise).
+- **The vision suite: 4/4** (all eight probes ok).
+
+**THE v1.2.3 ADOPTION**: the bar fully cleared — the pin STAYS on
+v1.2.3 (6ec5fa4cb, the commit sha). The digest edits: config.sh's
+TF_KV_PAGES + PATCHES comments cite the v123qual receipt; README's
+status rows + the TF_COMMIT mentions move to v1.2.3; DELTAS' engine row
+re-based; the loop hunt's instrument glm-zz-dsasel3.patch RETIRED in
+patches/README.md (the mechanism receipted twice — the v1.2.2 sparsefix
+and this re-qualification; the instrument was never in the serving
+PATCHES list). v1.2.2's §2-gates and duel receipts stand as the MODE's
+receipts (the rebase changed no perf path — absorb's diffstat is
+identical and the helper consolidation is semantics-preserving); the
+v123perf arms double as the rebase's perf spot-check.
+
+**LAUNCHED: kvqual4P + depth + v123perf** (one window): the §2 gates on
+the paged v1.2.3 stack (the adoption's gates receipt on the new ref),
+the depth ladder re-qualification (the post-adoption re-run, the 12/12
+bar), and v1.2.3's two perf knobs (TF_GLM_CHUNK_SOLO=4096 — upstream's
+~7% TTFT at TP=2; TF_GLM_COPIES=1) A/B'd on the duel instruments vs the
+standing absolutes (solo 63.5/63.2, c2 110.6, c4 154.8, ITL p50 55.3,
+slope 0.612). ~60 min + the prepare. THEN DARK. A knob advances to
+confirm only on a sharp, reproduced win + the gates (the protocol).

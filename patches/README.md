@@ -152,7 +152,7 @@ unit; its path is receipted correct — the poolcanary3 bisect). STAGING:
 sorts AFTER glm-mia-fp8-pages.patch (the first name sorted before it and
 the build's alphabetical apply failed — the rename is the receipt).
 
-## glm-zz-dsasel3.patch — THE LOOP HUNT'S INSTRUMENT v3 (staged 2026-11-06; retires with the mechanism receipt)
+## glm-zz-dsasel3.patch — THE LOOP HUNT'S INSTRUMENT v3 (RETIRED 2026-11-06: the mechanism receipted — the selist fix closed it, and the v1.2.3 rebase re-receipted the fix end to end; the instrument is NOT in the serving PATCHES list and stays here as the hunt's record)
 
 The DSA selection instrument: tf_glm_dsa_tokens prints VIOL lines (an
 E4M3 selection containing a token beyond the row's causal limit —

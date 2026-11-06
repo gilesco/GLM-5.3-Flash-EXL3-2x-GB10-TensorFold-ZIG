@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP v123qual knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP v123qual v123perf knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1258,6 +1258,42 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
   docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -10 | sed 's/^/  /' >> "$P"
   echo "- VERDICT: the replay stops looping (no truncated notes) + five exact MKR-{i}QX + hardmode >= 94 + the vision 4/4 = the v1.2.3 rebase VALIDATED (the v1.2.3 adoption digest follows: config.sh comments, the pin stays on the tag); a loop or a vision miss = back to the instrument" >> "$P"
   touch "$OUT/.v123qual.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: v123perf (SESSION-SPECIFIC; retires with the receipt). v1.2.3's two
+# perf knobs, each A/B'd on the duel instruments against the standing paged
+# receipt (duelpaged, campaign-20261106-052114, the ours arm ON v1.2.2:
+# solo 63.5/63.2 t/s, c2 110.6, c4 154.8, ITL p50 55.3 ms, TTFT slope
+# 0.612 ms/token, d0 199 ms):
+#   arm chunksolo: TF_GLM_CHUNK_SOLO=4096 — upstream's ~7% TTFT at TP=2
+#     (the prompt pass doubles to 4096 rows: half the exchange pieces)
+#   arm copies1: TF_GLM_COPIES=1 — verified root/context copies
+# The knob discipline: a knob advances to a confirm window only on a
+# sharp, instrument-consistent win; parity or a regression retires it;
+# adoption additionally wants the quality gates (the receipts protocol).
+# The arms also double as the rebase's perf spot-check (v1.2.3 vs the
+# v1.2.2 absolutes — a wild move is a rebase red flag).
+# ---------------------------------------------------------------------------
+if want v123perf && ! phase_done v123perf; then
+  log "=== v123perf (CHUNK_SOLO=4096 and COPIES=1 on the duel instruments)"
+  P="$OUT/12-v123perf.md"; : > "$P"
+  echo "# v123perf (v1.2.3's two perf knobs, the duel instruments per arm)" >> "$P"
+  echo "- the standing receipt (duelpaged, campaign-20261106-052114, ours ON v1.2.2): solo 63.5/63.2 t/s, c2 110.6, c4 154.8, ITL p50 55.3 ms, TTFT slope 0.612, d0 199 ms" >> "$P"
+  for arm in chunksolo copies1; do
+    K="TF_GLM_CHUNK_SOLO=4096"; [[ $arm == copies1 ]] && K="TF_GLM_COPIES=1"
+    echo "## arm $arm ($K)" >> "$P"
+    S=$(date +%s)
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 "$K"; then
+      echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-150)" >> "$P"
+      duel_arm "$arm" "$SERVED_NAME"
+    else
+      echo "- REFUSED to start (the refusal is the receipt):" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | tail -3 | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "- VERDICT: a knob advances to confirm only on a sharp, instrument-consistent win vs the standing absolutes; parity or a regression retires it; the arms' absolutes also spot-check the v1.2.3 rebase's perf (vs the v1.2.2 receipt above)" >> "$P"
+  touch "$OUT/.v123perf.done"
 fi
 
 # ---------------------------------------------------------------------------
