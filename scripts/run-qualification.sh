@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1189,6 +1189,79 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
   docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -12 | sed 's/^/  /' >> "$P"
   echo "- VERDICT: ten exact MKR-{i}QX replies = the mis-read is fixed; the battery re-run is the adoption judgment" >> "$P"
   touch "$OUT/.poolcanary5.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: resweep (SESSION-SPECIFIC; retires with the receipt — the (user)
+# ask, round 133 cont. 78: "re-run the sweep — the readme should reflect
+# what a user gets if they download and use the current version"). The
+# round-132 sweep's four local packs re-measured on the SHIPPING stack
+# (v1.2.3 + the 4-patch paged KV + TF_GLM_KV_SHARE=8 — every serving
+# default from config.sh; only the pack's MODEL_ID/REVISION vary per
+# cell, plus the AZ top-4 cell's glm-topk4b.patch, verified applying
+# clean on v1.2.3+the-4-patches). All four cells in ONE window (~40 min
+# each: load, g1 determinism, bench_cell, bench_perf). Each cell emits a
+# TSVROW| line (pack|hardmode|pp_d0|tg_d0|tg_d4096|tg_d8192|tg_c4_d8192)
+# — the next sitting transplants the rows into docs/bpw4-sweep.tsv,
+# re-renders the cards, and re-frames the README (the cards become the
+# CURRENT ranking; the round-132 sweep moves to history: LAUNCH +
+# results/bpw4sweep/). The tokenizer note: the bench's --tokenizer rides
+# the shell's default MODEL_ID for every cell (the packs share the GLM
+# tokenizer family; the round-132 sweep ran the same way — the
+# comparison stays consistent).
+# ---------------------------------------------------------------------------
+if want resweep && ! phase_done resweep; then
+  log "=== resweep (the four local packs on the shipping stack)"
+  P="$OUT/16-resweep.md"; : > "$P"
+  echo "# resweep (the 4bpw local packs on the CURRENT stack: v1.2.3, the 4 patches, paged KV, KV_SHARE=8)" >> "$P"
+  SWEEP_DIR="results/resweep"; mkdir -p "$SWEEP_DIR"
+  resweep_cell() {  # $1 tag, $2... env pairs (the pack's overrides only)
+    local tag="$1"; shift
+    echo "## cell $tag ($*)" >> "$P"
+    local S=$(date +%s)
+    if ! restart "$@" DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+      echo "- FAIL: the server refused the pack" >> "$P"
+      return 0
+    fi
+    echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-170)" >> "$P"
+    echo "- $(roce_state)" >> "$P"
+    local RP="$SWEEP_DIR/$tag-req.json"; req_file "$RP" "$REF_PROMPT"
+    chat "$RP" > "$SWEEP_DIR/$tag-1a.json"; chat "$RP" > "$SWEEP_DIR/$tag-1b.json"
+    if [[ "$(content_sha "$SWEEP_DIR/$tag-1a.json")" == "$(content_sha "$SWEEP_DIR/$tag-1b.json")" ]]; then
+      echo "- PASS g1 determinism (content)" >> "$P"
+    else echo "- FAIL g1 determinism" >> "$P"; fi
+    bench_cell "rs-$tag" "$SWEEP_DIR/$tag-battery" >> "$P" 2>&1
+    grep -h -o "final_score.: [0-9]*" "$SWEEP_DIR/$tag-battery/bench.log" >> "$P" || true
+    bench_perf "$tag-perf" "$SWEEP_DIR/$tag-perf" 4 >> "$P" 2>&1
+    python3 - "$SWEEP_DIR/$tag-battery" "$SWEEP_DIR/$tag-perf" "$tag" >> "$P" <<'PWE'
+import glob, json, re, sys
+bat, perf, tag = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    hm = json.load(open(f"{bat}/result.json"))["scores"]["final_score"]
+except Exception:
+    hm = "NA"
+reps = sorted(glob.glob(f"{perf}/2026/*/*--*.md"))
+vals = {}
+if reps:
+    for line in open(reps[-1], encoding="utf-8"):
+        m = re.match(r"\| pp2048 tg128 @ (d0|d4096|d8192)( c4)? \| ([\d,]+)\*? \| ([\d.]+) ", line)
+        if m:
+            if m.group(2):
+                vals["tg_c4_d8192"] = m.group(4)
+            elif m.group(1) == "d0":
+                vals["pp_d0"] = m.group(3).replace(",", "")
+                vals["tg_d0"] = m.group(4)
+            else:
+                vals["tg_" + m.group(1)] = m.group(4)
+print("TSVROW|%s|%s|%s|%s|%s|%s|%s" % (tag, hm, vals.get("pp_d0", "NA"), vals.get("tg_d0", "NA"), vals.get("tg_d4096", "NA"), vals.get("tg_d8192", "NA"), vals.get("tg_c4_d8192", "NA")))
+PWE
+  }
+  resweep_cell tr3 "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw MODEL_REVISION=main"
+  resweep_cell mia "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold MODEL_REVISION=main"
+  resweep_cell focus "MODEL_ID=local/GLM-5.3-Flash-AZ-Focus-EXL3 MODEL_REVISION=main"
+  resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
+  echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
+  touch "$OUT/.resweep.done"
 fi
 
 # ---------------------------------------------------------------------------

@@ -7156,3 +7156,36 @@ the new engine — that would be its own window).
   row superseded on the shipping stack).
 
 No new measurements; no window — desk work only.
+
+## (round 133, cont. 78) THE RE-SWEEP LAUNCHED ((user) ask: "re-run the sweep — the readme should reflect what a user gets if they download and use the current version"): the four local packs on the SHIPPING stack, one window, the tsv rows emitted per cell (2026-11-06)
+
+**The design** (the resweep session phase): the round-132 sweep's four
+packs re-measured on the shipping stack — v1.2.3 + the 4-patch paged KV
++ TF_GLM_KV_SHARE=8, every serving default from config.sh, only the
+pack's MODEL_ID/REVISION varying per cell:
+- **tr3** — the served default (Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw).
+- **mia** — production's stock (…-4bpw-TensorFold @ main).
+- **focus** — the AZ-Focus (local/GLM-5.3-Flash-AZ-Focus-EXL3).
+- **az4** — the AZ top-4 selector (local/GLM-5.3-Flash-AZ-EXL3) riding
+  **glm-topk4b.patch on TOP of the 4-patch stack** (verified applying
+  clean on v1.2.3+the-4-patches before staging — the AZ cell's fingerprint
+  change triggers a prepare rebuild inside its restart).
+
+Per cell: restart → the serve line + RoCE → g1 determinism (two greedy
+probes, content sha) → bench_cell (the 104-scenario hardmode battery,
+bench v3.0.1) → bench_perf (llama-benchy pp2048/tg128 at d0/d4096/d8192
++ c4@d8192) → a **TSVROW|** line emitted (the battery's final_score +
+the benchy table's five values, parsed from the report by the phase).
+The tokenizer note: the bench's --tokenizer rides the shell's default
+MODEL_ID for every cell (the packs share the GLM tokenizer family; the
+round-132 sweep ran the same way — the comparison stays consistent).
+
+~40 min per cell (the load, the g1, the battery ~30 min, the benchy) ≈
+**3.5 h for the window** — the longest yet; production restores on the
+exit path as always. When it lands: the four TSVROW lines transplant
+into docs/bpw4-sweep.tsv, the cards re-render, the README re-frames
+(the cards become the CURRENT ranking — "what a user gets"; the
+round-132 sweep and its annotation move to history: LAUNCH +
+results/bpw4sweep/). A FAIL cell keeps its round-132 row with a note.
+
+THEN DARK.
