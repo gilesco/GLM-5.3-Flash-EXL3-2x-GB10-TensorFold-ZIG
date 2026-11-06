@@ -84,6 +84,14 @@ Hard boundaries, never crossed:
   to BE production's served model; since the cloud-model switch the agent may run
   windows, but only when asked). Long runs go under `nohup` on the head with the
   console at `/tmp/<name>.console`, not in a foreground ssh.
+- **The launch is the LAST action of a sitting (user, round 133 — confirmed working:
+  no launch has cut a sitting's work off midway since)**. Finish every task first —
+  the docs, the digests, the commits, the pushes, the head's ff-only — then launch
+  at most ONE window and go dark until the poke. The launch command takes the phase
+  list as its ARGUMENT: `RC_PATCHES="a.patch,b.patch" scripts/autonomous-launch.sh
+  "phase summary"` (space-separated, `summary` last; a `PHASES` env var is silently
+  ignored — cont. 69's window ran only part of its list that way). A sitting with
+  nothing to test launches nothing.
 - A round's digest updates **the same sitting**: LAUNCH.md (append), the ledger's
   status items, any affected plan doc, and the README status table when a qualified
   fact changes. When a comparison metric changes, also update its anchors file
@@ -117,8 +125,27 @@ head's checkout under `results/` and are not committed — quote them from there
 - **`cached_tokens` in usage is unwired** (0 even on cache hits) — cache-hit
   verification is content + the `/metrics` counters (`tensorfold_cached_tokens_total`
   via goshi's exporter).
-- On the KV-pages branch head (87e4417e), **fp8 KV × `TF_KV_PAGES` is a fatal
-  combination** — bf16 is the only paged path.
+- **fp8 KV × `TF_KV_PAGES=on` is THE adopted serving mode** (the 1106 marriage + the
+  pagerows/selist fixes, round 133) — the old "bf16 is the only paged path" warning
+  died with the marriage; the mode is receipted end to end (§2 on both KV cells, the
+  depth ladder, hardmode, the duel).
+- **config.sh knobs have TWO forwarding paths, and they fail differently** — the arg
+  builders consume shell variables directly (`KV_CACHE` → `--kv-cache`), while
+  `env_args()` forwards TF_*/NCCL_* from the EXPORTED environment (`env | grep`).
+  A default added on the wrong path fails silently: the serve line's memory
+  arithmetic is the only witness. Defaults for env-forwarded knobs must be
+  `export`ed (the KV_SHARE adoption was smoke-caught on exactly this), and **the
+  bare config is smoke-tested after ANY default change** (the adoptsmoke phase
+  pattern — read the serve line, don't trust the probe alone).
+- **One quoted argument per `K=V` pair in restart calls** — joining pairs into a
+  single string makes `env` set ONE mangled variable (the resweep window burned on
+  it; prepare's error named a hub dir with `MODEL_REVISION=main` inside — read
+  error text for embedded pair syntax before suspecting the cache).
+- **`git rev-parse <tag>` yields the annotated TAG OBJECT, not the commit** — a pin
+  field needs `<tag>^{commit}` (the v1.2.3 pin would have checked out a tag object).
+- **A phase's refusal path prints the prepare/start log's tail** — the error must
+  land in the receipt, not hide in the campaign log (the resweep's first run didn't
+  self-diagnose and the window was wasted).
 - **Thinking eats small `max_tokens`** — gate probes use ≥1024.
 - **`VAR=x func` persists in bash** — prodqual restores `SERVED_NAME` after its
   override; keep that pattern for any new override.
