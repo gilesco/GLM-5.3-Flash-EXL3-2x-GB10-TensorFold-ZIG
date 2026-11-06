@@ -152,6 +152,21 @@ unit; its path is receipted correct — the poolcanary3 bisect). STAGING:
 sorts AFTER glm-mia-fp8-pages.patch (the first name sorted before it and
 the build's alphabetical apply failed — the rename is the receipt).
 
+## glm-mia-packed-s2.patch — the packed-prompt matmuls in two stages, two blocks an SM (staged 2026-11-06; the mms2 A/B decides)
+
+Mia 1104 0009, adapted to v1.2.3 (applies clean — glm_mm.cu/cuda_mm.zig are
+untouched by the 4-patch stack). glm_mm{4,6,8}_128s2: __launch_bounds__(256, 2)
+and 41 KB of shared memory in two cp.async stages (the 128-row kernels take
+61.8 KB in three, one block an SM; a 768-row prompt piece's 384 blocks fit one
+wave instead of 2.04). Each output's K groups run in the same order — the sums
+are glm_mm{B}_128's bit for bit (Mia: 0 differing outputs on all eight shapes).
+Mia's measurement (RTX PRO 6000, sm_120, 400 W sustained): 1.07-1.09x on GLM's
+prompt shapes; under their power cap most of the occupancy gain became power —
+the GB10 envelope differs, so the mms2 window's A/B decides (the content-sha
+cross-arm gate + the pp rows, 2+ runs per arm). STAGING: applies on v1.2.3 +
+the 4-patch stack; disjoint files, the list order does not matter. OWNER: this
+line; STATUS: EXPERIMENTAL.
+
 ## glm-zz-dsasel3.patch — THE LOOP HUNT'S INSTRUMENT v3 (RETIRED 2026-11-06: the mechanism receipted — the selist fix closed it, and the v1.2.3 rebase re-receipted the fix end to end; the instrument is NOT in the serving PATCHES list and stays here as the hunt's record)
 
 The DSA selection instrument: tf_glm_dsa_tokens prints VIOL lines (an

@@ -7277,3 +7277,31 @@ arc has been the poke-driven loop (the (user) handover). Now:
   generic form.
 
 No window — desk work.
+
+## (round 133, cont. 83) THE FRONT 2 DESIGN PASS → THE CANDIDATE BUILT AND THE A/B LAUNCHED: glm-mia-packed-s2.patch (Mia 1104 0009 — the two-stage packed-prompt matmuls, bit-identical sums, Mia 1.07-1.09x on prompt shapes); the "+36% prefill" citation withdrawn (2026-11-06)
+
+**The design pass's findings**: the fork's "+36% prefill" (the perf
+plan's old citation) is unlocatable in their materials — withdrawn.
+0010 = the side-stream drain fix (no anchor here); 0033 = the pair-launch
+TEST for a decode-side fusion (the implementation patch unlocated —
+parked). The real prefill-class lever: **0009 — glm_mm{4,6,8}_128s2**, 21
+lines, applies clean on v1.2.3 (glm_mm.cu/cuda_mm.zig are untouched by
+our stack), the mechanism pure occupancy (41 KB two-stage smem → two
+blocks/SM; a 768-row piece's 384 blocks fit one wave instead of 2.04),
+and the sums **bit-identical by construction** (the K groups run in the
+same order; Mia measured 0 differing outputs on all eight shapes). Mia's
+number: 1.07-1.09x on GLM's prompt shapes (sm_120, RTX PRO 6000) — with
+the power-cap caveat that our GB10's envelope may convert differently.
+
+**THE PORT**: `glm-mia-packed-s2.patch` staged (the provenance header +
+Mia's measurements + the staging note; verified applying on
+v1.2.3+the-4-patches), patches/README.md's entry written.
+
+**LAUNCHED: mms2 + summary** — the definitive A/B: arm off (the standing
+stack) vs arm on (+ the s2 patch; the rebuild rides the restart), each
+with the greedy content probes (three prompt sizes, the content shas —
+the cross-arm identity IS the bit-exactness gate) and bench_perf twice
+per arm. The bar: content IDENTICAL + a sharp pp gain → the battery +
+the duel re-pair; a content DIFFERENT retires outright; pp parity
+retires; the tg rows moving is a red flag. ~50 min (the rebuild
+included). THEN DARK.

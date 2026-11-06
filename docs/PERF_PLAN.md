@@ -553,3 +553,31 @@ perf path, as the diffstat/semantics analysis predicted.
 Also in the same window: the depth ladder re-qualification on the adopted
 paged v1.2.3 stack (the standing `depth` phase — the 12/12 bar, the post-
 adoption re-run queued at the adoption digest).
+
+**The Front 2 design pass (cont. 83, desk work) — the candidate found, the
+citation corrected**: the fork's materials contain NO "+36% prefill" claim
+(grepped the repo — the number is unlocatable; the plan's "(0010/0033,
++36% prefill)" citation is withdrawn). 0010 is the side-stream drain fix
+(no anchor here); 0033 is the TEST for a decode-side f_b+g_b pair fusion
+(whose implementation patch was never located — parked). The REAL
+prefill-class lever in the fork's early series is **0009: the packed-prompt
+matmuls in two stages (`glm_mm{4,6,8}_128s2`)** — 21 lines on
+glm_mm.cu/cuda_mm.zig (files our 4-patch stack never touches; **applies
+clean on v1.2.3, verified**), the mechanism pure occupancy (41 KB smem in
+two cp.async stages → two blocks/SM instead of one; a 768-row piece's 384
+blocks fit one wave instead of 2.04), and the sums **bit-identical** (the K
+groups run in the same order — Mia measured 0 differing outputs on all
+eight shapes). Mia's measurement: 1.07-1.09x on GLM's prompt shapes on
+sm_120 (RTX PRO 6000, 400 W sustained), with the caveat that under their
+power cap most of the occupancy gain became power — the GB10's envelope
+differs, so our A/B decides. **Ported as `glm-mia-packed-s2.patch`**
+(staged, the header carries the provenance + the measurements). **The
+mms2 window launched**: arm off (the standing 4-patch stack) vs arm on
+(+ the s2 patch; the rebuild rides the restart), each with the greedy
+content probes (three prompt sizes, the content shas — the cross-arm
+identity IS the bit-exactness gate on our shape) and bench_perf twice per
+arm. The bar: content IDENTICAL + a sharp pp gain → the battery + the
+duel re-pair (the adoption judgment); a content DIFFERENT retires it
+outright; pp parity retires it; the tg rows moving is an instrument red
+flag. The target: the prefill front's 69% (1,049-1,115 vs production's
+1,518) — an 8% prefill gain would be the front's first structural move.
