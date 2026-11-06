@@ -7008,3 +7008,42 @@ now rides the pool pages), a fresh restart, the hardmode battery + the
 vision suite. The bar: §2 PASS + hardmode ≥ 94 + the vision 4/4 =
 ADOPT (config.sh exports TF_GLM_KV_SHARE=8 as the default); any miss =
 retire. ~50 min. THEN DARK.
+
+## (round 133, cont. 74) THE KV_SHARE=8 ADOPTION: kvsharequal (campaign-20261106-093921) — §2 ALL PASS (g3 receipts the pool-page resume path), hardmode 95 + the vision 4/4, total_tokens 662,693 byte-identical; config.sh adopts the knob; the bare-config smoke test launched (2026-11-06)
+
+**kvsharequal's receipt** (TF_GLM_KV_SHARE=8, the 4-patch v1.2.3 stack):
+- **§2 ALL PASS** — g1 determinism (content), g2 drafted=plain, **g3
+  resumed=fresh** (the same answer tokens: alpha-7391, bravo-2250,
+  charlie-8118 — THE gate for the changed resume path), g4
+  concurrent=solo (4/4), g5 sampled.
+- **The serve line**: "the prompt cache over the pool's pages" — the
+  knob's signature; the pool reads **3075 pages of 512 rows (10.21
+  GiB)** — 1025 pages (~3.4 GiB) reserved for the store, 4100 → 3075
+  free; the one-at-524288 guarantee unchanged.
+- **The hardmode battery: final_score 95** (production parity; the
+  standing score) — **total_tokens 662,693, BYTE-IDENTICAL to the
+  standing run's** (the third consecutive receipt with the exact
+  profile); token_efficiency 0.30, deployability 74 (both standing);
+  median_turn_ms 6,432.4 (within instrument noise of the paged
+  receipt's 6,381.8).
+- **The vision suite: 4/4** (all eight probes ok).
+
+**THE ADOPTION DECISION (the receipts-equal-or-better protocol)**:
+the quality gates (the battery 95 + the vision 4/4), the correctness
+gates (§2 ALL PASS — g3 receipts the re-plumbed resume), the
+instrumented win (kvshare2: the concurrent 4-prefix aggregate −40%,
+7.41 vs 12.29 s, with the per-request cost flat; the solo warm
+reliable where the host store cascades), the content checks IDENTICAL
+(kvshare + g3), and a bounded, receipted trade (the pool reserve).
+**config.sh adopts `export TF_GLM_KV_SHARE="${TF_GLM_KV_SHARE-8}"`**
+(the cont. 66 export lesson applied — env_args() forwards TF_GLM_*
+from the environment); the README carries the env row; DELTAS' engine
+row gains the knob; PERF_PLAN's concurrent-resume item splits into the
+SOLVED store half and the remaining queue half (upstream-shaped).
+
+**LAUNCHED: adoptsmoke2 + summary** — the bare-config smoke test (the
+cont. 66 discipline: after ANY default change, smoke-test the bare
+config and read the serve line's memory arithmetic). ~10 min. THEN
+DARK. Next arc: the Front 2 build-class candidates (PDL from scratch
+or the 0010 port) need a design decision; the upstream watch continues
+each sitting.

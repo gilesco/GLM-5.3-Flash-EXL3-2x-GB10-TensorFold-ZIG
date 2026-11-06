@@ -604,9 +604,13 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (1.84 s vs the host arm's miss), and the concurrent volley hit
       4/4 (cached=2048 ×4, the aggregate 7.41 s vs the host arm's
       12.29 s — −40%; the per-request cost flat under concurrency, the
-      round-123 serialization confirmed cleanly). **kvsharequal in
-      flight** — the §2 gates + the battery + the vision on the knob;
-      the bar: §2 PASS + ≥94 + 4/4 = ADOPT TF_GLM_KV_SHARE=8.
+      round-123 serialization confirmed cleanly). **kvsharequal (campaign-20261106-093921): §2 ALL
+      PASS (g3 receipts the pool-page resume path — the same answer
+      tokens), hardmode 95 + the vision 4/4, total_tokens 662,693
+      byte-identical — **ADOPTED: config.sh exports
+      TF_GLM_KV_SHARE=8** (the pool reserves 1025 pages for the store;
+      the README carries the row; DELTAS updated). The bare-config
+      smoke test (adoptsmoke2) in flight per the cont. 66 discipline.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

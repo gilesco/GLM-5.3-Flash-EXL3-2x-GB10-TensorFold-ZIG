@@ -50,7 +50,15 @@ upstream-gated**:
   4/4 at a flat 1.84 s/request (the aggregate 7.41 s vs the host
   store's 12.29 s — −40%; the round-123 serialization is the queue,
   the per-resume cost does not inflate). The knob advances to the
-  gates + the battery (kvsharequal). The PDL-on-the-finish route
+  gates + the battery (kvsharequal, campaign-20261106-093921: §2 ALL
+  PASS — g3 receipts the pool-page resume path — hardmode 95 + the
+  vision 4/4, total_tokens 662,693 byte-identical) — **ADOPTED
+  (cont. 74): config.sh exports TF_GLM_KV_SHARE=8**. The concurrent-
+  resume gap SPLITS: the store half is SOLVED (the page store holds the
+  states; the aggregate −40%), the queue half remains (the resumes
+  serialize behind the admission — upstream-shaped, the batched-launch/
+  pair-seam class). The cross-restart resume stays COLD (the store is
+  device memory; it does not survive a restart). The PDL-on-the-finish route
   was surveyed and priced: OUR tree has no PDL plumbing (the plan's
   earlier ".pdl flag" reference was the fork's field), so it is a
   from-scratch build with a modest expected win (round 116: the hc
