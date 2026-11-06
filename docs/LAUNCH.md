@@ -6418,3 +6418,40 @@ interaction with a debug instrument on the cheap reproducer; (b) park
 the marriage and rebase onto v1.2.3 (its GLM items are prefill/serving
 features; the loops stay unfixed — upstream-relevant data either way);
 (c) the user's own direction.
+
+## (round 133, cont. 57) THE USER LIFTS THE HOLD: continue autonomously, fold in v1.2.3 when appropriate; the fix hunt opens with the selection instrument (2026-11-06)
+
+**(user, 2026-11-06)**: "Ok, yes, you should continue — autonomously,
+and fold in v1.2.3 when you feel appropriate." The agent's plan, on the
+timing: **finish the loop fix on the current pin first** (the
+reproducer, the anchor discipline and the instruments all live on
+00e7ddd; rebasing mid-hunt adds a moving base to a bug hunt), then
+rebase onto v1.2.3 as its own arc (re-anchor the three patches + the
+fix, canary + battery re-validate ONCE on the new base), then the
+config.sh adoption decision.
+
+**The hunt's opening moves (static, no window)**:
+- The CUDA-index "quick" selection path: ELIMINATED — off by default
+  (TF_GLM_INDEX_CUDA unset = Mode.off) and prompt-sized-only (takes()
+  requires rows >= rows_from); our serves run the glue selection,
+  driven by the fixed Table.
+- The assembler (tf_glm_dsa_tokens): for E4M3 the token lists stay
+  LOGICAL positions (pt=0 on this path — "its chunks take the table"
+  later); PAGE=512 hardcoded, consistent with the fix. The scores
+  kernel reads the pooled keys THROUGH the page table (t.pt + t.ps
+  raw — its own mapping, not the fixed page_rows: noted).
+- The loop onsets: EARLY (tokens 500-1,650 into each runaway) at no
+  common boundary; the loop token ("calendar,") is a tool-schema name
+  from the prompt; the replay's runaway is a SOFT loop (72,502 chars of
+  reasoning, no exact-repeat run, draft acceptance 72.8%) vs the
+  battery's hard loops (99%) — a severity spectrum, one disease.
+
+**LAUNCHED: pagehunt** — the selection instrument. The glm-zz-dsasel
+debug patch (30 lines, staged, applies on the full stack) makes
+tf_glm_dsa_tokens print row 0's first eight selected logical positions
++ the count every 64th position (__syncwarp-guarded, read-only). The
+replay runs on fp8-paged (loops) AND bf16-paged (clean control); the
+SEL dumps save whole with a per-position distinct-top-4 summary in the
+receipt. FREEZE on fp8 with a healthy slide on bf16 ⇒ the selection is
+the site; both slide ⇒ the sparse attention's gather/read is the site.
+~25 min.

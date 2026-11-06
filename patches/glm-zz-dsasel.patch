@@ -1,0 +1,30 @@
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Subject: glm-cuda: debug - the DSA selection assembler prints row 0's selections (the loop hunt's instrument)
+
+PROVENANCE: this line's debug instrument, 2026-11-06, on the composed
+stack (absorb + fp8-pages + pagerows-fix). tf_glm_dsa_tokens prints
+row 0's first eight selected positions and the count every 64th
+position (E4M3 lists are logical positions - pt=0 here - so the
+numbers are positions). Purpose: under the 5-minute TC-62 replay, show
+whether the decode-time selection COLLAPSES (the same positions every
+step / frozen) or slides healthily when the degenerate loop starts.
+Read-only printf with a __syncwarp before the reads; no addressing
+change. Sorts last (glm-zz-*). OWNER: this line; STATUS: the loop
+hunt's instrument, retires with the mechanism receipt.
+
+diff --git a/zig/kernels/cuda/glm_ops.cu b/zig/kernels/cuda/glm_ops.cu
+index b2fbee106..c6431b485 100644
+--- a/zig/kernels/cuda/glm_ops.cu
++++ b/zig/kernels/cuda/glm_ops.cu
+@@ -25,6 +25,11 @@ extern "C" __global__ void tf_glm_dsa_tokens(const long long* __restrict__ pools
+         int tail = 0;
+         for (int t = 0; t < 3; ++t) tail += npool * 4 + t <= q;
+         counts[r] = npool > K ? 4 * K + tail : 0;
++        __syncwarp();
++        if (r == 0 && ((*pos) % 64) == 0)
++            printf("SEL pos=%d cnt=%d t=[%d %d %d %d %d %d %d %d]\n",
++                   *pos, counts[r], row[0], row[1], row[2], row[3],
++                   row[4], row[5], row[6], row[7]);
+     }
+ }
+ 

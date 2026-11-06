@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagebisect knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,32 +1192,35 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagebisect (SESSION-SPECIFIC; retires with the receipt). The FORMAT
-# bisect at the loop level: pageconc reproduced the loops faithfully (the
-# harness replay fails on fp8-paged, is healthy on pages-off with numbers
-# IDENTICAL to the standing run — the marriage's non-paging changes are
-# exonerated; concurrency is not the co-trigger). This phase runs the same
-# replay on bf16-paged (the receipted-correct sibling; KV_CACHE= empty —
-# start.sh refuses the literal "bf16"): TC-62 loops = the loop is E4M3-
-# specific (the quantized read/selection on long thinking decodes); TC-62
-# passes = paging itself degrades long thinking chains.
+# phase: pagehunt (SESSION-SPECIFIC; retires with the mechanism receipt). The
+# selection instrument: the bisection is complete (fp8 AND pages together =
+# the loop; either alone = clean) and the ~5-minute harness replay is the
+# reproducer. The glm-zz-dsasel debug patch makes the selection assembler
+# print row 0's first eight selected logical positions every 64th position.
+# This phase replays TC-62+TC-49 on fp8-paged (loops) and bf16-paged (clean
+# control), saves the SEL dumps whole, and summarizes per-position: the count
+# of DISTINCT top-4 tuples across layers. FREEZE on fp8 with a healthy slide
+# on bf16 = the selection is the site; both slide = the gather/read is the
+# site (the next instrument).
 # ---------------------------------------------------------------------------
-if want pagebisect && ! phase_done pagebisect; then
-  log "=== pagebisect (the bf16-paged format bisect on the faithful replay)"
-  P="$OUT/99-pagebisect.md"; : > "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "- bf16 paged: $(serve_line | cut -c1-120)" >> "$P"
-  mkdir -p "$OUT/tc-bf16"
-  echo "- the faithful harness replay (TC-62 + TC-49, the battery's flags):" >> "$P"
-  PYTHONUNBUFFERED=1 "$BENCH" run \
-    --base-url "http://127.0.0.1:$PORT/v1" \
-    --model "$SERVED_NAME" \
-    --format openai \
-    --tokenizer "$MODEL_ID" \
-    --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
-    --label "tc-bf16" --output-dir "$OUT/tc-bf16" --json-file "$OUT/tc-bf16/result.json" \
-    > "$OUT/tc-bf16/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-bf16/bench.log)" >> "$P"
-  python3 - "$OUT/tc-bf16/result.json" <<'PDE'
+if want pagehunt && ! phase_done pagehunt; then
+  log "=== pagehunt (the selection instrument: fp8-paged vs bf16-paged under the replay)"
+  P="$OUT/99-pagehunt.md"; : > "$P"
+  ph_run() {
+    tag="$1"; kv="$2"
+    if [ -n "$kv" ]; then restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+    else restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"; fi
+    echo "- $tag: $(serve_line | cut -c1-120)" >> "$P"
+    mkdir -p "$OUT/tc-$tag"
+    PYTHONUNBUFFERED=1 "$BENCH" run \
+      --base-url "http://127.0.0.1:$PORT/v1" \
+      --model "$SERVED_NAME" \
+      --format openai \
+      --tokenizer "$MODEL_ID" \
+      --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
+      --label "tc-$tag" --output-dir "$OUT/tc-$tag" --json-file "$OUT/tc-$tag/result.json" \
+      > "$OUT/tc-$tag/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-$tag/bench.log)" >> "$P"
+    python3 - "$OUT/tc-$tag/result.json" >> "$P" <<'PDE'
 import json, sys, re
 try:
     d = json.load(open(sys.argv[1]))
@@ -1225,16 +1228,41 @@ try:
     for s in d["scores"]["scenario_results"]:
         log = s.get("raw_log", "")
         trunc = re.findall(r"truncated=(.{0,90})", log)
-        print("  %s | status=%s | completion=%s | turns=%s | truncated_notes=%d" % (s.get("scenario_id"), s.get("status"), s.get("completion_tokens"), s.get("turn_count"), len(trunc)))
-        for t in trunc[:3]:
+        print("  %s | status=%s | completion=%s | turns=%s | truncated=%d" % (s.get("scenario_id"), s.get("status"), s.get("completion_tokens"), s.get("turn_count"), len(trunc)))
+        for t in trunc[:2]:
             print("     ", t)
 except Exception as e:
     print("  EXTRACT-FAILED:%r" % e)
 PDE
-  echo "- engine lines:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -8 | sed 's/^/  /' >> "$P"
-  echo "- VERDICT: TC-62 fails with a ceiling note = the loop is E4M3-specific (the quantized latent read/selection during long thinking decodes — the fix hunt digs the fp8 path); TC-62 passes = paging itself degrades long thinking chains (the page mapping/selection, format-independent — the fix hunt digs the Table/mapping layer)" >> "$P"
-  touch "$OUT/.pagebisect.done"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep "SEL pos=" > "$OUT/sel-$tag.log" 2>/dev/null || true
+    python3 - "$OUT/sel-$tag.log" >> "$P" <<'PDS'
+import sys, re, collections
+try:
+    rows = []
+    for l in open(sys.argv[1]):
+        m = re.match(r"SEL pos=(\d+) cnt=(-?\d+) t=\[(-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\]", l)
+        if m:
+            rows.append((int(m.group(1)), int(m.group(2)), tuple(int(m.group(i)) for i in range(3, 11))))
+    print("  SEL lines: %d | pos range: %s..%s" % (len(rows), rows[0][0] if rows else "-", rows[-1][0] if rows else "-"))
+    g = collections.defaultdict(list)
+    for pos, cnt, toks in rows:
+        g[pos].append((cnt, toks))
+    poses = sorted(g)
+    for pos in poses[::8]:
+        tops = [t for _, t in g[pos]]
+        distinct = len(set(tops))
+        common, n = collections.Counter(tops).most_common(1)[0]
+        print("  pos=%5d layers=%2d distinct_top4=%2d most_common(%d/%d)=%s" % (pos, len(tops), distinct, n, len(tops), str(common[:4])))
+except Exception as e:
+    print("  SEL-ANALYZE-FAILED:%r" % e)
+PDS
+    echo "  engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -6 | sed 's/^/    /' >> "$P"
+  }
+  ph_run fp8 ""
+  ph_run bf16 kv
+  echo "- VERDICT: the fp8 selections FREEZE (distinct_top4 near 1 across positions, or the same tuple repeating step after step) while bf16 slides = the selection is the loop's site (dig the scores/pools kernels' E4M3 paged reads); both slide = the sparse attention's gather/read is the site (instrument it next)" >> "$P"
+  touch "$OUT/.pagehunt.done"
 fi
 
 # ---------------------------------------------------------------------------
