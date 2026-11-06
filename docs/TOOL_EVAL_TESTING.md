@@ -598,10 +598,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       store's lines expose the cascade eviction (4 × 182 MiB > 679
       MiB; each warm miss re-keeps and evicts the next). The receipt
       LOCALIZES the concurrent-resume gap to store capacity/eviction.
-      **kvshare2 in flight** — N=8 + the solo-warm diagnostic
-      (capacity vs the live-stream interaction); a concurrent-hit win
-      advances the knob, a miss retires the mechanism and receipts the
-      park's explanation.
+      **kvshare2 (campaign-20261106-092703): THE CAPACITY FIX
+      WORKS** — N=8 held all four prefix states as 16 pool pages
+      through the live streams (zero eviction), the solo warm HIT
+      (1.84 s vs the host arm's miss), and the concurrent volley hit
+      4/4 (cached=2048 ×4, the aggregate 7.41 s vs the host arm's
+      12.29 s — −40%; the per-request cost flat under concurrency, the
+      round-123 serialization confirmed cleanly). **kvsharequal in
+      flight** — the §2 gates + the battery + the vision on the knob;
+      the bar: §2 PASS + ≥94 + 4/4 = ADOPT TF_GLM_KV_SHARE=8.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

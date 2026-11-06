@@ -6979,3 +6979,32 @@ interaction; a solo MISS = the states are gone entirely). The host arm
 runs as the reference. A concurrent-hit win advances the knob to the
 gates + the battery; a miss retires the mechanism for good and the
 park's explanation is receipted. ~15 min. THEN DARK.
+
+## (round 133, cont. 73) kvshare2 (campaign-20261106-092703): THE CAPACITY FIX WORKS — N=8 holds all four states through the live streams, the concurrent volley hits 4/4 (7.41 s vs the host arm's 12.29 s, −40%); the knob advances to the adoption judgment (2026-11-06)
+
+**kvshare2's receipt** (the host store vs TF_GLM_KV_SHARE=8):
+- **The page store HOLDS the states**: the pool's idle lines walk
+  "free 4096 + store 4 → 4092 + 8 → 4088 + 12 → 4084 + 16" — four
+  prefix states as 16 pool pages, **zero eviction**, stable through
+  the live streams and the concurrent volley.
+- **The solo warm: HIT** (1.841 s) — the host arm's solo warm MISSED
+  (3.475 s, the cascade: "hits 0, misses 5, evicted 3").
+- **The concurrent 4-prefix volley: ALL FOUR HIT** — cached=2048 ×4,
+  ttft 1.840-1.848 each, the aggregate **7.41 s vs the host arm's
+  12.29 s** (−40%; vs kvshare's 13.9 s baseline, −47%). The per-
+  request resume cost did NOT inflate under concurrency (1.84 solo =
+  1.84 concurrent) — **the round-123 serialization confirmed cleanly**:
+  the queue serializes the resumes; the cost per resume is flat.
+- The host arm's concurrent volley: 1 hit + 3 misses (12.29 s) — the
+  store's budget/eviction decides which prefixes survive.
+
+**THE KNOB ADVANCES**: the concurrent-resume aggregate −40% with a
+reliable solo warm, zero content risk surfaced (kvshare's content
+check IDENTICAL; the g3 gate re-receipts it on the knob).
+
+**LAUNCHED: kvsharequal + summary** — the adoption judgment: the full
+§2 gates on the knob (g3 resumed=fresh is THE gate — the resume path
+now rides the pool pages), a fresh restart, the hardmode battery + the
+vision suite. The bar: §2 PASS + hardmode ≥ 94 + the vision 4/4 =
+ADOPT (config.sh exports TF_GLM_KV_SHARE=8 as the default); any miss =
+retire. ~50 min. THEN DARK.

@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP kvshare2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP kvsharequal knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,69 +1192,38 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: kvshare2 (SESSION-SPECIFIC; retires with the receipt). kvshare's
-# follow-up: the knob showed PARITY on the solo warm resume (both stores
-# identical ttft walls) and the concurrent 4-prefix probe MISSED in both
-# arms (cached=0 x8; the host arm's cache lines expose the cascade
-# eviction — each warm miss re-prefills and re-keeps, evicting the next
-# state; 4 x 182 MiB does not fit the 679 MiB host store). Two open
-# questions decide the mechanism's fate: (a) does N=8 (states > streams)
-# let the page store hold all four prefixes through the live streams, and
-# (b) does a SOLO warm after the colds hit while the concurrent warms
-# miss — separating capacity from the live-stream interaction. The host
-# arm runs as the reference; the depth volleys are skipped (parity is
-# already receipted). A concurrent-hit win advances the knob to the
-# gates + the battery; a miss retires the mechanism for good (the
-# concurrent-resume park gains its mechanism-level explanation).
+# phase: kvsharequal (SESSION-SPECIFIC; retires with the receipt). The
+# adoption judgment for TF_GLM_KV_SHARE=8: kvshare2 (campaign-20261106-
+# 092703) receipted the capacity fix — the page store held all four
+# prefix states through the live streams (free 4084 + store 16, no
+# eviction), the solo warm HIT (1.84 s vs the host arm's miss), and the
+# concurrent 4-prefix volley hit 4/4 (cached=2048 x4, the aggregate
+# 7.41 s vs the host arm's 12.29 s — the round-123 serialization
+# confirmed cleanly: the per-request resume cost does not inflate, the
+# queue serializes). The gates + the battery decide: g3 (resumed=fresh)
+# is THE gate — the resume path now rides the pool pages; the bar:
+# hardmode >= 94 + the vision 4/4 + all §2 PASS. ADOPT on the receipt
+# (config.sh: export TF_GLM_KV_SHARE="${TF_GLM_KV_SHARE-8}"); retire
+# otherwise.
 # ---------------------------------------------------------------------------
-if want kvshare2 && ! phase_done kvshare2; then
-  log "=== kvshare2 (N=8 + the solo-warm diagnostic: capacity or live-stream interference?)"
-  P="$OUT/13b-kvshare2.md"; : > "$P"
-  echo "# kvshare2 (KV_SHARE=8 vs the host store: the concurrent resume's blocker)" >> "$P"
-  for arm in host share8; do
-    K=""
-    [[ $arm == share8 ]] && K="TF_GLM_KV_SHARE=8"
-    echo "## arm $arm (${K:-the standing host store})" >> "$P"
-    S=$(date +%s)
-    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $K; then
-      echo "- REFUSED to start (the refusal is the receipt):" >> "$P"
-      docker logs "$CONTAINER_NAME" 2>&1 | tail -3 | sed 's/^/  /' >> "$P"
-      continue
-    fi
-    echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-200)" >> "$P"
-    mark() { echo "- --- $1 ---" >> "$P"; docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "prompt cache|store|keep|evict|resumed" | tail -4 | sed 's/^/  /' >> "$P"; }
-    # 4 distinct d4096 prefixes, cold sequential
-    for i in 1 2 3 4; do
-      bf="$OUT/ks2-$arm-cc$i.json"
-      FILL_WORDS="$FILL_WORDS" python3 -c "
-import json, os, sys
-words = os.environ['FILL_WORDS'].split(); off = int(sys.argv[1])
-fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + off) % 89}' for i, w in ((i, words[i % len(words)]) for i in range(4096 // 4)))
-json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
-" "$((i * 7))" "$bf"
-      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-      T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks2-$arm-cc$i-r.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
-      echo "- cc$i cold ttft_wall ${T}s" >> "$P"
-    done
-    mark "after the 4 colds (did all four keep?)"
-    # the solo warm: cc1 again — does it hit?
-    T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/ks2-$arm-cc1.json" -o "$OUT/ks2-$arm-solo.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
-    echo "- cc1 WARM SOLO ttft_wall ${T}s" >> "$P"
-    mark "after the solo warm (hit or evicted?)"
-    # the 4 concurrent warms
-    S=$(date +%s.%N)
-    for i in 1 2 3 4; do
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/ks2-$arm-cc$i.json" -o "$OUT/ks2-$arm-cc$i-w.json" || true
-    done &
-    wait
-    E=$(date +%s.%N)
-    echo "- the 4 concurrent resumes: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate" >> "$P"
-    mark "after the concurrent warms"
-    echo "- the concurrent warms' engine lines (cached= is the verdict):" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -5 | sed 's/^/  /' >> "$P" || true
-  done
-  echo "- VERDICT: share8's concurrent warms with cached>0 + a dropping aggregate = the capacity fix works (advance to the gates + the battery); cached=0 everywhere = the live streams reclaim the states (the mechanism retires; the park's explanation: the store yields to live streams before a resume — upstream-shaped)" >> "$P"
-  touch "$OUT/.kvshare2.done"
+if want kvsharequal && ! phase_done kvsharequal; then
+  log "=== kvsharequal (the KV_SHARE=8 adoption judgment: the gates + the battery + the vision)"
+  P="$OUT/14-kvsharequal.md"; : > "$P"
+  echo "# kvsharequal (TF_GLM_KV_SHARE=8: VALIDATION §2 + hardmode + the vision)" >> "$P"
+  if run_gates kvshare8g DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on TF_GLM_KV_SHARE=8 PATCHES="${RC_PATCHES-${PATCHES-}}"; then
+    echo "- the §2 gates on the knob: the receipt above" >> "$P"
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_KV_SHARE=8 PATCHES="${RC_PATCHES-${PATCHES-}}"
+    echo "- server: $(serve_line)" >> "$P"
+    bench_cell hm-kvshare "$OUT/hm-kvshare" >> "$P"
+    echo "- the vision suite:" >> "$P"
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-kvshare.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+    echo "- the engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -8 | sed 's/^/  /' >> "$P"
+    echo "- VERDICT: §2 PASS + hardmode >= 94 + the vision 4/4 = ADOPT TF_GLM_KV_SHARE=8 (config.sh exports the default; the concurrent-resume aggregate -40% rides the receipt); any miss = retire" >> "$P"
+    touch "$OUT/.kvsharequal.done"
+  else
+    echo "- kvsharequal incomplete (a restart was refused) — rerun this phase" >> "$P"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

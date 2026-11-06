@@ -44,8 +44,13 @@ upstream-gated**:
   resume MISSES in both stores (cached=0 ×8; the host store's cascade
   eviction exposed: 4 × 182 MiB > 679 MiB, each warm miss re-keeps and
   evicts the next). The gap localizes to store capacity/eviction, not
-  the resume medium; kvshare2 (N=8 + the solo-warm diagnostic) decides
-  capacity vs the live-stream interaction. The PDL-on-the-finish route
+  the resume medium — and kvshare2 (campaign-20261106-092703)
+  CONFIRMED it: N=8 held all four states through the live streams
+  (16 pool pages, zero eviction), the concurrent 4-prefix volley hit
+  4/4 at a flat 1.84 s/request (the aggregate 7.41 s vs the host
+  store's 12.29 s — −40%; the round-123 serialization is the queue,
+  the per-resume cost does not inflate). The knob advances to the
+  gates + the battery (kvsharequal). The PDL-on-the-finish route
   was surveyed and priced: OUR tree has no PDL plumbing (the plan's
   earlier ".pdl flag" reference was the fork's field), so it is a
   from-scratch build with a modest expected win (round 116: the hc
