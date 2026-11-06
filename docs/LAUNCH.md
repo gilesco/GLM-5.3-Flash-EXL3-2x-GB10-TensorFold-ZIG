@@ -6848,3 +6848,32 @@ bar), and v1.2.3's two perf knobs (TF_GLM_CHUNK_SOLO=4096 — upstream's
 standing absolutes (solo 63.5/63.2, c2 110.6, c4 154.8, ITL p50 55.3,
 slope 0.612). ~60 min + the prepare. THEN DARK. A knob advances to
 confirm only on a sharp, reproduced win + the gates (the protocol).
+
+## (round 133, cont. 69) v123perf: CHUNK_SOLO=4096 REFUSED beside the drafter, COPIES=1 pure parity — both knobs retired; the rebase's perf spot-check passes; the launch-interface miss cost kvqual4P+depth their slot (relaunched) (2026-11-06)
+
+**campaign-20261106-080743 (v123perf)**:
+- **TF_GLM_CHUNK_SOLO=4096: REFUSED** — "holds buffers no pass uses
+  beside --drafter: unset it, or leave out --drafter". The refusal
+  survives v1.2.3 (its explain() table entry was dropped, the error was
+  not). Our serving keeps DFlash2 — **the knob is retired for our
+  shape** (upstream's ~7% TTFT is a drafter-less measurement). The
+  refusal is the receipt.
+- **TF_GLM_COPIES=1: PURE PARITY** — solo 63.8/63.4 t/s (standing
+  63.5/63.2), c2 109.8 (110.6), c4 154.2 (154.8), ITL p50 55.3 ms
+  (55.3), TTFT slope 0.611 (0.612), d0 193 (199 ms) — within ~1% on
+  every instrument. **Retired per the discipline** (parity retires; a
+  knob must win to advance). No config.sh change.
+- **The rebase perf spot-check: PASSED** — the copies1 arm (v1.2.3 +
+  COPIES=1) rides the v1.2.2 standing absolutes within ~1% everywhere:
+  the rebase changed no perf path, as predicted.
+
+**THE LAUNCH-INTERFACE MISS**: autonomous-launch.sh takes the PHASE
+LIST AS ITS ARGUMENT (`autonomous-launch.sh "phases summary"`) — the
+PHASES env I set alongside was silently ignored, and only "v123perf
+summary" ran. kvqual4P and depth never launched. The interface is
+logged here; the relaunch passes them in the arg.
+
+**RELAUNCHED: kvqual4P + depth + summary** — the §2 gates on the paged
+v1.2.3 stack (the adoption's gates receipt on the new ref) + the depth
+ladder re-qualification (the post-adoption re-run, the 12/12 bar).
+~40 min. THEN DARK.

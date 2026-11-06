@@ -494,18 +494,26 @@ v1.2.3's changelog carries two opt-in serving knobs relevant at TP=2, both now
 probed by the `v123perf` window on the duel instruments against the standing
 paged absolutes (duelpaged, campaign-20261106-052114: solo 63.5/63.2 t/s, c2
 110.6, c4 154.8, ITL p50 55.3 ms, TTFT slope 0.612, d0 199 ms):
-- **TF_GLM_CHUNK_SOLO=4096** — upstream's ~7% TTFT at TP=2: the prompt pass
-  doubles to 4096 rows, halving the exchange pieces per pass (the engine's
-  "a prompt chunk's exchanges in N row pieces" line shows the piece count).
-  Watch: the TTFT slope + d0 fixed overhead; the c2/c4 prefill interleave.
-- **TF_GLM_COPIES=1** — verified root/context copies (the explain() table's
-  BadCopyPolicy wording). Watch: solo/c2 decode (copy overhead rides the
-  decode path if any) and the prefill.
+- **TF_GLM_CHUNK_SOLO=4096** — CLOSED (v123perf, campaign-20261106-080743):
+  REFUSED beside the drafter — "TF_GLM_CHUNK_SOLO=4096 holds buffers no pass
+  uses beside --drafter: unset it, or leave out --drafter" (the refusal is
+  the receipt; the error survives v1.2.3 even though its explain() entry
+  was dropped from the message table). Our serving keeps DFlash2, so the
+  knob is unusable on our shape — upstream's ~7% TTFT is a drafter-less
+  measurement. RETIRED for this line.
+- **TF_GLM_COPIES=1** — CLOSED (v123perf, campaign-20261106-080743): PURE
+  PARITY on every instrument — solo 63.8/63.4 (standing 63.5/63.2), c2
+  109.8 (110.6), c4 154.2 (154.8), ITL p50 55.3 (55.3), TTFT slope 0.611
+  (0.612), d0 193 (199) — all within ~1%. RETIRED per the discipline
+  (parity retires; a knob must win to advance).
 The knob discipline applies: a knob advances to a confirm window only on a
 sharp, instrument-consistent win; parity or a regression retires it; adoption
 additionally wants the quality gates (the receipts-equal-or-better protocol).
 The arms double as the v1.2.3 rebase's perf spot-check — a wild move vs the
-v1.2.2 absolutes is a rebase red flag.
+v1.2.2 absolutes is a rebase red flag. **SPOT-CHECK PASSED** (campaign-
+20261106-080743): the copies1 arm (v1.2.3 + COPIES=1) sits within ~1% of
+the v1.2.2 standing absolutes on every instrument — the rebase changed no
+perf path, as the diffstat/semantics analysis predicted.
 Also in the same window: the depth ladder re-qualification on the adopted
 paged v1.2.3 stack (the standing `depth` phase — the 12/12 bar, the post-
 adoption re-run queued at the adoption digest).

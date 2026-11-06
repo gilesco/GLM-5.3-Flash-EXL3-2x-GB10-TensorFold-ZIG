@@ -574,9 +574,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       4/4, total_tokens 662,693 BYTE-IDENTICAL to the standing run's.
       The pin stays on v1.2.3 (6ec5fa4cb); config.sh/README/DELTAS
       re-based; glm-zz-dsasel3.patch retired (the mechanism receipted
-      twice). **kvqual4P + depth + v123perf in flight** — the §2 gates
-      on the new ref, the depth ladder re-qual, and v1.2.3's two perf
-      knobs (CHUNK_SOLO=4096, COPIES=1) on the duel instruments.
+      twice). **v123perf (campaign-20261106-080743): BOTH KNOBS
+      RETIRED** — CHUNK_SOLO=4096 REFUSED beside the drafter (the
+      refusal is the receipt; upstream's ~7% is drafter-less), COPIES=1
+      pure parity (within ~1% of the standing absolutes everywhere) —
+      no config.sh change. The rebase's perf spot-check PASSED (the
+      copies1 arm rides the v1.2.2 absolutes). The launch-interface
+      miss (the phase list is the ARG, not the PHASES env) cost
+      kvqual4P+depth their slot — relaunched: the §2 gates on the new
+      ref + the depth ladder re-qual.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
