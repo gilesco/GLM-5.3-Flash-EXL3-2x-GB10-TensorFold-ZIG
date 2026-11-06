@@ -7569,3 +7569,25 @@ never string-index replacement of a partial region).
 **NO LAUNCH** — nothing to test: the default-change loop is closed and
 the perf plan's next step is a hunt (the fork's later series, the
 upstream watch, or the loading wall's re-take at 91%).
+
+## (round 133, cont. 92) (user) THE DEV MODEL ON 8001 FOR PRESTO-MONITOR TESTS — production stopped for an interactive user session (2026-11-06)
+
+**The (user) call**: "start the dev model on port 8001, I need to do
+some tests with it for the presto-monitor project, this will mean
+shutting you down temporarily." The user takes the GPUs for their own
+interactive session — outside the window flow's shape, done by direct
+instruction (the standing rule: anything outside the loop's shape is
+the user's, asked first — this is the asking).
+
+**The arrangement**: the window flag (/tmp/autonomous-testing.flag) is
+set manually so the crash-net cron hands off instead of restarting
+production under the user's session; production (8000 — this agent's
+serving model) is stopped through the tip's own stop.sh (both ranks);
+the testing stack starts via the bare ./scripts/start.sh (the
+smoke-verified 6-patch default, port 8001) and stays UP for the user.
+
+**The restore** (when the user's tests are done): clear the flag —
+`rm /tmp/autonomous-testing.flag` on the head — and the crash-net's
+next tick (≤5 min) restarts production via the tip's start.sh; or the
+agent restores on the user's signal the same way. The testing stack
+comes down first (scripts/stop.sh) so the GPUs are free.
