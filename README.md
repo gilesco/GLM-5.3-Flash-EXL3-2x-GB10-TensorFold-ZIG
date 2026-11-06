@@ -150,7 +150,7 @@ The ones that matter:
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` and the snapshot is present (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` / `PARALLEL` | `524288` / `4` | window and streams — the qualified optimum |
 | `DRAFTS` | `1` | `0` → `--no-drafts` (the serial reference); `1` drafts with DFlash2 (else the MTP head) |
-| `KV_CACHE` | `fp8` | `--kv-cache fp8`: halves per-token latent cache bytes; all §2 gates PASS on it at 524,288. Mutually exclusive with `TF_KV_PAGES`. `KV_CACHE=` (**empty**) is the explicit bf16 spelling — start.sh then omits `--kv-cache` (the engine default); the literal `bf16` is refused |
+| `KV_CACHE` | `fp8` | `--kv-cache fp8`: halves per-token latent cache bytes; all §2 gates PASS on it at 524,288. Combined with `TF_KV_PAGES=on` since the 1106 marriage (the fp8-paged elastic pool; the 4-patch stack: hardmode 95 + the vision 4/4, campaign-20261106-043015). `KV_CACHE=` (**empty**) is the explicit bf16 spelling — start.sh then omits `--kv-cache` (the engine default); the literal `bf16` is refused |
 | `DENSE_BITS` / `HEAD_BITS` | `4` / `4` | pack the dense linears / head at load: the measured speed leader (monotonic 4<6<8<16); with fp8 KV this is the qualified serving config |
 | `VISION` | `1` | `--vision --vision-image-tokens 2048` — the standing default (the round-51 (user) call); `0` serves text-only. The vision test assets: `assets/vision/` via `scripts/vision-suite-probe.py` |
 | `TF_GLM_INDEX_CUDA` | `1` | the DSA indexer's dedicated CUDA kernels — the depth-ladder TTFT gains grow with depth; set `0` to compare |

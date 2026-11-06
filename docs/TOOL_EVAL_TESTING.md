@@ -530,10 +530,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       category 89% (both standing); **deployability 74 (standing 73)**;
       **median_turn_ms 6,381.8 vs 6,829.6 — 6.5% faster**: production-
       parity quality WITH the pages' speed win. The loop arc is closed.
-      **duelpaged in flight** — the duel re-pair (the last gate before
-      the config.sh adoption decision): the standing duel's five
-      instruments, the ours arm on the paged candidate, the production
-      arm unchanged (production-for-testing on 8001, read-only). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      **duelpaged
+      (campaign-20261106-052114): THE DUEL GATE CLEARS (mixed-favorable)
+      — solo 63.5/63.2 vs 58.5/58.6 t/s (**108.5%**; the pages cost
+      ~1.5% vs the absorb-only 110%), c2 110.6 vs 87.1 (production's
+      volley 87-111, this run at its floor), c4 154.8 vs 154.6
+      (parity), **ITL 15.7 vs 17.1 ms/token — CROSSED (109%)**, TTFT
+      overhead 199 vs 186 (93%), **the cold depth d8192 5,215 ms /
+      slope 0.612 vs 17,129 / 2.026 — 3.3× CROSSED** (the pages'
+      overhead +1.8% vs the absorb-only 5,122/0.602). The anchors
+      re-paired for the paged candidate and the chart re-rendered; the
+      README's stale "mutually exclusive" claim corrected.
+      **pagedgates in flight** — the last pre-adoption gate: VALIDATION
+      §2 on the fp8-paged final stack (dense4fp8, 512K, TF_KV_PAGES=on,
+      the 4-patch build). The config.sh adoption decision follows. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.

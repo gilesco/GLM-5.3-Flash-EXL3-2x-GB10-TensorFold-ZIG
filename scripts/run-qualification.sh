@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP duelpaged knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagedgates knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,44 +1192,22 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: duelpaged (SESSION-SPECIFIC; retires with the receipt). The duel
-# re-pair: the standing duel's five instruments with the ours arm on the paged
-# candidate (TF_KV_PAGES=on + the four patches). The production arm is
-# unchanged: production-for-testing on 8001 (the intent-keyed start; read-
-# only), stopped for the ours arm, restored by the window flow's exit path.
-# The battery gate is cleared (pagedquality3: 95 + the vision 4/4) — the duel
-# is the last gate before the config.sh adoption decision.
+# phase: pagedgates (SESSION-SPECIFIC; retires with the receipt). The last
+# pre-adoption gate: VALIDATION §2 on the fp8-paged final stack (dense4fp8,
+# 512K window, TF_KV_PAGES=on, the 4-patch stack — PATCHES threaded explicitly
+# so the gates run the fixed build). The duel gate is cleared (duelpaged) and
+# the battery gate is cleared (pagedquality3: 95 + the vision 4/4). The
+# config.sh adoption decision follows this receipt.
 # ---------------------------------------------------------------------------
-if want duelpaged && ! phase_done duelpaged; then
-  log "=== duelpaged (the duel re-pair: production-for-testing vs the paged candidate)"
-  P="$OUT/08-duelpaged.md"; : > "$P"
-  echo "# duelpaged (the duel's five direct instruments; production-for-testing on 8001 vs the paged candidate)" >> "$P"
-  if ! prod_running; then
-    log "duelpaged: stopping our testing stack to free 8001"
-    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-    log "duelpaged: production down — starting it FOR TESTING on 8001"
-    PORT=8001 "$HOME/$PROD_TIP/start.sh" </dev/null >>"$LOG" 2>&1 || true
-  fi
-  if prod_running; then
-    PROD_MODEL=$(curl -s -m 10 "http://127.0.0.1:8001/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")') || PROD_MODEL=""
-    PROD_MODEL="${PROD_MODEL:-$SERVED_NAME}"
-    echo "## production (read-only on the testing port 8001; model $PROD_MODEL)" >> "$P"
-    PROD_PORT_SAVE="$PROD_PORT"
-    PROD_PORT=8001 duel_arm prod "$PROD_MODEL"
-    PROD_PORT="$PROD_PORT_SAVE"
-    log "production probed — stopping it for the ours arm (restored by the window flow's exit path)"
-    "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
-    prod_running && die "production still running after the autonomous stop — the ours arm needs the GPUs"
+if want pagedgates && ! phase_done pagedgates; then
+  log "=== pagedgates (VALIDATION §2 on the fp8-paged final stack)"
+  P="$OUT/05c-pagedgates.md"; : > "$P"
+  echo "# pagedgates (VALIDATION §2 on fp8 PAGED KV, dense4, 512K window, TF_KV_PAGES=on, the 4-patch stack)" >> "$P"
+  if run_gates pagedfp8 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"; then
+    touch "$OUT/.pagedgates.done"
   else
-    echo "- production not running: the prod arm skipped (the 8001 start failed — its refusal is the receipt)" >> "$P"
+    echo "- pagedgates incomplete (a restart was refused) — rerun this phase" >> "$P"
   fi
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-  echo "## ours paged (dense4fp8 @ 512K x4, TF_KV_PAGES=on, absorb+marriage+pagerows-fix+selist-fix)" >> "$P"
-  duel_arm ours "$SERVED_NAME"
-  touch "$OUT/.duelpaged.done"
 fi
 
 # ---------------------------------------------------------------------------

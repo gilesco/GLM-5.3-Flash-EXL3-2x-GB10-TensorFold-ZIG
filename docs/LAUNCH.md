@@ -6649,3 +6649,35 @@ the ours arm on the paged candidate; the production arm unchanged
 restored by the window flow's exit path). ~20 min. THEN DARK. The
 adoption decision follows the duel receipt (the receipts-equal-or-
 better protocol), and the v1.2.3 rebase is the arc after that.
+
+## (round 133, cont. 64) THE DUEL GATE CLEARS (mixed-favorable): solo 108.5%, c2 above production's floor, c4 parity, ITL CROSSED at 15.7 vs 17.1 ms/token, the cold depth crossed at 3.3×; the anchors re-paired for the paged candidate; the last pre-adoption gate launched (2026-11-06)
+
+**campaign-20261106-052114 (duelpaged — production-for-testing on 8001
+vs the paged candidate)**:
+- **Solo decode: 63.5/63.2 vs 58.5/58.6 t/s — 108.5%** (the ABSORB-only
+  pair was 110% — the pages cost ~1.5% solo and buy the elastic pool).
+- **c2 aggregate: 110.6 vs 87.1 t/s** — production's c2 volleys 87-111
+  with cache state, this run at its floor; ours stable 110.4-110.6
+  across the absorb and paged duels.
+- **c4 aggregate: 154.8 vs 154.6 — parity** (production's range
+  155-241, this run at its floor).
+- **ITL: 15.7 vs 17.1 ms/token — CROSSED (109%)** (ours' chunked rhythm
+  61.9 ms ÷ ~3.94 tokens vs production's single-token chunks).
+- **TTFT overhead: 199 vs 186 ms** (93% — stable across windows).
+- **The cold depth: d8192 5,215 ms, slope 0.612 vs production's
+  17,129 ms, slope 2.026 — 3.3× CROSSED** (the ABSORB-only pair was
+  5,122/0.602 — the pages' overhead +1.8%).
+
+**The anchors re-paired**: perf-anchors.tsv's duel rows now carry the
+paged candidate's pair (solo/c2/c4/ITL/overhead/cold-depth) and the
+chart is re-rendered; the README's stale "Mutually exclusive with
+TF_KV_PAGES" claim on the KV_CACHE row is corrected (the marriage made
+the combination the point).
+
+**The adoption state**: the battery gate cleared (95 + the vision 4/4),
+the duel gate cleared (mixed-favorable: the throughput instruments
+equal-or-better, the cold depth crossed; the ITL is per-token CROSSED
+too). The remaining gate: **VALIDATION §2 on the final stack** —
+**LAUNCHED: pagedgates** (run_gates on fp8-paged, dense4, 512K,
+TF_KV_PAGES=on, the 4-patch build; PATCHES threaded explicitly). The
+config.sh adoption decision follows its receipt. ~15 min. THEN DARK.
