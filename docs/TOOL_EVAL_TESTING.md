@@ -641,7 +641,12 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       ms (slope 0.482), overhead 96%, ITL 15.5, prefill 1,434 (94.4% of
       production's 1,518 — the front took 76% → 94.4% in one patch) —
       **ADOPTED: config.sh's PATCHES is the 6-patch stack; the anchors
-      re-paired and the chart re-rendered.** The 0010 fetch corrected
+      re-paired and the chart re-rendered.** The bare-config smoke
+      (campaign-20261106-225025): the bare default serves the adopted
+      stack — the prepared fingerprint names all six patches on the
+      v1.2.3 pin, the serve line carries both signatures (the
+      2048-row prompt passes, the pool-pages prompt cache), the probe
+      replies 'smoke-ok-6patch' exact — PASS. The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design

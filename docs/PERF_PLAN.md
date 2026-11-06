@@ -619,3 +619,11 @@ claim). The next lever hunt (the fork's later series, the upstream
 watch) or the loading wall's re-take (91%, the other open front) are
 the live options. The bare 6-patch default gets its codified smoke
 (adoptsmoke3) before anything else.
+
+**The bare-config smoke PASSed (cont. 91)** — the 6-patch default is
+served and verified end to end (the fingerprint witness + the serve
+line + the exact probe reply). The default-change loop is closed. The
+next step stands: the prefill front is at 94.4% with thin candidates
+(0033 unlocated, 0011 contract-hardening) — the live options are the
+fork's later-series hunt, the upstream watch, or the loading wall's
+re-take (91%, the other open front).

@@ -7529,3 +7529,43 @@ the serve line unchanged.
 **LAUNCHED: adoptsmoke3 + summary** (the rerun — the .done marker was
 never touched, so the phase reruns cleanly): the complete receipt
 expected (the fingerprint line + the serve line + the probe). THEN DARK.
+
+## (round 133, cont. 91) THE BARE-CONFIG SMOKE: PASS — the complete evidence chain survived the phase's self-inflicted rc=1; the phase retired, nothing launched (campaign-20261106-225025) (2026-11-06)
+
+**The smoke verdict: PASS.** The bare default (config.sh's defaults, no
+env pairs) serves the adopted 6-patch stack on the v1.2.3 pin. The
+evidence chain, all read this sitting:
+1. **The prepared fingerprint the start matched** ($STATE_DIR/prepared
+   — start.sh re-prepares only on a config_line mismatch, so a
+   cache-hit start proves the bare default expands to exactly this
+   line): `patches=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,
+   glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,
+   glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch` at
+   `tf=commit@6ec5fa4cb…` — all SIX patches.
+2. **The serve line**: "prompts in passes of up to 2048 rows" (the
+   exl3prompt patch's chunk_rows=prefill_rows) + "the prompt cache over
+   the pool's pages" (TF_GLM_KV_SHARE=8) — load 107 s (the fingerprint
+   cache hit on exl3qual's build).
+3. **The probe**: the reply `'smoke-ok-6patch'` EXACT (23 prompt + 7
+   completion tokens; as3-probe.json).
+
+**Why rc=1 anyway (the forensics, closed)**: my cont. 90 phase fix
+spliced by string-index and left the OLD block in the file behind the
+fixed one. The window script runs every window with **FORCE=1**
+(autonomous-window.sh line 46 — intra-window .done markers never
+guard), so both blocks executed: the fixed block completed in full
+(the probe json + marker at 22:52:14.44/.47), then the old block ran —
+restarted the stack a second time, re-truncated the receipt file, and
+died at its unguarded `^model=` grep (pipefail + set -e) — rc=1. The
+summary phase never ran (killed before it); the guard checks ran on
+this sitting's commits instead.
+
+**Actions**: the adoptsmoke3 phase RETIRED whole (both blocks — the
+receipted smoke closed the default-change loop; a future default
+change writes a new smoke phase); the splice lesson and the
+FORCE=1-in-windows property logged (splices go by line-range deletion,
+never string-index replacement of a partial region).
+
+**NO LAUNCH** — nothing to test: the default-change loop is closed and
+the perf plan's next step is a hunt (the fork's later series, the
+upstream watch, or the loading wall's re-take at 91%).

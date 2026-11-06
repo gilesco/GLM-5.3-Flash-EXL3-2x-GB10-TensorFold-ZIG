@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep adoptsmoke3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1266,86 +1266,6 @@ PWE
   resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
   echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
   touch "$OUT/.resweep.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: adoptsmoke3 (SESSION-SPECIFIC; retires with the receipt). The bare-config
-# smoke after the PATCHES default change (cont. 89: the 6-patch stack — the
-# codified rule: the bare config is smoke-tested after ANY default change; read
-# the serve line, don't trust a probe alone). Bare restart = start.sh with NO env
-# pairs: config.sh's default PATCHES expand. The witnesses: the PREPARED
-# FINGERPRINT the start matched (start.sh re-runs prepare.sh only on a
-# config_line mismatch — a cache-hit start proves the bare default expands to
-# exactly the stored line), the sm_121 admission line, one greedy probe. Every
-# grep is guarded: set -euo pipefail makes a missing pattern kill the campaign
-# (the cont. 90 lesson — the first run died exactly there, rc=1).
-# ---------------------------------------------------------------------------
-if want adoptsmoke3 && ! phase_done adoptsmoke3; then
-  log "=== adoptsmoke3 (the bare 6-patch default: the fingerprint + the serve line + one probe)"
-  P="$OUT/21-adoptsmoke3.md"; : > "$P"
-  echo "# adoptsmoke3 (the bare config after the 6-patch PATCHES default, cont. 89)" >> "$P"
-  S=$(date +%s)
-  if restart; then
-    echo "- load $(( $(date +%s) - S )) s" >> "$P"
-    echo "- the prepared fingerprint the start matched (the bare default's expansion — six patches = ADOPTED):" >> "$P"
-    cat "$STATE_DIR/prepared" 2>/dev/null | sed 's/^/  /' >> "$P" || true
-    echo "- serve: $(serve_line)" >> "$P"
-    bf=$(mktemp /tmp/as3.XXXXXX.json)
-    python3 -c "
-import json, sys
-json.dump({'model': sys.argv[2], 'temperature': 0, 'max_tokens': 64, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Reply with exactly: smoke-ok-6patch'}]}, open(sys.argv[1], 'w'))
-" "$bf" "$SERVED_NAME"
-    curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/as3-probe.json" || true
-    rm -f "$bf"
-    python3 -c "
-import json
-try:
-    d = json.load(open('$OUT/as3-probe.json'))
-    print('- probe: ' + repr(d['choices'][0]['message']['content'][:80]))
-except Exception as e:
-    print('- probe FAILED: ' + repr(e))
-" >> "$P"
-    echo "- VERDICT: the prepared line names SIX patches on the v1.2.3 pin + the serve line carries the adopted stack's signatures (the 2048-row prompt passes = the exl3prompt patch's chunk_rows=prefill_rows; the prompt cache over the pool's pages = KV_SHARE=8) + the probe replies = the bare default serves the adopted stack; anything else = the default change is broken, fix config.sh before any other window" >> "$P"
-    touch "$OUT/.adoptsmoke3.done"
-  else
-    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
-    tail -8 "$LOG" | sed 's/^/  /' >> "$P" || true
-  fi
-fi
-
-if want adoptsmoke3 && ! phase_done adoptsmoke3; then
-  log "=== adoptsmoke3 (the bare 6-patch default: the serve line + the patch log + one probe)"
-  P="$OUT/21-adoptsmoke3.md"; : > "$P"
-  echo "# adoptsmoke3 (the bare config after the 6-patch PATCHES default, cont. 89)" >> "$P"
-  S=$(date +%s)
-  if restart; then
-    echo "- load $(( $(date +%s) - S )) s" >> "$P"
-    echo "- the config echo line:" >> "$P"
-    grep -m1 "^model=.*patches=" "$LOG" | sed 's/^/  /' >> "$P"
-    echo "- the patch-application lines from the start log:" >> "$P"
-    grep -iE "apply|patch" "$LOG" | grep -iv "dispatch\|match" | tail -10 | sed 's/^/  /' >> "$P"
-    echo "- serve: $(serve_line)" >> "$P"
-    bf=$(mktemp /tmp/as3.XXXXXX.json)
-    python3 -c "
-import json, sys
-json.dump({'model': sys.argv[2], 'temperature': 0, 'max_tokens': 64, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Reply with exactly: smoke-ok-6patch'}]}, open(sys.argv[1], 'w'))
-" "$bf" "$SERVED_NAME"
-    curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/as3-probe.json" || true
-    rm -f "$bf"
-    python3 -c "
-import json
-try:
-    d = json.load(open('$OUT/as3-probe.json'))
-    print('- probe: ' + repr(d['choices'][0]['message']['content'][:80]))
-except Exception as e:
-    print('- probe FAILED: ' + repr(e))
-" >> "$P"
-    echo "- VERDICT: the config line names SIX patches + the probe replies = the bare default serves the adopted stack; anything else = the default change is broken, fix config.sh before any other window" >> "$P"
-    touch "$OUT/.adoptsmoke3.done"
-  else
-    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
-    tail -8 "$LOG" | sed 's/^/  /' >> "$P"
-  fi
 fi
 
 # ---------------------------------------------------------------------------
