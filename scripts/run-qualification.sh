@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt4 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,18 +1192,19 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagehunt3 (SESSION-SPECIFIC; retires with the mechanism receipt). The
-# hop-isolating instrument: the glm-zz-dsasel v3 debug patch adds the select
-# kernel's PICK printf (pos, vis, NP, top-2 outputs; sparse launches only)
-# beside the assembler's VIOL/SEL printfs. The replay (TC-62+TC-49, the
-# battery's flags) on fp8-paged: PICK causal + assembler out-of-horizon = the
-# pools scratch / aliasing gap; PICK already out-of-horizon = the scores
-# buffer's stale slots. 74% of v1's sparse selections were out-of-horizon and
-# the loop ignites right past the sparse boundary (npool ~= K).
+# phase: pagehunt4 (SESSION-SPECIFIC; retires with the mechanism receipt). The
+# hop isolator, re-delivered under a NEW patch file name (the two same-name
+# updates of glm-zz-dsasel.patch were both consumed stale by the cached
+# build). The glm-zz-dsasel3.patch instrument: the select kernel's PICK
+# printf (pos, vis, NP, top-2; sparse launches only) beside the assembler's
+# VIOL/SEL printfs. The replay (TC-62+TC-49, the battery's flags) on
+# fp8-paged: PICK causal with the assembler out-of-horizon = the pools
+# scratch / aliasing gap; PICK already out-of-horizon = the scores buffer's
+# stale slots win the top-K.
 # ---------------------------------------------------------------------------
-if want pagehunt3 && ! phase_done pagehunt3; then
-  log "=== pagehunt3 (the hop isolator: PICK vs VIOL/SEL under the fp8-paged replay)"
-  P="$OUT/99-pagehunt3.md"; : > "$P"
+if want pagehunt4 && ! phase_done pagehunt4; then
+  log "=== pagehunt4 (the hop isolator, the instrument finally delivered)"
+  P="$OUT/99-pagehunt4.md"; : > "$P"
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
   echo "- fp8 paged: $(serve_line | cut -c1-120)" >> "$P"
   mkdir -p "$OUT/tc-fp8"
@@ -1267,7 +1268,7 @@ PDS
   echo "  engine lines:" >> "$P"
   docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -5 | sed 's/^/    /' >> "$P"
   echo "- VERDICT: PICK causal with the assembler out-of-horizon = the pools scratch / aliasing gap (the select kernel's outputs never reach the assembler's reads — dig the scratch layout); PICK already out-of-horizon = the scores buffer's stale slots win the top-K (dig the scores kernel's write range vs NP and the np_max stride changes)" >> "$P"
-  touch "$OUT/.pagehunt3.done"
+  touch "$OUT/.pagehunt4.done"
 fi
 
 # ---------------------------------------------------------------------------

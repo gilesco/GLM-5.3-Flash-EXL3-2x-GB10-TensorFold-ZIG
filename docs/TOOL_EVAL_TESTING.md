@@ -483,10 +483,21 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       select_rows scans NP = min(np, max(vis, K))) ⇒ the corruption
       lives in the state BETWEEN the kernels. TC-49 also looped this
       run (both scenarios hit the ceiling; final_score 25; bf16 clean
-      100). **pagehunt3 in flight** — the hop isolator (the select
-      kernel's PICK lines beside the assembler's VIOL/SEL): PICK causal
-      + assembler out-of-horizon = the pools scratch / aliasing gap;
-      PICK already out-of-horizon = the scores buffer's stale slots. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      100). **pagehunt3
+      (campaign-20261106-023748): the instrument delivery failed AGAIN
+      (the container ran the v1 patch a second time — two same-name
+      updates, two stale builds); the fix per the lesson: a NEW file
+      name (glm-zz-dsasel3.patch; the old name retired, the README
+      carries the series). The fresh dump reconfirms the signature:
+      **47.6% of sparse selections emit out-of-horizon tokens**, frozen
+      on (35328..)=page 69's start across pos 2,240-3,264 (no request
+      had 35K tokens of history; the prior run froze on 9,216 — fixed
+      stale/unwritten slots at config-deterministic addresses). TC-62's
+      loop hit its FIRST generated turn this run; final_score 25; bf16
+      clean 100. **pagehunt4 in flight** — the hop isolator with the
+      instrument finally delivered: PICK causal + assembler
+      out-of-horizon = the pools scratch / aliasing gap; PICK already
+      out-of-horizon = the scores buffer's stale slots. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.

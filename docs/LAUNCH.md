@@ -6536,3 +6536,30 @@ assembler's VIOL/SEL. One fp8-paged replay: PICK causal with the
 assembler out-of-horizon ⇒ the pools scratch / aliasing gap; PICK
 already out-of-horizon ⇒ the scores buffer's stale slots win the
 top-K. ~15 min. THEN DARK.
+
+## (round 133, cont. 60) THE STALE-BUILD GOTCHA BIT TWICE; the hop isolator re-delivered under a NEW patch name; the fresh dump reconfirms the frozen out-of-horizon selections (2026-11-06)
+
+**The instrument delivery failed again**: pagehunt3's container ran the
+v1 patch a SECOND time (no PICK/npool/VIOL — the v3 content never
+reached the build despite the repo file being v3). Two same-name
+updates, two stale builds. **The fix per the logged lesson: a NEW file
+name** — glm-zz-dsasel.patch is retired (git rm; the README entry
+documents the series and the rename receipt) and the v3 instrument is
+re-delivered as **glm-zz-dsasel3.patch**.
+
+**The fresh dump (pagehunt3's sel-fp8.log, 6,050 lines, the looping
+serve — TC-62's loop hit its FIRST generated turn, prompt 1,383;
+final_score 25; bf16 clean 100)** reconfirms the signature: **47.6% of
+sparse selections emit out-of-horizon tokens** — the selection frozen
+on **(35328..35331) = page 69's start** across pos 2,240-3,264 while
+the visible history ends ~2,500 (no request had 35K tokens of history).
+The frozen window differs per serve (9,216 in the prior run; 35,328
+here) — consistent with fixed stale/unwritten slots at
+config-deterministic addresses winning the top-K.
+
+**LAUNCHED: pagehunt4** — the hop isolator, the instrument finally
+delivered: the select kernel's PICK lines (its own pos read, vis, NP,
+top-2 outputs) beside the assembler's VIOL/SEL on the fp8-paged replay.
+PICK causal with the assembler out-of-horizon ⇒ the pools scratch /
+aliasing gap; PICK already out-of-horizon ⇒ the scores buffer's stale
+slots win the top-K. ~15 min. THEN DARK.

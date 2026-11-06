@@ -152,6 +152,22 @@ unit; its path is receipted correct — the poolcanary3 bisect). STAGING:
 sorts AFTER glm-mia-fp8-pages.patch (the first name sorted before it and
 the build's alphabetical apply failed — the rename is the receipt).
 
+## glm-zz-dsasel3.patch — THE LOOP HUNT'S INSTRUMENT v3 (staged 2026-11-06; retires with the mechanism receipt)
+
+The DSA selection instrument: tf_glm_dsa_tokens prints VIOL lines (an
+E4M3 selection containing a token beyond the row's causal limit —
+mechanically impossible unless something selects outside the scored
+range) and periodic SEL lines (row 0's first eight selected logical
+positions + count + npool); tf_glm_index_pools prints PICK lines (the
+select kernel's own pos read, vis, NP and top-2 outputs, sparse
+launches only). STAGING: three same-name updates (v1-v3 under
+glm-zz-dsasel.patch) NEVER reached the cached build — the container ran
+v1's format twice after v2/v3 were staged; the rename to a NEW file
+name is the fix and the receipt. Offline analysis of the v1-format
+dumps stands: 47.6-74% of sparse selections emit out-of-horizon tokens,
+frozen on fixed page-start windows (9,216; 35,328) far beyond any
+request's history, while both kernels read causal in source.
+
 ## glm-zz-debug-tokenunits.patch — RETIRED (2026-11-05, the file removed)
 
 Logged the exact mismatch inputs at the TokenUnits return in cuda_latent.zig
