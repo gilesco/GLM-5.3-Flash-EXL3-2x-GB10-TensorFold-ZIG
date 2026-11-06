@@ -610,7 +610,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       byte-identical — **ADOPTED: config.sh exports
       TF_GLM_KV_SHARE=8** (the pool reserves 1025 pages for the store;
       the README carries the row; DELTAS updated). The bare-config
-      smoke test (adoptsmoke2) in flight per the cont. 66 discipline.
+      smoke test (adoptsmoke2, campaign-20261106-103510): the knob
+      ACTIVE in the bare config (the pool-pages store signature, the
+      probe OK — the export fix verified), the pool arithmetic matching
+      the receipted kvshare2 shape (4100 total, dynamic carving) —
+      **THE KV_SHARE ARC CLOSED END TO END**. The 0010 fetch corrected
+      the plan's citation: it is a 7-line correctness patch (the
+      side-stream drain), not the perf lever; the fork's prefill-class
+      lever is the 0009+0033 packed-prompt/pair-launch line (the design
+      pass is the next sitting's opener).
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

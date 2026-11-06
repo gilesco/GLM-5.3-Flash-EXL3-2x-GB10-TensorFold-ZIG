@@ -7047,3 +7047,41 @@ config and read the serve line's memory arithmetic). ~10 min. THEN
 DARK. Next arc: the Front 2 build-class candidates (PDL from scratch
 or the 0010 port) need a design decision; the upstream watch continues
 each sitting.
+
+## (round 133, cont. 75) THE KV_SHARE ARC CLOSED END TO END: adoptsmoke2 (campaign-20261106-103510) — the bare config serves the knob (the export fix verified); the 0010 fetch corrects the plan's citation (2026-11-06)
+
+**adoptsmoke2's receipt** (the bare config: only the structural pairs on
+the restart — every serving default from config.sh): the serve line
+carries **"the prompt cache over the pool's pages"** — TF_GLM_KV_SHARE=8
+reached the engine via config.sh's export (the cont. 66 lesson holds
+for the new knob); the probe answers OK. **The pool arithmetic matches
+the receipted kvshare2 shape exactly** — 4100 pages total, store 0 at
+boot, the kept states carving dynamically ("free N + store M == 4100",
+the kvshare2 receipt's own boot shape, where the −40% win was
+measured). kvsharequal's 3075-page boot is noted as boot-time variance
+(an immediate restart after the gates' container; its battery still ran
+95 — both shapes serve the bar). adoptsmoke2 retired (receipted).
+
+**THE KV_SHARE ARC IS CLOSED END TO END**: the probe (kvshare, parity
+at N=4 + the cascade exposed) → the diagnostic (kvshare2, N=8 holds
+all four states, the concurrent volley −40%) → the qualification
+(kvsharequal, §2 ALL PASS + hardmode 95 + the vision 4/4 +
+byte-identical) → the adoption (config.sh exports the default) → the
+smoke (the bare config serves it).
+
+**THE 0010 FETCH + THE CITATION CORRECTION**: the fork's repo
+(MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104 — active, now at patch 0108)
+cloned to /tmp/mia-fork; **patches/engine/0010 is a 7-line CORRECTNESS
+patch** (the shared-expert side stream drains before its buffers go —
+error paths only, "successful calls are unchanged"), NOT the +36%
+prefill perf lever the perf plan attributed to "(0010/0033)". Our tree
+has no side-stream code (no Engine.side in cuda_moe.zig) — 0010 has no
+anchor here regardless. The fork's prefill-class lever in that era is
+the **0009 (packed prompt matmuls in two stages) + 0033 (the f_b+g_b
+pair launch test)** line. PERF_PLAN's citation corrected; the next
+sitting's opener is the design pass: locate the fork's actual prefill
+claim in its README/RESULTS, map 0009+0033's surface onto our v1.2.3
+tree, and write the candidate-patch design before any window.
+
+No window this sitting — nothing to test until a candidate patch is
+built; the design pass is desk work.

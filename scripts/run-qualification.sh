@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP adoptsmoke2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1189,34 +1189,6 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
   docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -12 | sed 's/^/  /' >> "$P"
   echo "- VERDICT: ten exact MKR-{i}QX replies = the mis-read is fixed; the battery re-run is the adoption judgment" >> "$P"
   touch "$OUT/.poolcanary5.done"
-fi
-
-# ---------------------------------------------------------------------------
-# phase: adoptsmoke2 (SESSION-SPECIFIC; retires with the receipt). The
-# bare-config smoke test for the KV_SHARE=8 adoption (the cont. 66
-# discipline: smoke-test the bare config after ANY default change and read
-# the serve line's memory arithmetic): restart with ONLY the structural
-# pairs — every serving default (KV_CACHE=fp8, TF_KV_PAGES=on,
-# TF_GLM_KV_SHARE=8, PATCHES=the 4) comes from config.sh — then verify the
-# serve line carries the pool-pages store signature (the shrunken free
-# pool, "the prompt cache over the pool's pages") and one greedy probe.
-# ---------------------------------------------------------------------------
-if want adoptsmoke2 && ! phase_done adoptsmoke2; then
-  log "=== adoptsmoke2 (the adopted defaults serve the KV_SHARE=8 stack)"
-  P="$OUT/15-adoptsmoke2.md"; : > "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 PARALLEL=4
-  echo "- serve: $(serve_line)" >> "$P"
-  bf=$(mktemp /tmp/as2.XXXXXX.json)
-  python3 -c "import json,sys; print(json.dumps({'model':sys.argv[1],'messages':[{'role':'user','content':'Reply with just the word OK.'}],'max_tokens':8,'temperature':0,'seed':42,'chat_template_kwargs':{'enable_thinking':False}}))" "$SERVED_NAME" > "$bf"
-  R=$(curl -s -m 60 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$bf" 2>/dev/null | python3 -c 'import sys,json
-try: print(json.load(sys.stdin)["choices"][0]["message"]["content"][:40])
-except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
-  echo "- probe reply: $R" >> "$P"
-  rm -f "$bf"
-  echo "- the pool's idle line:" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "kv pool idle" | sed 's/^/  /' >> "$P" || echo "  (no idle line yet)" >> "$P"
-  echo "- VERDICT: the serve line carries the pool-pages store (the free pool shrank, the store reserve visible) + the probe answers = the adopted defaults serve the full stack" >> "$P"
-  touch "$OUT/.adoptsmoke2.done"
 fi
 
 # ---------------------------------------------------------------------------

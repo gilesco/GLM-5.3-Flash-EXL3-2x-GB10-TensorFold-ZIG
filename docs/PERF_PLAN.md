@@ -62,7 +62,15 @@ upstream-gated**:
   was surveyed and priced: OUR tree has no PDL plumbing (the plan's
   earlier ".pdl flag" reference was the fork's field), so it is a
   from-scratch build with a modest expected win (round 116: the hc
-  chain's launch gaps are already queue-hidden). The hc fusion:
+  chain's launch gaps are already queue-hidden). CORRECTED (cont. 75):
+  the fork's 0010 is a 7-line correctness patch (the side-stream
+  drain), NOT the perf lever — our tree has no side-stream code (no
+  anchor); the fork's prefill-class lever is the 0009 (packed prompt
+  matmuls in two stages) + 0033 (the f_b+g_b pair launch) line. The
+  fork's repo is cloned at /tmp/mia-fork (active, patch 0108); the
+  next sitting's opener is the design pass: locate the actual prefill
+  claim in its README/RESULTS, map 0009+0033 onto our v1.2.3 tree,
+  write the candidate design before any window. The hc fusion:
   built, bit-safe, NOT adopted (the occupancy trade — round 116). The depth census:
   the attention path is ~1% of the decode token cost (round 122) — no depth
   pathology. The cache churn: no evictions at probe scale, but the concurrent
