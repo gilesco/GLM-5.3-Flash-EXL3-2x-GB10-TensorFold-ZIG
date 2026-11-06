@@ -447,8 +447,21 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       paged read/selection path, only on long thinking decodes** (the
       same family as the page_rows bug, a second member). The fix
       target: the E4M3 paged latent read / sparse selection under long
-      decodes; the instrument: the ~5-min harness replay. (user) no new
-      launches until the user says so — the explanation first. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      decodes; the instrument: the ~5-min harness replay. (user,
+      2026-11-06) continue autonomously, fold in v1.2.3 when
+      appropriate — the agent's plan: fix on the current pin first, then
+      rebase as its own arc. The hunt's opening moves: the CUDA-index
+      quick path ELIMINATED (off by default, prompt-sized-only); the
+      assembler bypasses the table for E4M3 (logical positions,
+      PAGE=512 consistent); the onsets are early (tokens 500-1,650) at
+      no common boundary, the loop token is a prompt's tool-schema name,
+      and the replay's runaway is a SOFT loop (72.8% acceptance) vs the
+      battery's hard loops (99%) — one disease, a severity spectrum.
+      **pagehunt in flight** — the selection instrument (the
+      glm-zz-dsasel debug patch prints row 0's selections every 64th
+      position; the replay on fp8-paged vs bf16-paged): a freeze on
+      fp8 with a healthy slide on bf16 = the selection is the site;
+      both slide = the gather/read. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
