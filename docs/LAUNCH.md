@@ -6877,3 +6877,31 @@ logged here; the relaunch passes them in the arg.
 v1.2.3 stack (the adoption's gates receipt on the new ref) + the depth
 ladder re-qualification (the post-adoption re-run, the 12/12 bar).
 ~40 min. THEN DARK.
+
+## (round 133, cont. 70) kvqual4P + depth on the v1.2.3 stack: the ladder 12/12 (the post-adoption re-qual COMPLETE), the §2 gates ALL PASS on the bf16-paged cell — the fp8-paged cell's gates re-staged and launched (2026-11-06)
+
+**campaign-20261106-081942 (the cont. 69 relaunch — the arg carried the
+phase list this time)**:
+- **depth: 12/12** — 3/3 facts at each of 8k/64k/192k/384k on the
+  adopted paged v1.2.3 stack. **The post-adoption depth re-qualification
+  is COMPLETE** (the depth family's receipt on the new ref; the queued
+  item closes).
+- **kvqual4P: ALL §2 gates PASS** (g1 determinism content, g2
+  drafted=plain, g3 resumed=fresh, g4 concurrent=solo 4/4, g5 sampled)
+  — **on its original bf16-paged cell**: that phase predates the
+  marriage (its restart pairs run bf16 + pages + a bf16-window control,
+  whose expected refusal didn't fire — recorded). A real receipt for
+  the bf16 cell + the gate machinery on v1.2.3, but NOT the adopted
+  fp8-paged cell's.
+
+**The v1.2.3 receipt set** now: hardmode 95 + the vision 4/4 + the
+replay 100 + the probe 5/5 (v123qual), the perf parity (v123perf), the
+depth 12/12, the bf16-paged §2 (kvqual4P). The one missing piece for a
+fully symmetric set: the fp8-paged §2 on v1.2.3.
+
+**LAUNCHED: pagedgatesv123 + summary** — the retired pagedgates phase
+re-staged under a new name (the instrument rule), one restart + the
+gates on fp8 + pages + dense4 + 512K on the rebased stack. ~15 min.
+THEN DARK. This completes the v1.2.3 arc's receipt set; the perf plan's
+next step is the Front 2 overlap class (the fork's 0010/0033 HC-split/
+overlap set or PDL on the finish launch) — the next arc.

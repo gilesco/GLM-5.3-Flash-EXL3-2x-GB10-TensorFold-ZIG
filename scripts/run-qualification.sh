@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP v123qual v123perf knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP v123qual v123perf pagedgatesv123 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1294,6 +1294,26 @@ if want v123perf && ! phase_done v123perf; then
   done
   echo "- VERDICT: a knob advances to confirm only on a sharp, instrument-consistent win vs the standing absolutes; parity or a regression retires it; the arms' absolutes also spot-check the v1.2.3 rebase's perf (vs the v1.2.2 receipt above)" >> "$P"
   touch "$OUT/.v123perf.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: pagedgatesv123 (SESSION-SPECIFIC; retires with the receipt). The
+# fp8-paged cell's VALIDATION §2 on the v1.2.3 rebase — the one receipt the
+# re-anchored stack still lacked for a fully symmetric set (the cont. 69
+# window's kvqual4P ran its original bf16-paged cell — that phase predates
+# the marriage; its receipts stand for the bf16 cell). This is the retired
+# pagedgates phase re-staged under a new name (the instrument rule) with
+# the v1.2.3 pin riding local.sh.
+# ---------------------------------------------------------------------------
+if want pagedgatesv123 && ! phase_done pagedgatesv123; then
+  log "=== pagedgatesv123 (VALIDATION §2 on the fp8-paged stack, v1.2.3)"
+  P="$OUT/05d-pagedgatesv123.md"; : > "$P"
+  echo "# pagedgatesv123 (VALIDATION §2 on fp8 PAGED KV, dense4, 512K window, TF_KV_PAGES=on, the 4-patch stack REBASED onto v1.2.3)" >> "$P"
+  if run_gates pagedfp8v123 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"; then
+    touch "$OUT/.pagedgatesv123.done"
+  else
+    echo "- pagedgatesv123 incomplete (a restart was refused) — rerun this phase" >> "$P"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

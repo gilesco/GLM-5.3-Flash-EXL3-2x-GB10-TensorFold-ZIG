@@ -579,10 +579,13 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       refusal is the receipt; upstream's ~7% is drafter-less), COPIES=1
       pure parity (within ~1% of the standing absolutes everywhere) —
       no config.sh change. The rebase's perf spot-check PASSED (the
-      copies1 arm rides the v1.2.2 absolutes). The launch-interface
-      miss (the phase list is the ARG, not the PHASES env) cost
-      kvqual4P+depth their slot — relaunched: the §2 gates on the new
-      ref + the depth ladder re-qual.
+      copies1 arm rides the v1.2.2 absolutes). **kvqual4P + depth
+      (campaign-20261106-081942): the depth ladder 12/12 on the adopted
+      paged v1.2.3 stack — the post-adoption re-qualification COMPLETE;
+      the §2 gates ALL PASS on kvqual4P's original bf16-paged cell (it
+      predates the marriage — not the adopted fp8 cell's receipt).
+      **pagedgatesv123 in flight** — the fp8-paged §2 on v1.2.3, the
+      last piece of the symmetric receipt set.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
