@@ -37,13 +37,19 @@ upstream-gated**:
 - **Concurrency (Front 2)**: fully decomposed (rounds 114-123). UPDATED
   round 133 (cont. 71): the v1.2.3 arc closed with the receipt set fully
   symmetric on the new ref (pagedgatesv123: §2 ALL PASS fp8-paged; depth
-  12/12; hardmode 95 + the vision 4/4; the perf parity). The next A/B is
-  #1732's KV_SHARE+pages pair (the warm-resume mechanism — the concurrent
-  resume's 4× serialization is the priced gap it targets); the PDL-on-the-
-  finish route was surveyed and priced: OUR tree has no PDL plumbing (the
-  plan's earlier ".pdl flag" reference was the fork's field), so it is a
-  from-scratch build with a modest expected win (round 116: the hc chain's
-  launch gaps are already queue-hidden). The hc fusion:
+  12/12; hardmode 95 + the vision 4/4; the perf parity). The KV_SHARE A/B ran
+  (campaigns 20261106-090311/-next): the knob is PARITY on the solo warm
+  resume (the page store's per-resume cost is not faster than the host
+  store's — the medium is not the cost) and the concurrent 4-prefix
+  resume MISSES in both stores (cached=0 ×8; the host store's cascade
+  eviction exposed: 4 × 182 MiB > 679 MiB, each warm miss re-keeps and
+  evicts the next). The gap localizes to store capacity/eviction, not
+  the resume medium; kvshare2 (N=8 + the solo-warm diagnostic) decides
+  capacity vs the live-stream interaction. The PDL-on-the-finish route
+  was surveyed and priced: OUR tree has no PDL plumbing (the plan's
+  earlier ".pdl flag" reference was the fork's field), so it is a
+  from-scratch build with a modest expected win (round 116: the hc
+  chain's launch gaps are already queue-hidden). The hc fusion:
   built, bit-safe, NOT adopted (the occupancy trade — round 116). The depth census:
   the attention path is ~1% of the decode token cost (round 122) — no depth
   pathology. The cache churn: no evictions at probe scale, but the concurrent

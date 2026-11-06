@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP kvshare knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP kvshare2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,26 +1192,28 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: kvshare (SESSION-SPECIFIC; retires with the receipt). The perf
-# plan's next A/B (Front 2): #1732's KV_SHARE+pages pair — the warm-resume
-# mechanism. TF_GLM_KV_SHARE=4 keeps 4 prompt states as POOL PAGES (the
-# host store off): a resume re-binds pages instead of copying from the host
-# store — the warm solo resume and the CONCURRENT resume (receipted 4x
-# serialized, round 123) are the instruments. Two arms on the resumecost
-# volley instrument (d2048/4096/8192 x 3 shots, the ttft walls) + a
-# concurrent 4-prefix volley (cold sequential, then all four resumed in
-# parallel) + a g3-style content check per arm (the resume path changed;
-# the content must not). The <4-states refusal at PARALLEL=4 is a receipt.
-# A sharp win advances to the gates + the battery (the protocol); parity
-# or a regression retires the knob.
+# phase: kvshare2 (SESSION-SPECIFIC; retires with the receipt). kvshare's
+# follow-up: the knob showed PARITY on the solo warm resume (both stores
+# identical ttft walls) and the concurrent 4-prefix probe MISSED in both
+# arms (cached=0 x8; the host arm's cache lines expose the cascade
+# eviction — each warm miss re-prefills and re-keeps, evicting the next
+# state; 4 x 182 MiB does not fit the 679 MiB host store). Two open
+# questions decide the mechanism's fate: (a) does N=8 (states > streams)
+# let the page store hold all four prefixes through the live streams, and
+# (b) does a SOLO warm after the colds hit while the concurrent warms
+# miss — separating capacity from the live-stream interaction. The host
+# arm runs as the reference; the depth volleys are skipped (parity is
+# already receipted). A concurrent-hit win advances the knob to the
+# gates + the battery; a miss retires the mechanism for good (the
+# concurrent-resume park gains its mechanism-level explanation).
 # ---------------------------------------------------------------------------
-if want kvshare && ! phase_done kvshare; then
-  log "=== kvshare (TF_GLM_KV_SHARE=4 vs the host store: the warm + concurrent resume)"
-  P="$OUT/13-kvshare.md"; : > "$P"
-  echo "# kvshare (the warm-resume mechanism: the host store vs 4 states as pool pages)" >> "$P"
-  for arm in host share4; do
+if want kvshare2 && ! phase_done kvshare2; then
+  log "=== kvshare2 (N=8 + the solo-warm diagnostic: capacity or live-stream interference?)"
+  P="$OUT/13b-kvshare2.md"; : > "$P"
+  echo "# kvshare2 (KV_SHARE=8 vs the host store: the concurrent resume's blocker)" >> "$P"
+  for arm in host share8; do
     K=""
-    [[ $arm == share4 ]] && K="TF_GLM_KV_SHARE=4"
+    [[ $arm == share8 ]] && K="TF_GLM_KV_SHARE=8"
     echo "## arm $arm (${K:-the standing host store})" >> "$P"
     S=$(date +%s)
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $K; then
@@ -1220,48 +1222,10 @@ if want kvshare && ! phase_done kvshare; then
       continue
     fi
     echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-200)" >> "$P"
-    # the g3-style content check: the same body twice — the second resumes; contents must match
-    bf=$(mktemp /tmp/ks.XXXXXX.json)
-    FILL_WORDS="$FILL_WORDS" python3 -c "
-import json, os
-words = os.environ['FILL_WORDS'].split()
-fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(2048 // 4)))
-json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 48, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open('$bf', 'w'))
-"
-    for shot in a b; do
-      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-      curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks-$arm-$shot.json" || true
-    done
-    python3 - "$OUT" "$arm" >> "$P" <<'PKE'
-import json, sys
-out, arm = sys.argv[1], sys.argv[2]
-try:
-    a = json.load(open(f"{out}/ks-{arm}-a.json"))["choices"][0]["message"]["content"]
-    b = json.load(open(f"{out}/ks-{arm}-b.json"))["choices"][0]["message"]["content"]
-    print("- content check: %s (%d vs %d chars)" % ("IDENTICAL" if a == b else "DIFFERENT - the resume path changed content", len(a), len(b)))
-except Exception as e:
-    print("- content check EXTRACT-FAILED: %r" % e)
-PKE
-    rm -f "$bf"
-    # the solo volleys: 3 depths x 3 shots (shot 1 cold, shots 2-3 resumed)
-    for d in 2048 4096 8192; do
-      bf=$(mktemp /tmp/ksv.XXXXXX.json)
-      FILL_WORDS="$FILL_WORDS" DUEL_PROMPT="$DUEL_PROMPT" python3 -c "
-import json, os, sys
-words = os.environ['FILL_WORDS'].split(); d = int(sys.argv[1])
-fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(d // 4)))
-json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + chr(10) + chr(10) + os.environ['DUEL_PROMPT']}]}, open(sys.argv[2], 'w'))
-" "$d" "$bf"
-      for shot in 1 2 3; do
-        python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-        T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks-$arm-d$d-s$shot.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
-        echo "- d$d shot$shot ttft_wall ${T}s" >> "$P"
-      done
-      rm -f "$bf"
-    done
-    # the concurrent 4-prefix volley: cold sequential, then all four resumed in parallel
+    mark() { echo "- --- $1 ---" >> "$P"; docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "prompt cache|store|keep|evict|resumed" | tail -4 | sed 's/^/  /' >> "$P"; }
+    # 4 distinct d4096 prefixes, cold sequential
     for i in 1 2 3 4; do
-      bf="$OUT/ks-$arm-cc$i.json"
+      bf="$OUT/ks2-$arm-cc$i.json"
       FILL_WORDS="$FILL_WORDS" python3 -c "
 import json, os, sys
 words = os.environ['FILL_WORDS'].split(); off = int(sys.argv[1])
@@ -1269,23 +1233,28 @@ fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + off) % 89}' for i, w in ((i, 
 json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
 " "$((i * 7))" "$bf"
       python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-      S=$(date +%s.%N)
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks-$arm-cc$i-r.json" || true
-      E=$(date +%s.%N); echo "- cc$i cold: $(python3 -c "print(f'{$E-$S:.2f}')") s" >> "$P"
+      T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ks2-$arm-cc$i-r.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      echo "- cc$i cold ttft_wall ${T}s" >> "$P"
     done
+    mark "after the 4 colds (did all four keep?)"
+    # the solo warm: cc1 again — does it hit?
+    T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/ks2-$arm-cc1.json" -o "$OUT/ks2-$arm-solo.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+    echo "- cc1 WARM SOLO ttft_wall ${T}s" >> "$P"
+    mark "after the solo warm (hit or evicted?)"
+    # the 4 concurrent warms
     S=$(date +%s.%N)
     for i in 1 2 3 4; do
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/ks-$arm-cc$i.json" -o "$OUT/ks-$arm-cc$i-w.json" || true
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/ks2-$arm-cc$i.json" -o "$OUT/ks2-$arm-cc$i-w.json" || true
     done &
     wait
     E=$(date +%s.%N)
     echo "- the 4 concurrent resumes: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate" >> "$P"
-    echo "- the engine's lines (the ttft fields + the cache lines):" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -14 | sed 's/^/  /' >> "$P" || true
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "prompt cache: [0-9]+ tokens.*" | tail -6 | sed 's/^/  /' >> "$P" || true
+    mark "after the concurrent warms"
+    echo "- the concurrent warms' engine lines (cached= is the verdict):" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -5 | sed 's/^/  /' >> "$P" || true
   done
-  echo "- VERDICT: the share4 arm's warm ttft walls + the concurrent aggregate vs the host arm's — a sharp drop advances the knob to the gates + the battery; parity or a regression retires it; a content DIFFERENT retires it outright" >> "$P"
-  touch "$OUT/.kvshare.done"
+  echo "- VERDICT: share8's concurrent warms with cached>0 + a dropping aggregate = the capacity fix works (advance to the gates + the battery); cached=0 everywhere = the live streams reclaim the states (the mechanism retires; the park's explanation: the store yields to live streams before a resume — upstream-shaped)" >> "$P"
+  touch "$OUT/.kvshare2.done"
 fi
 
 # ---------------------------------------------------------------------------

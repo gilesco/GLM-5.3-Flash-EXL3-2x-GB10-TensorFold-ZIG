@@ -590,10 +590,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       receipt set fully symmetric** (gates fp8-paged + bf16-paged ALL
       PASS, depth 12/12, hardmode 95 + the vision 4/4, the replay 100
       + the probe 5/5, the perf parity). The session phases retired.
-      **kvshare in flight** — the perf plan's next A/B (Front 2:
-      #1732's KV_SHARE warm-resume mechanism; the PDL route surveyed
-      and priced — our tree has no PDL plumbing, the plan's flag
-      reference was the fork's field — and 0010 was never fetched).
+      **kvshare (campaign-20261106-090311): the knob retires at
+      N=4** — the solo warm resume DEAD PARITY (the pool-page store's
+      per-resume cost is not faster than the host store's), the
+      content IDENTICAL, and the concurrent 4-prefix resume MISSED in
+      both arms (cached=0 ×8, 13.9 s = four cold prefills) — the host
+      store's lines expose the cascade eviction (4 × 182 MiB > 679
+      MiB; each warm miss re-keeps and evicts the next). The receipt
+      LOCALIZES the concurrent-resume gap to store capacity/eviction.
+      **kvshare2 in flight** — N=8 + the solo-warm diagnostic
+      (capacity vs the live-stream interaction); a concurrent-hit win
+      advances the knob, a miss retires the mechanism and receipts the
+      park's explanation.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt

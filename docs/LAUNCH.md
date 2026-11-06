@@ -6944,3 +6944,38 @@ path changed — the content must not), the resumecost volley instrument
 the 4× serialization probe). The <4-states refusal is a receipt. A
 sharp warm/concurrent-resume win advances the knob to the gates + the
 battery; parity or a regression retires it. ~25 min. THEN DARK.
+
+## (round 133, cont. 72) kvshare (campaign-20261106-090311): the knob is PARITY on the solo warm resume and the concurrent 4-prefix resume MISSES in BOTH stores (cached=0 ×8) — the cascade eviction exposed; kvshare2 probes N=8 + the solo-warm diagnostic (2026-11-06)
+
+**kvshare's receipt** (the host store vs TF_GLM_KV_SHARE=4):
+- **The solo warm resume: DEAD PARITY** — every ttft wall identical
+  between the arms to within 0.1-0.3% (the colds 3.48/3.50, the warm
+  resumes 1.87/1.87, 1.35/1.35; the walls' d-row labels shift with the
+  cross-request prefix sharing — the d4096 cold resumed 2048 tokens
+  from the d2048 state, the shared-prefix mark working as designed).
+  **The pool-page store's per-resume cost is NOT faster than the host
+  store's** — the resume cost is not the store's medium.
+- **The content check: IDENTICAL in both arms** (the resume path does
+  not change content).
+- **The concurrent 4-prefix probe: BOTH ARMS MISS** — all eight warm
+  requests cached=0, the aggregate 13.93/13.91 s = four full cold
+  prefills. The host arm's cache lines expose the mechanism: "3
+  states, 546 MiB and 132 MiB spare of 679 MiB (evicted 7)" — 4 × 182
+  MiB does not fit the 679 MiB store, and each warm MISS re-prefills
+  and re-keeps, evicting the NEXT state: a cascade. The page store
+  (share4) missed identically — N=4 states with 4 live streams yields
+  nothing spare (the refusal's own arithmetic warned: "live streams
+  evict each other's before a resume").
+- **THE VERDICT: the knob retires at N=4** (parity on the solo resume;
+  no concurrent fix) — **but the receipt localizes the concurrent-
+  resume gap to store capacity/eviction, not the resume medium**. The
+  round-123 4× serialization park has its mechanism-level suspect.
+
+**RE-LAUNCHED: kvshare2 + summary** — the deciding probe: N=8 (states >
+streams — the page budget is trivial: 8 × 8 pages of 4100) + the
+solo-warm diagnostic (after the 4 colds, ONE warm solo before the
+concurrent volley: a solo HIT with concurrent MISSES = the live-stream
+interaction; a solo MISS = the states are gone entirely). The host arm
+runs as the reference. A concurrent-hit win advances the knob to the
+gates + the battery; a miss retires the mechanism for good and the
+park's explanation is receipted. ~15 min. THEN DARK.
