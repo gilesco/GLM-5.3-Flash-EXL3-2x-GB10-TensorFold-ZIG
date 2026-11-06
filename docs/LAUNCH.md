@@ -7392,3 +7392,36 @@ DELTAS' engine row re-framed. mms2 + mms2qual retired (receipted); the
 duel's MMS2_DUEL_PATCHES override stays (the candidate-duel pattern).
 
 No window — desk work.
+
+## (round 133, cont. 87) THE PREFILL FRONT'S NEXT LEVER PORTED AND THE A/B LAUNCHED: glm-mia-exl3prompt.patch (Mia 1104 0007+0008 hand-ported — one call a pass, the slot-row write, no MTP beside a drafter) (2026-11-06)
+
+**The candidate**: the fork's 0007+0008 — the pair behind the "+next two
+changes" in the packed-s2's combined cold-prefill claim (+12.6/15.6/16.0%
+at 4K/16K/64K with 0009, which we already adopted). The mechanisms:
+- **One call a pass** (0007a): cuda_exl3.chunk_rows follows
+  cuda_state.prefill_rows (2048 here; was 1024) — every expert's trellis
+  decoded once a pass instead of twice (~28 pairs an expert); a pair's
+  sums do not depend on which item of 64 holds it — the bits unchanged.
+- **The slot-row write** (0007b): the down kernel gains yrow — it writes
+  the routed slots of ey straight, dropping the cuMemcpy2D of
+  [rows][8][4096] fp32 after every call and the prompt arena's y.
+  yrow defaults 0: the old ABI for every other caller.
+- **No MTP beside a drafter** (0008): with DFlash2 the target MTP
+  layer's caches are never read — the prompt stops absorbing into them
+  (a whole DSA+MoE layer a pass; Mia's nsys: 3.4-4.4% of a traced
+  2048-row pass).
+
+**THE PORT** (hand-applied — the fork's hunks drifted on v1.2.3): five
+files, the k6 hunks dropped (our tree has no 3/6-bit kernels), the
+engine's site re-anchored onto prompt_solo.mtpRows, the two test hunks
+dropped (the content gate verifies). **The chain verified byte-identical
+to the port commit on a fresh v1.2.3 checkout** (the 5 patches + the
+port). Staged as glm-mia-exl3prompt.patch (patches/README.md's entry
+written).
+
+**LAUNCHED: exl3call + summary** — the mms2 A/B pattern: arm off (the
+standing 5-patch stack) vs arm on (+ the patch; the rebuild rides the
+restart), the content-sha cross-arm gate (three prompt sizes) + the pp
+rows twice per arm. The bar: content IDENTICAL + a sharp pp gain → the
+battery + the duel re-pair; a content DIFFERENT or pp parity retires.
+~50 min (the rebuild included). THEN DARK.

@@ -581,3 +581,19 @@ duel re-pair (the adoption judgment); a content DIFFERENT retires it
 outright; pp parity retires it; the tg rows moving is an instrument red
 flag. The target: the prefill front's 69% (1,049-1,115 vs production's
 1,518) — an 8% prefill gain would be the front's first structural move.
+
+**The prefill front's next lever, ported (cont. 87)**: Mia 1104 0007+0008
+— the EXL3 prompt path in one call (chunk_rows follows prefill_rows: the
+trellis decodes once a pass instead of twice) + the down kernel writing
+the MoE slot rows straight (yrow — the cuMemcpy2D of [rows][8][4096] fp32
+per call dropped) + no target-MTP prompt absorption beside a drafter (a
+whole DSA+MoE layer a pass, 3.4-4.4% of a traced pass — pure waste on
+our DFlash2 shape). **Hand-ported as `glm-mia-exl3prompt.patch`** (the
+fork's hunks drifted: no k6 kernels here, the v1.2.x engine delegates to
+prompt_solo.mtpRows, the test files dropped — the content gate verifies);
+**verified byte-identical to the port commit on a fresh checkout**. Mia's
+combined claim WITH 0009 (our adopted packed-s2): cold prefill
++12.6/15.6/16.0% at 4K/16K/64K, T=0 replies unchanged. **The exl3call
+window launched**: the mms2 A/B pattern (arm off = the 5-patch stack, arm
+on = + the patch), the content-sha cross-arm gate + the pp rows twice per
+arm. The target: the prefill front's 76% → the low 80s.

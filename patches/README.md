@@ -167,6 +167,23 @@ cross-arm gate + the pp rows, 2+ runs per arm). STAGING: applies on v1.2.3 +
 the 4-patch stack; disjoint files, the list order does not matter. OWNER: this
 line; STATUS: EXPERIMENTAL.
 
+## glm-mia-exl3prompt.patch — the EXL3 prompt path in one call + no MTP beside a drafter (staged 2026-11-06; the exl3call A/B decides)
+
+Mia 1104 0007+0008 hand-ported to v1.2.3 (the fork's hunks drifted: no k6
+kernels here, the v1.2.x engine delegates the MTP absorption to
+prompt_solo.mtpRows, the two test files don't exist — dropped, the A/B's
+content gate verifies). 0007: chunk_rows follows prefill_rows (2048, was
+1024 — the trellis decodes once a pass, the bits unchanged) and the down
+kernel writes the MoE slot rows straight (yrow — dropping the
+cuMemcpy2D of [rows][8][4096] fp32 per call and the arena's y). 0008:
+with a drafter the target MTP layer's caches are never read — the prompt
+stops absorbing into them (a whole DSA+MoE layer a pass). Mia's
+measurements: routed experts −28%, the MTP pass 3.4-4.4% of a traced
+pass; in the engine WITH 0009 (our adopted packed-s2): cold prefill
++12.6/15.6/16.0% at 4K/16K/64K, T=0 replies unchanged. STAGING: applies
+on v1.2.3 + the 5-patch stack (verified byte-identical to the port
+commit). OWNER: this line; STATUS: EXPERIMENTAL.
+
 ## glm-zz-dsasel3.patch — THE LOOP HUNT'S INSTRUMENT v3 (RETIRED 2026-11-06: the mechanism receipted — the selist fix closed it, and the v1.2.3 rebase re-receipted the fix end to end; the instrument is NOT in the serving PATCHES list and stays here as the hunt's record)
 
 The DSA selection instrument: tf_glm_dsa_tokens prints VIOL lines (an
