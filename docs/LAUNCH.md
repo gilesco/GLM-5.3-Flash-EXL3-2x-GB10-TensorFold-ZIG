@@ -7085,3 +7085,42 @@ tree, and write the candidate-patch design before any window.
 
 No window this sitting — nothing to test until a candidate patch is
 built; the design pass is desk work.
+
+## (round 133, cont. 76) THE DOCS-ACCURACY PASS: the README/DELTAS/anchors re-paired to the current receipts; the model cards refreshed from the bench store (2026-11-06, (user) ask)
+
+No new measurements — every number cited was already receipted; this sitting
+re-paired the standing docs to them:
+
+- **README**: the Speed row re-paired to the PAGED duel (the stale TR3-duel
+  numbers retired: solo 110%→**108.5%**, c4 80%→**parity 154.8 vs 154.6**,
+  cold 309%→**328%** (5,215 ms, slope 0.612), overhead 91%→**93%**, with
+  c2's floor-vs-top nuance and the prefill 69% added); the Quality row cites
+  the three byte-identical 95 receipts (campaign-20261106-043015/-065920/-093921);
+  the serve/Exactness/Context rows cite the v1.2.3 receipts (pagedgatesv123,
+  kvqual4P, the depth 12/12, the smoke); the PATCHES row carries the
+  **4-patch default** (it still described absorb-only); the KV_CACHE and
+  TF_KV_PAGES rows cite the current receipts; the bars row's loading fixed
+  (90/91 → **91%**) and the fronts' states named.
+- **The anchors** (docs/perf-anchors.tsv): the cold row's `ours` data cell
+  5122 → **5215** (the paged duel's number — the ABSORB-only 5122 was the
+  pre-pages stack; the chart's bar now matches its own narrative's 328%);
+  the header comment moved to v1.2.3 + TF_GLM_KV_SHARE=8; **the chart
+  re-rendered** (9 metrics — the guard --check passes).
+- **DELTAS' header**: v1.2.2 → **v1.2.3** with the full re-receipt set; the
+  CURRENT scoreboard lead is the PAGED duel (the round-132 window-mode duel
+  marked as the superseded history); "the served TR3 TIES production" →
+  "a point ABOVE" (95 vs 94, three receipts).
+- **THE MODEL CARDS (the (user) ask)**: docs/cards/ held only the
+  round-108-era cards (the Focus/top4cfg cells and the old production run —
+  the served default itself had no card). Refreshed from the bench store
+  (cwd-scoped data/benchmarks.sqlite on the head, `tool-eval-bench card`):
+  **tr3-definitive.svg** — the shipping config's receipted battery
+  (hardmode 95, the byte-identical token profile; kvsharequal,
+  campaign-20261106-093921, run 2026-11-06T09-57-44_4a88b560) — and
+  **prod-definitive.svg** — production's current-bench anchor (94/104; the
+  prodbench receipt, campaign-20261102-213954, run 2026-11-02T21-49-55_2a0fde3b,
+  the same instrument, superseding the round-108-era production card). The
+  round-108-era cell cards (focus/top4cfg, the old eras) stay as history;
+  the README's cards paragraph names each card and its receipt.
+
+No window — desk work only.

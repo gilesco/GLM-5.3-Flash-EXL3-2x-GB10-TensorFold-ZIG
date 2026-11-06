@@ -4,28 +4,38 @@ This repo is a **testing line** for the native engine, next to
 [MiaAI-Lab's GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold](https://github.com/MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold)
 (our production). Both serve the **same checkpoint** — the difference is the
 engine and the patch policy. Read this before pointing real traffic at it.
-*(Updated 2026-11-03 after the v1.2.2 bump — receipts in
+*(Updated 2026-11-06 after the v1.2.3 rebase and the KV_SHARE adoption — receipts in
 docs/LAUNCH.md and docs/TOOL_EVAL_TESTING.md; this repo's edits are AI-generated, see the
-README. The engine is **v1.2.2** (`00e7ddd`, round 133: gates ALL PASS, depth 12/12, hardmode 94, the
-duel re-paired the decode fronts) with **`TF_GLM_INDEX_CUDA=1`** as the
+README. The engine is **v1.2.3** (`6ec5fa4cb`, round 133: the 4-patch stack re-anchored and fully
+re-receipted — §2 gates ALL PASS on the fp8-paged cell (pagedgatesv123, campaign-20261106-084338)
+and the bf16 cell, the depth ladder 12/12, hardmode 95 + the vision 4/4 receipted three times with
+the standing run's byte-identical token profile, the replay 100 + the probe 5/5) with **TF_GLM_KV_SHARE=8**
+adopted (the prompt states as pool pages — the concurrent 4-prefix resume −40%, the solo warm
+reliable; kvshare2/kvsharequal, campaign-20261106-092703/-093921) and **`TF_GLM_INDEX_CUDA=1`** as the
 standing default (round 49: the depth ladder −2.6% at 131k → −5.5% at 393k, gates ALL
-PASS). The served default is now the **TR3-4bpw checkpoint** (the round-132
+PASS). The served default is the **TR3-4bpw checkpoint** (the round-132
 (user) swap after the 4bpw sweep: 94/104 hardmode, the best top-8 decode —
 docs/bpw4-sweep-cards.svg; the AZ-Focus stays receipted at 93) — the **(user) call: hardmode is THE quality
-measure, target = beat production's run-level 94 or come close**. On the CURRENT instrument (the 104-scenario hardmode battery, v1.2.1): the served
-**TR3 94**, the Focus **93**, the AZ top-4 **90** (docs/bpw4-sweep-cards.svg) — and **production's current-bench anchor: 94/104** (the prodbench
-receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served TR3 TIES production at the bar**. On the
+measure, target = beat production's run-level 94 or come close**. On the
+CURRENT instrument (the 104-scenario hardmode battery): the served config **95** (receipted three
+times: campaign-20261106-043015/-065920/-093921 — byte-identical token profiles), the Focus **93**, the AZ top-4 **90** (docs/bpw4-sweep-cards.svg) — and **production's current-bench anchor: 94/104** (the prodbench
+receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
-or bench versions). **The served TR3 cell's scoreboard (the round-132 duel, 2026-11-02 —
-campaign-20261102-210117: both engines on the clean 8001, same window; the duel's
-stack-stop fix)**: loading **90%** (104.5 vs 93.7 s — re-dated cont. 31 for the served
-default: 103/106 s, campaign-20261103-090007; the Focus cell's 95 s was the v1.2.0
-receipt), solo **110% — CROSSED** (64.4 vs 58.5 t/s), c2 **127%** (110.3 vs 87.0),
-c4 **80%** (152.6 vs 192.0 — production's c4 range 155-241 with cache state, this run near
-its top; ours holds 150-153 on TR3), ITL **109% — crossed** (15.6 vs 17.1 ms/token), TTFT
-overhead **91%** (201 vs 183 ms). The Focus cell's scoreboard (the round-130 head-to-head,
-2026-10-31 — the first two-arm duel since the port split, campaign-20261031-200757:
+or bench versions). **The CURRENT scoreboard (the PAGED duel, 2026-11-06 —
+campaign-20261106-052114: production-for-testing on 8001 vs ours paged, both engines the
+same window, the same probes)**: loading **91%** (103 vs 93.7 s), solo **108.5% — CROSSED**
+(63.5/63.2 vs 58.5/58.6 t/s), c2 **127% of production's floor** (110.6 vs 87.1 — ~parity with
+its top-of-range volley at ~111), c4 **~parity** (154.8 vs 154.6 — production's range 155-241
+with cache state, this run at its floor), TTFT overhead **93%** (199 vs 186 ms), ITL
+**109% — crossed** (15.7 vs 17.1 ms/token), **the cold depth cost CROSSED (328%)** — ours 5.2 s
+vs production's 17.1 s at d8192 cold (its slope 2.026 ms/tok, slowing with depth; ours 0.612
+flat). The round-132 window-mode duel (campaign-20261102-210117: solo 110%, c2 127%, c4 80%,
+ITL 109%, cold 309%) is the pre-pages history it superseded; the Focus cell's round-130
+head-to-head and the round-131 prodcold receipt are the cold front's provenance (the
+round-131 receipt: production's TRUE cold on novel fills its persistent cache cannot hit).
+The Focus cell's scoreboard (the round-130 head-to-head, 2026-10-31 — the first two-arm
+duel since the port split, campaign-20261031-200757:
 production started FOR TESTING on 8001, ours on main): **loading 98.6% — TAKEN** (95 s vs
 93.7), solo **93.2%** (54.9 vs 58.9), c2 **80.5%** (89.0 vs 110.6), c4 **75.2%** (144.9 vs
 192.6), ITL **102% — crossed** (16.6 vs 17.0), TTFT overhead **92.5%** (200 vs 185),
