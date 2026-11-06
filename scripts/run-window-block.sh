@@ -35,3 +35,4 @@ echo "=== campaign wrapped (rc=$RC) at $(date) — stopping the testing stack ==
 scripts/stop.sh </dev/null >/dev/null 2>&1 || true
 echo "=== the port is free — production can be restarted."
 echo "=== receipts: results/ (the newest campaign-* dir; bench runs under run-*/ inside it) ==="
+exit "$RC"   # propagate the campaign rc - the window rc must tell the truth (cont. 84: an echo-last swallowed a dead campaign rc=1)

@@ -1309,7 +1309,7 @@ import json, os, sys
 words = os.environ['FILL_WORDS'].split(); n = int(os.environ['FN'])
 fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(n // 4))) if n else ''
 json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 48, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': (fill + chr(10) + chr(10) if fill else '') + os.environ['DUEL_PROMPT'] + ' Answer with exactly five words.'}]}, open(sys.argv[1], 'w'))
-"
+" "$bf"
       python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
       curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/mm2-$arm-$pr.json" || true
       rm -f "$bf"

@@ -7305,3 +7305,26 @@ per arm. The bar: content IDENTICAL + a sharp pp gain → the battery +
 the duel re-pair; a content DIFFERENT retires outright; pp parity
 retires; the tg rows moving is a red flag. ~50 min (the rebuild
 included). THEN DARK.
+
+## (round 133, cont. 84) THE mms2 WINDOW DIED AT ITS FIRST PROBE — a python -c invoked without its positional argument (sys.argv[1] IndexError under set -e) AND the window wrapper swallowed the rc (an echo-last reported rc=0 on the dead campaign); both fixed; the console carried the truth (2026-11-06)
+
+**campaign-20261106-172745: the receipt stops after arm off's load
+line** — the probe builder called `python3 -c "<script>"` with NO
+positional argument: `sys.argv[1]` raised IndexError, `set -e` killed the
+campaign, arm on never ran. My kvshare phase used the same pattern but
+interpolated the filename into the python source; mms2 used sys.argv[1]
+and forgot to pass `"$bf"`.
+
+**THE SECOND BUG, WORSE**: the window logged `window finished rc=0` on
+the dead campaign — run-window-block.sh captured `RC=$?`, printed it,
+and ended on an `echo`, so the wrapper's own exit status was 0. The
+fail-honesty chain broke at the wrapper. **The console carried the
+truth** (the traceback + `campaign wrapped (rc=1)`) — reading the
+receipt caught what the rc signals hid.
+
+**THE FIXES**: the probe builder passes `"$bf"`; run-window-block.sh
+ends with `exit "$RC"` (the wrapper's rc now propagates). The lesson
+logged and verify-shell-config-edits extended (end every wrapper with
+`exit "$RC"`).
+
+**RE-LAUNCHED: mms2 + summary** — the same A/B (~50 min). THEN DARK.
