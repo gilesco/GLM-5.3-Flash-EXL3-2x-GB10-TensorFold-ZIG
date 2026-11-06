@@ -428,13 +428,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       up ~80K chars, 1/3/5 behave) and run from ~1.4-2K-token prompts
       whose history carries the PRIOR loop's ~20K tokens of repetitive
       text (the harness feeds the full output back).**pageconc
-      in flight**: the synthetic concurrent pair + the FAITHFUL harness
-      replay (--scenarios TC-62 TC-49 --hardmode --parallel 2) on pages
-      on vs off; pageloop was CLEAN both sides (the repetitive-KV
-      hypothesis dies). v1.2.3 scanned (425 commits, touches
-      cuda_dsa_block/cuda_forward): its GLM items are opt-in prefill/
-      serving features — nothing on the selection/loop bug; the rebase
-      waits for the loop verdict.
+      (campaign-20261105-231751): THE LOOPS ARE REPRODUCED FAITHFULLY** —
+      the harness replay (TC-62+TC-49, the battery's exact flags) fails
+      on fp8-paged (TC-62: turn 8 hit the 16,384 ceiling with 72,502
+      chars of reasoning — the loop lives in the reasoning channel;
+      19,458 tokens over 8 turns; final_score 50) and is healthy on
+      pages-off (TC-62 passes with 5,043 tokens / 12 turns and TC-49
+      751 — IDENTICAL to the standing run's numbers: **the marriage's
+      non-paging changes are exonerated**; final_score 100). The
+      synthetic concurrent pair was bit-clean — concurrency is NOT the
+      co-trigger. The reproducer is cheap now (one harness command, ~5
+      min). **pagebisect in flight** — the same replay on bf16-paged:
+      loops = E4M3-specific (the quantized read/selection on long
+      thinking decodes); passes = paging itself (the Table/mapping
+      layer). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      cuda_forward): its GLM items are opt-in prefill/serving features —
+      nothing on the selection/loop bug; the rebase waits for the loop
+      verdict.
       **poolcanary v1 (campaign-20261105-163035):
       clean but INCONCLUSIVE** — its ~790-token prompts never crossed the
       store's 2,048-row keep grid (every request resumed at 0; the adopt
