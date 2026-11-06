@@ -1,18 +1,32 @@
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
-Subject: glm-cuda: debug v2 - the DSA assembler's VIOL detector (the loop hunt's refined instrument)
+Subject: glm-cuda: debug v3 - PICK (the select kernel's own view) beside VIOL/SEL (the assembler's) - the loop hunt's hop-isolating instrument
 
-PROVENANCE: this line's debug instrument v2, 2026-11-06, on the composed
-stack (absorb + fp8-pages + pagerows-fix). v1's SEL dump caught the fp8
-selection's page-start attractor but its lines mixed stale scratch
-(count=0 dense rows) with sparse rows and carried no causal horizon.
-v2: print only count>0 rows, tag npool, and fire a VIOL line whenever
-an E4M3 selection (pt==0, logical positions) contains a token beyond
-the row's own causal limit (row[0] > q) - mechanically impossible
-unless something selects beyond the scored range. bf16 (physical
-page-row values) keeps the periodic SEL print only. Read-only printf
-with a __syncwarp; no addressing change. Sorts last (glm-zz-*).
-OWNER: this line; STATUS: the loop hunt's instrument v2.
+PROVENANCE: this line's debug instrument v3, 2026-11-06, on the composed
+stack (absorb + fp8-pages + pagerows-fix). The offline analysis of v1's
+dump: 2,684 of 3,641 sparse selections (74%) emit tokens beyond the
+row's causal limit, while BOTH kernels read causal in source (the
+scores kernel masks per-pool; select_rows scans NP = min(np, max(vis,
+K))). v3 adds tf_glm_index_pools PICK lines (pos, vis, NP, top-2
+outputs, sparse launches only) beside the assembler's v2 VIOL/SEL
+lines: PICK causal + assembler out-of-horizon = the pools scratch /
+aliasing gap; PICK already out-of-horizon = the scores buffer's stale
+slots. Read-only printf; no addressing change. Sorts last (glm-zz-*).
+OWNER: this line; STATUS: the loop hunt's instrument v3.
 
+diff --git a/zig/kernels/cuda/glm_index_pools.cuh b/zig/kernels/cuda/glm_index_pools.cuh
+index 4882b760c..66c16f5b7 100644
+--- a/zig/kernels/cuda/glm_index_pools.cuh
++++ b/zig/kernels/cuda/glm_index_pools.cuh
+@@ -184,6 +184,9 @@ extern "C" __global__ void __launch_bounds__(glm_index::T)
+   if (NP <= CAP) {
+     select(sm, Row{row, NP}, K, out, phase);
+     if (PATH != nullptr && threadIdx.x == 0) PATH[r] = 0;
++    if (blockIdx.x == 0 && threadIdx.x == 0 && NP > K)
++      printf("PICK pos=%d vis=%d NP=%d out0=%lld out1=%lld\n",
++             pos[0], (int)vis, NP, (long long)out[0], (long long)out[1]);
+     return;
+   }
+   const uint32_t lo = sample_floor(sm, row, NP, TARGET, phase);
 diff --git a/zig/kernels/cuda/glm_ops.cu b/zig/kernels/cuda/glm_ops.cu
 index b2fbee106..4c8205953 100644
 --- a/zig/kernels/cuda/glm_ops.cu

@@ -6496,3 +6496,43 @@ on fp8 with bf16 silent ⇒ the selection reads beyond the scored range
 written range); no VIOL anywhere ⇒ the impossible positions were stale
 scratch and the fixation is real attention (dig the pooled keys'
 content). ~25 min. THEN DARK per the user's directive.
+
+## (round 133, cont. 59) THE VIOLATION IS REAL: 74% of sparse selections emit tokens beyond the row's causal limit (offline analysis of pagehunt2's dump — the build had consumed the stale v1 patch); the hop-isolating PICK instrument launched (2026-11-06)
+
+**The instrument miss, diagnosed**: pagehunt2's container ran the OLD v1
+patch (its lines have no npool/VIOL — the build consumed the stale
+glm-zz-dsasel.patch despite the repo file being v2; a same-name patch
+update did not reach the build). The v2-format analyzer therefore
+matched nothing — "VIOL lines: 0" was the ANALYZER matching nothing,
+not the mechanism being absent. **Lesson: verify the instrument's
+output FORMAT in the receipt before concluding zero** (logged).
+
+**The offline analysis of the saved v1-format dump (sel-fp8.log, 4,598
+lines, the looping serve — TC-62 AND TC-49 both hit the ceiling this
+run; two 16,384-token runaways at 99.4% acceptance; final_score 25;
+bf16 clean at 100)**:
+- Sparse rows (count>0): 3,641. **CAUSAL VIOLATIONS (t0 > pos): 2,684 —
+  74%.** pos=2112 selecting t0=2560 (future by +448); the selection
+  FROZEN on (9216..9219) across pos 2,240-3,904 while the visible
+  history ends ~2,500; pos=4096's top = (13312..) — future by 9,216.
+- **49.2% of sparse rows' top token sits on a 512-page start** (pool ≡ 0
+  mod 128).
+- The loop ignites right past the sparse boundary (npool ≈ K, pos just
+  over 2,048) — where stale slots MUST fill the top-K — and the
+  E4M3-poison crash (the NaN-fragile selection over unwritten rows) is
+  the same root: unwritten/stale rows entering the selection.
+
+**Both kernels read causal in source**: the scores kernel masks
+per-pool (`p < npool ? s : -INFINITY`), and select_rows scans
+`NP = min(np, max(vis, K))` — the row's own horizon. Yet the emissions
+are out-of-horizon ⇒ the corruption lives in the state BETWEEN the
+kernels (the shared pools scratch / an aliasing gap, or the two
+kernels' views of pos_dev).
+
+**LAUNCHED: pagehunt3** — the hop isolator. glm-zz-dsasel v3 (50 lines,
+staged, applies) adds the select kernel's PICK printf (its own pos
+read, vis, NP, top-2 outputs; sparse launches only) beside the
+assembler's VIOL/SEL. One fp8-paged replay: PICK causal with the
+assembler out-of-horizon ⇒ the pools scratch / aliasing gap; PICK
+already out-of-horizon ⇒ the scores buffer's stale slots win the
+top-K. ~15 min. THEN DARK.

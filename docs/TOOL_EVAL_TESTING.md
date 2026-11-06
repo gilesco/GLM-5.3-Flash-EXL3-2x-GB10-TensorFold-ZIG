@@ -470,11 +470,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       and the pooled-key writer/reader addressing agrees. Instrument
       artifacts identified (stale scratch at count=0; the ~4,000-line
       printf FIFO cap). (user) workflow directive: all tasks first, one
-      launch last, dark until complete. **pagehunt2 in flight** — the
-      refined VIOL detector (count>0 gate, npool tag, per-instance
-      causal-violation lines) on fp8-paged AND bf16-paged: VIOL on fp8
-      with bf16 silent = the leak is real (dig select_rows next); no
-      VIOL = stale scratch, the fixation is real attention. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      launch last, dark until complete. **pagehunt2
+      (campaign-20261106-014222): the build consumed the STALE v1 patch
+      (no npool/VIOL in the container's lines — the v2-format analyzer
+      matched nothing; "VIOL 0" was the analyzer, not the mechanism).
+      The OFFLINE analysis of the saved v1-format dump: **2,684 of
+      3,641 sparse selections (74%) emit tokens beyond the row's
+      causal limit** (t0=2560 at pos 2112; frozen on (9216..) across
+      pos 2240-3904; 49.2% of tops on 512-page starts), the loop
+      ignites right past the sparse boundary (npool ~= K) — while BOTH
+      kernels read causal in source (the scores kernel masks per-pool;
+      select_rows scans NP = min(np, max(vis, K))) ⇒ the corruption
+      lives in the state BETWEEN the kernels. TC-49 also looped this
+      run (both scenarios hit the ceiling; final_score 25; bf16 clean
+      100). **pagehunt3 in flight** — the hop isolator (the select
+      kernel's PICK lines beside the assembler's VIOL/SEL): PICK causal
+      + assembler out-of-horizon = the pools scratch / aliasing gap;
+      PICK already out-of-horizon = the scores buffer's stale slots. v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.

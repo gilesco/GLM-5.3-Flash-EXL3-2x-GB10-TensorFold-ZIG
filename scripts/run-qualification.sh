@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt2 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP pagehunt3 knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1192,33 +1192,30 @@ except Exception: print("PARSE-FAILED")' 2>/dev/null || true)
 fi
 
 # ---------------------------------------------------------------------------
-# phase: pagehunt2 (SESSION-SPECIFIC; retires with the mechanism receipt). The
-# refined selection instrument: the glm-zz-dsasel v2 debug patch gates on
-# count>0, tags npool, and fires VIOL lines when an E4M3 selection exceeds the
-# row's causal limit (mechanically impossible unless something selects beyond
-# the scored range). The replay (TC-62+TC-49, the battery's flags) runs on
-# fp8-paged (loops) and bf16-paged (clean control). VIOL on fp8 with bf16
-# silent = the leak is real (dig select_rows next); no VIOL anywhere = the
-# artifacts were stale scratch and the fixation is real attention.
+# phase: pagehunt3 (SESSION-SPECIFIC; retires with the mechanism receipt). The
+# hop-isolating instrument: the glm-zz-dsasel v3 debug patch adds the select
+# kernel's PICK printf (pos, vis, NP, top-2 outputs; sparse launches only)
+# beside the assembler's VIOL/SEL printfs. The replay (TC-62+TC-49, the
+# battery's flags) on fp8-paged: PICK causal + assembler out-of-horizon = the
+# pools scratch / aliasing gap; PICK already out-of-horizon = the scores
+# buffer's stale slots. 74% of v1's sparse selections were out-of-horizon and
+# the loop ignites right past the sparse boundary (npool ~= K).
 # ---------------------------------------------------------------------------
-if want pagehunt2 && ! phase_done pagehunt2; then
-  log "=== pagehunt2 (the VIOL detector: fp8-paged vs bf16-paged under the replay)"
-  P="$OUT/99-pagehunt2.md"; : > "$P"
-  ph_run() {
-    tag="$1"; kv="$2"
-    if [ -n "$kv" ]; then restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE= CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
-    else restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"; fi
-    echo "- $tag: $(serve_line | cut -c1-120)" >> "$P"
-    mkdir -p "$OUT/tc-$tag"
-    PYTHONUNBUFFERED=1 "$BENCH" run \
-      --base-url "http://127.0.0.1:$PORT/v1" \
-      --model "$SERVED_NAME" \
-      --format openai \
-      --tokenizer "$MODEL_ID" \
-      --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
-      --label "tc-$tag" --output-dir "$OUT/tc-$tag" --json-file "$OUT/tc-$tag/result.json" \
-      > "$OUT/tc-$tag/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-$tag/bench.log)" >> "$P"
-    python3 - "$OUT/tc-$tag/result.json" >> "$P" <<'PDE'
+if want pagehunt3 && ! phase_done pagehunt3; then
+  log "=== pagehunt3 (the hop isolator: PICK vs VIOL/SEL under the fp8-paged replay)"
+  P="$OUT/99-pagehunt3.md"; : > "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_KV_PAGES=on PATCHES="${RC_PATCHES-${PATCHES-}}"
+  echo "- fp8 paged: $(serve_line | cut -c1-120)" >> "$P"
+  mkdir -p "$OUT/tc-fp8"
+  PYTHONUNBUFFERED=1 "$BENCH" run \
+    --base-url "http://127.0.0.1:$PORT/v1" \
+    --model "$SERVED_NAME" \
+    --format openai \
+    --tokenizer "$MODEL_ID" \
+    --seed 42 --perf --hardmode --scenarios TC-62 TC-49 --parallel 2 --timeout 240 --no-live \
+    --label "tc-fp8" --output-dir "$OUT/tc-fp8" --json-file "$OUT/tc-fp8/result.json" \
+    > "$OUT/tc-fp8/bench.log" 2>&1 || echo "  the harness run FAILED (see tc-fp8/bench.log)" >> "$P"
+  python3 - "$OUT/tc-fp8/result.json" >> "$P" <<'PDE'
 import json, sys, re
 try:
     d = json.load(open(sys.argv[1]))
@@ -1232,38 +1229,45 @@ try:
 except Exception as e:
     print("  EXTRACT-FAILED:%r" % e)
 PDE
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "VIOL pos=|SEL pos=" > "$OUT/sel-$tag.log" 2>/dev/null || true
-    python3 - "$OUT/sel-$tag.log" >> "$P" <<'PDS'
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -E "PICK pos=|VIOL pos=|SEL pos=" > "$OUT/sel-fp8.log" 2>/dev/null || true
+  python3 - "$OUT/sel-fp8.log" >> "$P" <<'PDS'
 import sys, re, collections
 try:
-    viol, sels = [], []
+    picks, viols, sels = [], [], []
     for l in open(sys.argv[1]):
-        if l.startswith("VIOL "):
+        if l.startswith("PICK "):
+            m = re.match(r"PICK pos=(\d+) vis=(\d+) NP=(\d+) out0=(\d+) out1=(\d+)", l)
+            if m: picks.append(tuple(int(m.group(i)) for i in range(1, 6)))
+        elif l.startswith("VIOL "):
             m = re.match(r"VIOL pos=(\d+) npool=(\d+) t0=(\d+) t1=(\d+) cnt=(\d+)", l)
-            if m: viol.append(tuple(int(m.group(i)) for i in range(1, 6)))
+            if m: viols.append(tuple(int(m.group(i)) for i in range(1, 6)))
         elif l.startswith("SEL "):
             m = re.match(r"SEL pos=(\d+) npool=(\d+) cnt=(-?\d+) t=\[(-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\]", l)
             if m: sels.append((int(m.group(1)), int(m.group(2)), int(m.group(3)), tuple(int(m.group(i)) for i in range(4, 12))))
-    print("  VIOL lines: %d%s" % (len(viol), (" | pos range: %d..%d" % (min(v[0] for v in viol), max(v[0] for v in viol))) if viol else ""))
-    for v in viol[:10]:
+    print("  PICK lines: %d%s" % (len(picks), (" | pos %d..%d" % (picks[0][0], picks[-1][0])) if picks else ""))
+    pv = [(p, v, n, o0) for p, v, n, o0, o1 in picks if o0 > 4 * ((p + 1) // 4)]
+    print("  PICK out0 beyond its own horizon: %d of %d" % (len(pv), len(picks)))
+    for p, v, n, o0 in pv[:8]:
+        print("    PICK-VIOL pos=%d vis=%d NP=%d out0=%d" % (p, v, n, o0))
+    for p, v, n, o0, o1 in picks[:10]:
+        print("    PICK pos=%d vis=%d NP=%d out0=%d out1=%d" % (p, v, n, o0, o1))
+    print("  VIOL lines: %d" % len(viols))
+    for v in viols[:8]:
         print("    VIOL pos=%d npool=%d t0=%d t1=%d cnt=%d" % v)
     print("  SEL lines: %d | pos range: %s..%s" % (len(sels), sels[0][0] if sels else "-", sels[-1][0] if sels else "-"))
     g = collections.defaultdict(list)
     for pos, npool, cnt, toks in sels:
         g[pos].append(toks)
-    for pos in sorted(g)[::6]:
-        tops = collections.Counter(g[pos])
-        print("  pos=%5d n=%3d top2=%s" % (pos, len(g[pos]), tops.most_common(2)))
+    for pos in sorted(g)[:14]:
+        tops = collections.Counter(g[pos]).most_common(2)
+        print("  pos=%5d n=%3d top2=%s" % (pos, len(g[pos]), [(c, t[:4]) for t, c in tops]))
 except Exception as e:
     print("  SEL-ANALYZE-FAILED:%r" % e)
 PDS
-    echo "  engine lines:" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -5 | sed 's/^/    /' >> "$P"
-  }
-  ph_run fp8 ""
-  ph_run bf16 kv
-  echo "- VERDICT: VIOL lines on fp8 with bf16 silent = the selection reads beyond the scored range (the leak is real — the next sit digs select_rows' scan range vs the written range and the scores buffer's unwritten slots); no VIOL anywhere = the v1 impossible positions were stale scratch and the fixation is real attention (dig the pooled keys' content next)" >> "$P"
-  touch "$OUT/.pagehunt2.done"
+  echo "  engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep "done chatcmpl" | tail -5 | sed 's/^/    /' >> "$P"
+  echo "- VERDICT: PICK causal with the assembler out-of-horizon = the pools scratch / aliasing gap (the select kernel's outputs never reach the assembler's reads — dig the scratch layout); PICK already out-of-horizon = the scores buffer's stale slots win the top-K (dig the scores kernel's write range vs NP and the np_max stride changes)" >> "$P"
+  touch "$OUT/.pagehunt3.done"
 fi
 
 # ---------------------------------------------------------------------------
