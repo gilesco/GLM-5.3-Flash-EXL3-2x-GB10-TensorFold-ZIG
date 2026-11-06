@@ -512,10 +512,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       sparse rows and long thinking generations loop. THE FIX:
       glm-mia-selist-fix.patch (34 lines) — tk carries .logical =
       c.ls != 0 (E4M3 lists stay positions end-to-end; bf16 unchanged).
-      **sparsefix in flight** — the replay first (churning the pages
-      non-identity), then the sparse-prefill code probe (the code at
-      ~row 3,650, beyond dense_limit, on recycled pages — the path the
-      original canary never touched). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
+      **sparsefix
+      (campaign-20261106-035856): THE FIX VALIDATES COMPLETELY** — the
+      harness replay **final_score 100** (TC-62 passes 5,043 tokens /
+      12 turns — byte-for-byte the standing run's profile; TC-49 751;
+      zero truncated notes; the loops GONE on the recycled-page churn
+      that reproduced them 4/4 runs before) + **the sparse-prefill code
+      probe 5/5 exact** (the code at ~row 3,650, beyond dense_limit, on
+      recycled pages — the prefill's sparse path exercised explicitly
+      for the first time reads perfectly). The mechanism stands
+      confirmed. **pagedquality3 in flight** — the adoption judgment:
+      the hardmode battery + the vision suite on absorb + marriage +
+      pagerows-fix + selist-fix, TF_KV_PAGES=on (the bar: hardmode
+      ≥ 94 + the vision 4/4). v1.2.3 scanned (425 commits, touches cuda_dsa_block/
       cuda_forward): its GLM items are opt-in prefill/serving features —
       nothing on the selection/loop bug; the rebase waits for the loop
       verdict.
