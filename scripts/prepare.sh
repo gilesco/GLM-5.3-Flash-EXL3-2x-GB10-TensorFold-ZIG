@@ -67,9 +67,11 @@ for host in local "$WORKER"; do
     docker run --rm -u "$(id -u):$(id -g)" -v "$HF_CACHE:/hf" -e HF_HOME=/hf \
       ${HF_TOKEN:+-e HF_TOKEN} python:3.12-slim sh -c \
       "pip install -q 'huggingface_hub[cli]' && hf download '$MODEL_ID' --revision '$MODEL_REVISION'"
+  elif [[ "${DOWNLOAD:-0}" == 1 ]]; then
+    log "$MODEL_ID@$MODEL_REVISION missing on ${host/local/the head} — the DOWNLOAD block below fills it"
   else
     die "checkpoint snapshot missing on ${host/local/the head}: $MODEL_SNAPSHOT
-     get it with:  DOWNLOAD=1 scripts/prepare.sh     (downloads on the head, then rsyncs to the worker)"
+     get it with:  DOWNLOAD=1 scripts/prepare.sh     (downloads on the head when it is missing there, then rsyncs to the worker)"
   fi
 done
 if [[ "${DOWNLOAD:-0}" == 1 ]]; then
