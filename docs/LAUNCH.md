@@ -7787,3 +7787,15 @@ receipt intact throughout (seven consecutive hardmode 95s, the vision
 **NO LAUNCH** — the next lever is a hunt (the loading wall's re-take,
 the upstream watch, or the capacity/hygiene ports); that is the next
 sitting's opener.
+
+## (round 134, cont. 101) THE BARE-CONFIG SMOKE FOR THE 8-PATCH DEFAULT: PASS, complete on the first try (campaign-20261107-103127); the phase retired (2026-11-07)
+
+**The smoke PASSed with the complete receipt** — every lesson from
+the prior smokes applied and none needed: load 109 s (a fingerprint
+cache hit on the moesidequal build), **the prepared fingerprint names
+all EIGHT patches on the v1.2.3 pin** (the cache-hit condition being
+config_line equality, the bare default's expansion is proven), the
+serve line carries both signatures (the 2048-row prompt passes, the
+pool-pages prompt cache), and the probe replies **'smoke-ok-8patch'**
+exact. The phase retired (receipted); the default-change loop is
+closed.

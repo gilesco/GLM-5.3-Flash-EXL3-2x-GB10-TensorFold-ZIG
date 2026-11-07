@@ -680,7 +680,11 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       production's top volley), c4 158.6 (+3.2% across three duels) —
       **ADOPTED: config.sh's PATCHES is the 8-patch stack**; the
       anchors + DELTAS + README re-paired (solo 112.3%, ITL 110%, the
-      cold 429%, prefill 96.0%). The 0010 fetch corrected
+      cold 429%, prefill 96.0%). The bare-config smoke
+      (campaign-20261107-103127) PASSed complete on the first try:
+      the prepared fingerprint names all eight patches on the v1.2.3
+      pin, the serve line carries the signatures, the probe replies
+      'smoke-ok-8patch' exact. The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design
