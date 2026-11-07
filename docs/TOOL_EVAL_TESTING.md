@@ -819,6 +819,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       twelfth patch** (the prefill anchor row re-paired to 100.1% and
       the chart re-rendered; the decode rows stay paired to the exl3p
       duel until the duel re-pair that follows).
+      **THE P2 DUEL RE-PAIRED (cont. 5, campaign-20261107-225124 —
+      both engines the same window, the adopted 12-patch engine)**:
+      solo **68.0/68.1 vs 58.5/58.6 — 116.2%**; c2 **118.6 vs 110.2 at
+      its top-of-range volley — 107.6%, our best c2** (its floor 86.4 —
+      137% there); c4 **168.9 vs 154.8 at its floor — 109.1%, our best
+      c4 held three windows** (the chain 153.7 → 157.4 → 158.6 → 160.2
+      → 166.1 → 168.8 → 168.9); ITL **14.7 vs 17.1 ms/token — 116%**;
+      overhead 183 vs 185 ms; the cold d8192 **3,803 ms, slope 0.442 —
+      450%, the best yet**. Every row holds the adoption reads
+      same-window; the anchors re-paired and the chart re-rendered.
+      The prefill row stands at the 0080qual reading (100.1% — the
+      duel carries no bench rows; the duel's own slope 0.442
+      re-confirms the prefill gains at depth).
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at

@@ -952,3 +952,42 @@ the 0030 lesson says decode levers show at concurrency), the PDL set,
 and the HC-split/overlap set (the +36%-at-50k class — a TP-exchange
 rework for long prompts). Scope 0081 next sitting; the 0082 pair
 needs the fork's dependent-launch concepts checked first.
+
+**THE P2 DUEL RE-PAIRED (round 137 cont. 6)**: the same-window pair on
+the adopted 12-patch engine (campaign-20261107-225124) — solo
+**68.0/68.1 vs 58.5/58.6 = 116.2%**; c2 **118.6 vs 110.2 at its
+top-of-range volley = 107.6%** (our best c2); c4 **168.9 vs 154.8 at
+its floor = 109.1%** (our best c4, held three windows); ITL **14.7 vs
+17.1 ms/token = 116%**; overhead 183 vs 185 ms; the cold d8192 **3,803
+ms, slope 0.442 = 450% — the best yet**. The prefill row stands at the
+0080qual reading (100.1% — the duel carries no bench rows; the duel's
+own slope 0.442 re-confirms the prefill gains at depth). The anchors
+re-paired, the chart re-rendered. EVERY (USER)-BAR FRONT IS CROSSED.
+
+**THE NEXT STEP: scope the fork's exl3r decode series** — with the
+prefill front crossed, the frontier moves to decode: 0081 (the 4-bit
+grouped experts read every trellis word once + fewer decode
+instructions, 221 lines) and 0082 (the chain as dependent launches,
+250 lines — needs the fork's dependent-launch/PDL concepts checked
+first). The decode concurrency cells (c2/c4) are where a decode kernel
+lever shows (the 0030 lesson). Read 0081's header + test-apply next
+sitting; if it stages cleanly, ship and launch its A/B; the PDL and
+HC-split sets stay parked behind it.
+
+**THE 0081 PORT STAGED (round 137 cont. 6)**: the exl3r read-once
+trellis patch (0081) applied 3 of 4 hunks clean; the one rejected hunk
+(the tilesFor choice line) hand-adapted to our single Layer.uniform_k2;
+the fork's text otherwise line-verbatim (14/14 .cu, 97/97 .cuh, 12/12
+.zig). The fork's own knob **TF_EXL3_SHFL=0** restores the old choice —
+no _cl twins needed. New kernels k8r8s/k8r16s ride the existing
+grouped_body_v2 template (no existing-kernel changes, no record work).
+Shipped as `glm-zz-zshfl.patch` (zh > z2). **THE NEXT STEP: the
+0081qual A/B** — both arms the same 13-patch image, the knob flips the
+path: content identity, the duel_arm c2/c4 cells (the decode lever's
+home — the fork measured the read-once loads to −14% at 16-32 rows),
+hardmode's thirteenth 95, the §2 gates, the vision 4/4, the bench as
+the regression watch (prefill flat expected — the read-once kernels
+serve decode windows only). At adoption: config.sh's thirteenth patch,
+the decode rows re-paired, the duel re-pair next window. 0082 (the
+chain as dependent launches) stays behind it — needs the fork's
+dependent-launch concepts checked first.

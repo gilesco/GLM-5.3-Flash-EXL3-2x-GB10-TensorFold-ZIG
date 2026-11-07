@@ -4123,6 +4123,113 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: 0081qual (SESSION-SPECIFIC; the fork's 0081 port — glm-zz-zshfl.
+# The 4-bit grouped experts read every trellis word once (exl3r): the
+# grouped decode kernel's lanes each loaded the two 32-bit words their
+# 16-bit windows span — every trellis word fetched twice (the fork's NCU:
+# 69-71 MB of L2 traffic for 33.7 MB of experts). Now lane l loads word l
+# once (one 128-byte warp load a 4-bit tile) and takes its windows' words
+# from their owners by __shfl_sync; the next tile's words and its A
+# fragment issue a tile ahead (warp_tiles_shfl); at 4 bits the windows sit
+# at fixed nibble offsets (lane_states8: funnel shifts and one byte_perm)
+# and the mcg mask stays in a register (26 of the k step's 252 instructions
+# were mask MOVs; now 216). Same words, same A values, same decoded values,
+# same MMA chain, same warp-order sum: the same bits. Fork-measured (RTX
+# PRO 6000, 400 W, cold 4-bit experts): gate/up to −14.0% and down to
+# −14.0% at 1-32 rows — a DECODE-window lever, the c2/c4 cells its home.
+# OUR adaptations: the tilesFor insertion adapted to our single
+# Layer.uniform_k2 (the zmoe-fuse port's form); the fork's own knob
+# TF_EXL3_SHFL=0 restores the old choice (wired in their .zig, envOn
+# default on) — no _cl twins needed. New kernels tf_exl3_grouped_1_k8r8s
+# (≤ 8 rows) and _k8r16s (9-32 rows) ride the existing grouped_body_v2
+# template (the existing instantiations' SASS unchanged; unlisted in the
+# registry → unchecked). The A/B: BOTH arms the same patched image, the
+# knob flips the path — greedy content identical is the same-bits claim;
+# the duel_arm c2/c4 cells are the lever's primary read; the §2 gates,
+# hardmode (the thirteenth 95) and the vision 4/4 qualify it. Retires
+# into the standing config at adoption (a later sitting re-pairs the duel).
+# ---------------------------------------------------------------------------
+if want 0081qual && ! phase_done 0081qual; then
+  log "=== 0081qual (the 0081 port A/B: the grouped experts read every trellis word once)"
+  P="$OUT/09-0081qual.md"; : > "$P"
+  echo "# 0081qual (glm-zz-zshfl: TF_EXL3_SHFL=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  SHPATCH="${PATCHES},glm-zz-zshfl.patch"
+  log "0081qual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$SHPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "0081qual: the image rebuild (prepare) failed - see the log"; fi
+  req_file "$OUT/sh-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  echo "## the OFF arm (TF_EXL3_SHFL=0: the lane-window loads)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_EXL3_SHFL=0 PATCHES="$SHPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/sh-greedy.json" > "$OUT/sh-off-greedy.json" || true
+    echo "- the OFF greedy content sha: $(content_sha "$OUT/sh-off-greedy.json")" >> "$P"
+    duel_arm shoff "$SERVED_NAME"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the ON arm (the knob unset — the engine default on)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$SHPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/sh-greedy.json" > "$OUT/sh-on-greedy.json" || true
+    echo "- the ON greedy content sha: $(content_sha "$OUT/sh-on-greedy.json")" >> "$P"
+    echo "- the arms' content: $([ "$(content_sha "$OUT/sh-off-greedy.json")" = "$(content_sha "$OUT/sh-on-greedy.json")" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+    duel_arm shon "$SERVED_NAME"
+    echo "## the §2 content gates (on the SHFL serve)" >> "$P"
+    run_gates sh DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$SHPATCH" || true
+    echo "## the bench pass (the regression watch — the read-once kernels serve decode windows; prefill flat expected)" >> "$P"
+    bench_perf sh "$OUT/sh-bench" 4 >> "$P" 2>&1 || true
+    bf=$(mktemp /tmp/shd.XXXXXX.json)
+    python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/sh-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/sh-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+    echo "## hardmode (the 95 must hold — the thirteenth consecutive)" >> "$P"
+    mkdir -p "$OUT/shhm"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+      --model "$model" --format openai --tokenizer "$MODEL_ID" \
+      --hardmode --label "0081qual" --output-dir "$OUT/shhm" \
+      --json-file "$OUT/shhm/hm.json" > "$OUT/shhm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/shhm/hm.json" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/shhm/hm.log" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/shhm/hm.log" >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold)" >> "$P"
+    mkdir -p "$OUT/shvision"
+    if [ -f scripts/vision-suite-probe.py ]; then
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/shvision/vision.json" > "$OUT/shvision/vision.log" 2>&1 || true
+      tail -6 "$OUT/shvision/vision.log" >> "$P" 2>/dev/null || true
+    else
+      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    fi
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "- VERDICT: the arms content-identical + the gates PASS + hardmode holds + the vision 4/4 + the decode instruments read the L2 savings = the 0081 port qualifies (adoption moves config.sh's PATCHES and re-pairs the duel in a later sitting)" >> "$P"
+  touch "$OUT/.0081qual.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"

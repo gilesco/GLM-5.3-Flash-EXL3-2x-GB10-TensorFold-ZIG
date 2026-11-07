@@ -735,6 +735,45 @@ documented in LAUNCH.md round 119.
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
+## glm-zz-zshfl.patch — the 4-bit grouped experts read every trellis word once, exl3r (round 137; Mia 1104's 0081 port)
+
+- What (Mia's subject: 4-bit grouped experts read every trellis word
+  once, and decode with fewer instructions; the same bits): the grouped
+  decode kernel's lanes each loaded the two 32-bit words their 16-bit
+  windows span — every trellis word fetched twice (the fork's NCU:
+  69-71 MB of L2 traffic for 33.7 MB of experts). Now lane l loads word
+  l once (one 128-byte warp load a 4-bit tile) and takes its windows'
+  words from their owners by __shfl_sync; the next tile's words and its
+  A fragment issue a tile ahead (warp_tiles_shfl); at 4 bits the windows
+  sit at fixed nibble offsets (lane_states8: funnel shifts and one
+  byte_perm) and the mcg mask stays in a register (26 of the k step's
+  252 instructions were mask MOVs; now 216). Same words, same A values,
+  same decoded values, same MMA chain, same warp-order sum: the same
+  bits. Fork-measured (RTX PRO 6000, 400 W, cold 4-bit experts):
+  gate/up to −14.0% and down to −14.0% at 1-32 rows — a DECODE-window
+  lever (the c2/c4 concurrency cells its home).
+- Port (v1.2.4 + the 12-patch stack, on v124-rebase): 3 of 4 hunks
+  applied clean via git apply --reject; the ONE rejected hunk (the
+  tilesFor choice line) hand-applied adapted to our single
+  Layer.uniform_k2 (the zmoe-fuse port's form — the fork splits
+  uniform_k2_gu/_d). The fork's text otherwise VERBATIM (line-verified:
+  14/14 .cu, 97/97 .cuh, 12/12 .zig). The fork's own knob
+  **TF_EXL3_SHFL=0** restores the old choice (wired in their .zig —
+  envOn, default on; no _cl twins needed). New kernels
+  tf_exl3_grouped_1_k8r8s (≤ 8 rows) and _k8r16s (9-32 rows) ride the
+  existing grouped_body_v2 template — the existing instantiations'
+  SASS unchanged; unlisted in the registry → unchecked (the 0030
+  precedent). The planted faults (SHFL_SRC/SHFL_A) are inert enum
+  variants — only SHFL instantiates.
+- Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
+  the builder base image); fresh-parent + the shipped patch = the commit
+  tree byte-identical. NAMED glm-zz-zshfl TO SORT AFTER zs2 (zh > z2).
+- OWNER: this line; STATUS: **STAGED — the 0081qual A/B decides** (the
+  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's
+  thirteenth 95, the vision 4/4; the duel_arm c2/c4 cells are the
+  lever's primary read — the fork measured the read-once loads to
+  −14% at 16-32 rows).
+
 ## glm-zz-zs2.patch — the packed prompt GEMMs' loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps, P2 (round 137; Mia 1104's 0080 port)
 
 - What (Mia's subject: the packed prompt GEMMs' loads fixed once a block
