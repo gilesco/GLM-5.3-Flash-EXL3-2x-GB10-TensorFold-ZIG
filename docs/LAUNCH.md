@@ -7799,3 +7799,24 @@ serve line carries both signatures (the 2048-row prompt passes, the
 pool-pages prompt cache), and the probe replies **'smoke-ok-8patch'**
 exact. The phase retired (receipted); the default-change loop is
 closed.
+
+## (round 134, cont. 102) THE POST-MARRIAGE SERIES TRIAGED: 0026/0027/0028 already mainlined in v1.2.3; 0030 and 0031+0032 queued as structural ports (2026-11-07)
+
+**The hunt's result**: the EXL3 decode levers (0026 the grouped
+load-ahead, 0027 the sm_120 variant, 0028 the no_allocate trellis
+policy) are ALL in our tree already — v1.2.3 mainlined them (our
+`exl3_grouped.cuh` carries the nx-prefetch warp_tiles with the
+LOAD-mode instrument; `ldg_stream_u32` = `ld_nc32`, 0028's exact
+rationale in the comment). 0029 a comment fix.
+
+**The remaining candidates are structural**: 0030 (the MoE-glue
+fusion — topk_row + group_rows one block, down_combine with the
+shared row, two copies + group + put_slot + combine gone a layer; the
+bits the same byte for byte; TF_GLM_MOE_FUSE=0) — the biggest port
+surface yet, the next sitting's opener with full budget; 0031+0032
+(the step-link broadcast — one host round trip per step, the keep
+piggybacked, the keep-loss guard) — a TP-pair latency lever in the
+rank-pairing-critical class, queued.
+
+**NO LAUNCH** — nothing staged; the smoke's digest (cont. 101) and
+this triage are the sitting's work. The next sitting: the 0030 port.

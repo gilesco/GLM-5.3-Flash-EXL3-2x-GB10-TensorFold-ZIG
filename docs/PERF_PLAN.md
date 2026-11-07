@@ -706,3 +706,21 @@ for the next lever: the loading wall's re-take (91% — the last open
 front), the upstream watch (docs/ECOSYSTEM.md — v1.2.4+ when it
 ships), or the capacity/hygiene ports when the resume front needs
 them.
+
+**The post-marriage series triaged (cont. 102)**: 0026/0027/0028 (the
+EXL3 grouped load-ahead + the no_allocate trellis policy) are ALREADY
+MAINLINED in v1.2.3 — our `exl3_grouped.cuh` carries the nx-prefetch
+warp_tiles with the LOAD-mode instrument (PLAIN/SKIP/STALE) and
+`ldg_stream_u32` = `ld_nc32` with 0028's exact rationale in its
+comment; 0029 is a comment fix. What remains is structural:
+- **0030** — a decode window's MoE glue fused: topk_row + group_rows
+  in one block, down_combine taking the shared expert's row, gone two
+  2D copies + tf_exl3_group + put_slot + combine a layer (the bits the
+  same byte for byte; TF_GLM_MOE_FUSE=0 the kill switch). The port
+  surface is the biggest yet (a fused kernel + the experts staged) —
+  the next sitting's opener with full budget.
+- **0031+0032** — the step-link: the first broadcast 384 bytes (one
+  host round trip instead of two), the keep piggybacked, the followers
+  skip their gathers; 0032 the keep-loss guard. A TP-pair latency
+  lever, likely ~1-2% decode, in the rank-pairing-critical class —
+  queued behind 0030.
