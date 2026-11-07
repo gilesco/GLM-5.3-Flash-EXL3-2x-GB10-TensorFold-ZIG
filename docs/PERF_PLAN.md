@@ -724,3 +724,17 @@ comment; 0029 is a comment fix. What remains is structural:
   skip their gathers; 0032 the keep-loss guard. A TP-pair latency
   lever, likely ~1-2% decode, in the rank-pairing-critical class —
   queued behind 0030.
+
+**The step-link ported first (cont. 103)**: 0030's true size (991
+lines, 12 files) makes it a multi-sitting port — 0031+0032 (383
+lines) went first as `glm-zz-steplink.patch`: a window's greedy picks
+in ONE gather (the pairs buffer pick_rows=32 wide — the verify
+window's rows stop paying a round trip each), the step in one
+384-byte broadcast, the keep piggybacked on the next step of the same
+slot, the follower joining its gathers and skipping the reads, and
+0032's keep-loss guard. The port DROPPED 0031's moe_fuse leakage
+(0030's plumbing — the fork stacks them; 0030 stays queued with full
+budget). The engine_pick + follow hunks applied verbatim (v1.2.3's
+files match the fork's baseline); the engine bits hand-ported. The
+chain verified byte-identical on a fresh checkout. No arithmetic
+changes — the content gate covers it. The steplink A/B launched.

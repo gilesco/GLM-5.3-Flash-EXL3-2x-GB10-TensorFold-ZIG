@@ -7820,3 +7820,39 @@ rank-pairing-critical class, queued.
 
 **NO LAUNCH** — nothing staged; the smoke's digest (cont. 101) and
 this triage are the sitting's work. The next sitting: the 0030 port.
+
+## (round 134, cont. 103) THE STEP-LINK PORTED AND THE A/B LAUNCHED: glm-zz-steplink.patch (Mia 1104 0031+0032 — the picks one gather, the step one broadcast) (2026-11-07)
+
+**The scoping that set the order**: 0030 (the MoE-glue fusion) is 991
+lines across 12 files — a multi-sitting port; 0031+0032 (383 lines)
+went first.
+
+**The candidate** (bit-preserving, three mechanisms):
+- **The greedy picks in one gather**: a window's picks ran one top-1 +
+  one gather + one sync + one device read PER ROW; greedyRows batches
+  them (the pairs buffer pick_rows=32 wide) — the verify window's rows
+  stop paying a round trip each.
+- **The step in one broadcast**: 384 bytes (the header + a decode
+  step's ids) — one host round trip on the other ranks instead of
+  two; rank 0's keep rides its next verify/block/draft step of the
+  same slot (keep_flag); 0032's guard: a refused step never loses a
+  committed keep.
+- **The follower's draws join their gathers** (Engine.discard_draws):
+  rank 0 alone reads the tokens.
+
+**THE PORT**: engine_pick + follow + pages_host applied VERBATIM
+(v1.2.3's files match the fork's baseline); cuda_engine.zig
+hand-ported (pick_rows, discard_draws, the pairs ×pick_rows, draw()'s
+discard branch + the greedyRows call) with **0031's moe_fuse leakage
+DROPPED** (0030's plumbing — the fork stacks them; 0030 stays queued
+with full budget). **The chain verified byte-identical to the port
+commit on a fresh v1.2.3 checkout** (the 8 patches + the port).
+NAMED glm-zz- TO SORT AFTER THE STACK (the engine hunks assume the
+moeside port's side field).
+
+**LAUNCHED: steplink + summary** — the A/B: arm off (the 8-patch
+stack) vs arm on (+ the patch; the rebuild rides the restart), the
+content-sha cross-arm gate + bench twice per arm + the steady-state
+decode probe (~2,000-token walls). The bar: content IDENTICAL + a
+steady-state tg gain beyond the probe's resolution → the battery +
+the duel re-pair. ~55 min. THEN DARK.

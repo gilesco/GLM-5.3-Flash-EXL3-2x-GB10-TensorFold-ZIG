@@ -167,6 +167,25 @@ cross-arm gate + the pp rows, 2+ runs per arm). STAGING: applies on v1.2.3 +
 the 4-patch stack; disjoint files, the list order does not matter. OWNER: this
 line; STATUS: EXPERIMENTAL.
 
+## glm-zz-steplink.patch — the follower's step in one broadcast, a window's greedy picks in one gather (staged 2026-11-07; the steplink A/B decides)
+
+Mia 1104 0031+0032 hand-ported to v1.2.3 + the adopted stack (0031's
+hunks carry 0030's moe_fuse plumbing — the fork stacks them; the port
+DROPS those bits). 0031a: a window's greedy picks — one top-1 + one
+gather + one sync + one read PER ROW before — batch into ONE gather of
+every rank's words (the pairs buffer pick_rows=32 wide), each row
+picked as greedy picks it; the verify window's rows stop paying a
+round trip each. 0031b: every step's first broadcast is 384 bytes (the
+header and a decode step's ids) — one host round trip instead of two;
+rank 0's keep rides its next verify/block/draft step of the same slot;
+a follower's verify and shared steps join their gathers and skip the
+sync and read. 0032: a refused step never loses a committed keep. No
+arithmetic changes — the replies are the same. STAGING: applies on
+v1.2.3 + the 8-patch stack (verified byte-identical to the port
+commit); NAMED glm-zz- TO SORT AFTER THE STACK (the engine hunks
+assume the moeside port's side field). OWNER: this line; STATUS:
+EXPERIMENTAL.
+
 ## glm-zz-moeside.patch — a decode window's MoE shared expert on a side stream beside the routed experts (staged 2026-11-07; the moeside A/B decides)
 
 Mia 1104 0006+0010 hand-ported to v1.2.3 + the adopted stack (our

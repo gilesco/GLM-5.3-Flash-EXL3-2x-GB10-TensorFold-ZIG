@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep steplink knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1266,6 +1266,116 @@ PWE
   resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
   echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
   touch "$OUT/.resweep.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: steplink (SESSION-SPECIFIC; retires with the receipt). The definitive
+# A/B for glm-zz-steplink.patch (Mia 1104 0031+0032 hand-ported — a window's
+# greedy picks in one gather instead of one round trip a row, the step in one
+# 384-byte broadcast instead of two, the keep piggybacked, the follower
+# skipping its draws' reads; no arithmetic changes). Arm off = the standing
+# 8-patch stack; arm on = + the patch (the rebuild rides the restart). Per
+# arm: the greedy content probes (three prompt sizes — the cross-arm identity
+# IS the bit-exactness gate), bench_perf twice, and the steady-state decode
+# probe (two solo ~2000-token greedy generations, ~50 s walls). The bar: the
+# content shas IDENTICAL + a steady-state tg gain beyond the probe's
+# resolution = the patch advances to the battery + the duel re-pair (the
+# adoption judgment); a content DIFFERENT or tg parity retires it outright.
+# ---------------------------------------------------------------------------
+if want steplink && ! phase_done steplink; then
+  log "=== steplink (the steplink A/B: the content gate + the decode rows + the steady-state tg)"
+  P="$OUT/27-steplink.md"; : > "$P"
+  echo "# steplink (glm-zz-steplink.patch: the picks one gather, the step one broadcast)" >> "$P"
+  for arm in off on; do
+    if [[ $arm == on ]]; then
+      echo "## arm $arm (+ glm-zz-steplink.patch — the rebuild rides the restart)" >> "$P"
+      S=$(date +%s)
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch,glm-zz-attnfetch8.patch,glm-zz-moeside.patch,glm-zz-steplink.patch" || { echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"; continue; }
+    else
+      echo "## arm $arm (the standing 8-patch stack)" >> "$P"
+      S=$(date +%s)
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"; continue; }
+    fi
+    echo "- load $(( $(date +%s) - S )) s; serve: $(serve_line | cut -c1-140)" >> "$P"
+    for pr in short mid long; do
+      case $pr in short) FN=0 ;; mid) FN=1024 ;; long) FN=2048 ;; esac
+      bf=$(mktemp /tmp/slk.XXXXXX.json)
+      FILL_WORDS="$FILL_WORDS" DUEL_PROMPT="$DUEL_PROMPT" FN="$FN" python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split(); n = int(os.environ['FN'])
+fill = ' '.join(w if i % 11 == 0 else w + f'-{i % 89}' for i, w in ((i, words[i % len(words)]) for i in range(n // 4))) if n else ''
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 48, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': (fill + chr(10) + chr(10) if fill else '') + os.environ['DUEL_PROMPT'] + ' Answer with exactly five words.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      curl -s -m 120 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/slk-$arm-$pr.json" || true
+      rm -f "$bf"
+    done
+    for r in a b; do bench_perf "steplink-$arm-$r" "$OUT/steplink-$arm-$r" 4 >> "$P" 2>&1; done
+    for r in a b; do
+      bf=$(mktemp /tmp/sld.XXXXXX.json)
+      python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      S=$(date +%s)
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/sl-decode-$arm-$r.json" || true
+      W=$(( $(date +%s) - S ))
+      rm -f "$bf"
+      python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/sl-decode-$arm-$r.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode $arm/$r: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- decode probe $arm/$r FAILED: ' + repr(e))
+" >> "$P"
+    done
+  done
+  python3 - "$OUT" >> "$P" <<'PME'
+import hashlib, json, sys, glob, re
+out = sys.argv[1]
+def sha(p):
+    try:
+        d = json.load(open(p))
+        return hashlib.sha256(json.dumps(d["choices"][0]["message"]["content"], sort_keys=True).encode()).hexdigest()[:16]
+    except Exception:
+        return "ERR"
+for pr in ("short", "mid", "long"):
+    a, b = sha(f"{out}/slk-off-{pr}.json"), sha(f"{out}/slk-on-{pr}.json")
+    print("- content %s: %s (%s vs %s)" % (pr, "IDENTICAL" if a == b else "DIFFERENT - the no-arithmetic-change claim FAILS on our shape", a, b))
+def dec(p):
+    try:
+        d = json.load(open(p))
+        return d["choices"][0]["message"]["content"], d["usage"]["completion_tokens"]
+    except Exception:
+        return None, 0
+a1, n1 = dec(f"{out}/sl-decode-off-a.json"); a2, n2 = dec(f"{out}/sl-decode-on-a.json")
+if a1 and a2:
+    print("- the long-essay decode replies %s across arms (tokens %d vs %d)" % ("IDENTICAL" if a1 == a2 else "DIFFERENT", n1, n2))
+def pp(tag):
+    rows = {}
+    for r in ("a", "b"):
+        reps = sorted(glob.glob(f"{out}/{tag}-{r}/2026/*/*--*.md"))
+        if not reps:
+            continue
+        for line in open(reps[-1], encoding="utf-8"):
+            m = re.match(r"\| pp2048 tg128 @ (d0|d4096|d8192)( c[24])? \| ([\d,]+)\*? \| ([\d.]+) ", line)
+            if m:
+                rows.setdefault((m.group(1), m.group(2) or ""), []).append((float(m.group(3).replace(",", "")), float(m.group(4))))
+    return rows
+off, on = pp("steplink-off"), pp("steplink-on")
+for d in ("d0", "d4096", "d8192"):
+    for c in ("", " c2", " c4"):
+        o, n = off.get((d, c), []), on.get((d, c), [])
+        if o and n:
+            om = sum(x[0] for x in o) / len(o); nm = sum(x[0] for x in n) / len(n)
+            og = sum(x[1] for x in o) / len(o); ng = sum(x[1] for x in n) / len(n)
+            print("- bench @ %s%s: pp off %.0f on %.0f (%+.1f%%) | tg off %.1f on %.1f (%+.1f%%)" % (d, c, om, nm, (nm - om) / om * 100, og, ng, (ng - og) / og * 100))
+PME
+  echo "- VERDICT: the content shas IDENTICAL + a steady-state tg gain beyond the probe's resolution = the patch advances to the battery + the duel re-pair (the adoption judgment); a content DIFFERENT or tg parity retires it" >> "$P"
+  touch "$OUT/.steplink.done"
 fi
 
 # ---------------------------------------------------------------------------
