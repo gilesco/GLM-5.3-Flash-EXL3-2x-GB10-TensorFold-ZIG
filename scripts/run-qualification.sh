@@ -1285,7 +1285,7 @@ fi
 if want v124val && ! phase_done v124val; then
   log "=== v124val (the v1.2.4 rebase + the direct reads: gates + battery + vision + the wall)"
   P="$OUT/29-v124val.md"; : > "$P"
-  echo "# v124val (v1.2.4 267c5af6a + the 8-patch stack + glm-zz-loaddirect)" >> "$P"
+  echo "# v124val (v1.2.4 267c5af6a + the 9-patch stack + glm-zz-loaddirect on the resharded pack)" >> "$P"
   log "v124val: explicit prepare (the fingerprint moved)"
   if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v124val: the image rebuild (prepare) failed - see the log"; fi
   echo "## the OFF arm (TF_LOAD_DIRECT=0: the old read-ahead path, insurance)" >> "$P"
