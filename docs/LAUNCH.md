@@ -8367,3 +8367,35 @@ prefill candidate.
 (production-for-testing on 8001 vs ours on the adopted 11-patch stack):
 every speed row re-paired same-window on the exl3p engine, the solo
 watch item settled. THEN DARK.
+
+## (round 137, cont. 3) THE EXL3P DUEL RE-PAIRED — solo 116.4% (the A/B's solo watch item SETTLED), c2 136.7% of the floor, c4 109.0% at its floor (our best again), ITL 118%, cold 445% (campaign-20261107-211404); the 0080 scope landed — it does NOT need 0073, the port stages this sitting (2026-11-07)
+
+**The same-window pair** (production-for-testing on 8001 vs ours on
+the adopted 11-patch engine):
+- **Solo: 68.2/68.3 vs 58.6/58.7 — 116.4%** — the A/B's solo watch
+  item SETTLED: the adopted engine reads at the top of its historical
+  range; the A/B's 66.8 was run-order drift.
+- **c2: 118.1 vs 86.4 at its floor — 136.7% there** (above its
+  top-of-range volley ~110-111 even there).
+- **c4: 168.9 vs 188.2 at a warm-cache high — 109.0% at its floor
+  (155.0), our best c4 again** (the chain 153.7 → 157.4 → 158.6 →
+  160.2 → 166.1 → 168.8 → 168.9).
+- **ITL: 14.7 vs 17.4 ms/token — 118%**; overhead 185 vs 182 ms; the
+  cold d8192 **3,845 ms, slope 0.447 — 445%** (the exl3p lever shows
+  at depth too; the duel's own slope re-confirms the prefill gain
+  same-window). The prefill row stands at the exl3pqual reading
+  (98.5% — the duel carries no bench rows).
+
+The anchors re-paired same-window and the chart re-rendered; README/
+DELTAS/ledger/PERF_PLAN updated.
+
+**The 0080 scope** (the sitting's second work item): the dependency
+check came back clean — 0080 does NOT need the fork's 0073 MmTwo
+machinery (only its base signature carries 0073's xtile param; P2 does
+not use it). 11 of 12 hunks applied clean; the one rejected hunk (the
+mm_kernel template line) hand-applied keeping v1.2.4's signature; the
+fork's text otherwise verbatim (line-verified). The classic packed-
+prompt kernels kept as the _128s2_cl twins behind TF_GLM_MM_P2=0; no
+contract-record work (the _128s2 kernels are unlisted in our registry).
+The port ships as glm-zz-zs2.patch (zs > zprompt) once the compile
+check lands; the 0080qual A/B launches at the sitting's end.
