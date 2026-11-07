@@ -272,6 +272,57 @@ qualification receipts.
   callbacks) is the path to production-class resume times on the native line. Nothing
   posted upstream.
 
+## Upstream v1.2.4 review (the (user) ask, 2026-11-07) — our pin is v1.2.3 (6ec5fa4cb)
+
+v1.2.4 shipped (267c5af6a, 675 commits after v1.2.3). The GLM-CUDA/GB10
+read of the changelog:
+
+- **THE LEVER — direct reads past the page cache (#2282, #1901)**:
+  `checkpoint_direct.zig` + `direct_gather.zig` — a layer's tensors read
+  with direct_gather into an arena, layer i+1 read on a thread while
+  layer i packs; `TF_LOAD_DIRECT=0` keeps the old read-ahead. **Claimed:
+  Gemma 4 / Qwen 3.5 CUDA cold loads 28-31% faster on a GB10; Flash
+  Next's O_DIRECT experts dropped a GB10 cold start 74 s → 48 s.** Wired
+  for Gemma 4 and Qwen 3.5 only — GLM is NOT wired (the opt-in lives in
+  the family's cuda_weights.zig; the pattern is small). **The loading
+  wall is our last uncrossed front (91%: 103 vs 93.7 s) — wiring GLM
+  onto this is the front's lever.**
+- **GB10 integrated-GPU D2H staging (#2289)**: every other synchronous
+  device-to-host copy stages through the shared pinned buffer; discrete
+  cards keep the direct copy. Could shave the per-step sync reads (the
+  greedy pick's DtoH) on our GB10s.
+- **GLM CUDA TP=2+ startup naming (#2354)**: each rank names its phases
+  (NCCL init, peer warm-up, weights, calibration, ready) and warns once
+  a minute while init stalls. Observability only — transfers unchanged.
+- **Strict TF_-setting validation (#2405)**: a MALFORMED TF_/TENSORFOLD_
+  setting stops the native server at startup with its name and forms,
+  before any checkpoint work. Our patches' knobs (TF_GLM_KV_SHARE,
+  TF_GLM_ABSORB_MMA, ...) are read via getenv inside the patched code —
+  outside core's registry — so the rebase validation must confirm the
+  bare 8-patch config boots under the strict check.
+- The kernel-contract nvcc records refresh (#2390): no kernel changes.
+- The rest: Qwen 3.5 BF16 decisions, Gemma 4, Flash Next KV-pages
+  (#2244) and in-pass prompt-cache marks (#1866 — 19% sooner first
+  token on a GB10, the FLASHNEXT family, not GLM), HIP/RDNA fixes,
+  MCDMA bring-up 2a, docs/tests. Nothing else on our fronts.
+
+**The rebase drift map (the 8-patch stack vs v1.2.4, measured
+2026-11-07)**: packed-s2 and exl3prompt APPLY CLEAN; 30 failed hunks —
+absorb-mma 8 (cuda_engine.zig:182, cuda_forward.zig:195,
+cuda_ranks.zig:166 — v1.2.4's GLM engine changes), fp8-pages 12 (the
+build files, the snapshot host, the contract registry), pagerows-fix 2
++ selist-fix 2 (cuda_dsa_block.zig — v1.2.4 touched the DSA block),
+attnfetch8 2 (glm_glue_attn.cuh:73), moeside 4 (cascades from
+absorb-mma + the engine changes). A sitting's re-anchoring, then the
+validation battery.
+
+**The plan**: rebase the 8-patch stack onto v1.2.4 (the re-anchoring is
+the next sitting's opener), wire GLM's weights loader onto
+checkpoint_direct following the gemma4/qwen3_5 pattern (a small patch —
+glm-zz-loaddirect), then ONE validation window covers both (the gates +
+the smoke + the loading wall's re-take on the direct reads). The
+loading front could cross.
+
 ## Community sweep — the NVIDIA GB10 GLM-5.3-Flash thread + DeepSeek field (2026-10-29, round 73)
 
 Source: forums.developer.nvidia.com/t/381350 (936 posts; the user is giles8 in-thread),
