@@ -7882,3 +7882,34 @@ the 8-patch stack stands unchanged.
 **NO LAUNCH** — nothing staged; the next sitting's opener is the 0030
 port (the last structural candidate, multi-sitting) or the loading
 wall's re-take.
+
+## (round 134, cont. 105) THE UPSTREAM WATCH: v1.2.4 assessed — the direct-reads lever for the loading wall found; the rebase drift mapped (the (user) ask) (2026-11-07)
+
+**The (user) call**: "We should look at the new release of tensorfold
+v1.2.4 now." The assessment (ECOSYSTEM.md carries the full note):
+
+- v1.2.4 shipped 675 commits after v1.2.3; the GLM-CUDA/GB10-relevant
+  items are few but ONE IS OUR LAST FRONT'S LEVER: **checkpoint.direct
+  (#2282/#1901) — direct reads past the page cache, 28-31% faster cold
+  on a GB10 claimed** (Flash Next's variant: 74 s → 48 s). Wired for
+  Gemma 4/Qwen 3.5 only; **GLM needs a small weights-loader patch
+  following their pattern**. Our loading wall: 91% (103 vs 93.7 s) —
+  this could cross it.
+- #2289: GB10 integrated-GPU sync-D2H staging through the shared pinned
+  buffer — possibly shaves the per-step reads. #2354: the TP=2 startup
+  naming (observability). #2405: STRICT TF_-setting validation — the
+  rebase validation must confirm our knobs boot (our patches' getenv
+  knobs live outside core's registry).
+- **The rebase drift measured**: packed-s2 + exl3prompt APPLY CLEAN;
+  30 failed hunks across the other six (absorb-mma 8, fp8-pages 12,
+  the dsa pair 4, attnfetch8 2, moeside 4) — v1.2.4's GLM
+  engine/forward/DSA changes.
+
+**THE PLAN (the next sitting)**: rebase the 8-patch stack onto v1.2.4
+(the re-anchoring is the opener), wire GLM's weights loader onto
+checkpoint_direct (glm-zz-loaddirect, following the gemma4/qwen3_5
+pattern), then ONE validation window covers both — the gates + the
+smoke + the loading wall's re-take on the direct reads.
+
+**NO LAUNCH** — the rebase is a full sitting's careful work; the
+assessment and the plan are this sitting's product.
