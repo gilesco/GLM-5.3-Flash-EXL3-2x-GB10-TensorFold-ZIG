@@ -1270,7 +1270,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # phase: attnpref (SESSION-SPECIFIC; retires with the receipt). The definitive
-# A/B for glm-mia-attnfetch8.patch (Mia 1104 0005+0011 hand-ported — the latent
+# A/B for glm-zz-attnfetch8.patch (Mia 1104 0005+0011 hand-ported — the latent
 # attention FP8 key tiles load 8 bytes at a time, a tile ahead, convert after
 # the math; Mia's claim: decode dense chunks 58 -> 35 us, sparse 72 -> 41-44 us,
 # the shared-memory keys the same bits). Arm off = the standing 6-patch stack;
@@ -1286,12 +1286,12 @@ fi
 if want attnpref && ! phase_done attnpref; then
   log "=== attnpref (the attnfetch8 A/B: the content gate + the decode rows + the steady-state tg)"
   P="$OUT/22-attnpref.md"; : > "$P"
-  echo "# attnpref (glm-mia-attnfetch8.patch: the FP8 key tiles load 8 bytes a time, a tile ahead)" >> "$P"
+  echo "# attnpref (glm-zz-attnfetch8.patch: the FP8 key tiles load 8 bytes a time, a tile ahead)" >> "$P"
   for arm in off on; do
     if [[ $arm == on ]]; then
-      echo "## arm $arm (+ glm-mia-attnfetch8.patch — the rebuild rides the restart)" >> "$P"
+      echo "## arm $arm (+ glm-zz-attnfetch8.patch — the rebuild rides the restart)" >> "$P"
       S=$(date +%s)
-      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch,glm-mia-attnfetch8.patch" || { echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"; continue; }
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch,glm-zz-attnfetch8.patch" || { echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"; continue; }
     else
       echo "## arm $arm (the standing 6-patch stack)" >> "$P"
       S=$(date +%s)

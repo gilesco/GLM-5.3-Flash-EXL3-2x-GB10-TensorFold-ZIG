@@ -167,7 +167,7 @@ cross-arm gate + the pp rows, 2+ runs per arm). STAGING: applies on v1.2.3 +
 the 4-patch stack; disjoint files, the list order does not matter. OWNER: this
 line; STATUS: EXPERIMENTAL.
 
-## glm-mia-attnfetch8.patch — the latent attention FP8 key tiles load 8 bytes at a time, a tile ahead (staged 2026-11-07; the attnpref A/B decides)
+## glm-zz-attnfetch8.patch — the latent attention FP8 key tiles load 8 bytes at a time, a tile ahead (staged 2026-11-07; the attnpref A/B decides; NAMED glm-zz- TO SORT AFTER THE STACK — the image applies patches alphabetically and the port depends on the fp8-pages marriage's PAGED8 file state; the first attnpref window burned on exactly this)
 
 Mia 1104 0005+0011 hand-ported to v1.2.3 + the paged marriage (our
 chunks_wide carries PAGED8 — the port folds the page-table addressing

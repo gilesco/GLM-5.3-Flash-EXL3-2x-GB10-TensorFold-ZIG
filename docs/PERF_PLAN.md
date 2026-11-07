@@ -644,3 +644,11 @@ in v1.2.3 (upstream PR #1623 — tapPieces/shareTaps present); 0006+0010
 (the MoE side-stream overlap, −12-14% a layer) is the next candidate
 after this one. The attnpref A/B launched: the content gate + the bench
 rows + the steady-state decode probe (the honest tg instrument).
+
+**The attnpref window burned on the patch-order gotcha
+(campaign-20261107-003829)**: the arm-on build refused — the image
+applies the stack ALPHABETICALLY and glm-mia-attnfetch8 sorted before
+the fp8-pages marriage whose PAGED8 file-state the hunks assume.
+Renamed glm-zz-attnfetch8.patch (the dsasel3 convention). The arm-off
+baseline is banked (the content shas + bench + the steady-state
+probes). Relaunched.
