@@ -734,3 +734,40 @@ documented in LAUNCH.md round 119.
 - Status: **PARKED — bit-safe and free, but unproven on our cell; not
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
+
+## glm-zz-zmoe-fuse.patch — a decode window's MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b in one launch (round 136; Mia 1104's 0030 port)
+
+- What (Mia's subject, three keep-the-bits fusions for decode windows):
+  (1) the MoE glue fused — tf_glm_topk_group runs a window's top-k
+  (glm_moe::topk_row, tf_glm_topk's own per-row code) AND, for the EXL3
+  experts, the compact picks and their grouping (tf_exl3::group_rows in the
+  new exl3_group.cuh, tf_exl3_group's own code) in one 1024-thread block;
+  the grouped path's experts run core-only (two 2D copies, tf_exl3_group,
+  put_slot and glue.combine GONE) and tf_exl3_down_combine takes the shared
+  expert's row as an extra slot (weight wts[r][slots], summed LAST —
+  tf_glm_combine's order) after the side stream's join. (2) The grouped EXL3
+  decode kernel at one trellis width (grouped_body_v2: tf_exl3_grouped_1_k6r8/
+  _k8r8 — no 15-way switch, 79-80 registers not 158 — plus _1_nt4, 4 tiles a
+  block), chosen by tilesFor per projection (rows ≤ 8 on a uniform 3/4-bit
+  projection → r8; wider windows → nt4 where it measured faster; our Layer
+  keeps ONE uniform_k2 — the loader verified EVERY projection — so tilesFor
+  reads it for both which-branches). (3) KDA's f_b and g_b (one shape) in one
+  launch (glm_mm*_16x2 via mm_kernel's zslice). TF_GLM_MOE_FUSE=0 unfuses
+  (envOn, default on — the engine switch came from Mia's 0031, which also
+  carries the retired steplink; a TF_GLM_* getenv knob, no #2405 surface).
+- Port (v1.2.4 + the 9-patch stack, commit 39ac60e3b on v124-rebase): 8 files
+  applied clean; 4 hunks re-anchored by hand — exl3_experts.cu's include
+  (v1.2.4's decode/plan includes), the run() split in src/cuda/exl3_experts.zig
+  (v1.2.4's act_mode check moved INTO core() so the grouped path gates there
+  too), cuda_exl3.zig's grouped fns (our tests follow run()), cuda_forward.zig's
+  field (our extra fields sit between taps and side); tilesFor's
+  uniform_k2_gu/_d read our single field. The engine knob wiring ported from
+  0031 (the engine field + envOn + both Forward constructions carry .moe_fuse).
+- Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0, the
+  builder base image); fresh-parent + the shipped patch = the commit tree
+  byte-identical (0 diff lines). NAMED glm-zz-zmoe-fuse TO SORT AFTER moeside
+  (the engine hunks assume the side field and the fork's 0030 followed 0006).
+- OWNER: this line; STATUS: **STAGED — the moefusequal A/B decides** (the
+  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's tenth 95,
+  the vision 4/4; the duel_arm instruments read the decode savings; prefill
+  flat — the prompt path is untouched by design).

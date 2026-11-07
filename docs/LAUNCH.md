@@ -8170,3 +8170,44 @@ The scoreboard: two of the (user) bar's three fronts crossed at
 port (the MoE-glue fusion, 991 lines, 12 files — multi-sitting, full
 budget), whose launch-savings math faces the prefill front's 4% gap
 first.
+
+## (round 136) THE 0030 PORT — glm-zz-zmoe-fuse staged (the fork's MoE-glue fusion, 991 lines, 12 files + 1 new): 8 clean / 4 re-anchored hunks, compile RC=0 first pass, byte-identity 0 diff lines; the moefusequal A/B LAUNCHED (2026-11-07)
+
+**The port** (multi-sitting plan, sitting 1 — the full port landed in one):
+- **The candidate**: Mia 1104's 0030 (patches/engine/, 991 lines, 12 files +
+  the new exl3_group.cuh): a decode window's MoE glue fused (tf_glm_topk_group
+  = the select + the compact picks + the EXL3 grouping in one 1024-thread
+  block; the grouped experts core with no slot-row copies — two 2D copies,
+  tf_exl3_group, put_slot and glue.combine GONE; the shared expert's row
+  summed LAST in tf_exl3_down_combine, glue.combine's order), the one-width
+  grouped decode tiles (grouped_body_v2: k6r8/k8r8 + nt4), KDA's f_b/g_b in
+  one launch (glm_mm*_16x2). TF_GLM_MOE_FUSE=0 unfuses (default on).
+- **The drift map**: the fork's series places 0030 after 0006 (moeside),
+  0007 (exl3prompt), 0009 (packed-s2) — our stack carries all three ports,
+  so the hunks assume our tree's shape. git apply --reject: 8 files clean,
+  4 hunks rejected (one per file).
+- **The re-anchors**: the .cu include (v1.2.4's decode/plan includes); the
+  run() split in src/cuda/exl3_experts.zig (v1.2.4's act_mode check moved
+  INTO core() — the grouped path gates there too, runGrouped calls core
+  directly); cuda_exl3.zig's three grouped fns (after run(), our tests
+  follow); cuda_forward.zig's field (our extra fields sit between taps and
+  side); tilesFor reads our single Layer.uniform_k2 (the fork splits gate/up
+  from down; ours is every-projection-verified — conservative and correct);
+  the engine knob wiring ported from 0031 (envOn + the engine field + both
+  Forward constructions carry .moe_fuse — 0030's exported diff never reads
+  the env; found by grepping the whole exported series for MOE_FUSE).
+- **The verify**: compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
+  the builder base image — FIRST PASS, no fallout); fresh-parent + the
+  shipped patch = the commit tree byte-identical (0 diff lines); commit
+  39ac60e3b on v124-rebase (ff-merged). NAMED glm-zz-zmoe-fuse TO SORT AFTER
+  moeside (the engine hunks assume the side field; "zmoe" > "moeside").
+- **The phase**: moefusequal in run-qualification.sh — the A/B on the SAME
+  patched image (the standing 9 + zmoe-fuse), the knob flips the path: the
+  OFF arm (TF_GLM_MOE_FUSE=0) greedy sha + duel_arm; the ON arm (unset) the
+  same + the identity + duel_arm + the §2 gates + one bench pass (prefill
+  flat — the prompt path untouched by design) + the steady-state decode +
+  hardmode (the tenth 95) + the vision 4/4. Explicit prepare with the
+  10-patch overlay (PATCHES="$MFPATCH" scripts/prepare.sh — the fingerprint
+  moves; one-shot env, not an export).
+
+**LAUNCHED: moefusequal + summary.** THEN DARK.

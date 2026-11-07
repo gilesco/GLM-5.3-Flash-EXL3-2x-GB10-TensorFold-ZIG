@@ -3827,6 +3827,102 @@ if want cardrun && ! phase_done cardrun; then
 fi
 
 # ---------------------------------------------------------------------------
+# phase: moefusequal (SESSION-SPECIFIC; the fork's 0030 port — glm-zz-zmoe-fuse.
+# A decode window's MoE glue fused: tf_glm_topk_group (the select, the compact
+# picks and the EXL3 grouping in one 1024-thread block), the grouped experts
+# core with no slot-row copies (no put_slot, no glue.combine; the shared
+# expert's row summed last in tf_exl3_down_combine, glue.combine's own order),
+# the one-width grouped decode tiles (grouped_body_v2: k6r8/k8r8/nt4), and
+# KDA's f_b/g_b in one launch (glm_mm*_16x2). TF_GLM_MOE_FUSE=0 unfuses
+# (envOn, default on; a TF_GLM_* getenv knob — no #2405 surface). The A/B:
+# BOTH arms the same patched image (the standing stack + zmoe-fuse), the knob
+# flips the path — greedy content identical is the port's same-bits claim on
+# the real model; duel_arm's five instruments read the decode savings; the
+# §2 gates, hardmode (the tenth 95), the vision 4/4 and one bench pass
+# (prefill flat — the prompt path is untouched by design) qualify it. Retires
+# into the standing config at adoption (a later sitting re-pairs the duel).
+# ---------------------------------------------------------------------------
+if want moefusequal && ! phase_done moefusequal; then
+  log "=== moefusequal (the 0030 port A/B: the fused decode MoE glue)"
+  P="$OUT/08-moefusequal.md"; : > "$P"
+  echo "# moefusequal (glm-zz-zmoe-fuse: TF_GLM_MOE_FUSE=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  MFPATCH="${PATCHES},glm-zz-zmoe-fuse.patch"
+  log "moefusequal: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$MFPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "moefusequal: the image rebuild (prepare) failed - see the log"; fi
+  req_file "$OUT/mf-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  echo "## the OFF arm (TF_GLM_MOE_FUSE=0: the old path)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_MOE_FUSE=0 PATCHES="$MFPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/mf-greedy.json" > "$OUT/mf-off-greedy.json" || true
+    echo "- the OFF greedy content sha: $(content_sha "$OUT/mf-off-greedy.json")" >> "$P"
+    duel_arm mfoff "$SERVED_NAME"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the ON arm (the knob unset — the engine default on)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$MFPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/mf-greedy.json" > "$OUT/mf-on-greedy.json" || true
+    echo "- the ON greedy content sha: $(content_sha "$OUT/mf-on-greedy.json")" >> "$P"
+    echo "- the arms' content: $([ "$(content_sha "$OUT/mf-off-greedy.json")" = "$(content_sha "$OUT/mf-on-greedy.json")" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+    duel_arm mfon "$SERVED_NAME"
+    echo "## the §2 content gates (on the fused serve)" >> "$P"
+    run_gates mf DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$MFPATCH" || true
+    echo "## the regression watch (one bench pass — prefill flat: the prompt path is untouched by design)" >> "$P"
+    bench_perf mf "$OUT/mf-bench" 4 >> "$P" 2>&1 || true
+    bf=$(mktemp /tmp/mfd.XXXXXX.json)
+    python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/mf-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/mf-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+    echo "## hardmode (the 95 must hold — the tenth consecutive)" >> "$P"
+    mkdir -p "$OUT/mfhm"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+      --model "$model" --format openai --tokenizer "$MODEL_ID" \
+      --hardmode --label "moefusequal" --output-dir "$OUT/mfhm" \
+      --json-file "$OUT/mfhm/hm.json" > "$OUT/mfhm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/mfhm/hm.json" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/mfhm/hm.log" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/mfhm/hm.log" >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold)" >> "$P"
+    mkdir -p "$OUT/mfvision"
+    if [ -f scripts/vision-suite-probe.py ]; then
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/mfvision/vision.json" > "$OUT/mfvision/vision.log" 2>&1 || true
+      tail -6 "$OUT/mfvision/vision.log" >> "$P" 2>/dev/null || true
+    else
+      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    fi
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "- VERDICT: the arms content-identical + the gates PASS + hardmode holds + the vision 4/4 + the decode instruments read the launch savings = the 0030 port qualifies (adoption moves config.sh's PATCHES and re-pairs the duel in a later sitting)" >> "$P"
+  touch "$OUT/.moefusequal.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"
