@@ -167,6 +167,22 @@ cross-arm gate + the pp rows, 2+ runs per arm). STAGING: applies on v1.2.3 +
 the 4-patch stack; disjoint files, the list order does not matter. OWNER: this
 line; STATUS: EXPERIMENTAL.
 
+## glm-mia-attnfetch8.patch — the latent attention FP8 key tiles load 8 bytes at a time, a tile ahead (staged 2026-11-07; the attnpref A/B decides)
+
+Mia 1104 0005+0011 hand-ported to v1.2.3 + the paged marriage (our
+chunks_wide carries PAGED8 — the port folds the page-table addressing
+into the new fetch8 lambda; 0011's contract naming lands as-is).
+0005: each thread fetches its 8-code units of tile + 2 with one 8-byte
+read right after the tile's first barrier — the reads overlap QK,
+softmax and PV — and converts where load_kv(tile + 2) stood; the same
+cvt, row scale and bf16 rounding per value, so the shared-memory keys
+are the same bits. 0011: the 256-thread block is the named contract
+CHUNK_THREADS (static_assert + the kernel traps on any other width).
+Mia's measurements: decode dense chunks 58 → 35 µs, sparse 72 → 41-44
+µs. STAGING: applies on v1.2.3 + the 6-patch stack (verified
+byte-identical to the port commit). OWNER: this line; STATUS:
+EXPERIMENTAL.
+
 ## glm-mia-exl3prompt.patch — the EXL3 prompt path in one call + no MTP beside a drafter (staged 2026-11-06; the exl3call A/B decides)
 
 Mia 1104 0007+0008 hand-ported to v1.2.3 (the fork's hunks drifted: no k6
@@ -182,7 +198,7 @@ measurements: routed experts −28%, the MTP pass 3.4-4.4% of a traced
 pass; in the engine WITH 0009 (our adopted packed-s2): cold prefill
 +12.6/15.6/16.0% at 4K/16K/64K, T=0 replies unchanged. STAGING: applies
 on v1.2.3 + the 5-patch stack (verified byte-identical to the port
-commit). OWNER: this line; STATUS: EXPERIMENTAL.
+commit). OWNER: this line; STATUS: ADOPTED (cont. 89: the exl3call A/B cleared — content IDENTICAL, pp +24.5/+22.7/+23.3%; exl3qual §2 PASS + hardmode 95 + the vision 4/4; the duel re-paired; config.sh's sixth patch).
 
 ## glm-zz-dsasel3.patch — THE LOOP HUNT'S INSTRUMENT v3 (RETIRED 2026-11-06: the mechanism receipted — the selist fix closed it, and the v1.2.3 rebase re-receipted the fix end to end; the instrument is NOT in the serving PATCHES list and stays here as the hunt's record)
 

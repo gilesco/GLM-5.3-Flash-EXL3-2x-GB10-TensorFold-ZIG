@@ -627,3 +627,20 @@ next step stands: the prefill front is at 94.4% with thin candidates
 (0033 unlocated, 0011 contract-hardening) — the live options are the
 fork's later-series hunt, the upstream watch, or the loading wall's
 re-take (91%, the other open front).
+
+**The next lever, ported (cont. 93)**: Mia 1104 0005+0011 — the latent
+attention FP8 key tiles load 8 bytes at a time, a tile ahead (the reads
+overlap QK/softmax/PV; the conversion moves to where load_kv(tile+2)
+stood; the shared-memory keys are the same bits) + the 256-thread
+launch as a named contract. **Hand-ported as
+`glm-mia-attnfetch8.patch`** — the port's novel work: our chunks_wide
+carries PAGED8 (the marriage), so fetch8 folds the page-table
+addressing for a sparse key's codes and scales; bit-order verified
+identical (little-endian code pairs); the chain verified
+byte-identical on a fresh checkout. **Mia's claim: decode dense chunks
+58 → 35 µs, sparse 72 → 41-44 µs** — the largest claimed decode lever
+left in the series. The 0013 stale-tap bug turned out ALREADY MAINLINED
+in v1.2.3 (upstream PR #1623 — tapPieces/shareTaps present); 0006+0010
+(the MoE side-stream overlap, −12-14% a layer) is the next candidate
+after this one. The attnpref A/B launched: the content gate + the bench
+rows + the steady-state decode probe (the honest tg instrument).

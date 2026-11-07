@@ -7591,3 +7591,37 @@ smoke-verified 6-patch default, port 8001) and stays UP for the user.
 next tick (≤5 min) restarts production via the tip's start.sh; or the
 agent restores on the user's signal the same way. The testing stack
 comes down first (scripts/stop.sh) so the GPUs are free.
+
+## (round 134, cont. 93) THE ATTENTION FP8 8-BYTE PREFETCH PORTED AND THE A/B LAUNCHED: glm-mia-attnfetch8.patch (Mia 1104 0005+0011 — decode chunks −40% claimed) (2026-11-07)
+
+**The dev session closed first (user)**: the flag cleared (the
+crash-net re-armed — it had correctly hands-off'd through the user's
+session), the fork's remaining series triaged: 0013's stale-tap bug is
+ALREADY MAINLINED in v1.2.3 (upstream PR #1623 — tapPieces/shareTaps
+present in our tree), 0006+0010 (the MoE side-stream overlap) is the
+next candidate after this one, 0012/0014/0015 are capacity/hygiene.
+
+**The candidate**: 0005+0011 — the latent attention's FP8 key tiles
+load 8 bytes at a time, a tile ahead (the reads overlap QK/softmax/PV),
+converting where load_kv(tile+2) stood; the same cvt/row-scale/bf16
+rounding per value (bit-order verified: little-endian code pairs), so
+the shared-memory keys are the same bits. 0011 names the 256-thread
+block CHUNK_THREADS (static_assert + the kernel traps otherwise).
+**Mia's claim: decode dense chunks 58 → 35 µs, sparse 72 → 41-44 µs.**
+
+**THE PORT** (hand-applied): the fork's baseline predates the paged
+marriage — our chunks_wide carries PAGED8, so fetch8 folds the
+page-table addressing (dense at the bases moved once, sparse through
+pt[src/CH]; uint2 8-byte loads safe — pstep is 16-aligned for cp16).
+**The chain verified byte-identical to the port commit on a fresh
+v1.2.3 checkout** (the 6 patches + the port). Staged as
+glm-mia-attnfetch8.patch (patches/README.md's entry written; the
+exl3prompt entry's status corrected to ADOPTED).
+
+**LAUNCHED: attnpref + summary** — the A/B: arm off (the 6-patch
+stack) vs arm on (+ the patch; the rebuild rides the restart), the
+content-sha cross-arm gate (three prompt sizes) + bench twice per arm
++ **the steady-state decode probe** (two solo 2048-token greedy
+generations per arm — the honest tg instrument). The bar: content
+IDENTICAL + a sharp steady-state tg gain → the battery + the duel
+re-pair. ~50 min. THEN DARK.
