@@ -45,6 +45,9 @@ to the port commit on a fresh checkout). OWNER: this line; STATUS:
 EXPERIMENTAL, judged by the attnpref window (the content gate + the
 decode rows, the definitive protocol).
 
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
+were re-cut by the rebase; the content is unchanged.
+
 diff --git a/zig/kernels/cuda/glm_glue_attn.cuh b/zig/kernels/cuda/glm_glue_attn.cuh
 index 979474683..2a95af088 100644
 --- a/zig/kernels/cuda/glm_glue_attn.cuh

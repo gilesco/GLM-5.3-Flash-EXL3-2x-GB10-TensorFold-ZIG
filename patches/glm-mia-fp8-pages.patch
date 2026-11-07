@@ -49,12 +49,17 @@ between v1.2.2 and v1.2.3). NOTE: v1.2.3 threads tk into blockLastRow's
 indexUpdate and attendLastRow's selectTokensProfile - with the selist fix
 below, the MTP prompt-chunk path is covered too.
 
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): the snapshot tests append after the
+KV_SHARE adapter test v1.2.4 added; the glm_kv_paged_records import sits beside the
+pages family in the registry; the BadKvPages/PoolTooSmall explain lines, the
+Pages.waiting field and the test-glm-kv-pages-host step re-anchored.
+
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
-index bb92d482e..7cde4542f 100644
+index 95a5a690f..733b05a22 100644
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
-@@ -48,6 +48,7 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
-     const copies = b.createModule(.{ .root_source_file = b.path("zig/src/native/cuda_snaps.zig"), .target = host, .optimize = .debug, .imports = &.{.{ .name = "engine_api", .module = api }} });
+@@ -51,6 +51,7 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
+     const copies = b.createModule(.{ .root_source_file = b.path("zig/src/native/cuda_snaps.zig"), .target = host, .optimize = .debug, .imports = &.{ .{ .name = "engine_api", .module = api }, .{ .name = "core", .module = mods.core } } });
      const snapshots = b.createModule(.{ .root_source_file = b.path("zig/glm_snapshot_host.zig"), .target = host, .optimize = .debug, .link_libc = true, .imports = &.{ .{ .name = "glm", .module = glm }, .{ .name = "cuda", .module = cuda }, .{ .name = "core", .module = mods.core }, .{ .name = "engine_api", .module = api }, .{ .name = "copies", .module = copies } } });
      b.step("test-glm-snapshots-host", "Prompt-sized GLM state copies, page budgets and rank ordering without devices").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = snapshots })).step);
 +    b.step("test-glm-kv-pages-host", "TF_KV_PAGES for bf16 and E4M3, the page layouts, admission and refusals, on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{ "TF_KV_PAGES", "capacity keeps", "the plan's window" } })).step);
@@ -62,12 +67,12 @@ index bb92d482e..7cde4542f 100644
      const mm_record = b.createModule(.{ .root_source_file = b.path("zig/test_support/glm_mm_cuda.zig"), .target = host, .optimize = .debug });
      const mm_actual = b.createModule(.{ .root_source_file = b.path("zig/src/families/glm/cuda_mm.zig"), .target = host, .optimize = .debug, .imports = &.{.{ .name = "cuda", .module = mm_record }} });
 diff --git a/zig/glm_snapshot_host.zig b/zig/glm_snapshot_host.zig
-index 2a83b3f43..1488a863f 100644
+index 4a54b7958..a86023e6d 100644
 --- a/zig/glm_snapshot_host.zig
 +++ b/zig/glm_snapshot_host.zig
-@@ -592,3 +592,144 @@ test "GLM snapshots: with the engine's own sequence on pages too, a prefix's siz
-         for (ats, sizes) |at, s| try t.expectEqual(s, f.e.stateBytes(at));
-     }
+@@ -597,3 +597,144 @@ test "GLM snapshots: TF_KV_SHARE's adapter reads GLM's decls as the store it rep
+     const r = adapter.cacheRules(glm.native);
+     try std.testing.expect(r.planned and r.grid == 2048 and r.lookahead == 1 and r.min_prompt == 0 and r.warm == .off and !r.fork);
  }
 +
 +/// Every field an E4M3 prefix at `at` reads, in `a` and in `b` (codes, scales, rings, pooled keys), from either layout.
@@ -210,6 +215,7 @@ index 2a83b3f43..1488a863f 100644
 +    }
 +    f.e.cur = &f.seq;
 +}
+\ No newline at end of file
 diff --git a/zig/kernels/cuda/glm_glue_attn.cuh b/zig/kernels/cuda/glm_glue_attn.cuh
 index 1a4363b15..979474683 100644
 --- a/zig/kernels/cuda/glm_glue_attn.cuh
@@ -382,7 +388,7 @@ index bd21f7a0c..79d8a5b0d 100644
      .{ .name = "norms tf_slerp_rows", .usage = .{ .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 } } },
      .{ .name = "qk_rows tf_qk_rows at dim 256", .usage = .{ .{ .regs = 30, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 } } },
 diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry.zig
-index 9bc2a02ec..b6ebc328e 100644
+index eb84aed67..31fab7519 100644
 --- a/zig/src/core/contract/registry.zig
 +++ b/zig/src/core/contract/registry.zig
 @@ -351,7 +351,7 @@ pub fn usageFor(r: CudaRecord, release: ?limits.Nvcc) [limits.sms.len]U {
@@ -395,7 +401,7 @@ index 9bc2a02ec..b6ebc328e 100644
  pub const cuda_controls = [_]CudaRecord{
      .{ .launch = .{ .name = "control: past its bounds", .symbol = "tf_ctl_bounded", .image = "contract_controls", .threads = 512 }, .usage = .{ .{ .regs = 10, .static = 0, .bound = 256 }, .{ .regs = 10, .static = 0, .bound = 256 }, .{ .regs = 10, .static = 0, .bound = 256 }, .{ .regs = 10, .static = 0, .bound = 256 }, .{ .regs = 10, .static = 0, .bound = 256 } } },
 @@ -590,6 +590,7 @@ test {
-     _ = @import("glm_f32w_pending.zig");
+     _ = @import("glm_l2pf_pending.zig");
      _ = @import("registry_pending_test.zig");
      _ = @import("flashnext_pages_pending.zig");
 +    _ = @import("glm_kv_paged_records.zig");
@@ -403,7 +409,7 @@ index 9bc2a02ec..b6ebc328e 100644
  }
  test "unmeasured CUDA records cannot pass a compiled resource check" {
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
-index 0676a9b12..ca4bf7d72 100644
+index 72041dca4..23426a901 100644
 --- a/zig/src/families/glm/cuda.zig
 +++ b/zig/src/families/glm/cuda.zig
 @@ -22,6 +22,7 @@ pub const shard = @import("cuda_shard.zig");
@@ -695,10 +701,10 @@ index da202196d..7a91561f9 100644
  
  const Ops = struct {
 diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
-index 89155cf94..6da3ed68d 100644
+index dc3bb0ce1..c03a7ad37 100644
 --- a/zig/src/families/glm/cuda_lanes.zig
 +++ b/zig/src/families/glm/cuda_lanes.zig
-@@ -348,7 +348,7 @@ pub const Lanes = struct {
+@@ -345,7 +345,7 @@ pub const Lanes = struct {
  
      /// The lane host's admission: with a pool, a paged sequence and the request's pages are free.
      pub fn fits(self: *const Lanes, prompt: usize, max_tokens: usize) bool {
@@ -770,19 +776,19 @@ index d04bdaae5..7b6d7d59f 100644
          a.add(@as(i64, @intCast(t.ps)));
      }
 diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_native.zig
-index f64566398..c423b5ecd 100644
+index 0fbb34e18..65723d9c6 100644
 --- a/zig/src/families/glm/cuda_native.zig
 +++ b/zig/src/families/glm/cuda_native.zig
-@@ -453,6 +453,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
+@@ -486,6 +486,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
          error.NoCommId => "GLM-5.3-Flash's ranks meet over NCCL: with TF_GLM_WORLD 2 or more, set NCCL_COMM_ID to rank 0's address:port on every host",
          error.RankMismatch => "the ranks' settings differ (each rank's log names the one): start them alike",
          error.Fp8OnPages => "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to auto or off",
 +        error.BadKvPages => "TF_KV_PAGES: give auto, on (or 1, all) or off (or 0)",
 +        error.PoolTooSmall => "this request's prompt and max_tokens need more KV pages than the whole pool holds, even with every other stream done: shorten the prompt or lower max_tokens",
-         error.BadGlmKvShare => "TF_GLM_KV_SHARE: give how many states the prompt cache over the KV pages keeps, or 0 or unset for off",
-         error.GlmShareNeedsPages => "TF_GLM_KV_SHARE keeps prompts as KV pool pages: set TF_KV_PAGES=on as well",
-         error.BadCopyPolicy => "TF_GLM_COPIES: expected 0 or 1 for verified root/context copies",
-@@ -478,7 +480,7 @@ test "a checkpoint refused for its format, at the entry or by the loader, is exp
+         error.BadKvShare => "TF_KV_SHARE: give how many states the prompt store over the KV pages keeps, or 0 or unset for off",
+         error.GlmKvShareMoved => "TF_GLM_KV_SHARE is now TF_KV_SHARE, the prompt store every family on the KV pool shares: set that instead",
+         error.GlmShareNeedsPages => "TF_KV_SHARE keeps prompts as KV pool pages: set TF_KV_PAGES=on as well",
+@@ -512,7 +514,7 @@ test "a checkpoint refused for its format, at the entry or by the loader, is exp
      for ([_]anyerror{ error.NotModelOpt, error.UnsupportedQuant, error.UnreadableFormat }) |e| try std.testing.expect(explain(null, e) != null);
  }
  
@@ -791,7 +797,7 @@ index f64566398..c423b5ecd 100644
      try std.testing.expect(!try paging(null, 1, false));
      try std.testing.expect(!try paging("auto", 1, false));
      for ([_]usize{ 2, 3, 16 }) |w| {
-@@ -491,18 +493,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
+@@ -525,18 +527,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
          try std.testing.expect(!try paging("off", w, false));
          try std.testing.expect(!try paging("0", w, false));
          try std.testing.expect(try paging("all", w, false));
@@ -816,10 +822,10 @@ index f64566398..c423b5ecd 100644
  }
  
 diff --git a/zig/src/families/glm/cuda_pages.zig b/zig/src/families/glm/cuda_pages.zig
-index 7cbb56f0c..923e38e70 100644
+index 7b2c8bf9d..f22ea5ab8 100644
 --- a/zig/src/families/glm/cuda_pages.zig
 +++ b/zig/src/families/glm/cuda_pages.zig
-@@ -13,14 +13,25 @@ pub fn tableLen(capacity: usize) usize {
+@@ -14,14 +14,25 @@ pub fn tableLen(capacity: usize) usize {
      return (capacity + state.page_rows - 1) / state.page_rows;
  }
  
@@ -848,7 +854,7 @@ index 7cbb56f0c..923e38e70 100644
  /// A request's need: its prompt, its reply and one last verify window.
  pub fn need(l: kv.Layout, prompt: usize, max_tokens: usize) usize {
      return l.need(prompt, max_tokens, fw.window_rows);
-@@ -32,7 +43,7 @@ pub fn ownSequence(e: *Engine) !void {
+@@ -33,7 +44,7 @@ pub fn ownSequence(e: *Engine) !void {
      if (e.seqs.items[0] != null) return error.SlotTaken;
      const q = try e.gpa.create(types.Seq);
      errdefer e.gpa.destroy(q);
@@ -857,15 +863,15 @@ index 7cbb56f0c..923e38e70 100644
      e.seqs.items[0] = q;
      e.cur = q;
      e.slot = 0;
-@@ -58,6 +69,7 @@ pub const Pages = struct {
+@@ -59,6 +70,7 @@ pub const Pages = struct {
      used: []bool,
      leader: bool,
      poison: bool, // TF_KV_POISON=1: a stream's pages start as NaN, so a row read before its write shows in the reply
 +    waiting: ?usize = null, // rank 0: the pages the request admission last held back needs (one log line a wait)
+     prompts: ?kp.Prompts = null, // TF_KV_SHARE: the shared prompt store over this pool (rank 0's), from the server
  
      /// `streams` sequences from slot 0 on `pages` pages: the engine's own (`ownSequence`) placed, the others made now.
-     pub fn init(gpa: std.mem.Allocator, e: *Engine, l: kv.Layout, streams: usize, pages: usize, leader: bool) !*Pages {
-@@ -110,7 +122,7 @@ pub const Pages = struct {
+@@ -112,7 +124,7 @@ pub const Pages = struct {
              if (q.* != null) return error.SlotTaken; // attach comes before any stream
              const s = try e.gpa.create(types.Seq);
              errdefer e.gpa.destroy(s);
@@ -874,7 +880,7 @@ index 7cbb56f0c..923e38e70 100644
              q.* = s;
              made += 1;
          }
-@@ -160,10 +172,32 @@ pub const Pages = struct {
+@@ -162,10 +174,32 @@ pub const Pages = struct {
          return slot < p.used.len;
      }
  
@@ -911,7 +917,7 @@ index 7cbb56f0c..923e38e70 100644
      }
  
      /// Rank 0: paged slot `slot` takes the pages of a prompt, its reply and a last window; LaneMemory: not yet.
-@@ -183,6 +217,7 @@ pub const Pages = struct {
+@@ -185,6 +219,7 @@ pub const Pages = struct {
          if (!p.paged(slot) or p.used[slot]) return error.SlotTaken;
          const n = need(p.layout, prompt, max_tokens);
          if (n > tableLen(p.e.capacity) or adopted.len > n) return error.PromptTooLong;
@@ -919,7 +925,7 @@ index 7cbb56f0c..923e38e70 100644
          const l = &p.leases[slot];
          try p.pool.promise(l, n - adopted.len);
          errdefer p.pool.finish(l);
-@@ -213,6 +248,9 @@ pub const Pages = struct {
+@@ -215,6 +250,9 @@ pub const Pages = struct {
  
      /// The slot's sequence reaches its pages' rows (past the `kept` first, NaN first under TF_KV_POISON).
      fn mapped(p: *Pages, slot: u32, ids: []const u32, kept: usize) !void {
@@ -930,10 +936,10 @@ index 7cbb56f0c..923e38e70 100644
          const page = p.page;
          if (p.poison) for (ids[kept..]) |id| try p.e.d.check(p.e.d.api.cuMemsetD32Async(p.base() + id * page, 0xFFFF_FFFF, page / 4, p.e.stream.handle), "cuMemsetD32Async");
 diff --git a/zig/src/families/glm/cuda_pages_test.zig b/zig/src/families/glm/cuda_pages_test.zig
-index ee0199839..cac988bd8 100644
+index 3fef09ccd..cba665961 100644
 --- a/zig/src/families/glm/cuda_pages_test.zig
 +++ b/zig/src/families/glm/cuda_pages_test.zig
-@@ -86,6 +86,7 @@ const Fake = struct {
+@@ -90,6 +90,7 @@ const Fake = struct {
          f.e.pages = null;
          f.e.images = null;
          f.e.settings = .{};
@@ -941,7 +947,7 @@ index ee0199839..cac988bd8 100644
          f.e.w = undefined;
          f.e.w.config = .{};
          f.e.w.share = try shard.Share.of(&f.e.w.config, 0, 2);
-@@ -477,3 +478,40 @@ test "every host allocation failure while making the pages leaves no device buff
+@@ -530,3 +531,40 @@ test "every host allocation failure while making the pages leaves no device buff
          }
      }.run, .{});
  }
@@ -1090,7 +1096,7 @@ index 3b7fff9f2..54341b9f0 100644
          try std.testing.expect(w.connected[0]);
          try std.testing.expect(w.constructed[0]);
 diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_state.zig
-index ff3983f0f..c32cb7037 100644
+index 0a5e6bf05..cebac2485 100644
 --- a/zig/src/families/glm/cuda_state.zig
 +++ b/zig/src/families/glm/cuda_state.zig
 @@ -65,9 +65,10 @@ pub fn mlaLayers(w: *const weights.Weights) usize {
@@ -1132,7 +1138,7 @@ index ff3983f0f..c32cb7037 100644
      x.pks = p.pk_page;
      x.pt = table;
      x.ps = p.page_bytes;
-@@ -349,6 +357,8 @@ pub const State = struct {
+@@ -375,6 +383,8 @@ pub const State = struct {
      mtp_base: usize = 0,
      prompt_hidden: u64, // first-draft row owned and charged by this sequence arena
      table: u64 = 0, // on pages: its page table (i32, `pages` entries), else 0
@@ -1141,7 +1147,7 @@ index ff3983f0f..c32cb7037 100644
      pages: []const u32 = &.{}, // on pages: the page ids its table holds, in row order (none while no stream holds it)
  
      pub fn init(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize) !State {
-@@ -356,16 +366,29 @@ pub const State = struct {
+@@ -382,16 +392,29 @@ pub const State = struct {
      }
  
      pub fn initFormat(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize, kv8: bool) !State {
@@ -1173,7 +1179,7 @@ index ff3983f0f..c32cb7037 100644
          const sizes = try stateSizes(gpa, w, capacity, false, pages);
          defer gpa.free(sizes);
          var total: usize = 0;
-@@ -373,7 +396,7 @@ pub const State = struct {
+@@ -399,7 +422,7 @@ pub const State = struct {
          return total;
      }
  
@@ -1182,7 +1188,7 @@ index ff3983f0f..c32cb7037 100644
          const c = &w.config;
          const s = &w.share;
          const nk = w.layers.len - mlaLayers(w);
-@@ -396,7 +419,7 @@ pub const State = struct {
+@@ -422,7 +445,7 @@ pub const State = struct {
          const rings = try gpa.alloc(u64, 2 * (nd + 1));
          for (0..nd + 1) |j| rings[2 * j ..][0..2].* = .{ p[9 + 4 * j], p[10 + 4 * j] };
          const ring_rows = @min(capacity, index_ring);
@@ -1191,7 +1197,7 @@ index ff3983f0f..c32cb7037 100644
          if (paged) |q| {
              st.table = p[14 + 4 * nd];
              st.capacity = 0; // no rows until a stream's pages are mapped
-@@ -407,8 +430,8 @@ pub const State = struct {
+@@ -433,8 +456,8 @@ pub const State = struct {
  
      /// A paged sequence's caches on the pages of `p` (the engine's own, made before its pool, placed when it is made).
      pub fn place(st: *State, w: *const weights.Weights, p: Paged) void {

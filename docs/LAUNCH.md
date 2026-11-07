@@ -7913,3 +7913,52 @@ smoke + the loading wall's re-take on the direct reads.
 
 **NO LAUNCH** — the rebase is a full sitting's careful work; the
 assessment and the plan are this sitting's product.
+
+## (round 135) THE v1.2.4 REBASE LANDED + glm-zz-loaddirect WRITTEN; the v124val window launched (the (user) ask: "Begin the rebase") (2026-11-07)
+
+**The rebase** (the head's /tmp/tf-src, branch v124-rebase = v1.2.4
+267c5af6a + 9 commits, one per patch in ALPHABETICAL order):
+- **Verbatim (5)**: exl3prompt, packed-s2, pagerows-fix, selist-fix,
+  attnfetch8 — the bare-tree drift map's failures re-aligned once the
+  stack sat beneath them (the drift was measured against BARE v1.2.4;
+  the anchors the stack produces match the hunks' context).
+- **Hand-re-anchored (3)**: absorb-mma (the Fingerprint: v1.2.4 is at
+  layout 19 "18 plus the prompt pair" with pair/l2pf fields — the patch
+  bumps to 20 "19 plus numerics", inserts numerics after bits, and the
+  two Forward constructions carry .absorb_mma beside l2pf/
+  prompt_pair.piecesOf; the numerics test appended at the new EOF),
+  fp8-pages (the two E4M3 snapshot tests + expectSamePrefix8 append
+  after v1.2.4's KV_SHARE adapter test; the glm_kv_paged_records import
+  beside the pages family; the BadKvPages/PoolTooSmall explain lines,
+  Pages.waiting, the host-test step re-anchored), moeside (the side
+  field, sideStream/freeSide, the constructor, deinit, view() and the
+  solo Forward re-anchored around pair/l2pf; .side on decode windows
+  only, the same b == &e.bp logic).
+- **New 9th commit glm-zz-loaddirect**: cuda_load_ahead.layersWithCount
+  builds core.checkpoint.direct.Layers(gpa, ck, count); on() →
+  direct.enter(prefix, next) before each layer's loads (the next layer's
+  tensors read on the thread while one packs; ck.get returns the
+  copies); off → #1928's read-ahead + release exactly as it was
+  (TF_LOAD_DIRECT=0). 23 shards < gather.max_sources 64: engages on our
+  checkpoint. No arithmetic changes — the tensors' bytes are the same.
+
+**THE TRIPLE VERIFY**: fresh-v1.2.4 + the 9 commit bodies in order =
+byte-identical (0 diff lines); fresh-v1.2.4 + the SHIPPED patch files
+(headers + bodies, alphabetical, as the image applies them) =
+byte-identical (0 diff lines); the full compile in the builder base
+image (zig 0.17.0, nvcc sm_121: fatbins + native) **BUILD RC=0**. The
+assembly guard: the 5 verbatim patches' +/- content identical to the old
+bodies (a lone "--" separator artifact excluded).
+
+**The pin bumped**: local.sh TF_COMMIT → 267c5af6a (v1.2.4); README's
+version-identity rows carry v1.2.4 with the pending-window note; the
+scoreboard rows keep the v1.2.3 receipts until the digest re-pairs.
+
+**LAUNCHED: v124val + summary** — the OFF-arm insurance (TF_LOAD_DIRECT=0
+restart + probe + the read-ahead witness), the standing restart + the
+witnesses (the serve line, the direct-reads rank log, the strict-TF_
+refusal scan under #2405, the arms' content shas), the §2 content gates,
+one bench pass + the steady-state decode probe, ONE hardmode run (the 95
+must hold), the vision suite (4/4 must hold), TWO timed load walls (the
+loading row's re-take — 91%, the last uncrossed front, on the direct
+reads). ~45 min + the prepare build. THEN DARK.

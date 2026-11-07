@@ -11,6 +11,39 @@ build. `config.sh`'s `PATCHES` knob selects them (empty = pristine upstream, the
 the tested configuration); `scripts/prepare.sh` stages the named files into `image/patches/`
 and the Docker build applies them right after the TensorFold checkout.
 
+## THE v1.2.4 REBASE (2026-11-07, round 135) — all 8 stack patches + one new wiring
+
+The adopted 8-patch stack was rebased onto **TensorFold v1.2.4** (`267c5af6a`,
+675 commits after v1.2.3) and one new patch joined. Every patch file here now
+carries a `REBASE (2026-11-07, onto v1.2.4 267c5af6a)` paragraph in its header;
+the per-entry staging lines below that say "v1.2.3" are the historical port
+records — the header note supersedes them.
+
+- **Applied verbatim (content unchanged, only anchors re-cut)**:
+  exl3prompt, packed-s2, pagerows-fix, selist-fix, attnfetch8 — the drift map's
+  bare-v1.2.4 failures re-aligned once the stack sat beneath them.
+- **Hand-re-anchored**: absorb-mma (the Fingerprint at layout 20 — 19 plus
+  numerics — after v1.2.4's prompt-pair fields; the Forward constructions carry
+  `l2pf`/`prompt_pair.piecesOf`; the numerics test appended after v1.2.4's
+  KV_SHARE adapter test), fp8-pages (the snapshot tests append after the
+  adapter test; the records import beside the pages family; the explain lines,
+  `Pages.waiting` and the host-test step re-anchored), moeside (the side field,
+  `sideStream`/`freeSide`, the constructor, deinit and both Forward call sites
+  re-anchored around `pair` and `l2pf`).
+- **New: glm-zz-loaddirect.patch** — GLM's layer loads wired onto v1.2.4's
+  `checkpoint.direct` (#2282/#1901), following the gemma4/qwen3_5 pattern in
+  `cuda_load_ahead.zig`: each layer's tensors read past the page cache while the
+  previous layer packs; `TF_LOAD_DIRECT=0` keeps #1928's read-ahead. Our
+  checkpoint's 23 shards < `gather.max_sources` (64): the path engages.
+- **The verification (triple)**: the 9-commit rebase branch (`v124-rebase` on
+  the head's /tmp/tf-src) — fresh-v1.2.4 + the commit bodies byte-identical
+  (0 diff lines); fresh-v1.2.4 + the SHIPPED patch files in alphabetical order
+  byte-identical (0 diff lines); the full compile (fatbins + native, nvcc
+  sm_121, zig 0.17.0) RC=0 in the builder base image. Judgment: the v124val
+  window (the §2 gates, the bare-config smoke under #2405's strict TF_
+  validation, the battery, the vision, the loading wall's re-take on the direct
+  reads).
+
 ## The rules
 
 1. **Upstream first.** A patch exists here only while upstream lacks the feature (check

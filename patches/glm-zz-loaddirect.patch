@@ -1,0 +1,66 @@
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Subject: glm-cuda: GLM's layer loads on checkpoint.direct (the next layer read while one packs)
+
+PROVENANCE: this line's wiring (2026-11-07), following the gemma4/qwen3_5
+pattern upstream shipped in v1.2.4 (#2282/#1901) - GLM was not wired.
+
+MECHANISM: cuda_load_ahead.layersWithCount builds core.checkpoint.direct.Layers
+over the checkpoint and the TF_LOAD_PREFETCH reader count; when it is on (Linux,
+readers, <= 64 shards, TF_LOAD_DIRECT unset or 1) each layer's tensors are read
+past the page cache into an arena while the previous layer packs, and the
+checkpoint's get returns the copies; the next layer's read starts on the thread
+as enter() returns. TF_LOAD_DIRECT=0 (or TF_LOAD_PREFETCH=0) keeps #1928's
+page-cache read-ahead exactly as it was. 23 shards < gather.max_sources (64):
+the path engages on our checkpoint.
+
+No arithmetic changes: the tensors' bytes are the same either way - the content
+gate covers it. OWNER: this line; STATUS: EXPERIMENTAL, judged by the v124val
+window (the content gate + the loading wall's re-take, the timed wall protocol).
+
+diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cuda_load_ahead.zig
+index f777c7e2e..1c255dd94 100644
+--- a/zig/src/families/glm/cuda_load_ahead.zig
++++ b/zig/src/families/glm/cuda_load_ahead.zig
+@@ -1,4 +1,4 @@
+-//! The load's layers, each read into the page cache by TF_LOAD_PREFETCH threads while the loader packs it.
++//! The load's layers: read direct past the page cache (checkpoint.direct, the next layer on the thread while one packs), or into the page cache by TF_LOAD_PREFETCH threads.
+ 
+ const std = @import("std");
+ const core = @import("core");
+@@ -15,17 +15,29 @@ pub fn layers(L: anytype, prefix: []const u8, ids: []const u32, out: anytype) !v
+ 
+ pub fn layersWithCount(L: anytype, ids: []const u32, out: anytype, count: usize) !void {
+     var ahead: u64 = 0;
+-    for (ids, out) |i, *l| {
++    // each layer read past the page cache, the next one while it packs (TF_LOAD_DIRECT=0: the read-ahead below)
++    var direct = core.checkpoint.direct.Layers.init(L.gpa, L.ck, count);
++    defer direct.deinit();
++    var pb: [2][64]u8 = undefined;
++    for (ids, out, 0..) |i, *l, j| {
+         if (i >= L.w.config.layers) return error.BadLayer;
+-        {
+-            var reading = try @import("cuda_load_prefetch.zig").begin(L.ck, i, count);
+-            defer reading.deinit();
++        if (direct.on()) {
++            const p = try std.fmt.bufPrint(&pb[0], "model.language_model.layers.{d}.", .{i});
++            const np: ?[]const u8 = if (j + 1 < ids.len) try std.fmt.bufPrint(&pb[1], "model.language_model.layers.{d}.", .{ids[j + 1]}) else null;
++            try direct.enter(p, np);
+             l.* = try L.layer(i);
+-            ahead += try reading.check();
++        } else {
++            {
++                var reading = try @import("cuda_load_prefetch.zig").begin(L.ck, i, count);
++                defer reading.deinit();
++                l.* = try L.layer(i);
++                ahead += try reading.check();
++            }
++            L.ck.release(); // a rank reads about half the checkpoint: its pages would crowd the GPU's allocations out
+         }
+-        L.ck.release(); // a rank reads about half the checkpoint: its pages would crowd the GPU's allocations out
+     }
+-    if (count > 0) std.log.info("weights: {d} readers read {d:.1} GiB ahead of the loader", .{ count, @as(f64, @floatFromInt(ahead)) / (1 << 30) });
++    if (direct.on()) std.log.info("weights: the layers read direct, past the page cache (TF_LOAD_DIRECT)", .{});
++    if (!direct.on() and count > 0) std.log.info("weights: {d} readers read {d:.1} GiB ahead of the loader", .{ count, @as(f64, @floatFromInt(ahead)) / (1 << 30) });
+ }
+ 
+ /// Readers when TF_GLM_LOAD_PREFETCH is unset.

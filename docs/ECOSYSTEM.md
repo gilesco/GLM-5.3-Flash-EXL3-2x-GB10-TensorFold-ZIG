@@ -323,6 +323,21 @@ glm-zz-loaddirect), then ONE validation window covers both (the gates +
 the smoke + the loading wall's re-take on the direct reads). The
 loading front could cross.
 
+**LANDED (round 135, 2026-11-07)**: the rebase + the wiring are done and
+triple-verified — the 9-commit `v124-rebase` branch (the head's
+/tmp/tf-src): fresh-v1.2.4 + the commit bodies byte-identical (0 diff
+lines), fresh-v1.2.4 + the SHIPPED patch files in alphabetical order
+byte-identical (0 diff lines), the full compile (fatbins + native,
+nvcc sm_121, zig 0.17.0) RC=0 in the builder base image. The re-anchoring
+turned out LIGHTER than the bare-tree drift map: five of eight apply
+verbatim once the stack sits beneath them (the bare-tree failures were
+anchor shifts the stack re-aligns); absorb-mma, fp8-pages and moeside
+were hand-re-anchored (the Fingerprint at layout 20, the snapshot tests
+after v1.2.4's KV_SHARE adapter test, the side field around pair/l2pf).
+glm-zz-loaddirect is written (cuda_load_ahead.zig; TF_LOAD_DIRECT=0 keeps
+#1928's read-ahead; 23 shards < max_sources 64 so the path engages on our
+checkpoint). The pin is bumped; the v124val window covers it.
+
 ## Community sweep — the NVIDIA GB10 GLM-5.3-Flash thread + DeepSeek field (2026-10-29, round 73)
 
 Source: forums.developer.nvidia.com/t/381350 (936 posts; the user is giles8 in-thread),

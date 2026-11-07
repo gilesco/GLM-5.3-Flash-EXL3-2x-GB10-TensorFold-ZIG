@@ -24,6 +24,9 @@ tables() helper (was attend only) - v1.2.3 already threads tk into
 blockLastRow's indexUpdate and attendLastRow's selectTokensProfile, so
 this line covers the MTP prompt-chunk path too (on v1.2.2 it rode t).
 
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
+were re-cut by the rebase; the content is unchanged.
+
 diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
 index 4ab08c370..ba0a6b247 100644
 --- a/zig/src/families/glm/cuda_dsa_block.zig

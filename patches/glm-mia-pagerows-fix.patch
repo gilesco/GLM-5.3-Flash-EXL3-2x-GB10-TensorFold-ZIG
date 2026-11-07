@@ -17,6 +17,9 @@ the battery re-run.
 RE-ANCHORED onto v1.2.3+marriage, 2026-11-06: one site in the tables()
 helper (was three); tk inherits t.page_rows there as before.
 
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
+were re-cut by the rebase; the content is unchanged.
+
 diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
 index 2bbe864f0..4ab08c370 100644
 --- a/zig/src/families/glm/cuda_dsa_block.zig

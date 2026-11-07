@@ -65,7 +65,7 @@ LOG="$OUT/campaign.log"
 log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$LOG"; }
 phase_done() { [[ -f "$OUT/.$1.done" ]] && [[ "${FORCE:-0}" != 1 ]]; }
 
-PHASES="${PHASES:-preflight reference parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung summary}"
+PHASES="${PHASES:-preflight reference parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs hmcheck v124val duel confirm depth cliff prefill rung summary}"
 want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
@@ -1266,6 +1266,109 @@ PWE
   resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
   echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
   touch "$OUT/.resweep.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: v124val (SESSION-SPECIFIC; retires with the receipt). The v1.2.4
+# rebase + glm-zz-loaddirect validation: the engine is now v1.2.4 (267c5af6a)
+# + the rebased 8-patch stack + the direct-reads wiring. The receipt carries:
+# the explicit prepare (the fingerprint moved: TF_COMMIT + the patch bodies),
+# the OFF-arm insurance (TF_LOAD_DIRECT=0 restarts and probes the old
+# read-ahead path), the VALIDATION §2 content gates at the standing config,
+# the bare-config boot witnesses under #2405's strict TF_ validation (the
+# serve line + the absence of refusal lines + the direct-reads rank log),
+# one bench pass + the steady-state decode probe (the regression watch), ONE
+# hardmode run (the 95 must hold), the vision suite (4/4 must hold), and TWO
+# timed load walls (the loading row's re-take on the direct reads - the last
+# uncrossed front at 91%).
+# ---------------------------------------------------------------------------
+if want v124val && ! phase_done v124val; then
+  log "=== v124val (the v1.2.4 rebase + the direct reads: gates + battery + vision + the wall)"
+  P="$OUT/29-v124val.md"; : > "$P"
+  echo "# v124val (v1.2.4 267c5af6a + the 8-patch stack + glm-zz-loaddirect)" >> "$P"
+  log "v124val: explicit prepare (the fingerprint moved)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v124val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the OFF arm (TF_LOAD_DIRECT=0: the old read-ahead path, insurance)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_LOAD_DIRECT=0; then
+    echo "- load $(( $(date +%s) - S )) s; the read-ahead witness: $(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "readers read") rank line(s)" >> "$P"
+    req_file "$OUT/v124-off-req.json" "$REF_PROMPT"
+    chat "$OUT/v124-off-req.json" > "$OUT/v124-off.json" || true
+    echo "- the off-arm greedy content sha: $(content_sha "$OUT/v124-off.json")" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the standing restart (the direct reads on)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    echo "- the direct-reads witness: $(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "the layers read direct") rank line(s)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
+    req_file "$OUT/v124-on-req.json" "$REF_PROMPT"
+    chat "$OUT/v124-on-req.json" > "$OUT/v124-on.json" || true
+    echo "- the on-arm greedy content sha: $(content_sha "$OUT/v124-on.json")" >> "$P"
+    echo "- the arms' content: $([ "$(content_sha "$OUT/v124-off.json")" = "$(content_sha "$OUT/v124-on.json")" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the §2 content gates" >> "$P"
+  run_gates v124 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  echo "## the regression watch" >> "$P"
+  bench_perf v124 "$OUT/v124-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/v124d.XXXXXX.json)
+  python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v124-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v124-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "## hardmode (the 95 must hold)" >> "$P"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "v124val" --output-dir "$OUT/v124hm" \
+    --json-file "$OUT/v124hm/hm.json" > "$OUT/v124hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/v124hm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/v124hm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/v124hm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v124vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v124vision/vision.json" > "$OUT/v124vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/v124vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on the direct reads)" >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the gates content-PASS + hardmode holds + the vision 4/4 + the walls re-date the loading row = the rebase qualifies (the digest re-pairs the anchors); any FAIL holds the pin at v1.2.3 until understood" >> "$P"
+  touch "$OUT/.v124val.done"
 fi
 
 # ---------------------------------------------------------------------------

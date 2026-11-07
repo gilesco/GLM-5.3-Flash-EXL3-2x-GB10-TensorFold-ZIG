@@ -41,8 +41,11 @@ power, so this is optional; contract records for the three entries are still to 
  zig/src/families/glm/cuda_mm.zig | 15 ++++++++++++---
  2 files changed, 21 insertions(+), 3 deletions(-)
 
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
+were re-cut by the rebase; the content is unchanged.
+
 diff --git a/zig/kernels/cuda/glm_mm.cu b/zig/kernels/cuda/glm_mm.cu
-index 942431e4..d82cd3f5 100644
+index 942431e43..d82cd3f5c 100644
 --- a/zig/kernels/cuda/glm_mm.cu
 +++ b/zig/kernels/cuda/glm_mm.cu
 @@ -251,6 +251,15 @@ GLM_MM_ALL(4)
@@ -62,7 +65,7 @@ index 942431e4..d82cd3f5 100644
  // -- tiling at load: ops.cu's packed rows and fp16 scales [N][K / 64] -> the tiled chunks and scales ---------------
  template <int BITS>
 diff --git a/zig/src/families/glm/cuda_mm.zig b/zig/src/families/glm/cuda_mm.zig
-index f6398a91..273c57a3 100644
+index f6398a910..273c57a32 100644
 --- a/zig/src/families/glm/cuda_mm.zig
 +++ b/zig/src/families/glm/cuda_mm.zig
 @@ -40,6 +40,7 @@ pub const Packed = struct {
@@ -116,6 +119,3 @@ index f6398a91..273c57a3 100644
              const f = if (wi == 0) k.by_rows[i] else k.packed_rows[wi - 1][i];
              try cuda.launch.launch(f, .{ .grid = .{ .x = cols, .y = row_blocks, .z = @intCast(sk) }, .block = .{ .x = if (bm <= 32) 128 else 256 }, .shared = sharedBytes(w.bits, bm), .pdl = k.pdl }, s, &a);
          }
--- 
-2.53.0
-

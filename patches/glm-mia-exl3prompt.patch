@@ -47,6 +47,9 @@ the 5-patch stack (verified byte-identical to the port commit on a fresh
 checkout). OWNER: this line; STATUS: EXPERIMENTAL, judged by the exl3call
 window (the content gate + the pp rows, the definitive protocol).
 
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
+were re-cut by the rebase; the content is unchanged.
+
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
 index d6c8a6751..eae880b5e 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
@@ -143,10 +146,10 @@ index 635540ecc..e4dab7bb9 100644
      }
  };
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 5271d0b07..e33fd1d12 100644
+index 8a2bc4241..abaafd879 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -400,7 +400,9 @@ pub const Engine = struct {
+@@ -410,7 +410,9 @@ pub const Engine = struct {
          if (f.prof) |p| p.mark(e.stream, .draw);
          if (last) try e.holdPrompt(e.bp.fnormed + (rows - 1) * e.c.hidden * 2);
          stamp = prof_mod.span(f.prof, e.stream, .mtp);
