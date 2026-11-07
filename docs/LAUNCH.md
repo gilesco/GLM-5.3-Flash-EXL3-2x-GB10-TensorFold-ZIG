@@ -7722,3 +7722,28 @@ with ~2000-token walls (±2.5% resolution — the attnpref probe's
 lesson applied). The bar: content IDENTICAL + a steady-state tg gain
 beyond the probe's resolution → the battery + the duel re-pair. ~55
 min. THEN DARK.
+
+## (round 134, cont. 98) THE MOESIDE A/B CLEARS WITH A RESOLVED SOLO GAIN; THE JUDGMENT + THE DUEL LAUNCHED (campaign-20261107-083254) (2026-11-07)
+
+**The A/B's receipt** (arm off = the 7-patch stack, arm on = +
+glm-zz-moeside.patch; the rebuild rode arm on's restart):
+- **The content gate: IDENTICAL everywhere** — three prompt sizes +
+  the long-essay decode replies (2048 vs 2048 tokens — the probe
+  worked as designed this time).
+- **The steady-state probe RESOLVED**: the off arm repeated at
+  exactly 51/51 s (0% spread), both on-runs faster (49/50 s):
+  **40.2 → 41.4 tok/s avg (+3.0%), 4/4 sign-consistent** — matching
+  the claim's transfer math (−14% a MoE layer × the MoE share of a
+  decode step ≈ +2.4%). The attnpref probe's quantization lesson,
+  applied, paid off.
+- **The bench corroborates on the solo cells** (+2.9% d0, +3.1%
+  d8192, +6.0% c2@d0) with the depth-concurrency cells flat
+  (−0.4-2.2%) — expected: the overlap gain shrinks under saturation;
+  the claim's mechanism is the 1-2-row decode window.
+
+**LAUNCHED: moesidequal + duel + summary** (one window): moesidequal —
+the §2 gates + the hardmode battery + the vision on the 8-patch stack
+(the formality receipts) — then the duel re-paired with the duel's
+ours arm riding MMS2_DUEL_PATCHES (the 8-patch candidate). **The duel
+decides**: its solo beyond the 0.2% band = ADOPT (the eighth patch);
+a duel solo parity = retire. THEN DARK.

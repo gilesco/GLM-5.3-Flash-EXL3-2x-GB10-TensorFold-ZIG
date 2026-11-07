@@ -681,3 +681,15 @@ capacity/hygiene). The chain verified byte-identical on a fresh
 checkout. The moeside A/B launched: the content gate + the bench rows +
 the steady-state decode probe with ~2000-token walls (±2.5% resolution
 — the attnpref probe's lesson).
+
+**The moeside A/B clears with a resolved solo gain
+(campaign-20261107-083254)**: the content shas IDENTICAL on three
+prompt sizes AND the 2048-token essay replies (the bits are the same);
+the steady-state probe RESOLVED this time — the off arm 51/51 s (0%
+spread), both on-runs faster: **40.2 → 41.4 tok/s avg (+3.0%),
+4/4 sign-consistent**, matching the claim's transfer math (−14% × the
+MoE share of a decode step ≈ +2.4%); the bench corroborates on the
+solo cells (+2.9%/+3.1%, c2@d0 +6.0%) with depth concurrency flat
+(expected — the overlap gains shrink under saturation). moesidequal +
+the duel launched: the formality receipts + the duel's solo (the 0.2%
+instrument) decide the adoption.
