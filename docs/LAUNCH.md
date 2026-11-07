@@ -7625,3 +7625,30 @@ content-sha cross-arm gate (three prompt sizes) + bench twice per arm
 generations per arm — the honest tg instrument). The bar: content
 IDENTICAL + a sharp steady-state tg gain → the battery + the duel
 re-pair. ~50 min. THEN DARK.
+
+## (round 134, cont. 95) THE ATTNFETCH8 A/B CLEARS THE CONTENT GATE WITH A CONSISTENT DEPTH GAIN; THE JUDGMENT + THE DUEL LAUNCHED (campaign-20261107-010849) (2026-11-07)
+
+**The A/B's receipt** (arm off = the 6-patch stack, arm on = +
+glm-zz-attnfetch8.patch; the rebuild rode arm on's restart):
+- **The content gate: IDENTICAL everywhere** — the three prompt sizes
+  AND the 2048-token decode replies (369 vs 369 tokens). The
+  same-bits claim holds: the quality instruments cannot move.
+- **The bench rows** (2 runs/cell, sub-second resolution): pp
+  +1.7/+3.6/+3.9/+4.0/+4.3% (growing with depth); tg +4.7/+3.3% (c2/c4
+  at d4096), +3.2/+2.9% (c2/c4 at d8192), +10.9% (d4096 solo), +5.8%
+  (d8192 solo); d0 tg -1.4% is the noise cell.
+- **The steady-state probe read parity** (off 41.0/36.9 vs on
+  36.9/41.0 tok/s) — an instrument limit, not a patch fact: its walls
+  are integer seconds on a ~9 s request (±1 s = ±11%), so it cannot
+  resolve the 3-5% the bench rows show; the probe's pairs mirrored
+  each other. The bar's "tg parity retires" clause assumed the probe
+  resolves single digits — it does not; the duel's solo ITL instrument
+  (0.2% stability) is the resolving instrument and rides this window.
+
+**LAUNCHED: attnqual + duel + summary** (one window): attnqual — the
+§2 gates + the hardmode battery + the vision on the 7-patch stack (the
+formality receipts: bit-identical outputs) — then the standing duel
+re-paired with the duel's ours arm riding MMS2_DUEL_PATCHES (the
+7-patch candidate). **The duel decides the adoption**: its solo decode
+moving beyond the 0.2% band + the depth rows = ADOPT; a duel solo
+parity = retire. THEN DARK.

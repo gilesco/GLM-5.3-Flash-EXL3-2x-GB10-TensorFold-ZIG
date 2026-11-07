@@ -652,3 +652,16 @@ the fp8-pages marriage whose PAGED8 file-state the hunks assume.
 Renamed glm-zz-attnfetch8.patch (the dsasel3 convention). The arm-off
 baseline is banked (the content shas + bench + the steady-state
 probes). Relaunched.
+
+**The attnfetch8 A/B cleared the content gate and shows a consistent
+depth gain (campaign-20261107-010849)**: the content shas IDENTICAL on
+three prompt sizes AND the 2048-token decode replies (369 vs 369
+tokens — the keys are the same bits, so the quality instruments cannot
+move); bench pp +1.7/+3.6-4.3% and bench tg +2.9/+3.3/+4.7/+5.8/+10.9%
+at every depth cell (d4096 solo +10.9% the largest; d0 tg -1.4% the
+noise cell). The steady-state probe read parity but cannot resolve
+single digits (integer-second walls on a ~9 s request — its pairs
+mirrored each other); the duel's solo ITL instrument (0.2% stability)
+is the resolver and rides the judgment window. attnqual + the duel
+launched: the formality receipts (§2 + hardmode + the vision) + the
+duel re-pair on the 7-patch candidate decide the adoption.

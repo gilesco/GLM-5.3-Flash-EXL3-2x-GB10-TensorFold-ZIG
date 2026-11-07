@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep attnpref knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep attnpref attnqual knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1382,6 +1382,43 @@ for d in ("d0", "d4096", "d8192"):
 PME
   echo "- VERDICT: the content shas IDENTICAL + a sharp steady-state tg gain = the patch advances to the battery + the duel re-pair (the adoption judgment); a content DIFFERENT or tg parity retires it" >> "$P"
   touch "$OUT/.attnpref.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: attnqual (SESSION-SPECIFIC; retires with the receipt). The adoption
+# judgment for glm-zz-attnfetch8.patch: the attnpref A/B (campaign-
+# 20261107-010849) cleared the content gate everywhere (three prompt sizes +
+# the 2048-token decode replies identical — the keys are the same bits, so the
+# quality instruments CANNOT move) and the bench rows show a consistent gain
+# at depth (pp +1.7/+3.6-4.3%, tg +2.9/+3.3/+4.7/+5.8/+10.9%; d0 tg -1.4% is
+# the noise cell). The steady-state probe read PARITY but at integer-second
+# walls on a ~9 s request it cannot resolve single digits (its pairs mirrored
+# each other — the instrument measured its own granularity); the duel's
+# solo-decode ITL instrument (0.2% stability) is the resolving instrument and
+# rides this window. The bar: §2 PASS + hardmode >= 94 + the vision 4/4 (the
+# formality receipts — bit-identical outputs) + the duel's solo decode moving
+# beyond its 0.2% band = ADOPT (config.sh's PATCHES gains the seventh patch);
+# a duel solo parity = retire (the tg gains would be depth-only and inside
+# the duel's resolution on the served fronts).
+# ---------------------------------------------------------------------------
+if want attnqual && ! phase_done attnqual; then
+  log "=== attnqual (the attnfetch8 adoption judgment: the gates + the battery + the vision)"
+  P="$OUT/23-attnqual.md"; : > "$P"
+  echo "# attnqual (glm-zz-attnfetch8.patch: VALIDATION §2 + hardmode + the vision)" >> "$P"
+  if run_gates attnq DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_KV_PAGES=on PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch,glm-zz-attnfetch8.patch"; then
+    echo "- the §2 gates on the 7-patch stack: the receipt above" >> "$P"
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-mia-packed-s2.patch,glm-mia-exl3prompt.patch,glm-zz-attnfetch8.patch"
+    echo "- server: $(serve_line)" >> "$P"
+    bench_cell hm-attn "$OUT/hm-attn" >> "$P"
+    echo "- the vision suite:" >> "$P"
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT/v1" "$OUT/vision-attn.json" >> "$P" 2>&1 || echo "the vision probe FAILED" >> "$P"
+    echo "- the engine lines:" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -E "done chatcmpl|error|stopped" | tail -8 | sed 's/^/  /' >> "$P"
+    echo "- VERDICT: §2 PASS + hardmode >= 94 + the vision 4/4 + the duel's solo beyond its band = ADOPT (config.sh's PATCHES gains glm-zz-attnfetch8.patch); a duel solo parity = retire" >> "$P"
+    touch "$OUT/.attnqual.done"
+  else
+    echo "- attnqual incomplete (a restart was refused) — rerun this phase" >> "$P"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
