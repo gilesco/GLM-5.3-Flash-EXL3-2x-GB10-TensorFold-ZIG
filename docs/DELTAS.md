@@ -24,23 +24,25 @@ times: campaign-20261106-043015/-065920/-093921 — byte-identical token profile
 receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
-or bench versions). **The CURRENT scoreboard (the zmoe-fuse duel re-pair, 2026-11-07 —
-campaign-20261107-183530: production-for-testing on 8001 vs ours on the fused
-10-patch stack, both engines the same window, the same probes)**: loading **112.9% — CROSSED** (83 vs 93.7 s —
+or bench versions). **The CURRENT scoreboard (the exl3p duel re-pair, 2026-11-07 —
+campaign-20261107-211404: production-for-testing on 8001 vs ours on the adopted
+11-patch engine, both engines the same window, the same probes)**: loading **112.9% — CROSSED** (83 vs 93.7 s —
 the v1.2.4 wall on the direct reads, glm-zz-loaddirect on the resharded pack, the
 timed walls 83/83 s, v124val campaign-20261107-150250; the v1.2.3-era wall 103 s = 91%),
-solo **115.4% — CROSSED** (67.6/67.5 vs 58.6/58.6 t/s — the fused engine; the adoption
-A/B read 115.2%), c2 **106.3% — above production even at its top** (117.3 vs 110.3 this
-run; its floor 87.1 — 134.7% there), c4: production **at its
-floor this run** (168.8 vs 154.7 — its range 155-241 with cache state; ours 153.7 → 157.4
-→ 158.6 → 160.2 → 166.1 → **168.8** across the windows — the fusion's +4.2%, our best c4), TTFT overhead
-**97.8%** (189 vs 185 ms), ITL **117% — crossed** (14.6 vs 17.1 ms/token), **the cold depth
-cost CROSSED (433%)** — ours 4.0 s vs production's 17.1 s true cold at d8192 (ours 3,961 ms,
-slope 0.460 flat — flat across the fusion knob too; production's cold slope 2.026 ms/tok,
+solo **116.4% — CROSSED** (68.2/68.3 vs 58.6/58.7 t/s — the A/B's solo watch item
+settled: the adopted engine reads at the top of its range), c2 **136.7% of production's
+floor** (118.1 vs 86.4 at its floor this run — above its top-of-range volley ~110-111
+even there), c4: production **at a warm-cache high this run** (168.9 vs 188.2 — its
+range 155-241 with cache state; **vs its floor 155.0 the pair is 109.0%**; ours 153.7 → 157.4
+→ 158.6 → 160.2 → 166.1 → 168.8 → **168.9** across the windows — our best c4), TTFT overhead
+**98.4%** (185 vs 182 ms), ITL **118% — crossed** (14.7 vs 17.4 ms/token), **the cold depth
+cost CROSSED (445%)** — ours 3.8 s vs production's 17.1 s true cold at d8192 (ours 3,845 ms,
+slope 0.447 — the exl3p lever shows at depth too; production's cold slope 2.026 ms/tok,
 slowing with depth; the 2.5 s it
 shows in-window is its persistent cache, not cold) — and the **prefill front 98.5%**
-(1,458 vs 1,518 tok/s — ours the attnpref
-A/B's arm-on pair, campaign-20261107-010849; production the round-129 same-day pair,
+(1,495 vs 1,518 tok/s — the exl3p prompt loop's lever, bench pp d0 1,495 vs the
+1,458-1,468 the last three windows read; the duel's own TTFT slope 0.447 confirms it
+same-window; production the round-129 same-day pair,
 campaign-20261031-171731; exl3prompt took the front from 76% to 94.4%, the attention
 prefetch to 96.0% — the v1.2.4 benches read 1,461/1,406/1,449, inside the noise). The
 MOESIDE duel on v1.2.3 (campaign-20261107-092913: solo 112.3%, c2 129%, cold 429%), the

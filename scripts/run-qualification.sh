@@ -4023,6 +4023,106 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: 0080qual (SESSION-SPECIFIC; the fork's 0080 port — glm-zz-zs2.
+# The packed prompt GEMMs' loads fixed once a block and 8-bit codes to
+# bf16 pairs in fewer steps (the same bits): glm_mm{4,6,8}_128s2 keep
+# their tiles, B fragments, the four-K16 MMA chain from zero a 64-group
+# and the ascending scale FMAs; only how they are fed changes (mm_kernel's
+# P2: each thread's cp.async sources/destinations/bounds worked out once
+# a block — a stage adds its group's offset — and bpairs8_fast, the 8-bit
+# codes to bf16 pairs by two LOP3s + one bf16x2 subtraction that rounds
+# nothing). The other glm_mm instances compile to the same SASS as before
+# (P2 = false default). Fork-measured 1.116-1.138x at GLM's prompt
+# shapes, energy −8-12%/call. OUR adaptations: the mm_kernel signature
+# keeps v1.2.4's (the fork's base carries 0073's xtile; P2 does not use
+# it); the classic packed-prompt kernels kept as the _128s2_cl twins;
+# TF_GLM_MM_P2=0 resolves them (envOn, default on). The A/B: BOTH arms
+# the same patched image, the knob flips the path — greedy content
+# identical is the same-bits claim; the bench pp rows are the prefill
+# lever's primary read; the §2 gates, hardmode (the twelfth 95) and the
+# vision 4/4 qualify it. Retires into the standing config at adoption.
+# ---------------------------------------------------------------------------
+if want 0080qual && ! phase_done 0080qual; then
+  log "=== 0080qual (the 0080 port A/B: the packed prompt linears' loads)"
+  P="$OUT/09-0080qual.md"; : > "$P"
+  echo "# 0080qual (glm-zz-zs2: TF_GLM_MM_P2=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  S2PATCH="${PATCHES},glm-zz-zs2.patch"
+  log "0080qual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$S2PATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "0080qual: the image rebuild (prepare) failed - see the log"; fi
+  req_file "$OUT/s2-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  echo "## the OFF arm (TF_GLM_MM_P2=0: the classic packed-prompt loads)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_MM_P2=0 PATCHES="$S2PATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/s2-greedy.json" > "$OUT/s2-off-greedy.json" || true
+    echo "- the OFF greedy content sha: $(content_sha "$OUT/s2-off-greedy.json")" >> "$P"
+    duel_arm s2off "$SERVED_NAME"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the ON arm (the knob unset — the engine default on)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$S2PATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/s2-greedy.json" > "$OUT/s2-on-greedy.json" || true
+    echo "- the ON greedy content sha: $(content_sha "$OUT/s2-on-greedy.json")" >> "$P"
+    echo "- the arms' content: $([ "$(content_sha "$OUT/s2-off-greedy.json")" = "$(content_sha "$OUT/s2-on-greedy.json")" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+    duel_arm s2on "$SERVED_NAME"
+    echo "## the §2 content gates (on the P2 serve)" >> "$P"
+    run_gates s2 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$S2PATCH" || true
+    echo "## the bench pass (the bench pp rows are the prefill lever's primary read)" >> "$P"
+    bench_perf s2 "$OUT/s2-bench" 4 >> "$P" 2>&1 || true
+    bf=$(mktemp /tmp/s2d.XXXXXX.json)
+    python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/s2-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/s2-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+    echo "## hardmode (the 95 must hold — the twelfth consecutive)" >> "$P"
+    mkdir -p "$OUT/s2hm"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+      --model "$model" --format openai --tokenizer "$MODEL_ID" \
+      --hardmode --label "0080qual" --output-dir "$OUT/s2hm" \
+      --json-file "$OUT/s2hm/hm.json" > "$OUT/s2hm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/s2hm/hm.json" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/s2hm/hm.log" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/s2hm/hm.log" >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold)" >> "$P"
+    mkdir -p "$OUT/s2vision"
+    if [ -f scripts/vision-suite-probe.py ]; then
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/s2vision/vision.json" > "$OUT/s2vision/vision.log" 2>&1 || true
+      tail -6 "$OUT/s2vision/vision.log" >> "$P" 2>/dev/null || true
+    else
+      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    fi
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "- VERDICT: the arms content-identical + the gates PASS + hardmode holds + the vision 4/4 + the bench pp rows read the prefill lever = the 0080 port qualifies (adoption moves config.sh's PATCHES and re-pairs the duel in a later sitting)" >> "$P"
+  touch "$OUT/.0080qual.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"

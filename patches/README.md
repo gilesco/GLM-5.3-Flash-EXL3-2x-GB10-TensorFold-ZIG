@@ -735,6 +735,47 @@ documented in LAUNCH.md round 119.
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
+## glm-zz-zs2.patch — the packed prompt GEMMs' loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps, P2 (round 137; Mia 1104's 0080 port)
+
+- What (Mia's subject: the packed prompt GEMMs' loads fixed once a block
+  and 8-bit codes to bf16 pairs in fewer steps; the same bits):
+  glm_mm{4,6,8}_128s2 (the packed prompt linears, sk = 1) keep their
+  tiles, B fragments, the four-K16 MMA chain from zero a 64-group and
+  the ascending scale FMAs, and the bf16 RN (or fp32) store; only how
+  they are fed changes (mm_kernel's P2 template param): each thread's
+  cp.async sources, destinations and bounds worked out once a block (a
+  stage adds its group's offset — the weights still load before
+  griddepcontrol.wait, the rows after it) + bpairs8_fast (two codes u
+  spread into a bf16 pair's low bytes, a = 128 + (u & 127) and c = 256
+  or 128 by two LOP3s, a − c = u − 128 by one bf16x2 subtraction that
+  rounds nothing — the same values as bf16((float)(u − 128))). The other
+  glm_mm instances compile to the same SASS as before (P2 = false
+  default). Fork-measured: 1.116-1.138x at GLM's prompt shapes, energy
+  −8-12%/call; glm_mm8_128s2's loop a 64-K group 300 static + ~320
+  dynamic instrs → 205 with the loads inline, 122 → 125 regs, no spills.
+- Port (v1.2.4 + the 11-patch stack, on v124-rebase): 11 of 12 hunks
+  applied clean via git apply --reject; the ONE rejected hunk (the
+  mm_kernel template line) hand-applied — the fork's base carries 0073's
+  xtile param beside zslice (our signature keeps v1.2.4's two-param
+  form; P2 does not use it). The fork's text otherwise VERBATIM
+  (line-verified). The classic packed-prompt kernels kept as the
+  _128s2_cl twins (the pre-port instantiation verbatim); TF_GLM_MM_P2=0
+  resolves them in cuda_mm.zig's load() (envOn, default on — the 0030
+  knob pattern). NO contract-record work: the _128s2 kernels are not in
+  our registry (unlisted → unchecked, the 0030-new-kernel precedent).
+- Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
+  the builder base image); fresh-parent + the shipped patch = the commit
+  tree byte-identical (tree f8b47b31…). OUR cuobjdump on the built
+  sm_121 fatbin CONFIRMS the fork's register claim: glm_mm8_128s2
+  122 → 125 (the _cl twins at the pre-port 122/119/122); the _128s2
+  kernels are not in our registry → unchecked, no record work. NAMED
+  glm-zz-zs2 TO SORT AFTER zprompt (zs > zp).
+- OWNER: this line; STATUS: **STAGED — the 0080qual A/B decides** (the
+  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's
+  twelfth 95, the vision 4/4; the bench pp rows are the prefill lever's
+  primary read — the fork measured the packed prompt linears
+  1.116-1.138x at GLM's prompt shapes).
+
 ## glm-zz-zprompt.patch — the prompt experts' main loop reworked, exl3p (round 137; Mia 1104's 0078+0079 port)
 
 - What (Mia's 0078 subject: the prompt kernels' main loop compiled for an

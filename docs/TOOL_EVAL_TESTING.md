@@ -777,6 +777,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       re-paired to 98.5% and the chart re-rendered; the decode rows
       stay paired to the zmoe-fuse duel until the duel re-pair that
       follows re-grounds them same-window).
+      **THE EXL3P DUEL RE-PAIRED (cont. 2, campaign-20261107-211404 —
+      both engines the same window, the adopted 11-patch engine)**:
+      solo **68.2/68.3 vs 58.6/58.7 — 116.4%** (the A/B's solo watch
+      item SETTLED — the adopted engine reads at the top of its range,
+      the A/B's 66.8 was run-order drift); c2 **118.1 vs 86.4 at its
+      floor — 136.7% there** (above its top-of-range volley ~110-111
+      even there); c4 **168.9 vs 188.2 at a warm-cache high — 109.0%
+      at its floor, our best c4 again** (the chain 153.7 → 157.4 →
+      158.6 → 160.2 → 166.1 → 168.8 → 168.9); ITL **14.7 vs 17.4
+      ms/token — 118%**; overhead 185 vs 182 ms; the cold d8192
+      **3,845 ms, slope 0.447 — 445%** (the exl3p lever shows at depth
+      too, and the duel's own slope re-confirms the prefill gain
+      same-window). The anchors re-paired and the chart re-rendered.
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at

@@ -891,3 +891,40 @@ its base against the fork's 0073 MmTwo concepts first; behind it the
 PDL set and the HC-split set stay parked. The front may also cross on
 the duel's own prefill reading if production's same-window prefill
 drifts low — the duel receipt decides.
+
+**THE EXL3P DUEL RE-PAIRED (round 137 cont. 2)**: the same-window pair
+on the adopted 11-patch engine (campaign-20261107-211404) — solo
+**68.2/68.3 vs 58.6/58.7 = 116.4%** (the A/B's solo watch item SETTLED:
+the adopted engine reads at the top of its range); c2 **118.1 vs 86.4
+at its floor = 136.7% there**; c4 **168.9 vs 188.2 at a warm-cache high
+= 109.0% at its floor** (our best c4 again); ITL **14.7 vs 17.4 ms/token
+= 118%**; overhead 185 vs 182 ms; the cold d8192 **3,845 ms, slope
+0.447 = 445%**. The duel's own slope re-confirms the exl3p prefill
+lever same-window. The anchors re-paired, the chart re-rendered.
+
+**THE NEXT STEP: the prefill front's last 1.5%** (98.5%, 1,495 vs
+1,518): **0080** (`0080-exl3p-0069-r6-glm-mm-prompt-loads-and-pairs.patch`,
+185 lines — the packed prompt linears' cp.async loads and launch
+pairing) is the follow-on candidate — its base may need the fork's 0073
+MmTwo concepts checked first (the fork's series is a dependency web).
+Scope it this sitting; if it stages cleanly (a small, self-contained
+port), ship and launch its A/B next window; if it needs 0073's two-
+problem machinery, park it behind a dependency decision and re-scope
+(the PDL set and the HC-split set stay parked regardless).
+
+**THE 0080 PORT STAGED (round 137 cont. 2)**: the dependency check came
+back clean — 0080 does NOT need the fork's 0073 MmTwo machinery (only
+its base signature carries 0073's xtile param; P2 does not use it). 11
+of 12 hunks applied clean; the one rejected hunk (the mm_kernel template
+line) hand-applied keeping v1.2.4's signature; the fork's text otherwise
+verbatim (line-verified). The classic packed-prompt kernels kept as the
+_128s2_cl twins behind **TF_GLM_MM_P2=0**; no contract-record work (the
+_128s2 kernels are unlisted in our registry). Shipped as
+`glm-zz-zs2.patch` (zs > zprompt). **THE NEXT STEP: the 0080qual A/B** —
+both arms the same 12-patch image, the knob flips the path: content
+identity, the bench pp rows (the prefill lever's primary read — the
+fork measured the packed prompt linears 1.116-1.138x at GLM's prompt
+shapes, which at their share of pp2048 is maybe +0.5-1.5% whole-prefill
+— the front's remaining 1.5% could cross), hardmode's twelfth 95, the
+§2 gates, the vision 4/4. At adoption: config.sh's twelfth patch, the
+prefill row re-paired, the duel re-pair next window.
