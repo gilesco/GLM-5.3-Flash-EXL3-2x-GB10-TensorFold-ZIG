@@ -8022,3 +8022,37 @@ holds the one-at-524288 guarantee ("enough for 3 at a 524288 window").
 **RELAUNCHED: v124val + summary** — the third run of the phase (the
 walls + hardmode + the direct-reads witness are its remaining unknowns).
 THEN DARK.
+
+## (round 135, cont. 4) THE THIRD v124val: the rebase QUALIFIES (hardmode 95 — the eighth consecutive, the gates ALL PASS, the vision 4/4) — but the direct reads STILL never engaged: the served TR3 pack has 120 shards > checkpoint.direct's max_sources 64; a byte-identical reshard to 55 is the fix (campaign-20261107-132414) (2026-11-07)
+
+**The quality receipt** (everything but the wall lever):
+- The OFF arm boots (104 s, the read-ahead witness), the standing boot
+  clean (strict-TF_ refusals 0, the arms' content IDENTICAL).
+- **The §2 gates ALL PASS** on v1.2.4 + the native TF_KV_SHARE=16 store.
+- **hardmode 95** (TC-51 pass, TC-92 pass) — the eighth consecutive 95.
+- The vision 4/4 + the detail rows. The decode flat (41.8 tok/s). The
+  bench flat (pp 1,475/1,421/1,464; the d0 tg cells noisy upward as
+  ever — the duel re-pair settles the solo rows).
+- The walls 103/103 s — the OLD path (no change; the row stands).
+
+**The direct-reads diagnosis (the real one this time)**: the ninth
+patch WAS in the image (the campaign log: 9 patches staged and applied;
+the binary carries the string). `direct.on()` was false at runtime →
+the init guard → `files.len > gather.max_sources`: the served
+TR3-4bpw pack has **120 safetensors files, ALL holding
+model.language_model.* tensors — 120 > max_sources 64** → the direct
+path off by design. The 64 cap is an fd budget (64 sources × 16 readers
+≈ the 1024 soft limit — each reader opens one fd per file it touches),
+so raising it locally is the wrong fix.
+
+**THE FIX: a byte-identical reshard** (`/tmp/tr3-reshard.py` on the
+head; the AZ local-pack precedent): 120 shards → 55 × ~3 GiB, every
+tensor's bytes copied verbatim, the name set + lengths + total volume +
+sha256 of 24 sampled tensors verified before success. The pack lands at
+models--local--GLM-5.3-Flash-TR3-4bpw-reshard (the engine mounts the
+host HF cache; SERVED_NAME stays "GLM-5.3-Flash-EXL3" — only the source
+path moves). config.sh MODEL_ID swaps to the resharded pack. The
+checkpoint digest re-hashes once on the first load (the digest cache
+rebuilds — absorbed in the untimed first restart). The next v124val run
+re-verifies the content gates on the resharded pack (the tensors are
+the same bytes — the gates must reproduce exactly).

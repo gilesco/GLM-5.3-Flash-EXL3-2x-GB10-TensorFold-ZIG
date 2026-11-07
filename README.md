@@ -129,10 +129,10 @@ header for the per-phase list.
 ## Versions: how the pin works
 
 The pin lives in `scripts/local.sh` (`TF_REF` or `TF_COMMIT`): the current pin is
-`TF_COMMIT=267c5af6a…` (**v1.2.4** — the round-135 rebase; the qualification
-window `v124val` covers it: the §2 gates, the bare-config smoke under #2405's
-strict TF_ validation, hardmode, the vision, the loading wall's re-take on the
-direct reads). At prepare time the ref is resolved and **recorded in the prepared
+`TF_COMMIT=267c5af6a…` (**v1.2.4** — the round-135 rebase, qualified by the
+`v124val` window: the §2 gates ALL PASS, hardmode 95 (the eighth consecutive),
+the vision 4/4, zero strict-TF_ refusals under #2405; the loading row stands
+pending the direct reads' re-take on the resharded pack). At prepare time the ref is resolved and **recorded in the prepared
 marker**, so a running pair never drifts and a restart does not silently upgrade.
 
 > **Pin in `scripts/local.sh`, not in your shell.** `start.sh` re-runs `prepare.sh`

@@ -353,6 +353,19 @@ marriage's GLM KV-share hunks may be subsumed — a follow-up sitting
 judges whether the patch slims to the fp8-paging core (the §2 gates on
 the native store decide).
 
+**THE RESHARD (round 135, cont. 4)**: the third v124val run qualified
+the rebase end to end (the gates, hardmode 95 — the eighth consecutive,
+the vision 4/4, flat decode/pp) but the direct reads STILL never
+engaged: the served TR3-4bpw pack has **120 safetensors files (all
+holding model.language_model.* tensors) > checkpoint.direct's
+max_sources 64** — the gather's fd budget (64 sources × 16 readers ≈
+the 1024 soft limit) keeps the path off by design. THE FIX: a
+byte-identical reshard to 55 × ~3 GiB shards
+(`models--local--GLM-5.3-Flash-TR3-4bpw-reshard`, the tool verified the
+name set, every tensor's length, the total volume, and sha256 of 24
+sampled tensors before success; SERVED_NAME unchanged). The loading
+wall's re-take on the resharded pack is the next window's opener.
+
 ## Community sweep — the NVIDIA GB10 GLM-5.3-Flash thread + DeepSeek field (2026-10-29, round 73)
 
 Source: forums.developer.nvidia.com/t/381350 (936 posts; the user is giles8 in-thread),

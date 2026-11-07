@@ -681,6 +681,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       **ADOPTED: config.sh's PATCHES is the 8-patch stack**; the
       anchors + DELTAS + README re-paired (solo 112.3%, ITL 110%, the
       cold 429%, prefill 96.0%).
+      **THE v1.2.4 REBASE QUALIFIED (round 135): the 8-patch stack
+      rebased onto v1.2.4 (267c5af6a) + glm-zz-loaddirect (the layer
+      loads on checkpoint.direct) — the v124val receipts
+      (campaign-20261107-125114/-132414): the §2 gates ALL PASS, the
+      arms content-identical, zero strict-TF_ refusals (#2405 passes),
+      hardmode 95 (the eighth consecutive), the vision 4/4, the decode
+      and pp flat. Two burns on the way: the TF_GLM_KV_SHARE→TF_KV_SHARE
+      rename (v1.2.4 mainlined the store; the floor moved to
+      4×PARALLEL — config exports TF_KV_SHARE=16) and the direct path's
+      silent off (the ninth patch missed the PATCHES list once; the
+      served TR3 pack's 120 shards exceed max_sources 64 — a
+      byte-identical reshard to 55 is the fix, the next window
+      re-verifies). The loading row stands at 103 s/91% pending the
+      direct reads' re-take on the resharded pack.
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at

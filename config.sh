@@ -55,7 +55,7 @@ TF_REPO="${TF_REPO:-https://github.com/ashhart/TensorFold.git}"
 # line is EXL3 only; the NVFP4 route has its own repo. The ranks cross-check every
 # checkpoint byte against each other at start, so a copy that differs on one host stops
 # both before serving.
-MODEL_ID="${MODEL_ID:-Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw}"
+MODEL_ID="${MODEL_ID:-local/GLM-5.3-Flash-TR3-4bpw-reshard}"   # the TR3-4bpw pack reshared 120 -> 55 shards (round 135): checkpoint.direct's gather draws on at most max_sources 64 files (the fd budget: 64 x 16 readers ~ the 1024 soft limit), and the served pack's 120 files ALL hold model.language_model.* tensors — the direct path silently stayed off on the original pack. Byte-identical tensors (the reshard tool verified: the name set, every length, the total volume, sha256 of 24 sampled tensors); SERVED_NAME unchanged; the same bytes the round-132 (user) TR3 swap qualified — 94/104 hardmode, the best top-8 decode
 MODEL_REVISION="${MODEL_REVISION:-main}"   # the qualified optimum (2026-11-02, (user): the 4bpw sweep's verdict — TR3 94/104 hardmode with the best top-8 decode (tg128 46.0/46.2/45.2), dominating the Focus's 93 on both axes; the scorecards: docs/bpw4-sweep-cards.svg; the prior Focus swap (2026-10-27) stood at 93)
                              # the site's top4cfg variant of this checkpoint — num_experts_per_tok
                              # 4, byte-surgical vs the base snapshot (one line differs). Receipts:
