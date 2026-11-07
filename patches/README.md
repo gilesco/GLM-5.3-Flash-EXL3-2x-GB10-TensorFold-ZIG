@@ -770,11 +770,15 @@ documented in LAUNCH.md round 119.
   122 → 125 (the _cl twins at the pre-port 122/119/122); the _128s2
   kernels are not in our registry → unchecked, no record work. NAMED
   glm-zz-zs2 TO SORT AFTER zprompt (zs > zp).
-- OWNER: this line; STATUS: **STAGED — the 0080qual A/B decides** (the
-  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's
-  twelfth 95, the vision 4/4; the bench pp rows are the prefill lever's
-  primary read — the fork measured the packed prompt linears
-  1.116-1.138x at GLM's prompt shapes).
+- OWNER: this line; STATUS: **ADOPTED (round 137 cont. 4, the 0080qual
+  A/B — campaign-20261107-214342: both arms the SAME 12-patch image,
+  TF_GLM_MM_P2=0 vs unset; the arms' greedy content IDENTICAL — the
+  same 80cc3802… sha as every window; the §2 gates ALL PASS, hardmode
+  95 (the TWELFTH consecutive), the vision 4/4; **THE PREFILL FRONT
+  CROSSED** — the bench pp d0 1,519 vs production's 1,518 = 100.1% (the
+  chain 1,458 → 1,468 → 1,495 → 1,519; the TTFT slope 0.448 → 0.441 =
+  −1.6% agrees); decode flat within the arm spread; the load walls
+  unchanged (86/89 s); config.sh's twelfth patch).
 
 ## glm-zz-zprompt.patch — the prompt experts' main loop reworked, exl3p (round 137; Mia 1104's 0078+0079 port)
 

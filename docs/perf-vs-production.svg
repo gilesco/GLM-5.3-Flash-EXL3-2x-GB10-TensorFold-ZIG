@@ -34,9 +34,9 @@
     <text x="379" y="291.5" font-size="13.5" font-weight="700" fill="#d29922">70%</text>
     <text x="411" y="291.5" font-size="10" fill="#8b949e">302 vs ~212 ms</text>
     <text x="12" y="331.5" font-size="12.5" fill="#9fb1c9">prefill (benchy pp2048 @ d0)</text>
-    <rect x="270" y="314" width="141" height="26" rx="4" fill="#d29922"/>
-    <text x="419" y="331.5" font-size="13.5" font-weight="700" fill="#d29922">98%</text>
-    <text x="451" y="331.5" font-size="10" fill="#8b949e">1,495 vs 1,518 tok/s</text>
+    <rect x="270" y="314" width="144" height="26" rx="4" fill="#3fb950"/>
+    <text x="422" y="331.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
+    <text x="463" y="331.5" font-size="10" fill="#8b949e">1,519 vs 1,518 tok/s</text>
     <text x="12" y="371.5" font-size="12.5" fill="#9fb1c9">streaming latency per token (ITL)</text>
     <rect x="270" y="354" width="170" height="26" rx="4" fill="#3fb950"/>
     <text x="448" y="371.5" font-size="13.5" font-weight="700" fill="#3fb950">118%</text>

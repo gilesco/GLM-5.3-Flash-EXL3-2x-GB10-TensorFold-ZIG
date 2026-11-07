@@ -8399,3 +8399,42 @@ prompt kernels kept as the _128s2_cl twins behind TF_GLM_MM_P2=0; no
 contract-record work (the _128s2 kernels are unlisted in our registry).
 The port ships as glm-zz-zs2.patch (zs > zprompt) once the compile
 check lands; the 0080qual A/B launches at the sitting's end.
+
+## (round 137, cont. 5) THE 0080 PORT QUALIFIED AND ADOPTED — content identical to the byte, hardmode 95 (the TWELFTH consecutive), THE PREFILL FRONT CROSSED at 100.1% — the last uncrossed (user)-bar front falls; config.sh's twelfth patch; the duel re-pair LAUNCHED (campaign-20261107-214342) (2026-11-07)
+
+**The 0080qual A/B receipt** (both arms the SAME 12-patch image,
+TF_GLM_MM_P2=0 vs unset):
+- **The arms' greedy content IDENTICAL** — the same 80cc3802… sha as
+  every window: the same-bits claim proven on the real model.
+- **The quality battery**: the §2 gates ALL PASS; **hardmode 95** (the
+  TWELFTH consecutive; TC-51/TC-92 pass); the vision 4/4.
+- **THE PREFILL FRONT CROSSED**: the bench pp d0 **1,519 vs
+  production's 1,518 = 100.1%** — the chain 1,458 → 1,468 → 1,495 →
+  1,519 across the last four windows (the exl3prompt patch took the
+  front from 76% to 94.4%, the attention prefetch to 96.0%, the exl3p
+  prompt loop to 98.5%, the P2 packed-prompt loads to 100.1%); the
+  duel_arm TTFT slope 0.448 → 0.441 (−1.6%) agrees — the fork's
+  1.116-1.138× claim at GLM's prompt shapes transfers as ~+1.6%
+  whole-prefill.
+- **Decode flat within the arm spread**: solo 68.5/68.3 (ON) vs
+  68.6/68.2 (OFF) — both arms at the top of the range; c2 117.1 vs
+  118.7, c4 167.4 vs 168.0, ITL 57.7 vs 57.9 ms/chunk. The load walls
+  unchanged (86/89 s).
+
+**ADOPTED**: config.sh's PATCHES carries glm-zz-zs2.patch (the
+twelfth; the edit verified per the sourced-config skill — the 12-name
+probe, config_line RC=0, the fingerprint moves). The prefill anchor
+row re-paired to **100.1% — CROSSED** and the chart re-rendered (the
+decode rows stay paired to the exl3p duel until the duel re-pair);
+README (serve/Speed/PATCHES rows), DELTAS (scoreboard + Engine), the
+ledger, PERF_PLAN and ECOSYSTEM updated (the fork's measured claims
+have now transferred THREE FOR THREE — 0030, 0078+0079, 0080). The
+frontier re-scopes: every (user)-bar front is crossed; the next
+candidates are the fork's exl3r decode series (0081 read-once trellis,
+0082 dependent-launch chain) with the PDL and HC-split sets parked
+behind them.
+
+**LAUNCHED: duel + summary** — the v1.2.4+P2 duel re-pair
+(production-for-testing on 8001 vs ours on the adopted 12-patch
+stack): every speed row re-paired same-window, the prefill row's
+production side included. THEN DARK.

@@ -928,3 +928,27 @@ shapes, which at their share of pp2048 is maybe +0.5-1.5% whole-prefill
 — the front's remaining 1.5% could cross), hardmode's twelfth 95, the
 §2 gates, the vision 4/4. At adoption: config.sh's twelfth patch, the
 prefill row re-paired, the duel re-pair next window.
+
+**THE 0080 PORT QUALIFIED AND ADOPTED — THE PREFILL FRONT CROSSED
+(round 137 cont. 4)**: the 0080qual A/B (campaign-20261107-214342) —
+the arms' content IDENTICAL (the same 80cc3802… sha as every window),
+the §2 gates ALL PASS, **hardmode 95 (the TWELFTH consecutive)**, the
+vision 4/4, and the bench pp d0 **1,519 vs production's 1,518 =
+100.1%** (the chain 1,458 → 1,468 → 1,495 → 1,519; the TTFT slope
+0.448 → 0.441 = −1.6% agrees). **The last uncrossed (user)-bar front
+falls**: loading 112.9%, solo 116.4%, c2 136.7% of the floor, c4
+109.0% at the floor, ITL 118%, cold 445%, and now prefill 100.1%.
+config.sh carries the twelfth patch; the prefill anchor row re-paired
+and the chart re-rendered.
+
+**THE NEXT STEP: the duel re-pair on the adopted 12-patch stack** —
+production-for-testing + ours the same window re-dates every speed row
+same-window on the P2 engine (the prefill row's production side
+re-pairs too). THEN the frontier re-scopes: every (user)-bar front is
+crossed, so the plan's next levers are the parked candidates — the
+fork's exl3r decode series (0081: the 4-bit grouped experts read every
+trellis word once; 0082: the chain as dependent launches — decode-side,
+the 0030 lesson says decode levers show at concurrency), the PDL set,
+and the HC-split/overlap set (the +36%-at-50k class — a TP-exchange
+rework for long prompts). Scope 0081 next sitting; the 0082 pair
+needs the fork's dependent-launch concepts checked first.

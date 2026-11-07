@@ -516,6 +516,18 @@ down 1.161×, transfer to our whole-prefill at ~2-2.5%), decode flat
 after 0030. 0080 (the packed prompt linears' cp.async) is the next candidate from its
 tail; the HC-split/overlap set stays parked behind it.
 
+**Addendum (round 137 cont. 4, 2026-11-07)**: the fork's 0080 (the packed prompt GEMMs'
+loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps — mm_kernel's P2 +
+bpairs8_fast) is PORTED AND ADOPTED here as `glm-zz-zs2.patch` (the twelfth patch): the
+A/B content identical to the byte, hardmode 95 (the twelfth consecutive), **the prefill
+front CROSSED at 100.1%** (bench pp d0 1,519 vs production's 1,518; the TTFT slope −1.6%
+agrees — the fork's 1.116-1.138× claim at GLM's prompt shapes transfers as ~+1.6%
+whole-prefill), decode flat (campaign-20261107-214342). **The last uncrossed (user)-bar
+front falls — the fork's measured claims have transferred three for three** (0030, 0078+0079,
+0080). Its untriaged tail is now the exl3r decode series (0081 read-once trellis, 0082
+dependent-launch chain) — the next candidates to scope; the HC-split/overlap set stays
+parked behind them.
+
 ## Round 94 research addendum (2026-10-30)
 
 - Upstream 465e48b6..cefb72fd: Nemotron CUDA (#548), Qwen3.8-27B pair-seam kernels (#1432),

@@ -790,6 +790,35 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       **3,845 ms, slope 0.447 — 445%** (the exl3p lever shows at depth
       too, and the duel's own slope re-confirms the prefill gain
       same-window). The anchors re-paired and the chart re-rendered.
+      **THE 0080 PORT QUALIFIED AND ADOPTED (round 137 cont. 4, the
+      0080qual A/B — campaign-20261107-214342)**: glm-zz-zs2 (Mia
+      1104's 0080 — the packed prompt GEMMs' loads fixed once a block +
+      8-bit codes to bf16 pairs in fewer steps: mm_kernel's P2 — each
+      thread's cp.async sources/destinations/bounds worked out once a
+      block, a stage adds its group's offset, the weights still load
+      before griddepcontrol.wait — and bpairs8_fast, two LOP3s + one
+      rounding-free bf16x2 subtraction, the same values; the other
+      glm_mm instances compile to the same SASS). TF_GLM_MM_P2=0
+      resolves the classic _128s2_cl twins (envOn, default on). The
+      port: 11 of 12 hunks clean, the rejected template hunk
+      hand-applied keeping v1.2.4's signature (the fork's base carries
+      0073's xtile — P2 does not use it), the fork's text otherwise
+      line-verbatim; our cuobjdump CONFIRMS the fork's register claim
+      (glm_mm8_128s2 122 → 125); no record work (the _128s2 kernels
+      unlisted). The A/B: BOTH arms the SAME 12-patch image, the knob
+      flips the path — **the arms' greedy content IDENTICAL** (the same
+      80cc3802… sha as every window), the §2 gates ALL PASS, **hardmode
+      95 (the TWELFTH consecutive), the vision 4/4**; **THE PREFILL
+      FRONT CROSSED** — the bench pp d0 **1,519 vs production's 1,518 =
+      100.1%** (the chain 1,458 → 1,468 → 1,495 → 1,519; the duel_arm
+      TTFT slope 0.448 → 0.441 = −1.6% agrees) — **the last uncrossed
+      (user)-bar front falls**. Decode flat within the arm spread (c2
+      117.1 vs 118.7, c4 167.4 vs 168.0, ITL 57.7 vs 57.9 ms/chunk,
+      solo 68.5/68.3 vs 68.6/68.2 — both arms at the top of the range).
+      The load walls unchanged (86/89 s). **ADOPTED: config.sh's
+      twelfth patch** (the prefill anchor row re-paired to 100.1% and
+      the chart re-rendered; the decode rows stay paired to the exl3p
+      duel until the duel re-pair that follows).
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at
