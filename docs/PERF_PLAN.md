@@ -665,3 +665,19 @@ mirrored each other); the duel's solo ITL instrument (0.2% stability)
 is the resolver and rides the judgment window. attnqual + the duel
 launched: the formality receipts (§2 + hardmode + the vision) + the
 duel re-pair on the 7-patch candidate decide the adoption.
+
+**The last pre-marriage candidate, ported (cont. 97)**: Mia 1104
+0006+0010 — a decode window's MoE shared expert on a side stream beside
+the routed experts (the fork right after the block's input, the join
+before the slot combine; the kernels and the combine's order unchanged,
+the bits the same; TF_GLM_SHARED_SIDE=0 the kill switch; 0010's drain
+on error/teardown). **Hand-ported as `glm-zz-moeside.patch`** — our
+drift: the two Forward constructions carry .absorb_mma, the port adds
+.side beside it; upstream's flashnext has the same pattern so the
+Stream/Event API matches. **Mia's claim: 70.6 → 60.6 µs a MoE layer at
+one row, 96.5 → 84.9 µs at two (−14/−12%)** — a decode-layer overlap
+lever, the last one in the series (0012/0014/0015 are
+capacity/hygiene). The chain verified byte-identical on a fresh
+checkout. The moeside A/B launched: the content gate + the bench rows +
+the steady-state decode probe with ~2000-token walls (±2.5% resolution
+— the attnpref probe's lesson).

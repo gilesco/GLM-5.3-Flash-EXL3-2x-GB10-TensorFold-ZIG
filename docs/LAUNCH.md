@@ -7688,3 +7688,37 @@ staging-order + patch-naming lessons logged.
 **NO LAUNCH** — the next candidate (0006+0010, the GLM MoE
 side-stream overlap, −12-14% a layer claimed) needs its hand-port
 first; that is the next sitting's opener.
+
+## (round 134, cont. 97) THE MOE SIDE-STREAM OVERLAP PORTED AND THE A/B LAUNCHED: glm-zz-moeside.patch (Mia 1104 0006+0010 — the shared expert beside the routed experts) (2026-11-07)
+
+**The candidate**: the MoE block ran the shared expert AFTER the
+routed experts on one stream; a decode window now forks the shared
+expert's gate/up, SwiGLU, down and put_slot onto a second stream right
+after the block's input and joins it before the slot combine — the
+kernels, their inputs and the combine's order unchanged, so the bits
+are the same; only the overlap changes. TF_GLM_SHARED_SIDE=0 keeps one
+stream (the kill switch). 0010 is the correctness companion (the drain
+on error/teardown — the side stream never outlives its buffers).
+**Mia's claim: 70.6 → 60.6 µs a MoE layer at one row, 96.5 → 84.9 µs
+at two (−14/−12%)** — a decode-layer overlap lever, the last real one
+in the pre-marriage series.
+
+**THE PORT** (hand-applied, three files): moe's Side/Kernels/forks/
+body/fill split into fill + sharedRows; Forward.side + moeKernels;
+Engine.side + sideStream()/freeSide() + the 0010 drains. Our drift:
+the two Forward constructions carry .absorb_mma (our ABSORB_MMA port)
+— .side added beside it; upstream's flashnext has the same pattern
+(TF_FLASHNEXT_SHARED_SIDE) so the Stream/Event API matches. **The
+chain verified byte-identical to the port commit on a fresh v1.2.3
+checkout** (the 7 patches + the port). NAMED glm-zz- TO SORT AFTER THE
+STACK (the hunks assume the absorb-mma port's field — the
+alphabetical-apply gotcha).
+
+**LAUNCHED: moeside + summary** — the A/B: arm off (the 7-patch
+stack) vs arm on (+ the patch; the rebuild rides the restart), the
+content-sha cross-arm gate (three prompt sizes + the long-essay
+decode reply) + bench twice per arm + the steady-state decode probe
+with ~2000-token walls (±2.5% resolution — the attnpref probe's
+lesson applied). The bar: content IDENTICAL + a steady-state tg gain
+beyond the probe's resolution → the battery + the duel re-pair. ~55
+min. THEN DARK.

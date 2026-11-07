@@ -167,6 +167,24 @@ cross-arm gate + the pp rows, 2+ runs per arm). STAGING: applies on v1.2.3 +
 the 4-patch stack; disjoint files, the list order does not matter. OWNER: this
 line; STATUS: EXPERIMENTAL.
 
+## glm-zz-moeside.patch — a decode window's MoE shared expert on a side stream beside the routed experts (staged 2026-11-07; the moeside A/B decides)
+
+Mia 1104 0006+0010 hand-ported to v1.2.3 + the adopted stack (our
+drift: the two Forward constructions carry .absorb_mma — the port adds
+.side beside it; upstream's flashnext has the same pattern, so the
+Stream/Event API matches). 0006: the shared expert's gate/up, SwiGLU,
+down and put_slot fork onto a second stream right after the block's
+input and join before the slot combine — the kernels and the combine's
+order unchanged, the bits the same, only the overlap changes;
+TF_GLM_SHARED_SIDE=0 is the kill switch; prompt chunks never fork.
+0010: the side stream drains on any error from the fork on, in deinit,
+and on init's error path. Mia's measurements: 70.6 → 60.6 µs a MoE
+layer at one row, 96.5 → 84.9 µs at two (−14/−12%). STAGING: applies
+on v1.2.3 + the 7-patch stack (verified byte-identical to the port
+commit); NAMED glm-zz- TO SORT AFTER THE STACK (the hunks assume the
+absorb-mma port's .absorb_mma field). OWNER: this line; STATUS:
+EXPERIMENTAL.
+
 ## glm-zz-attnfetch8.patch — the latent attention FP8 key tiles load 8 bytes at a time, a tile ahead (staged 2026-11-07; the attnpref A/B decides; NAMED glm-zz- TO SORT AFTER THE STACK — the image applies patches alphabetically and the port depends on the fp8-pages marriage's PAGED8 file state; the first attnpref window burned on exactly this)
 
 Mia 1104 0005+0011 hand-ported to v1.2.3 + the paged marriage (our
