@@ -646,7 +646,26 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       stack — the prepared fingerprint names all six patches on the
       v1.2.3 pin, the serve line carries both signatures (the
       2048-row prompt passes, the pool-pages prompt cache), the probe
-      replies 'smoke-ok-6patch' exact — PASS. The 0010 fetch corrected
+      replies 'smoke-ok-6patch' exact — PASS.
+      **THE ATTNFETCH8 ADOPTION (cont. 93-96): the attnpref A/B
+      (campaign-20261107-010849) — the content shas IDENTICAL on three
+      prompt sizes AND the 2048-token decode replies (369 vs 369
+      tokens: the keys are the same bits, the quality instruments
+      cannot move); bench pp +1.7/+3.6-4.3% and tg
+      +2.9/+3.3/+4.7/+5.8/+10.9% at every depth cell (d4096 solo
+      +10.9% the largest; d0 tg -1.4% the noise cell); the
+      steady-state probe read parity but CANNOT resolve single digits
+      (integer-second walls on a ~9 s request — its pairs mirrored
+      each other); attnqual + the duel (campaign-20261107-020420): §2
+      ALL PASS, hardmode 95 (the SIXTH consecutive), the vision 4/4,
+      the duel re-paired — solo 109.4% (64.2/65.0 vs 58.7/58.8, beyond
+      the 0.2% band), c4 157.4 (+2.4%), the cold d8192 3,942 ms
+      (slope 0.458, -4.6% = 434% of production's true cold) —
+      **ADOPTED: config.sh's PATCHES is the 7-patch stack** (the patch
+      NAMED glm-zz- to sort after the stack — the image applies
+      patches alphabetically; the first attnpref window burned on
+      exactly that); the anchors + DELTAS + README re-paired, the
+      prefill front 94.4% → 96.0%. The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design

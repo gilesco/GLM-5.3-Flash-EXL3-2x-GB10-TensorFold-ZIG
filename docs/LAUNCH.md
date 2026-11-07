@@ -7652,3 +7652,39 @@ re-paired with the duel's ours arm riding MMS2_DUEL_PATCHES (the
 7-patch candidate). **The duel decides the adoption**: its solo decode
 moving beyond the 0.2% band + the depth rows = ADOPT; a duel solo
 parity = retire. THEN DARK.
+
+## (round 134, cont. 96) THE ATTNFETCH8 ADOPTION: GO — the seventh patch joins the default stack (attnqual + the duel, campaign-20261107-020420) (2026-11-07)
+
+**The adoption judgment cleared every bar** on the 7-patch candidate:
+- **§2 gates ALL PASS**, **hardmode 95 — the SIXTH consecutive
+  receipt** on the line's configs vs production's current-bench
+  anchor 94, **the vision 4/4** — the formality receipts (the outputs
+  are bit-identical by construction).
+- **The duel re-pair** (production-for-testing on 8001, same window):
+  solo **64.2/65.0 vs 58.7/58.8 (109.4%)** — up from the exl3prompt
+  pair's 63.8 avg, a ~6× move beyond production's 0.2% band — the
+  resolving instrument the steady-state probe could not be; c2 111.2
+  (127% of its floor); c4 157.4 (+2.4% across the duels; production
+  near its top again, its range 155-241); ITL 15.6 vs 17.0 (crossed);
+  overhead 189 vs 181 ms (96%); **the cold d8192 3,942 ms, slope
+  0.458 — −4.6%, matching the bench's depth gain = 434% of
+  production's true cold**. Three independent instruments agree (the
+  bench depth tg, the duel solo, the duel TTFT-at-depth).
+
+**DECISION: ADOPT — config.sh's PATCHES is the 7-patch stack** (the
+patch named glm-zz- to sort after the stack — the alphabetical-apply
+gotcha the first window burned on).
+
+**The digest executed the same sitting**: the anchors' six rows +
+header re-paired on the ATTN8 duel, the chart re-rendered; the
+README's serve/Quality/Speed/bars/PATCHES rows re-paired (six 95
+receipts cited, prefill at 96.0% — from 76% two patches ago); DELTAS's
+header scoreboard re-paired to the ATTN8 duel (the EXL3P/S2/PAGED
+duels in the superseded chain) and the engine row describes the
+7-patch stack; the attnpref + attnqual session phases RETIRED (both
+receipted); the ledger's arc block carries the adoption. The
+staging-order + patch-naming lessons logged.
+
+**NO LAUNCH** — the next candidate (0006+0010, the GLM MoE
+side-stream overlap, −12-14% a layer claimed) needs its hand-port
+first; that is the next sitting's opener.
