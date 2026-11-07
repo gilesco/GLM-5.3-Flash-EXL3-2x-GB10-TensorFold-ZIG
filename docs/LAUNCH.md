@@ -8079,3 +8079,19 @@ quotes its campaign — history stands.
 witness on the resharded pack + the timed walls (the loading row's
 re-take) + the full quality battery re-run (the content gates must
 reproduce on the same tensor bytes). THEN DARK.
+
+## (round 135, cont. 6) THE FOURTH v124val BURNED AT PREPARE — the resharded pack never reached the worker; DOWNLOAD=1 prepare is running the rsync (campaign-20261107-144549) (2026-11-07)
+
+**The receipt**: prepare refused before anything ran — "checkpoint
+snapshot missing on [the worker]:
+models--local--GLM-5.3-Flash-TR3-4bpw-reshard/snapshots/main ... get it
+with: DOWNLOAD=1 scripts/prepare.sh (downloads on the head, then rsyncs
+to the worker)". The reshard wrote to the HEAD's hub dir only; the
+worker's cache still holds only the original 120-shard pack. Production
+restored normally (the window's exit path, rc=1).
+
+**Running now**: DOWNLOAD=1 scripts/prepare.sh on the head — the
+163.6 GiB rsync to the worker (skipped when its cache already has the
+pack), then the cached image build + the prepared marker. The window
+relaunches when it lands; the phase's own prepare needs no change (the
+rsync is one-time — future prepares find the pack on both hosts).
