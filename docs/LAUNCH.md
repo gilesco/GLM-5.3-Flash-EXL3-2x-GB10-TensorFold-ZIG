@@ -7856,3 +7856,29 @@ content-sha cross-arm gate + bench twice per arm + the steady-state
 decode probe (~2,000-token walls). The bar: content IDENTICAL + a
 steady-state tg gain beyond the probe's resolution → the battery +
 the duel re-pair. ~55 min. THEN DARK.
+
+## (round 134, cont. 104) THE STEPLINK RETIRED — the content gate clean, the gain at parity (campaign-20261107-105455); the 8-patch stack stands (2026-11-07)
+
+**The A/B's receipt**: the content shas IDENTICAL on three prompt
+sizes AND the 2,048-token essay replies (the no-arithmetic-change
+claim held exactly) — but the perf gain is at PARITY:
+- The steady-state probe: off 41.0/41.0 vs on 41.0/41.8 tok/s —
+  +1.0% avg, 3 of 4 runs at exactly 50 s, inside the probe's ±2%.
+- The bench tg: mixed-sign (−2.5% to +2.7% across the nine cells) —
+  noise; pp flat (−0.5 to +0.1%) — no overhead, as designed.
+
+**Why parity**: the batching's saving lives ONLY in multi-row verify
+windows (a 1-row window does one gather either way — the solo
+instruments cannot see the mechanism by construction), and the
+verify-window round trips are evidently cheaper on our RoCE pair than
+the claim's context assumed. A sub-resolution patch does not meet the
+adoption bar.
+
+**DECISION: RETIRE** — the patch stays staged in patches/ (the README
+entry carries the retirement and the re-judgment condition: 0030's
+fusion changes the economics); the steplink session phase retired;
+the 8-patch stack stands unchanged.
+
+**NO LAUNCH** — nothing staged; the next sitting's opener is the 0030
+port (the last structural candidate, multi-sitting) or the loading
+wall's re-take.

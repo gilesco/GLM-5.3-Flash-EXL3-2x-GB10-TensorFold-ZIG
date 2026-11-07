@@ -738,3 +738,14 @@ budget). The engine_pick + follow hunks applied verbatim (v1.2.3's
 files match the fork's baseline); the engine bits hand-ported. The
 chain verified byte-identical on a fresh checkout. No arithmetic
 changes — the content gate covers it. The steplink A/B launched.
+
+**The steplink RETIRED (cont. 104)**: the A/B (campaign-20261107-
+105455) — content identical everywhere (the no-arithmetic-change
+claim held) but the gain at parity: the steady-state +1.0% avg inside
+the probe's ±2%, the bench tg mixed-sign noise, pp flat. The
+mechanism is real but sub-resolution on our shape (a 1-row window
+does one gather either way; the verify-window round trips are cheaper
+than assumed). The patch stays staged. **The remaining structural
+candidate: 0030 alone** (991 lines, 12 files — the MoE-glue fusion,
+multi-sitting). The loading wall's re-take (91%, the last uncrossed
+front) and the upstream watch remain the other live threads.

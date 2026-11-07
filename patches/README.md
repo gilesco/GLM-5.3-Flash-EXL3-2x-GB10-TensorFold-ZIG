@@ -184,7 +184,7 @@ arithmetic changes — the replies are the same. STAGING: applies on
 v1.2.3 + the 8-patch stack (verified byte-identical to the port
 commit); NAMED glm-zz- TO SORT AFTER THE STACK (the engine hunks
 assume the moeside port's side field). OWNER: this line; STATUS:
-EXPERIMENTAL.
+RETIRED (cont. 104: the steplink A/B — content identical everywhere but the gain at parity: the steady-state +1.0% avg inside the probe's ±2%, the bench tg mixed-sign noise; the mechanism is real but sub-resolution on our shape — a 1-row window does one gather either way, and the verify-window round trips are cheaper than the claim's context assumed; the patch stays staged for a future re-judgment if 0030's fusion changes the economics).
 
 ## glm-zz-moeside.patch — a decode window's MoE shared expert on a side stream beside the routed experts (staged 2026-11-07; the moeside A/B decides)
 

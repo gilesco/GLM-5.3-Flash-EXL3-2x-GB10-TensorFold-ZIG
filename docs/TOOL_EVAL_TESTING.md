@@ -680,7 +680,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       production's top volley), c4 158.6 (+3.2% across three duels) —
       **ADOPTED: config.sh's PATCHES is the 8-patch stack**; the
       anchors + DELTAS + README re-paired (solo 112.3%, ITL 110%, the
-      cold 429%, prefill 96.0%). The bare-config smoke
+      cold 429%, prefill 96.0%).
+      **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
+      (campaign-20261107-105455) — the content shas IDENTICAL
+      everywhere (no arithmetic changes, as claimed) but the gain at
+      PARITY: the steady-state +1.0% avg inside the probe's ±2% (3 of
+      4 runs at exactly 50 s), the bench tg mixed-sign (−2.5% to
+      +2.7%, noise), pp flat. The mechanism is real but
+      sub-resolution on our shape: a 1-row window does one gather
+      either way (the solo instruments cannot see it by construction)
+      and the verify-window round trips are cheaper than the claim's
+      context assumed; the patch stays staged for a future
+      re-judgment if 0030's fusion changes the economics. The
+      bare-config smoke
       (campaign-20261107-103127) PASSed complete on the first try:
       the prepared fingerprint names all eight patches on the v1.2.3
       pin, the serve line carries the signatures, the probe replies
