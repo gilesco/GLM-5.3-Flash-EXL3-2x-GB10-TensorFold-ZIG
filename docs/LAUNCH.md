@@ -8140,3 +8140,33 @@ stack" when no candidate is set.
 
 **RELAUNCHED: duel + summary** — the v1.2.4 duel re-pair on the
 standing 9-patch stack. THEN DARK.
+
+## (round 135, cont. 9) THE v1.2.4 DUEL RE-PAIRED — every row improved or held: solo 114.2%, c2 133.5% of the floor, ITL 113%, cold 433% (campaign-20261107-163011) (2026-11-07)
+
+**The same-window pair** (production-for-testing on 8001 vs ours on
+the standing 9-patch stack — the re-pair after the empty-patch burn):
+- **Solo: 67.3/66.8 vs 58.7/58.7 — 114.2%** (the rebase is a straight
+  solo upgrade: the MOESIDE pair read 112.3% on v1.2.3).
+- **c2: 116.3 vs 87.1 — 133.5% of the floor** (ours 110.3 → 111.2 →
+  113.1 → 116.3 across four duels — past production's top-of-range
+  volley at ~111).
+- **c4: 160.2 vs 155.0** — production at its exact floor this run (its
+  range 155-241 with cache state); above parity even there (103.4%).
+- **ITL: 15.1 vs 17.1 ms/token — 113%** (the chunked rhythm 59.4 ms
+  over 520 chunks; crossed further from the MOESIDE pair's 110%).
+- **Overhead: 188 vs 183 ms (97.3%)**; **the cold d8192: 3,957 ms,
+  slope 0.460 — 433% of production's true cold** (the 2.5 s it shows
+  in-window is its persistent cache, not cold).
+- The prefill front: the duel carries no bench rows — the row stands
+  (96.0%; the v1.2.4 benches read 1,461/1,406/1,449, inside the noise
+  of the attnpref receipt's 1,458).
+
+**The anchors re-paired** (solo/c2/c4/overhead/cold/ITL to the v1.2.4
+duel; loading already re-paired on v124val) and the chart re-rendered.
+The scoreboard: two of the (user) bar's three fronts crossed at
+114.2%/112.9%; prefill 96.0% the remaining gap.
+
+**NO LAUNCH** — nothing staged. The next sitting's opener: the 0030
+port (the MoE-glue fusion, 991 lines, 12 files — multi-sitting, full
+budget), whose launch-savings math faces the prefill front's 4% gap
+first.
