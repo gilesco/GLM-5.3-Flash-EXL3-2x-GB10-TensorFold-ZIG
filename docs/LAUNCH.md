@@ -8438,3 +8438,39 @@ behind them.
 (production-for-testing on 8001 vs ours on the adopted 12-patch
 stack): every speed row re-paired same-window, the prefill row's
 production side included. THEN DARK.
+
+## (round 137, cont. 6) THE P2 DUEL RE-PAIRED — solo 116.2%, c2 107.6% above production at its top (our best c2), c4 109.1% at its floor (our best held), ITL 116%, cold 450% — the best yet (campaign-20261107-225124); the 0081 scope landed — the port stages this sitting (2026-11-07)
+
+**The same-window pair** (production-for-testing on 8001 vs ours on
+the adopted 12-patch engine):
+- **Solo: 68.0/68.1 vs 58.5/58.6 — 116.2%.**
+- **c2: 118.6 vs 110.2 at its top-of-range volley — 107.6%, our best
+  c2** (its floor 86.4 — 137% there).
+- **c4: 168.9 vs 154.8 at its floor — 109.1%, our best c4 held three
+  windows** (the chain 153.7 → 157.4 → 158.6 → 160.2 → 166.1 → 168.8 →
+  168.9).
+- **ITL: 14.7 vs 17.1 ms/token — 116%**; overhead 183 vs 185 ms; the
+  cold d8192 **3,803 ms, slope 0.442 — 450%, the best yet**. The
+  prefill row stands at the 0080qual reading (100.1% — the duel
+  carries no bench rows; the duel's own slope re-confirms the prefill
+  gains at depth). The prefill front is CROSSED — every (user)-bar
+  front now leads.
+
+The anchors re-paired same-window and the chart re-rendered; README/
+DELTAS/ledger/PERF_PLAN updated.
+
+**The 0081 scope** (the sitting's second work item): the exl3r
+read-once trellis patch (0081 — the grouped decode kernel's lanes each
+loaded the two words their windows span, every trellis word fetched
+twice; now one 128-byte warp load a tile + __shfl_sync hand-off, the
+next tile issued a tile ahead, the mcg mask in a register) applied 3
+of 4 hunks clean; the one rejected hunk (the tilesFor choice line)
+hand-adapted to our single Layer.uniform_k2; the fork's text otherwise
+line-verbatim (14/14 .cu, 97/97 .cuh, 12/12 .zig). THE FORK SHIPPED
+ITS OWN KNOB this time — TF_EXL3_SHFL=0 restores the old choice — no
+_cl twins needed. New kernels k8r8s/k8r16s ride the existing
+grouped_body_v2 template (no existing-kernel changes, no record work).
+The port ships as glm-zz-zshfl.patch (zh > z2) once the compile check
+lands; the 0081qual A/B launches at the sitting's end — the duel_arm
+c2/c4 cells are the lever's primary read (the fork measured to −14% at
+16-32 rows).
