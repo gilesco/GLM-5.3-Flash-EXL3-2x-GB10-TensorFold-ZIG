@@ -8211,3 +8211,36 @@ first.
   moves; one-shot env, not an export).
 
 **LAUNCHED: moefusequal + summary.** THEN DARK.
+
+## (round 136, cont. 2) THE 0030 PORT QUALIFIED AND ADOPTED — content identical to the byte, hardmode 95 (the TENTH consecutive), c4 +4.2% (our best); config.sh's tenth patch; the duel re-pair LAUNCHED (campaign-20261107-172250) (2026-11-07)
+
+**The moefusequal A/B receipt** (both arms the SAME 10-patch image,
+the knob flips the path):
+- **The arms' greedy content IDENTICAL** — the same 80cc3802… sha as
+  every window: the port's same-bits claim proven on the real model.
+- **The quality battery**: the §2 gates ALL PASS; **hardmode 95** (the
+  TENTH consecutive; TC-51/TC-92 pass); the vision 4/4.
+- **The decode savings**: c4 **166.1 vs the OFF arm's 159.4 (+4.2% —
+  our best c4)**; c2 117.1 vs 115.9 (+1.0%); ITL 58.4 vs 59.3 ms/chunk
+  (−1.5%); solo flat (67.7/67.4 vs 67.2/67.5); the TTFT slope flat
+  (0.459 vs 0.456 — the prompt path untouched by design); the load
+  walls unchanged (83/87 s).
+- The bench pp rows inside the noise (d0 1,468) — prefill stands at
+  96.0%, the fusion cannot move it (a decode-window lever).
+
+**ADOPTED**: config.sh's PATCHES carries glm-zz-zmoe-fuse.patch (the
+tenth; the config edit verified per the sourced-config skill — the
+10-name probe, config_line RC=0, the fingerprint moves so the next
+window rebuilds with 10 patches). The anchors re-paired to the ON arm
+(solo 115.2%, c2 134.4% of the floor, c4 107.2% at production's floor,
+ITL 115%, cold 434% — production cited from the same-day v1.2.4 duel,
+campaign-20261107-163011) and the chart re-rendered; README (serve/
+Speed/PATCHES rows), DELTAS (scoreboard + Engine), the ledger,
+PERF_PLAN and ECOSYSTEM updated. The steplink stays retired (its
+mechanism is gather-side, the fusion launch-side — no interaction
+measured).
+
+**LAUNCHED: duel + summary** — the v1.2.4+zmoe-fuse duel re-pair
+(production-for-testing on 8001 vs ours on the adopted 10-patch
+stack): every speed row re-paired same-window on the fused engine.
+THEN DARK.

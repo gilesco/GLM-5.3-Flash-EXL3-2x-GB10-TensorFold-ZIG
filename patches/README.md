@@ -767,7 +767,11 @@ documented in LAUNCH.md round 119.
   builder base image); fresh-parent + the shipped patch = the commit tree
   byte-identical (0 diff lines). NAMED glm-zz-zmoe-fuse TO SORT AFTER moeside
   (the engine hunks assume the side field and the fork's 0030 followed 0006).
-- OWNER: this line; STATUS: **STAGED — the moefusequal A/B decides** (the
-  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's tenth 95,
-  the vision 4/4; the duel_arm instruments read the decode savings; prefill
-  flat — the prompt path is untouched by design).
+- OWNER: this line; STATUS: **ADOPTED (round 136, the moefusequal A/B —
+  campaign-20261107-172250: both arms the SAME 10-patch image, the knob flips
+  the path; the arms' greedy content IDENTICAL — the same 80cc3802… sha as
+  every window; the §2 gates ALL PASS, hardmode 95 (the TENTH consecutive),
+  the vision 4/4; c4 166.1 vs the OFF arm's 159.4 (+4.2% — our best c4), c2
+  117.1 vs 115.9 (+1.0%), ITL 58.4 vs 59.3 ms/chunk (−1.5%), solo flat,
+  prefill flat (the prompt path untouched by design — the bench pp d0 1,468),
+  the load walls unchanged (83/87 s); config.sh's tenth patch).

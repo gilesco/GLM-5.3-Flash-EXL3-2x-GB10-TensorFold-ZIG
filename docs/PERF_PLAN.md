@@ -777,3 +777,28 @@ bar's fronts: solo 112.3% crossed, loading 112.9% crossed, prefill
 re-dates the v1.2.3-era speed rows (the duel window); then the 0030
 port (the MoE-glue fusion, 991 lines) with full budget — and the
 prefill front looks at 0030's launch-savings math first.
+
+**THE 0030 PORT QUALIFIED AND ADOPTED (round 136)**: the port landed in
+one sitting (8 files clean, 4 hunks re-anchored — the receipt in
+patches/README.md; compile RC=0 first pass; byte-identity 0 diff
+lines) and the moefusequal A/B (campaign-20261107-172250) cleared it:
+the arms' content IDENTICAL (the same 80cc3802… sha as every window),
+the §2 gates ALL PASS, **hardmode 95 (the TENTH consecutive)**, the
+vision 4/4 — and the decode instruments read the launch savings: **c4
+166.1 vs the OFF arm's 159.4 (+4.2% — our best c4)**, c2 +1.0%, ITL
+−1.5%, solo flat, prefill flat (the prompt path untouched by design —
+the fusion is a decode-window lever; it cannot move the prefill
+front). config.sh carries the tenth patch; the anchors re-paired to
+the ON arm (solo 115.2%, c2 134.4% of the floor, c4 107.2% at
+production's floor, ITL 115%, cold 434%) and the chart re-rendered.
+
+**THE NEXT STEP: the duel re-pair on the adopted 10-patch stack** —
+production-for-testing + ours the same window re-dates every speed row
+same-window (the adoption pair cites production from the same-day
+v1.2.4 duel; the duel makes it same-window). THEN the prefill front
+(96.0%, 1,458 vs 1,518 tok/s — the last uncrossed (user)-bar front):
+0030's fusion is decode-side, so the prefill lever must come from
+elsewhere — the fork's 0033+ untriaged tail (the 0009+0033
+packed-prompt/pair-launch line the design pass named) and the
+launch-savings math the fusion proved (fewer launches a window) are
+the candidates to scope.

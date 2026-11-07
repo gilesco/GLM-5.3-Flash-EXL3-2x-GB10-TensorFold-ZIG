@@ -497,6 +497,14 @@ diff, our exact pathology neighborhood) and A/B it same-session; (c) the HC-spli
 the +36% prize but multi-patch — port behind a window with the full battery; (d) the ncu
 capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
 
+**Addendum (round 136, 2026-11-07)**: the fork's engine-series 0030 (a decode window's
+MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b pair launch) is PORTED AND
+ADOPTED here as `glm-zz-zmoe-fuse.patch` (the tenth patch): the A/B content identical to
+the byte, hardmode 95 (the tenth consecutive), c4 +4.2% (our best c4, 166.1 t/s), solo
+flat, prefill flat by design (campaign-20261107-172250). The fork's decode-side launch
+savings transfer; its prefill-class levers (the 0009+0033 packed-prompt/pair-launch line)
+remain the untriaged tail.
+
 ## Round 94 research addendum (2026-10-30)
 
 - Upstream 465e48b6..cefb72fd: Nemotron CUDA (#548), Qwen3.8-27B pair-seam kernels (#1432),

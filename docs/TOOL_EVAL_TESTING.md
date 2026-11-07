@@ -704,6 +704,33 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       end to end), the decode and pp flat. The loading row re-paired in
       the anchors (112.9%) and the chart re-rendered; the duel rows
       stay v1.2.3-era — the v1.2.4 duel re-pair re-dates them.
+      **THE 0030 PORT QUALIFIED AND ADOPTED (round 136, the
+      moefusequal A/B — campaign-20261107-172250)**: glm-zz-zmoe-fuse
+      (Mia 1104's 0030 — a decode window's MoE glue fused:
+      tf_glm_topk_group = the select + the compact picks + the EXL3
+      grouping in ONE 1024-thread block; the grouped experts core with
+      NO slot-row copies — two 2D copies, tf_exl3_group, put_slot and
+      glue.combine GONE; the shared expert's row summed LAST in
+      tf_exl3_down_combine, glue.combine's order) + the one-width
+      grouped EXL3 decode tiles (grouped_body_v2 k6r8/k8r8 + nt4) +
+      KDA's f_b/g_b in one launch (glm_mm*_16x2). TF_GLM_MOE_FUSE=0
+      unfuses (envOn, default ON — the switch ported from 0031; a
+      TF_GLM_* getenv knob, no #2405 surface). The A/B: BOTH arms the
+      SAME 10-patch image, the knob flips the path — **the arms'
+      greedy content IDENTICAL** (the same 80cc3802… sha as every
+      window), **the §2 gates ALL PASS, hardmode 95 (the TENTH
+      consecutive), the vision 4/4**; c4 **166.1 vs the OFF arm's
+      159.4 (+4.2% — our best c4)**, c2 117.1 vs 115.9 (+1.0%), ITL
+      58.4 vs 59.3 ms/chunk (−1.5%), solo flat (67.7/67.4 vs
+      67.2/67.5), prefill flat (the prompt path untouched by design —
+      the bench pp d0 1,468), the load walls unchanged (83/87 s).
+      **ADOPTED: config.sh's tenth patch** (the anchors re-paired to
+      the ON arm — solo 115.2%, c2 134.4% of the floor, c4 107.2% at
+      production's floor, ITL 115%, cold 434% — and the chart
+      re-rendered; production cited from the same-day v1.2.4 duel
+      campaign-20261107-163011). The port's 4 re-anchored hunks and
+      the engine-knob wiring (0031's) are receipted in
+      patches/README.md.
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at
