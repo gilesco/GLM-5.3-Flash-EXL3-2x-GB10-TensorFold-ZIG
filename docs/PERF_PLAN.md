@@ -749,3 +749,16 @@ than assumed). The patch stays staged. **The remaining structural
 candidate: 0030 alone** (991 lines, 12 files — the MoE-glue fusion,
 multi-sitting). The loading wall's re-take (91%, the last uncrossed
 front) and the upstream watch remain the other live threads.
+
+**Round 135 (the v1.2.4 sitting)**: the rebase landed and QUALIFIED
+(v124val, campaign-20261107-132414: §2 ALL PASS, hardmode 95 — the
+eighth consecutive, the vision 4/4, flat decode/pp; two burns on the
+way — the TF_KV_SHARE rename + floor, and the ninth patch's PATCHES
+omission). The loading lever's last obstacle found and removed: the
+served TR3 pack's 120 shards exceed checkpoint.direct's max_sources 64
+(the fd budget) — the pack resharded byte-identically to 55 (the tool
+verified sha256 on sampled tensors). **THE NEXT STEP: the v124val
+re-run on the resharded pack — the direct-reads witness + the timed
+walls are the loading row's re-take; then the duel re-pair re-dates
+the v1.2.3-era scoreboard rows.** The 0030 port (the MoE-glue fusion,
+991 lines) stays queued behind the loading front.

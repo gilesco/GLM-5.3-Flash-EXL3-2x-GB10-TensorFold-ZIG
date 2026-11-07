@@ -8056,3 +8056,26 @@ checkpoint digest re-hashes once on the first load (the digest cache
 rebuilds — absorbed in the untimed first restart). The next v124val run
 re-verifies the content gates on the resharded pack (the tensors are
 the same bytes — the gates must reproduce exactly).
+
+## (round 135, cont. 5) THE RESHARD VERIFIED AND THE v124val RE-RUN LAUNCHED — the docs swept for stale state (2026-11-07)
+
+**The reshard receipt**: 120 shards → 55 × ~3 GiB in 296 s; VERIFIED —
+the name set identical, 24 sampled tensors sha-identical, 163.6 GiB
+total; the tokenizer/config family copied
+(models--local--GLM-5.3-Flash-TR3-4bpw-reshard; SERVED_NAME unchanged).
+config.sh MODEL_ID swapped.
+
+**The stale-state sweep (the same sitting)**: README's serve row (v1.2.4
++ the 9-patch stack + TF_KV_SHARE=16 + the v124val receipts), the
+PATCHES row (the ninth + the rebase qualification), the KV_SHARE row
+(the rename + the floor + the new value), the served-default row (the
+reshard), the bpw4-sweep caption ("then-shipping"), the Speed row (the
+v1.2.3-era vintage note — the duel re-pair pending); DELTAS's header
+paragraph + the Engine row (v1.2.4 + the 9-patch stack + the round-135
+sentence); PERF_PLAN's round-135 entry. Every remaining v1.2.3 mention
+quotes its campaign — history stands.
+
+**LAUNCHED: v124val + summary** — the fourth run: the direct-reads
+witness on the resharded pack + the timed walls (the loading row's
+re-take) + the full quality battery re-run (the content gates must
+reproduce on the same tensor bytes). THEN DARK.
