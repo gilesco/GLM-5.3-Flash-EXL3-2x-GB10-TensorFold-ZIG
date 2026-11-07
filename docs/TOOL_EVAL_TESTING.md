@@ -742,6 +742,41 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       re-paired and the chart re-rendered. The prefill front stands at
       96.0% — the fusion is decode-side; the prefill lever is the next
       scope (the fork's untriaged 0033+ tail).
+      **THE EXL3P PORT QUALIFIED AND ADOPTED (round 137, the
+      exl3pqual A/B — campaign-20261107-200411)**: glm-zz-zprompt (Mia
+      1104's 0078+0079 — the prompt experts' main loop reworked:
+      compiled for an item's 8-member column blocks NBA 1..8, the next
+      k tile's trellis decode issued among the current MMAs across the
+      stage barrier, each thread's cp.async pieces fixed per item
+      (TLoads), the mcg mask one LOP3 (mcg2), 4-bit tiles from the
+      lane's word and its neighbour's (decode_a8), fwht128 epilogues
+      one FFMA per butterfly (fwht128f), Xd one 8-byte and y one
+      16-byte store; the fork measured the kernels **gate/up 1.177x,
+      down 1.161x** at 2,048 rows). TF_GLM_EXL3P=0 resolves the classic
+      _cl kernel twins (the pre-port loop kept verbatim; envOn, default
+      on). The port's fidelity is LINE-VERIFIED (every one of 0078's
+      added lines verbatim in our port — 244/244 .cuh, 18/18 .cu —
+      except the documented 4-bit-only adaptations) and the contract
+      records re-measured per 0079 with OUR OWN sm_121 cuobjdump
+      verifying 122/122 on our nvcc 13.3 build. The A/B: BOTH arms the
+      SAME 11-patch image, the knob flips the path — **the arms' greedy
+      content IDENTICAL** (the same 80cc3802… sha as every window), the
+      §2 gates ALL PASS, **hardmode 95 (the ELEVENTH consecutive), the
+      vision 4/4**; **THE PREFILL LEVER REAL** — the bench pp d0 1,495
+      (the ON arm; the last three windows read 1,458-1,468) and the
+      duel_arm TTFT slope 0.458 → 0.447 (−2.4%) agree on ~2-2.5%
+      whole-prefill: **the front moved 96.0% → 98.5%** (1,495 vs
+      production's 1,518). Decode flat within the arm spread (c2 117.3
+      vs 118.1, c4 166.8 vs 167.6, ITL 58.4 vs 58.6 ms/chunk; the solo
+      68.5-vs-66.8 spread — the OFF arm the highest solo ever recorded,
+      the ON arm inside history, the prompt loop decode-inert —
+      run-order drift, a watch item for the duel re-pair). The load
+      walls unchanged (83/87 s); the campaign log's 20 warning-pattern
+      lines are the image rebuild's CMake feature probes (benign).
+      **ADOPTED: config.sh's eleventh patch** (the prefill anchor row
+      re-paired to 98.5% and the chart re-rendered; the decode rows
+      stay paired to the zmoe-fuse duel until the duel re-pair that
+      follows re-grounds them same-window).
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at

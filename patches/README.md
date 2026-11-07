@@ -769,10 +769,20 @@ documented in LAUNCH.md round 119.
   builder base image); fresh-parent + the shipped patch = the commit tree
   byte-identical (0 diff lines). NAMED glm-zz-zprompt TO SORT AFTER
   zmoe-fuse (the .cu hunks assume the post-0030 experts file; zp > zm).
-- OWNER: this line; STATUS: **STAGED — the exl3pqual A/B decides** (the
-  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's eleventh
-  95, the vision 4/4; the bench pp rows + the TTFT slope are the prefill
-  lever's instruments — the fork measured the prompt kernels 1.177x/1.161x).
+- OWNER: this line; STATUS: **ADOPTED (round 137, the exl3pqual A/B —
+  campaign-20261107-200411: both arms the SAME 11-patch image,
+  TF_GLM_EXL3P=0 vs unset; the arms' greedy content IDENTICAL — the same
+  80cc3802… sha as every window, the same-bits claim proven; the §2 gates
+  ALL PASS, hardmode 95 (the ELEVENTH consecutive), the vision 4/4; THE
+  PREFILL LEVER REAL — the bench pp d0 1,495 (the ON arm; the last three
+  windows read 1,458-1,468) + the duel_arm TTFT slope 0.458 → 0.447
+  (−2.4%) agree on ~2-2.5% whole-prefill (the front 96.0% → 98.5%);
+  decode flat within the arm spread (c2 117.3 vs 118.1, c4 166.8 vs
+  167.6, ITL 58.4 vs 58.6 ms/chunk; the solo 68.5-vs-66.8 spread is
+  run-order drift — the OFF arm the highest solo ever recorded, the ON
+  arm inside history, the prompt loop decode-inert; the duel re-pair
+  re-grounds the decode rows); the load walls unchanged (83/87 s);
+  config.sh's eleventh patch).
 
 ## glm-zz-zmoe-fuse.patch — a decode window's MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b in one launch (round 136; Mia 1104's 0030 port)
 

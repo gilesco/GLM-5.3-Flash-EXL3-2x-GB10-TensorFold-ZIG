@@ -868,3 +868,26 @@ the vision 4/4. At adoption: config.sh's eleventh patch, the anchors'
 prefill row re-paired, the duel re-pair next window. 0080 (the packed
 prompt linears' cp.async, 185 lines) stays the follow-on candidate — its
 base may need the fork's 0073 MmTwo concepts checked first.
+
+**THE EXL3P PORT QUALIFIED AND ADOPTED (round 137)**: the exl3pqual A/B
+(campaign-20261107-200411) cleared it — the arms' content IDENTICAL (the
+same 80cc3802… sha as every window), the §2 gates ALL PASS, **hardmode 95
+(the ELEVENTH consecutive)**, the vision 4/4, and **THE PREFILL LEVER IS
+REAL**: the bench pp d0 **1,495** (the ON arm; the last three windows read
+1,458-1,468) and the duel_arm TTFT slope **0.458 → 0.447 (−2.4%)** agree
+on ~2-2.5% whole-prefill — **the front moved 96.0% → 98.5%** (1,495 vs
+production's 1,518). config.sh carries the eleventh patch; the prefill
+anchor row re-paired and the chart re-rendered. Decode flat within the
+arm spread (the solo 68.5-vs-66.8 spread is run-order drift — the OFF arm
+the highest solo ever recorded, the ON arm inside history, the prompt
+loop decode-inert; a watch item for the duel).
+
+**THE NEXT STEP: the duel re-pair on the adopted 11-patch stack** —
+production-for-testing + ours the same window re-dates every speed row
+same-window on the exl3p engine (and settles the solo watch item).
+THEN the prefill front's remaining 1.5%: 0080 (the packed prompt
+linears' cp.async rework, 185 lines) is the follow-on candidate — check
+its base against the fork's 0073 MmTwo concepts first; behind it the
+PDL set and the HC-split set stay parked. The front may also cross on
+the duel's own prefill reading if production's same-window prefill
+drifts low — the duel receipt decides.

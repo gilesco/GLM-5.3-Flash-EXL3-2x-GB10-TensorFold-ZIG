@@ -505,6 +505,17 @@ flat, prefill flat by design (campaign-20261107-172250). The fork's decode-side 
 savings transfer; its prefill-class levers (the 0009+0033 packed-prompt/pair-launch line)
 remain the untriaged tail.
 
+**Addendum (round 137, 2026-11-07)**: the fork's exl3p pair 0078+0079 (the prompt
+experts' main loop reworked — 8-member column blocks, the next k tile decoded among the
+current MMAs, per-item cp.async, mcg2/decode_a8/fwht128f, vector stores) is PORTED AND
+ADOPTED here as `glm-zz-zprompt.patch` (the eleventh patch): the A/B content identical to
+the byte, hardmode 95 (the eleventh consecutive), **the prefill front 96.0% → 98.5%**
+(the bench pp d0 1,495; the TTFT slope −2.4% — the fork's kernel claims, gu 1.177× /
+down 1.161×, transfer to our whole-prefill at ~2-2.5%), decode flat
+(campaign-20261107-200411). The fork's measured kernel claims transfer — two for two
+after 0030. 0080 (the packed prompt linears' cp.async) is the next candidate from its
+tail; the HC-split/overlap set stays parked behind it.
+
 ## Round 94 research addendum (2026-10-30)
 
 - Upstream 465e48b6..cefb72fd: Nemotron CUDA (#548), Qwen3.8-27B pair-seam kernels (#1432),

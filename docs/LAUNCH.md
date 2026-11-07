@@ -8326,3 +8326,44 @@ TF_GLM_EXL3P=0 vs unset: the arms' greedy content identical is the
 same-bits claim; the bench pp rows + the TTFT slope are the prefill
 lever's instruments; the §2 gates, hardmode (the eleventh 95) and the
 vision 4/4 must hold. THEN DARK.
+
+## (round 137, cont. 2) THE EXL3P PORT QUALIFIED AND ADOPTED — content identical to the byte, hardmode 95 (the ELEVENTH consecutive), THE PREFILL LEVER REAL: the front 96.0% → 98.5%; config.sh's eleventh patch; the duel re-pair LAUNCHED (campaign-20261107-200411) (2026-11-07)
+
+**The exl3pqual A/B receipt** (both arms the SAME 11-patch image,
+TF_GLM_EXL3P=0 vs unset):
+- **The arms' greedy content IDENTICAL** — the same 80cc3802… sha as
+  every window: the port's same-bits claim proven on the real model.
+- **The quality battery**: the §2 gates ALL PASS; **hardmode 95** (the
+  ELEVENTH consecutive; TC-51/TC-92 pass); the vision 4/4.
+- **THE PREFILL LEVER REAL**: the bench pp d0 **1,495** (the ON arm;
+  the last three windows read 1,458-1,468) and the duel_arm TTFT slope
+  **0.458 → 0.447 (−2.4%)** — two independent instruments agreeing on
+  ~2-2.5% whole-prefill from the prompt experts' loop (the fork's
+  kernel claims, gu 1.177x / down 1.161x, transfer). **The front moved
+  96.0% → 98.5%** (1,495 vs production's 1,518).
+- **Decode flat within the arm spread**: c2 117.3 vs 118.1, c4 166.8
+  vs 167.6, ITL 58.4 vs 58.6 ms/chunk; solo 68.5 (OFF) vs 66.8 (ON) —
+  the OFF arm the highest solo ever recorded (history max 67.7), the
+  ON arm inside history, the prompt loop decode-inert → run-order/
+  thermal drift; a WATCH ITEM for the duel re-pair, which re-grounds
+  every decode row same-window.
+- The load walls unchanged (83/87 s); the campaign log's 20
+  warning-pattern lines are the image rebuild's CMake feature probes
+  (benign — the fingerprint moved, prepare rebuilt).
+
+**ADOPTED**: config.sh's PATCHES carries glm-zz-zprompt.patch (the
+eleventh; the edit verified per the sourced-config skill — the 11-name
+probe, config_line RC=0, the fingerprint moves). The prefill anchor row
+re-paired to **98.5%** and the chart re-rendered (the decode rows stay
+paired to the zmoe-fuse duel until the duel re-pair); README (serve/
+Speed/PATCHES rows), DELTAS (scoreboard + Engine), the ledger,
+PERF_PLAN and ECOSYSTEM (the round-137 addendum: the fork's measured
+kernel claims transfer, two for two) updated. The patch-craft skill
+extended with the cross-tree port workflow (the --reject-applied-zero-
+hunks lesson, the line-fidelity checker). 0080 stays the follow-on
+prefill candidate.
+
+**LAUNCHED: duel + summary** — the v1.2.4+exl3p duel re-pair
+(production-for-testing on 8001 vs ours on the adopted 11-patch stack):
+every speed row re-paired same-window on the exl3p engine, the solo
+watch item settled. THEN DARK.

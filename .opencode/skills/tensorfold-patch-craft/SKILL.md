@@ -97,6 +97,47 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   error surfaced. Keep the argv contract when porting a proven instrument;
   sanity-check the built body's size (wc -c on the temp file) before the
   first send.
+- **`git apply --reject` can apply ZERO hunks on a cross-tree port** (2026-11-07,
+  the exl3p port): the "only the .rej files need hands" recipe assumes hunks are
+  locally anchored — a whole-file region rewrite (a 116→267-line kernel loop)
+  against a structurally drifted base rejects in every file at once, and the
+  applied-hunk guarantee is gone entirely. The line-level fidelity check
+  (Workflow → Cross-tree ports) replaces it — 244/244 + 18/18 fork lines
+  verified on the port that shipped.
+
+## Cross-tree ports (a fork patch generated against a different base)
+
+When the patch to ship is a FORK's patch (Mia's series) and our tree's base
+has drifted, the port is a hand-rewrite, and hand-rewrites get verified
+differently:
+
+1. Read the fork's patch fully first; identify EVERY helper/symbol it
+   references and check each against OUR tree (the fork's intermediate
+   patches — e.g. a 3-bit work adding a template param — may have changed the
+   base declarations the patch assumes). The `+` lines are the fork's new
+   text; the `-` lines are the FORK's base, not ours.
+2. Port by scripted exact-anchor edits (every replacement asserts its anchor
+   is unique) — never by hand in an editor. Keep the fork's text verbatim
+   except DOCUMENTED adaptations (each listed in the shipped patch's
+   comment/commit message).
+3. Line-level fidelity check (replaces the applied-hunk guarantee): parse the
+   fork patch's `+` lines per file section and assert every one appears
+   verbatim in the ported tree. Reverse-check: every ported line must be a
+   fork `+` line, a diff CONTEXT line (space-prefixed — the carried-over
+   unchanged text), or a documented adaptation. The forward check catches
+   transcription typos; the reverse catches invented code.
+4. Template-param drift: a fork param our tree lacks can be KEPT in the
+   signature and instantiated only at our value at the call sites — the
+   unused instantiations never compile, and `if constexpr` discarded branches
+   never instantiate (a helper referenced only in the discarded branch may be
+   absent from our tree entirely).
+5. If the port changes an EXISTING kernel's register count, the contract
+   records must be re-measured: build the sm_121 fatbin, `cuobjdump
+   --dump-resource-usage`, and set the records to the MEASURED values (the
+   fork's same-nvcc records verify against our build — check, don't assume).
+   New kernel names (`_cl` twins) stay unlisted → unchecked.
+6. Verify: compile RC=0 on the final tree, then byte-identity — fresh parent
+   + `git format-patch` output applied = the commit tree hash.
 
 ## Verification
 
