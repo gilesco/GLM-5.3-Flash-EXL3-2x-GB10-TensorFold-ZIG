@@ -24,21 +24,19 @@ times: campaign-20261106-043015/-065920/-093921 — byte-identical token profile
 receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
-or bench versions). **The CURRENT scoreboard (the zmoe-fuse adoption pair, 2026-11-07 —
-ours the moefusequal ON arm on the fused 10-patch engine (campaign-20261107-172250,
-the A/B: content identical to the unfused arm, hardmode 95 — the TENTH consecutive),
-production the same-day v1.2.4 duel (campaign-20261107-163011); the duel window that
-follows re-pairs same-window)**: loading **112.9% — CROSSED** (83 vs 93.7 s —
+or bench versions). **The CURRENT scoreboard (the zmoe-fuse duel re-pair, 2026-11-07 —
+campaign-20261107-183530: production-for-testing on 8001 vs ours on the fused
+10-patch stack, both engines the same window, the same probes)**: loading **112.9% — CROSSED** (83 vs 93.7 s —
 the v1.2.4 wall on the direct reads, glm-zz-loaddirect on the resharded pack, the
 timed walls 83/83 s, v124val campaign-20261107-150250; the v1.2.3-era wall 103 s = 91%),
-solo **115.2% — CROSSED** (67.7/67.4 vs 58.7/58.7 t/s — the fused arm's solo flat vs
-the unfused 67.3/66.8: 65.9/66.2 on v1.2.3), c2 **134.4% of production's
-floor** (117.1 vs 87.1 — past its top-of-range volley at ~111), c4: production **at its
-floor in the cited duel** (166.1 vs 155.0 — its range 155-241 with cache state; ours 153.7 → 157.4
-→ 158.6 → 160.2 → **166.1** across the windows — the fusion's +4.2%, our best c4), TTFT overhead
-**96.3%** (190 vs 183 ms), ITL **115% — crossed** (14.8 vs 17.1 ms/token), **the cold depth
-cost CROSSED (434%)** — ours 3.9 s vs production's 17.1 s true cold at d8192 (ours 3,946 ms,
-slope 0.459 flat — flat across the fusion knob too; production's cold slope 2.026 ms/tok,
+solo **115.4% — CROSSED** (67.6/67.5 vs 58.6/58.6 t/s — the fused engine; the adoption
+A/B read 115.2%), c2 **106.3% — above production even at its top** (117.3 vs 110.3 this
+run; its floor 87.1 — 134.7% there), c4: production **at its
+floor this run** (168.8 vs 154.7 — its range 155-241 with cache state; ours 153.7 → 157.4
+→ 158.6 → 160.2 → 166.1 → **168.8** across the windows — the fusion's +4.2%, our best c4), TTFT overhead
+**97.8%** (189 vs 185 ms), ITL **117% — crossed** (14.6 vs 17.1 ms/token), **the cold depth
+cost CROSSED (433%)** — ours 4.0 s vs production's 17.1 s true cold at d8192 (ours 3,961 ms,
+slope 0.460 flat — flat across the fusion knob too; production's cold slope 2.026 ms/tok,
 slowing with depth; the 2.5 s it
 shows in-window is its persistent cache, not cold) — and the **prefill front 96.0%**
 (1,458 vs 1,518 tok/s — ours the attnpref

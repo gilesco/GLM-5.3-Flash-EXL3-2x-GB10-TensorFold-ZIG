@@ -802,3 +802,53 @@ elsewhere — the fork's 0033+ untriaged tail (the 0009+0033
 packed-prompt/pair-launch line the design pass named) and the
 launch-savings math the fusion proved (fewer launches a window) are
 the candidates to scope.
+
+**THE ZMOE-FUSE DUEL RE-PAIRED (round 136 cont. 3)**: the same-window
+pair on the fused 10-patch engine (campaign-20261107-183530) — solo
+**67.6/67.5 vs 58.6/58.6 = 115.4%**; c2 **117.3 vs 110.3 = 106.3% —
+above production even at its top-of-range volley** (its floor 87.1 =
+134.7% there); c4 **168.8 vs 154.7 at its floor = 109.1%** (our best
+c4 again); ITL **14.6 vs 17.1 ms/token = 117%**; overhead 189 vs 185
+ms; the cold d8192 3,961 ms, slope 0.460 — 433%. Every row holds the
+A/B's adoption read. The anchors re-paired, the chart re-rendered.
+
+**THE NEXT STEP: the prefill front's scope** (96.0%, 1,458 vs 1,518
+tok/s — the last uncrossed (user)-bar front): read the fork's
+untriaged 0033+ engine-series tail on the head (/tmp/mia-fork), map
+the prefill-class candidates (the 0009+0033 packed-prompt/pair-launch
+line the design pass named; the ECOSYSTEM table's HC-split/overlap
+set and prompt-scoring lever if they appear in this series), size the
+top one, and stage its port next sitting. No window until a candidate
+is staged.
+
+**THE PREFILL SCOPE, LANDED (round 136 cont. 4)**: the fork's gen-5
+tail mapped (0033-0090). The candidates by measured claim:
+- **exl3p 0078+0079 (527 lines)** — the prompt experts' main loop
+  compiled for 8-member column blocks, the next k tile decoded among
+  the current MMAs, cp.async per item, the fwht epilogues as FFMAs:
+  **gate/up 1.177x, down 1.161x measured on the prompt-expert kernels
+  (2,048 rows)**, energy −9-10%. At a plausible experts' share of our
+  pp2048 prefill (~0.3-0.5) that is +5-8% whole-prefill — the 96.0%
+  front's crossing with margin. 0080 (185 lines, the packed prompt
+  linears' cp.async) is a follow-on. THE TOP CANDIDATE.
+- The PDL set (0069+0070+0071, ~300 lines): the mm reduce/hc/p2p chain
+  as dependent launches — a launch-gap lever, unmeasured for prefill;
+  our prefill is long-kernel-dominated (the 0030 A/B's lesson: launch
+  savings show at decode concurrency, not in the dense prefill loop).
+  PARKED behind exl3p.
+- The HC-split/overlap set (0075/0086/0088/0089/0090 + the pairing
+  line 0050-0063): the +36%-at-50k class — a multi-patch TP-exchange
+  rework; at our 2k bench prompt the exchanges are small. PARKED.
+- 0064 W8A8: 8-bit prompt linears — a quality trade, not a rate lever
+  on our 4-bit dense. NOT A CANDIDATE.
+
+**The exl3p port's drift, measured**: 0078 rejects clean-apply on our
+tree in all 3 files (4 hunks) — the fork's base carries a K2 template
+parameter in the prompt loop (its 0003 3-bit work; v1.2.4 never
+absorbed it; our loop is `template <int MATS, int XR>`). The port:
+replace our tmain with the new loop adapted to our 2-param form (the
+4-bit path is what runs on our model — decode_a8/mcg2 are the
+4-bit-relevant pieces), then the .cu and .zig hunks (their drift is
+our 0030 re-anchors). Multi-hour, kernel-level — the next sitting's
+work, then the exl3pqual A/B (content identity — the same bits are
+the claim — + the bench pp rows, hardmode, gates, vision).

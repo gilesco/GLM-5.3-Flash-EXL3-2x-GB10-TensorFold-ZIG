@@ -8244,3 +8244,35 @@ measured).
 (production-for-testing on 8001 vs ours on the adopted 10-patch
 stack): every speed row re-paired same-window on the fused engine.
 THEN DARK.
+
+## (round 136, cont. 4) THE ZMOE-FUSE DUEL RE-PAIRED — solo 115.4%, c2 above production even at its top, c4 109.1% at its floor (our best again), ITL 117% (campaign-20261107-183530); the prefill scope landed — exl3p 0078+0079 the top candidate, its port is the next sitting; NO LAUNCH (2026-11-07)
+
+**The same-window pair** (production-for-testing on 8001 vs ours on
+the fused 10-patch engine):
+- **Solo: 67.6/67.5 vs 58.6/58.6 — 115.4%** (the adoption A/B's
+  115.2% holds).
+- **c2: 117.3 vs 110.3 — 106.3%, above production even at its
+  top-of-range volley** (its floor 87.1 — 134.7% there).
+- **c4: 168.8 vs 154.7 at its floor — 109.1%, our best c4 again**
+  (the chain 153.7 → 157.4 → 158.6 → 160.2 → 166.1 → 168.8).
+- **ITL: 14.6 vs 17.1 ms/token — 117%**; overhead 189 vs 185 ms;
+  the cold d8192 3,961 ms, slope 0.460 — 433%. The prefill row
+  stands (96.0% — the duel carries no bench rows).
+
+The anchors re-paired same-window and the chart re-rendered; README/
+DELTAS/ledger/PERF_PLAN updated.
+
+**The prefill scope** (the sitting's second work item): the fork's
+gen-5 tail mapped — **exl3p 0078+0079 is the top candidate** (the
+prompt experts' main loop rework: gate/up 1.177x, down 1.161x
+MEASURED on the prompt kernels — at the experts' plausible share of
+our prefill that is the 96.0% front's crossing); the PDL set and the
+HC-split set parked behind it (launch-gap levers, unmeasured for our
+dense prefill loop / a multi-patch TP rework for 50k prompts). The
+port's drift is measured: 0078 rejects in all 3 files (the fork's K2
+template param vs our 2-param loop — the 4-bit path is what runs on
+our model); the port is kernel-level, the next sitting's work, then
+the exl3pqual A/B.
+
+**NO LAUNCH** — nothing staged to test; the sitting ends with the
+scope documented.

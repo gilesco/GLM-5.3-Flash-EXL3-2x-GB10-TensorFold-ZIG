@@ -730,7 +730,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       re-rendered; production cited from the same-day v1.2.4 duel
       campaign-20261107-163011). The port's 4 re-anchored hunks and
       the engine-knob wiring (0031's) are receipted in
-      patches/README.md.
+      patches/README.md. **THE ZMOE-FUSE DUEL RE-PAIRED (cont. 3,
+      campaign-20261107-183530 — both engines the same window)**: solo
+      **67.6/67.5 vs 58.6/58.6 — 115.4%**; c2 **117.3 vs 110.3 — 106.3%,
+      above production even at its top-of-range volley** (its floor
+      87.1 — 134.7% there); c4 **168.8 vs 154.7 at its floor — 109.1%,
+      our best c4 again** (the chain 153.7 → 157.4 → 158.6 → 160.2 →
+      166.1 → 168.8); ITL **14.6 vs 17.1 ms/token — 117%**; overhead
+      189 vs 185 ms; the cold d8192 3,961 ms, slope 0.460 — 433%.
+      Every row holds the A/B's adoption read same-window; the anchors
+      re-paired and the chart re-rendered. The prefill front stands at
+      96.0% — the fusion is decode-side; the prefill lever is the next
+      scope (the fork's untriaged 0033+ tail).
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at
