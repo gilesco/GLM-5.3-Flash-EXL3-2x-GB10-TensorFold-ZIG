@@ -852,3 +852,19 @@ replace our tmain with the new loop adapted to our 2-param form (the
 our 0030 re-anchors). Multi-hour, kernel-level — the next sitting's
 work, then the exl3pqual A/B (content identity — the same bits are
 the claim — + the bench pp rows, hardmode, gates, vision).
+
+**THE EXL3P PORT STAGED (round 137)**: 0078+0079 landed on v124-rebase as
+`glm-zz-zprompt.patch` (the eleventh; zp > zmoe-fuse). The fork's text
+verified line-identical (244/244 .cuh, 18/18 .cu) except the documented
+adaptations (4-bit-only tree: K2 at 8 only, our helper forms kept, the
+classic loop kept as the _cl twins behind TF_GLM_EXL3P=0, 0079's _k6
+records skipped — no _k6 kernels here). Compile RC=0; the contract
+records re-measured on our own nvcc 13.3 build. **THE NEXT STEP: the
+exl3pqual A/B window** — both arms the same 11-patch image, the knob flips
+the path: content identity (the same-bits claim), the bench pp rows + the
+TTFT slope (the prefill lever's instruments — the fork measured the prompt
+kernels gu 1.177x / down 1.161x), hardmode's eleventh 95, the §2 gates,
+the vision 4/4. At adoption: config.sh's eleventh patch, the anchors'
+prefill row re-paired, the duel re-pair next window. 0080 (the packed
+prompt linears' cp.async, 185 lines) stays the follow-on candidate — its
+base may need the fork's 0073 MmTwo concepts checked first.

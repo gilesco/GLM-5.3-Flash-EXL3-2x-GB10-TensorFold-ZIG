@@ -3923,6 +3923,106 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: exl3pqual (SESSION-SPECIFIC; the fork's 0078+0079 port — glm-zz-zprompt.
+# The prompt experts' main loop reworked (exl3p): compiled for an item's
+# 8-member column blocks (NBA 1..8, no predicate, no dead MMA), the next k
+# tile's trellis decode issued among the current MMAs across the stage barrier
+# (PS 4/3), each thread's cp.async pieces fixed per item (TLoads), the mcg
+# mask one LOP3 (mcg2), 4-bit tiles from the lane's word and its neighbour's
+# (decode_a8), fwht128 epilogues one FFMA per butterfly (fwht128f), Xd one
+# 8-byte and y one 16-byte store. Fork-measured gate/up 1.177x, down 1.161x
+# on the prompt kernels (2,048 rows, nvcc 13.3) — the 96.0% prefill front's
+# top candidate. OUR adaptations: the tree is 4-bit-only (the fork's K2 param
+# instantiated at 8 only; tstage_halves/tsmem_bytes keep our 1/0-param forms),
+# the classic loop kept as tmain_cl/tspill_cl/tgateup_cl + the _cl kernel
+# twins; TF_GLM_EXL3P=0 resolves them (envOn, default on; no #2405 surface).
+# The A/B: BOTH arms the same patched image, the knob flips the path — greedy
+# content identical is the port's same-bits claim; the bench pp rows and
+# duel_arm's TTFT slope read the prefill lever; the §2 gates, hardmode (the
+# eleventh 95) and the vision 4/4 qualify it. Retires into the standing
+# config at adoption (a later sitting re-pairs the duel).
+# ---------------------------------------------------------------------------
+if want exl3pqual && ! phase_done exl3pqual; then
+  log "=== exl3pqual (the 0078+0079 port A/B: the prompt experts' main loop)"
+  P="$OUT/09-exl3pqual.md"; : > "$P"
+  echo "# exl3pqual (glm-zz-zprompt: TF_GLM_EXL3P=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  EPPATCH="${PATCHES},glm-zz-zprompt.patch"
+  log "exl3pqual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$EPPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "exl3pqual: the image rebuild (prepare) failed - see the log"; fi
+  req_file "$OUT/ep-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  echo "## the OFF arm (TF_GLM_EXL3P=0: the classic prompt loop)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_EXL3P=0 PATCHES="$EPPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/ep-greedy.json" > "$OUT/ep-off-greedy.json" || true
+    echo "- the OFF greedy content sha: $(content_sha "$OUT/ep-off-greedy.json")" >> "$P"
+    duel_arm epoff "$SERVED_NAME"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the ON arm (the knob unset — the engine default on)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$EPPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/ep-greedy.json" > "$OUT/ep-on-greedy.json" || true
+    echo "- the ON greedy content sha: $(content_sha "$OUT/ep-on-greedy.json")" >> "$P"
+    echo "- the arms' content: $([ "$(content_sha "$OUT/ep-off-greedy.json")" = "$(content_sha "$OUT/ep-on-greedy.json")" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+    duel_arm epon "$SERVED_NAME"
+    echo "## the §2 content gates (on the exl3p serve)" >> "$P"
+    run_gates ep DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$EPPATCH" || true
+    echo "## the bench pass (the bench pp rows are the prefill lever's primary read)" >> "$P"
+    bench_perf ep "$OUT/ep-bench" 4 >> "$P" 2>&1 || true
+    bf=$(mktemp /tmp/epd.XXXXXX.json)
+    python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/ep-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/ep-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+    echo "## hardmode (the 95 must hold — the eleventh consecutive)" >> "$P"
+    mkdir -p "$OUT/ephm"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+      --model "$model" --format openai --tokenizer "$MODEL_ID" \
+      --hardmode --label "exl3pqual" --output-dir "$OUT/ephm" \
+      --json-file "$OUT/ephm/hm.json" > "$OUT/ephm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/ephm/hm.json" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/ephm/hm.log" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/ephm/hm.log" >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold)" >> "$P"
+    mkdir -p "$OUT/epvision"
+    if [ -f scripts/vision-suite-probe.py ]; then
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/epvision/vision.json" > "$OUT/epvision/vision.log" 2>&1 || true
+      tail -6 "$OUT/epvision/vision.log" >> "$P" 2>/dev/null || true
+    else
+      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    fi
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "- VERDICT: the arms content-identical + the gates PASS + hardmode holds + the vision 4/4 + the bench pp rows read the prefill lever = the exl3p port qualifies (adoption moves config.sh's PATCHES and re-pairs the duel in a later sitting)" >> "$P"
+  touch "$OUT/.exl3pqual.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"

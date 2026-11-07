@@ -8276,3 +8276,53 @@ the exl3pqual A/B.
 
 **NO LAUNCH** — nothing staged to test; the sitting ends with the
 scope documented.
+
+## (round 137) THE EXL3P PORT — glm-zz-zprompt staged (the fork's 0078+0079, the prompt experts' main loop reworked): the fork's text verified line-identical (244/244 .cuh, 18/18 .cu), compile RC=0, byte-identity 0 diff lines; the exl3pqual A/B LAUNCHED (2026-11-07)
+
+**The port** (v1.2.4 + the 10-patch stack, commit e9d511546 on
+v124-rebase): the prompt experts' main loop reworked (exl3p) — compiled
+for an item's 8-member column blocks (NBA 1..8, no predicate, no dead
+MMA), the next k tile's trellis decode issued among the current MMAs
+across the stage barrier (PS 4/3), each thread's cp.async pieces fixed
+per item (TLoads), the mcg mask one LOP3 (mcg2), 4-bit tiles from the
+lane's word and its neighbour's (decode_a8), fwht128 epilogues one FFMA
+per butterfly (fwht128f), Xd one 8-byte and y one 16-byte store. The
+fork measured the prompt kernels **gate/up 1.177x, down 1.161x** (2,048
+rows, nvcc 13.3) — the 96.0% prefill front's top candidate.
+
+- **Fidelity, line-verified**: every one of 0078's added lines appears
+  verbatim in our port (244/244 in exl3_prompt.cuh, 18/18 in
+  exl3_experts.cu); the only deviations are the documented adaptations.
+- **Our adaptations** (the drift measured last round, resolved): the tree
+  is 4-bit-only — the fork's K2 template param stays and instantiates at
+  8 only; tstage_halves/tsmem_bytes keep our 1/0-param forms (identical
+  values at K2 8); tgateup takes the fork's <XR, K2> and our gu kernel
+  call sites pass 8; 0079's pending_133 _k6 records hunk SKIPPED (our
+  tree has no _k6 prompt kernels). The classic loop kept as
+  tmain_cl/tspill_cl/tgateup_cl + the tf_exl3_prompt_{gu,down}_cl kernel
+  twins (our pre-port bodies verbatim); **TF_GLM_EXL3P=0** resolves them
+  in exl3_prompt.zig's resolve() (envOn, default on — the 0030 knob
+  pattern).
+- **The contract records re-measured per 0079** (nvcc 13.3 set): gu
+  128/126/126/128/128 → **122/125/125/122/122**, down ADDED at
+  123/125/125/122/122; **our own sm_121 cuobjdump on this tree reads
+  122/122 — 0079's entry-5 values verified on our build**; static 43264
+  unchanged (the __shared__ layout is byte-identical); the _cl twins
+  (128/127 measured) stay unlisted → unchecked, the 0030-new-kernel
+  precedent.
+- **Verify**: the compile RC=0 twice (pre-records and final tree;
+  fatbins + native, nvcc sm_121, zig 0.17.0, the builder base image);
+  fresh-parent + the shipped patch = the commit tree **byte-identical**
+  (tree 731656f6…). NAMED glm-zz-zprompt TO SORT AFTER zmoe-fuse (the
+  .cu hunks assume the post-0030 experts file; zp > zm). The engine
+  commit authored with the house identity at the source (the From: leak
+  the guard caught once cannot recur).
+- Staged, NOT adopted: config.sh's PATCHES stays at 10 — the exl3pqual
+  A/B decides. 0080 (the packed prompt linears' cp.async) remains the
+  follow-on candidate.
+
+**LAUNCHED: exl3pqual + summary** — both arms the SAME 11-patch image,
+TF_GLM_EXL3P=0 vs unset: the arms' greedy content identical is the
+same-bits claim; the bench pp rows + the TTFT slope are the prefill
+lever's instruments; the §2 gates, hardmode (the eleventh 95) and the
+vision 4/4 must hold. THEN DARK.

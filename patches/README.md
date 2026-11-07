@@ -735,6 +735,45 @@ documented in LAUNCH.md round 119.
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
+## glm-zz-zprompt.patch — the prompt experts' main loop reworked, exl3p (round 137; Mia 1104's 0078+0079 port)
+
+- What (Mia's 0078 subject: the prompt kernels' main loop compiled for an
+  item's 8-member column blocks, the next k tile decoded among the current
+  MMAs, butterflies one FFMA, vector stores; the same bits): the new tmain
+  <MATS, XR, K2, NBA, PS> (no predicate, no MMA on a member-less column
+  block, no member-row load nobody reads; two decoded A fragment sets across
+  the stage barrier — 4 stages at shared rows, 3 at separate gate/up rows;
+  TLoads fixes each thread's cp.async pieces once an item; the mcg mask one
+  LOP3 on a register (mcg2); 4-bit tiles from the lane's word and its
+  neighbour's (decode_a8)) + fwht128f (each cross-lane butterfly one FFMA —
+  s v exact, rounds once) + Xd's 4 halves one 8-byte store and y's 4 floats
+  one 16-byte store (Kernels.run refuses a y not 16-byte or an xd not
+  8-byte aligned) + the NBA dispatch (TF_EXL3_PROMPT_NBA: the loop compiled
+  per 8-member-block count 1..8). Fork-measured (GPU0 400 W, 2,048 rows):
+  gate/up 1.177x, down 1.161x, energy −9-10%/call; SASS stage 361→210-243
+  instrs, 122 regs no spills. 0079's contract records ride along (the
+  prompt kernels' nvcc-13.3 usage re-measured; our sm_121 numbers verified
+  against our own build's cuobjdump — see the commit message).
+- Port (v1.2.4 + the 10-patch stack, on v124-rebase): ALL of 0078's text
+  verified line-identical against the fork's added lines (244/244 .cuh,
+  18/18 .cu) except the documented adaptations: our tree is 4-bit-only —
+  the fork's K2 template param stays and instantiates at 8 only;
+  tstage_halves/tsmem_bytes keep our 1/0-param forms (identical values at
+  K2 8); tgateup takes the fork's <XR, K2> and our gu kernel call sites
+  pass 8; the fork's 0079 pending_133 _k6 hunk SKIPPED (our tree has no _k6
+  prompt kernels). The classic loop kept as tmain_cl/tspill_cl/tgateup_cl +
+  the tf_exl3_prompt_{gu,down}_cl kernel twins (our pre-port bodies
+  verbatim); TF_GLM_EXL3P=0 resolves them in exl3_prompt.zig's resolve()
+  (envOn, default on — the 0030 knob pattern; no #2405 surface).
+- Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0, the
+  builder base image); fresh-parent + the shipped patch = the commit tree
+  byte-identical (0 diff lines). NAMED glm-zz-zprompt TO SORT AFTER
+  zmoe-fuse (the .cu hunks assume the post-0030 experts file; zp > zm).
+- OWNER: this line; STATUS: **STAGED — the exl3pqual A/B decides** (the
+  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's eleventh
+  95, the vision 4/4; the bench pp rows + the TTFT slope are the prefill
+  lever's instruments — the fork measured the prompt kernels 1.177x/1.161x).
+
 ## glm-zz-zmoe-fuse.patch — a decode window's MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b in one launch (round 136; Mia 1104's 0030 port)
 
 - What (Mia's subject, three keep-the-bits fusions for decode windows):
