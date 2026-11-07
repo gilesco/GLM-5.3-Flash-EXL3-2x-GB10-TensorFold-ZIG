@@ -1341,6 +1341,7 @@ except Exception as e:
     print('- the decode probe FAILED: ' + repr(e))
 " >> "$P"
   echo "## hardmode (the 95 must hold)" >> "$P"
+  mkdir -p "$OUT/v124hm"
   model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
 import json, sys
 try: print(json.load(sys.stdin)["data"][0]["id"])

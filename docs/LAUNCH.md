@@ -7995,3 +7995,30 @@ elasticity and the admission arithmetic are the re-run's to verify.
 
 **RELAUNCHED: v124val + summary** (FORCE=1 re-runs the phase from
 scratch). THEN DARK.
+
+## (round 135, cont. 3) THE v124val RE-RUN: the rebase QUALIFIES on quality — but the direct reads never engaged (the ninth patch never made the PATCHES list) and hardmode never ran (a phase mkdir bug); both fixed, relaunched (campaign-20261107-125114) (2026-11-07)
+
+**What passed**: the OFF arm boots (104 s, the read-ahead witness fired);
+the standing restart boots (112 s, the serve line clean, strict-TF_
+refusal lines 0 — #2405 passes with TF_KV_SHARE=16); the arms' content
+IDENTICAL; **the §2 gates ALL PASS on v1.2.4 + the native TF_KV_SHARE
+store** (g1/g2/g3/g4 PASS, g5 note); the bench pp 1,469/1,410/1,454
+(flat vs the v1.2.3 era); the steady-state decode 41.8 tok/s (flat); the
+vision 4/4 + the detail rows; the walls 103/103 s; the KV_SHARE=16 boot
+holds the one-at-524288 guarantee ("enough for 3 at a 524288 window").
+
+**What failed and why**:
+- The direct-reads witness counted 0 and the log shows the read-ahead
+  line on the standing boot — **glm-zz-loaddirect.patch was never added
+  to config.sh's PATCHES**: the patch existed in patches/ (written,
+  triple-verified, committed) but the image built WITHOUT it. The walls
+  re-dated nothing (103 = the v1.2.3-era wall, the old path). THE FIX:
+  PATCHES gains the ninth (alphabetical: attnfetch8 < loaddirect <
+  moeside; it touches only cuda_load_ahead.zig).
+- The hardmode section is empty — the phase redirected the bench log to
+  "$OUT/v124hm/hm.log" without mkdir (the vision block had one; the
+  redirection failed and || true swallowed it). THE FIX: mkdir -p.
+
+**RELAUNCHED: v124val + summary** — the third run of the phase (the
+walls + hardmode + the direct-reads witness are its remaining unknowns).
+THEN DARK.
