@@ -9,27 +9,22 @@
 # 86% subset); the top4cfg (89 / 76%) stays receipted as the perf leader.
 #
 # title=The fronts — this line vs production 0.6.6 (same harness
-# dated=2026-11-06
-# receipts=the served default is the TR3-4bpw checkpoint on TensorFold v1.2.3 (6ec5fa4cb) + the EIGHT-patch
-# receipts=stack: the 4-patch paged KV (absorb+marriage+pagerows-fix+selist-fix — §2 ALL PASS, the depth ladder
-# receipts=12/12, hardmode 95 + the vision 4/4) + glm-mia-packed-s2 (the two-stage packed-prompt matmuls, adopted
-# receipts=cont. 86: content bit-identical, pp +3.4/+5.8/+6.7%) + glm-mia-exl3prompt (the EXL3 prompt path in one
-# receipts=call + the slot-row write + no MTP beside a drafter, adopted cont. 89: content bit-identical, pp
-# receipts=+24.5/+22.7/+23.3% — exceeding Mia's claim — §2 PASS, hardmode 95, the vision 4/4) + glm-zz-attnfetch8
-# receipts=(the latent attention's FP8 key tiles loading 8 bytes at a time, a tile ahead, adopted cont. 96: content
-# receipts=bit-identical everywhere, bench pp +1.7/+3.6-4.3% and tg +2.9-10.9% at depth, §2 PASS, hardmode 95, the
-# receipts=vision 4/4, the duel's solo beyond its band) + glm-zz-moeside (a decode window's MoE shared expert on a
-# receipts=second stream beside the routed experts, adopted cont. 100: content bit-identical everywhere incl. the
-# receipts=2048-token essay replies, the steady-state probe resolved — the off arm 51/51 s, both on-runs faster,
-# receipts=+3.0% 4/4 sign-consistent — §2 PASS, hardmode 95 — the SEVENTH consecutive — the vision 4/4, the duel's
-# receipts=solo +2.9% over the ATTN8 pair) + TF_GLM_KV_SHARE=8 (the prompt states as pool pages — the concurrent
-# receipts=4-prefix resume −40%). The duel rows re-paired on the MOESIDE candidate (campaign-20261107-092913:
-# receipts=solo 65.9/66.2 vs 58.7/58.8, c2 113.1 vs 87.4, c4 158.6 vs 193.1 — production near its top this run,
-# receipts=its range 155-241; ITL 15.4 vs 17.0; overhead 187 vs 185 ms; the cold d8192 3,990 ms, slope 0.464).
+# dated=2026-11-07
+# receipts=the served default is the TR3-4bpw checkpoint (reshared locally 120 -> 55 shards, byte-identical,
+# receipts=round 135 — checkpoint.direct's 64-source fd budget) on TensorFold v1.2.4 (267c5af6a) + the NINE-patch
+# receipts=stack: the eight adopted (absorb + the fp8-pages marriage + pagerows-fix + selist-fix + packed-s2 +
+# receipts=exl3prompt + attnfetch8 + moeside — rebased onto v1.2.4 in round 135, the re-anchoring light: five
+# receipts=verbatim, three hand-anchored) + glm-zz-loaddirect (the layer loads on v1.2.4's checkpoint.direct,
+# receipts=the next layer read on the thread while one packs; TF_LOAD_DIRECT=0 keeps the read-ahead). QUALIFIED
+# receipts=on v1.2.4 (v124val, campaign-20261107-150250: the §2 gates ALL PASS, hardmode 95 — the NINTH
+# receipts=consecutive — the vision 4/4, the arms content-identical to the byte, zero strict-TF_ refusals under
+# receipts=#2405, the decode and pp flat). THE LOADING FRONT CROSSED: the timed walls 83/83 s vs production's
+# receipts=93.7 — 112.9% (the direct reads took 20 s off the v1.2.3-era 103 s wall). The duel rows below are the
+# receipts=v1.2.3-era MOESIDE-duel pair (campaign-20261107-092913) — the v1.2.4 duel re-pair re-dates them.
 # receipts=The top4cfg's crossed rows (solo 111/c2 124/c4 108) remain receipted in TOOL_EVAL_TESTING.md as the
 # receipts=perf leader.
 # Columns: label|direction(lower|higher)|production|ours|raw label (receipt numbers as displayed)
-loading (warm restart wall)|lower|93.7|103|103 vs 93.7 s — **91%**: the v1.2.2 wall (timed end to end, campaign-20261103-221555; the requal walls 96-101 s health agree) — the front is stable across the v1.2.1→v1.2.2 bump (the v1.2.1-era walls: 103/106 s, campaign-20261103-090007); the digest-cache (#1771) and page-cache-release (#1884) levers show no wall effect (the weights load dominates); the prior 95 s was the Focus-cell v1.2.0 qualification; production's 93.7 stands
+loading (warm restart wall)|lower|93.7|83|83 vs 93.7 s — **112.9%, CROSSED**: the v1.2.4 wall on the direct reads (glm-zz-loaddirect on the resharded 55-shard pack — the timed walls 83/83 s, the first load after prepare 88 s, campaign-20261107-150250; the OFF arm's 138 s carries the one-time digest-cache rebuild on the model swap — not a clean instrument this run; the v1.2.3-era wall was 103 s = 91%, campaign-20261103-221555 — the direct reads took 20 s off); production's 93.7 stands
 decode solo (2048-token, measured)|higher|58.7|65.9|65.9 vs 58.7 t/s — the MOESIDE duel re-pair (campaign-20261107-092913: ours 65.9/66.2, production 58.7/58.8; **112.3%** — +2.9% over the ATTN8 pair's 64.6 avg, two independent instruments agreeing: the A/B's steady-state probe +3.0% (campaign-20261107-083254) and this duel; the chain: the exl3prompt pair 63.8 avg (108.9%), the ATTN8 pair 64.6 (109.4%))
 decode c2 aggregate (measured)|higher|87.4|113.1|113.1 vs 87.4 t/s — the MOESIDE duel re-pair (**129% of production's floor**; ours 110.3 -> 111.2 -> 113.1 across the last three duels — above the floor, ~parity with production's top-of-range volley at ~111, now past it)
 decode c4 aggregate (measured)|higher|193.1|158.6|158.6 vs 193.1 t/s — the MOESIDE duel re-pair (production near its TOP again — its c4 range 155-241 with cache state; ours 153.7 -> 157.4 -> 158.6 across the duels (+3.2% over three patches); at production's floor the pair is parity)

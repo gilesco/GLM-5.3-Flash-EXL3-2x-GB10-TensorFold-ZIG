@@ -762,3 +762,18 @@ re-run on the resharded pack — the direct-reads witness + the timed
 walls are the loading row's re-take; then the duel re-pair re-dates
 the v1.2.3-era scoreboard rows.** The 0030 port (the MoE-glue fusion,
 991 lines) stays queued behind the loading front.
+
+**THE LOADING FRONT CROSSED (round 135 cont. 7)**: the fifth v124val
+window (campaign-20261107-150250) — the direct reads ENGAGED on the
+resharded pack (the witness line fired; three windows of diagnosis
+behind it: the rename, the PATCHES omission, the 120-shard fd budget —
+each a receipt), the timed walls **83/83 s vs production's 93.7 =
+112.9%** (the v1.2.3-era 103 s wall = 91%; the direct reads took 20 s
+off). The quality held through every run: hardmode 95 (the ninth
+consecutive), the §2 gates ALL PASS, the vision 4/4, the arms
+content-identical to the byte, the decode and pp flat. **The (user)
+bar's fronts: solo 112.3% crossed, loading 112.9% crossed, prefill
+96.0% the closest remaining gap.** NEXT: the v1.2.4 duel re-pair
+re-dates the v1.2.3-era speed rows (the duel window); then the 0030
+port (the MoE-glue fusion, 991 lines) with full budget — and the
+prefill front looks at 0030's launch-savings math first.

@@ -8095,3 +8095,26 @@ restored normally (the window's exit path, rc=1).
 pack), then the cached image build + the prepared marker. The window
 relaunches when it lands; the phase's own prepare needs no change (the
 rsync is one-time — future prepares find the pack on both hosts).
+
+## (round 135, cont. 7) THE LOADING FRONT CROSSED — the direct reads engaged, the walls 83/83 s vs production's 93.7 = 112.9% (campaign-20261107-150250) (2026-11-07)
+
+**The fifth v124val window, everything landed**:
+- **The direct-reads witness: 1 rank line** — the path engaged on the
+  resharded pack. The OFF arm's 138 s load carried the one-time
+  digest-cache rebuild on the model swap (noted, not a clean
+  instrument); the standing restart 88 s; **the walls 83/83 s**.
+- **The quality battery**: the §2 gates ALL PASS; **hardmode 95** (the
+  NINTH consecutive; TC-51/TC-92 pass); the vision 4/4; the decode
+  flat 41.8 tok/s; the pp flat (1,461/1,406/1,449).
+- **The arms' content IDENTICAL** — the same greedy sha
+  (80cc3802…) as every previous window: the reshard's tensor bytes
+  proven identical end to end.
+
+**THE SCOREBOARD**: loading 91% → **112.9% — CROSSED** (the anchors
+re-paired, the chart re-rendered). The (user) bar's fronts: solo
+112.3% crossed, loading 112.9% crossed, prefill 96.0% the closest gap.
+The duel rows stay v1.2.3-era.
+
+**LAUNCHED: duel + summary** — the v1.2.4 duel re-pair (production-
+for-testing on 8001 vs ours on the 9-patch stack): the same-window
+probes re-date the speed rows on the qualified engine. THEN DARK.

@@ -39,10 +39,13 @@ records — the header note supersedes them.
   the head's /tmp/tf-src) — fresh-v1.2.4 + the commit bodies byte-identical
   (0 diff lines); fresh-v1.2.4 + the SHIPPED patch files in alphabetical order
   byte-identical (0 diff lines); the full compile (fatbins + native, nvcc
-  sm_121, zig 0.17.0) RC=0 in the builder base image. Judgment: the v124val
-  window (the §2 gates, the bare-config smoke under #2405's strict TF_
-  validation, the battery, the vision, the loading wall's re-take on the direct
-  reads).
+  sm_121, zig 0.17.0) RC=0 in the builder base image. **JUDGED (round 135,
+  the v124val windows)**: QUALIFIED — the §2 gates ALL PASS, hardmode 95
+  (the ninth consecutive), the vision 4/4, zero strict-TF_ refusals under
+  #2405, the arms content-identical to the byte; **the loading front CROSSED
+  on loaddirect (the walls 83/83 s vs production's 93.7 — 112.9%)** on the
+  resharded 55-shard pack. glm-zz-loaddirect's STATUS: **QUALIFIED** (the
+  round-135 receipts, campaign-20261107-150250).
 
 ## The rules
 

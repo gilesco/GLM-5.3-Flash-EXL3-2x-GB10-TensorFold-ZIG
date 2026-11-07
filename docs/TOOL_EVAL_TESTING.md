@@ -693,8 +693,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       silent off (the ninth patch missed the PATCHES list once; the
       served TR3 pack's 120 shards exceed max_sources 64 — a
       byte-identical reshard to 55 is the fix, the next window
-      re-verifies). The loading row stands at 103 s/91% pending the
-      direct reads' re-take on the resharded pack.
+      re-verifies). **THE LOADING FRONT CROSSED (cont. 7,
+      campaign-20261107-150250)**: the direct reads engaged on the
+      resharded 55-shard pack (the witness line fired), the timed
+      walls **83/83 s vs production's 93.7 — 112.9%** (the v1.2.3-era
+      wall 103 s = 91%; the direct reads took 20 s off), hardmode 95
+      (the NINTH consecutive), the vision 4/4, the gates ALL PASS, the
+      arms content-identical to the byte (the same greedy sha as the
+      pre-reshard windows — the reshard's tensor bytes proven identical
+      end to end), the decode and pp flat. The loading row re-paired in
+      the anchors (112.9%) and the chart re-rendered; the duel rows
+      stay v1.2.3-era — the v1.2.4 duel re-pair re-dates them.
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at
