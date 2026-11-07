@@ -7962,3 +7962,36 @@ one bench pass + the steady-state decode probe, ONE hardmode run (the 95
 must hold), the vision suite (4/4 must hold), TWO timed load walls (the
 loading row's re-take — 91%, the last uncrossed front, on the direct
 reads). ~45 min + the prepare build. THEN DARK.
+
+## (round 135, cont. 2) THE v124val WINDOW BURNED ON THE v1.2.4 KV-SHARE RENAME — fixed (TF_KV_SHARE=16), relaunched (campaign-20261107-123013) (2026-11-07)
+
+**The receipt**: every restart REFUSED — `tensorfold: TF_GLM_KV_SHARE is
+now TF_KV_SHARE, the prompt store every family on the KV pool shares:
+set that instead`. v1.2.4 MAINLINED the KV-share-over-pages as a core
+knob for every family (`core/kv_prompts.zig`, #2282-era work) and its
+strict startup validation (#2405) refuses the old name before any
+checkpoint work — the exact risk cont. 105 flagged, firing on a NAME
+move, not a malformed value. Everything downstream (the OFF arm, the
+gates, bench, hardmode, the vision, the walls) is void. The useful
+half: the prepare REBUILT clean with the rebased patches (no PATCH
+FAILED) and the engine ran far enough to hit the validation — the
+rebase's code executes.
+
+**The sweep**: the migration guard AND the new floor are VANILLA v1.2.4
+(not our patch). The floor moved too: `fewStates` demands
+**N ≥ 4×PARALLEL** ("4 states a GLM stream") — the old ≥PARALLEL rule is
+gone, so the adopted 8 at PARALLEL=4 refuses next. Every other exported
+name survives v1.2.4 (swept in the rebased tree: TF_KV_PAGES,
+TF_GLM_DENSE_BITS, TF_GLM_HEAD_BITS, TF_GLM_PDL, TF_GLM_SHARED_SIDE,
+TF_GLM_ABSORB_MMA, TF_HEAT_*, TF_GLM_CHUNK_SOLO; nothing exports
+TF_ROCE_*).
+
+**THE FIX**: config.sh exports `TF_KV_SHARE="${TF_KV_SHARE-16}"` (the
+rename + the floor: 16 = 4×PARALLEL at the standing config; the comment
+carries the full provenance — the kvshare2/kvsharequal receipts stand,
+the rename + the floor are v1.2.4's, the value receipted by the re-run).
+The store's page reservation roughly doubles (8→16 states) — the pool's
+elasticity and the admission arithmetic are the re-run's to verify.
+
+**RELAUNCHED: v124val + summary** (FORCE=1 re-runs the phase from
+scratch). THEN DARK.

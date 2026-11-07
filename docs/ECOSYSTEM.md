@@ -338,6 +338,21 @@ glm-zz-loaddirect is written (cuda_load_ahead.zig; TF_LOAD_DIRECT=0 keeps
 #1928's read-ahead; 23 shards < max_sources 64 so the path engages on our
 checkpoint). The pin is bumped; the v124val window covers it.
 
+**THE RENAME v1.2.4 SPRUNG (the first v124val window burned on it,
+campaign-20261107-123013)**: upstream MAINLINED the KV-share-over-pages
+as core's `TF_KV_SHARE` (kv_prompts.zig — "what a family on the core
+pool calls of one prompt store over its pages") and REFUSES the old
+TF_GLM_KV_SHARE at startup (#2405's strict validation, before any
+checkpoint work). The GLM family is rewired onto the core store in
+vanilla v1.2.4 (our patch's share hunks re-anchored around it). The
+floor moved: TF_KV_SHARE ≥ 4×PARALLEL ("4 states a GLM stream",
+fewStates in cuda_native.zig) — the adopted 8 at PARALLEL=4 refuses;
+config.sh now exports TF_KV_SHARE=16. All other exported knobs swept
+and intact. UPSTREAM-FIRST NOTE: with the store native, the fp8-pages
+marriage's GLM KV-share hunks may be subsumed — a follow-up sitting
+judges whether the patch slims to the fp8-paging core (the §2 gates on
+the native store decide).
+
 ## Community sweep — the NVIDIA GB10 GLM-5.3-Flash thread + DeepSeek field (2026-10-29, round 73)
 
 Source: forums.developer.nvidia.com/t/381350 (936 posts; the user is giles8 in-thread),

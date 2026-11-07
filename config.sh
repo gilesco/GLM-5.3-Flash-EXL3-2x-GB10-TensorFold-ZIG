@@ -212,24 +212,29 @@ KV_CACHE="${KV_CACHE-fp8}"
 # window-mode while config.sh said on).
 export TF_KV_PAGES="${TF_KV_PAGES-on}"
 
-# TF_GLM_KV_SHARE: the prompt cache's states live as POOL PAGES (the host
+# TF_KV_SHARE: the prompt cache's states live as POOL PAGES (the host
 # store off) — a resume re-binds pages instead of copying from the host
-# store. ADOPTED at 8 (2026-11-06, round 133 cont. 74): kvshare2
-# (campaign-20261106-092703) held all four prefix states through the live
-# streams (16 pool pages, zero eviction), the concurrent 4-prefix volley
-# hit 4/4 (the aggregate 7.41 s vs the host store's 12.29 s — −40%; the
-# per-request cost flat under concurrency — the round-123 serialization is
-# the queue), and the host store's cascade eviction (each warm miss
-# re-prefills and re-keeps, evicting the next state) disappears. kvsharequal
-# (campaign-20261106-093921): §2 ALL PASS (g3 resumed=fresh — the resume
-# path rides the pool pages), hardmode 95 + the vision 4/4, total_tokens
-# 662,693 byte-identical to the standing run's. The trade: the pool
-# reserves 1025 pages (~3.4 GiB) for the store (4100 → 3075 free; the
-# one-at-524288 guarantee unchanged). N must be ≥ PARALLEL (the refusal:
-# "live streams evict each other's before a resume"); 8 = 2× the stream
-# count. EXPORTED: env_args() forwards TF_GLM_* from the environment (the
+# store. ADOPTED at 8 as TF_GLM_KV_SHARE (2026-11-06, round 133 cont. 74):
+# kvshare2 (campaign-20261106-092703) held all four prefix states through
+# the live streams (16 pool pages, zero eviction), the concurrent
+# 4-prefix volley hit 4/4 (the aggregate 7.41 s vs the host store's
+# 12.29 s — −40%; the per-request cost flat under concurrency — the
+# round-123 serialization is the queue), and the host store's cascade
+# eviction (each warm miss re-prefills and re-keeps, evicting the next
+# state) disappears. kvsharequal (campaign-20261106-093921): §2 ALL PASS
+# (g3 resumed=fresh — the resume path rides the pool pages), hardmode 95
+# + the vision 4/4, total_tokens 662,693 byte-identical to the standing
+# run's. The trade: the pool reserves 1025 pages (~3.4 GiB) for the store
+# (4100 → 3075 free; the one-at-524288 guarantee unchanged).
+# RENAMED BY v1.2.4 (round 135): upstream mainlined the store for every
+# family as core's TF_KV_SHARE (kv_prompts.zig) and REFUSES the old
+# TF_GLM_KV_SHARE name at startup (the first v124val window burned on
+# exactly this — campaign-20261107-123013). The floor moved too:
+# fewStates demands N ≥ 4×PARALLEL (v1.2.4's "4 states a GLM stream"),
+# so 8 → 16 at the standing PARALLEL=4 — the v124val re-run receipts it.
+# EXPORTED: env_args() forwards TF_KV_* from the environment (the
 # cont. 66 lesson — an unexported assignment never reaches the container).
-export TF_GLM_KV_SHARE="${TF_GLM_KV_SHARE-8}"
+export TF_KV_SHARE="${TF_KV_SHARE-16}"
 
 # PROMPT_K: v1.1.1 regroups prompt-projection K slices (one K slice at every operator row
 # count), which can change replies versus 1.1.0 — including long or resumed prompts. "shape"
