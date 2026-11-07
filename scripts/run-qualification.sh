@@ -1423,8 +1423,13 @@ except Exception: print("")') || PROD_MODEL=""
   else
     echo "- production not running: the prod arm skipped (the 8001 start failed — its refusal is the receipt)" >> "$P"
   fi
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${MMS2_DUEL_PATCHES-}"
-  echo "## ours (dense4fp8 @ 512K x4${MMS2_DUEL_PATCHES:+, the MMS2_DUEL_PATCHES candidate})" >> "$P"
+  # the ours arm rides the STANDING config's stack unless a candidate overrides it
+  # (MMS2_DUEL_PATCHES — the candidate-duel pattern; a standalone duel launch has it
+  # unset, and the bare ${MMS2_DUEL_PATCHES-} expanded to the EMPTY opt-out list —
+  # the stock build refused the adopted fp8+pages mode and the first v1.2.4 duel
+  # re-pair burned on exactly that, campaign-20261107-160107).
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${MMS2_DUEL_PATCHES-${PATCHES-}}"
+  echo "## ours (dense4fp8 @ 512K x4${MMS2_DUEL_PATCHES:+, the MMS2_DUEL_PATCHES candidate}; ${MMS2_DUEL_PATCHES:-the standing stack})" >> "$P"
   duel_arm ours "$SERVED_NAME"
   touch "$OUT/.duel.done"
 fi

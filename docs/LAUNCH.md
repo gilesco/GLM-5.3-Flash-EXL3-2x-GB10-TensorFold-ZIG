@@ -8118,3 +8118,25 @@ The duel rows stay v1.2.3-era.
 **LAUNCHED: duel + summary** — the v1.2.4 duel re-pair (production-
 for-testing on 8001 vs ours on the 9-patch stack): the same-window
 probes re-date the speed rows on the qualified engine. THEN DARK.
+
+## (round 135, cont. 8) THE FIRST v1.2.4 DUEL BURNED — ours arm rode an EMPTY patch list (the standalone-launch hole in the candidate-duel pattern) and the stock build refused fp8+pages; fixed, relaunched (campaign-20261107-160107) (2026-11-07)
+
+**The receipt**: production's arm ran clean (solo 58.7/58.7, c2 87.2,
+c4 192.7, ITL 17.1 ms, overhead 184 ms — its receipt stands) and OURS
+REFUSED at boot: `--kv-cache fp8 keeps a window per stream: unset
+TF_KV_PAGES` — the STOCK engine's fp8+pages refusal. The prepared line
+says `patches=` — EMPTY. The duel's ours arm used
+`PATCHES="${MMS2_DUEL_PATCHES-}"`: the candidate-duel pattern expects
+MMS2_DUEL_PATCHES exported by the pairing candidate phase (the
+moesidequal duel rode it); a STANDALONE duel launch has it unset and
+the bare `-` form expanded to the explicit EMPTY list — the opt-out —
+so the fingerprint moved, prepare rebuilt a stock image, and the
+refusal followed.
+
+**THE FIX**: the duel's ours arm falls back to the standing config's
+stack — `PATCHES="${MMS2_DUEL_PATCHES-${PATCHES-}}"` — the same shape
+the RC_PATCHES phases use; the receipt label names "the standing
+stack" when no candidate is set.
+
+**RELAUNCHED: duel + summary** — the v1.2.4 duel re-pair on the
+standing 9-patch stack. THEN DARK.
