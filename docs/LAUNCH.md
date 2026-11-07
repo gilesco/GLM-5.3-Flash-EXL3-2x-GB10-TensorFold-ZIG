@@ -7747,3 +7747,43 @@ the §2 gates + the hardmode battery + the vision on the 8-patch stack
 ours arm riding MMS2_DUEL_PATCHES (the 8-patch candidate). **The duel
 decides**: its solo beyond the 0.2% band = ADOPT (the eighth patch);
 a duel solo parity = retire. THEN DARK.
+
+## (round 134, cont. 100) THE MOESIDE ADOPTION: GO — the eighth patch joins the default stack; the pre-marriage series is fully triaged (moesidequal + the duel, campaign-20261107-092913) (2026-11-07)
+
+**The adoption judgment cleared every bar** on the 8-patch candidate:
+- **§2 gates ALL PASS**, **hardmode 95 — the SEVENTH consecutive
+  receipt** on the line's configs vs production's current-bench
+  anchor 94, **the vision 4/4** — the formality receipts (the outputs
+  are bit-identical by construction).
+- **The duel re-pair** (production-for-testing on 8001, same window):
+  solo **65.9/66.2 vs 58.7/58.8 — 112.3%** (+2.9% over the ATTN8
+  pair's 64.6 avg; two independent instruments agree — the A/B's
+  steady-state probe +3.0% and this duel); c2 **113.1 — 129% of the
+  floor, past production's top-of-range volley at ~111**; c4 158.6
+  (+3.2% across the last three duels; production near its top again);
+  ITL 15.4 vs 17.0 (110% — crossed); overhead 187 vs 185 ms (99%);
+  the cold d8192 3,990 ms, slope 0.464 (**429%** — within the row's
+  window drift of the ATTN8 pair's 3,942/434%; the chain preserved).
+
+**DECISION: ADOPT — config.sh's PATCHES is the 8-patch stack.**
+
+**The digest executed the same sitting**: the anchors' seven rows +
+header re-paired on the MOESIDE duel, the chart re-rendered; the
+README's serve/Quality/Speed/bars/PATCHES rows re-paired (seven 95
+receipts cited); DELTAS's header scoreboard re-paired to the MOESIDE
+duel (the ATTN8/EXL3P/S2/PAGED duels in the superseded chain) and the
+engine row describes the 8-patch stack; the moeside + moesidequal
+session phases RETIRED (both receipted); the ledger's arc block
+carries the adoption.
+
+**THE SERIES IS TRIAGED**: every perf-relevant patch in the fork's
+pre-marriage series (0005/0006/0007/0008/0009/0011) is adopted with a
+receipt or retired with a reason; 0012/0014/0015 are capacity/hygiene.
+The arc's scoreboard: the prefill front 76% → 96.0%, solo 108.5% →
+112.3%, the cold depth 328% → 429%, ITL 109% → 110% — every quality
+receipt intact throughout (seven consecutive hardmode 95s, the vision
+4/4 every time).
+
+**NO LAUNCH** — the next lever is a hunt (the loading wall's re-take,
+the upstream watch, or the capacity/hygiene ports); that is the next
+sitting's opener.

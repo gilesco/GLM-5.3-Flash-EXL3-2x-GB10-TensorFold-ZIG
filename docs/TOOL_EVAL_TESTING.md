@@ -665,7 +665,22 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       NAMED glm-zz- to sort after the stack — the image applies
       patches alphabetically; the first attnpref window burned on
       exactly that); the anchors + DELTAS + README re-paired, the
-      prefill front 94.4% → 96.0%. The 0010 fetch corrected
+      prefill front 94.4% → 96.0%.
+      **THE MOESIDE ADOPTION (cont. 97-100): the moeside A/B
+      (campaign-20261107-083254) — the content shas IDENTICAL
+      everywhere incl. the 2048-token essay replies; the steady-state
+      probe RESOLVED (the off arm 51/51 s, both on-runs faster: 40.2 →
+      41.4 tok/s avg +3.0%, 4/4 sign-consistent — matching the claim's
+      transfer math); the bench corroborating on the solo cells
+      (+2.9%/+3.1%) with depth concurrency flat; moesidequal + the
+      duel (campaign-20261107-092913): §2 ALL PASS, hardmode 95 (the
+      SEVENTH consecutive), the vision 4/4, the duel re-paired — solo
+      65.9/66.2 vs 58.7/58.8 (**112.3%**, +2.9% over the ATTN8 pair,
+      two instruments agreeing), c2 113.1 (129% of the floor, past
+      production's top volley), c4 158.6 (+3.2% across three duels) —
+      **ADOPTED: config.sh's PATCHES is the 8-patch stack**; the
+      anchors + DELTAS + README re-paired (solo 112.3%, ITL 110%, the
+      cold 429%, prefill 96.0%). The 0010 fetch corrected
       the plan's citation: it is a 7-line correctness patch (the
       side-stream drain), not the perf lever; the fork's prefill-class
       lever is the 0009+0033 packed-prompt/pair-launch line (the design

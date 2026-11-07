@@ -8,7 +8,7 @@ engine and the patch policy. Read this before pointing real traffic at it.
 docs/LAUNCH.md and docs/TOOL_EVAL_TESTING.md; this repo's edits are AI-generated, see the
 README. The engine is **v1.2.3** (`6ec5fa4cb`, round 133: the 4-patch stack re-anchored and fully
 re-receipted — §2 gates ALL PASS on the fp8-paged cell (pagedgatesv123, campaign-20261106-084338)
-and the bf16 cell, the depth ladder 12/12, hardmode 95 + the vision 4/4 receipted six times with
+and the bf16 cell, the depth ladder 12/12, hardmode 95 + the vision 4/4 receipted seven times with
 the standing run's byte-identical token profile, the replay 100 + the probe 5/5) with **TF_GLM_KV_SHARE=8**
 adopted (the prompt states as pool pages — the concurrent 4-prefix resume −40%, the solo warm
 reliable; kvshare2/kvsharequal, campaign-20261106-092703/-093921) and **`TF_GLM_INDEX_CUDA=1`** as the
@@ -22,21 +22,23 @@ times: campaign-20261106-043015/-065920/-093921 — byte-identical token profile
 receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
-or bench versions). **The CURRENT scoreboard (the ATTN8 duel, 2026-11-07 —
-campaign-20261107-020420: production-for-testing on 8001 vs ours on the adopted 7-patch
+or bench versions). **The CURRENT scoreboard (the MOESIDE duel, 2026-11-07 —
+campaign-20261107-092913: production-for-testing on 8001 vs ours on the adopted 8-patch
 stack, both engines the same window, the same probes)**: loading **91%** (103 vs 93.7 s),
-solo **109.4% — CROSSED** (64.2/65.0 vs 58.7/58.8 t/s — the attention prefetch's solo gain,
-beyond the instrument's 0.2% band), c2 **127% of production's floor** (111.2 vs 87.4 —
-~parity with its top-of-range volley at ~111), c4: production **near its top this run**
-(157.4 vs 193.5 — its range 155-241 with cache state; ours +2.4% across the duels), TTFT
-overhead **96%** (189 vs 181 ms), ITL **109% — crossed** (15.6 vs 17.0 ms/token), **the cold
-depth cost CROSSED (434%)** — ours 3.9 s vs production's 17.1 s at d8192 cold (its slope
-2.026 ms/tok, slowing with depth; ours 0.458 flat) — and the **prefill front 96.0%** (1,458
-vs 1,518 tok/s — ours the attnpref A/B's arm-on pair, campaign-20261107-010849; production
-the round-129 same-day pair, campaign-20261031-171731; exl3prompt took the front from 76%
-to 94.4%, the attention prefetch to 96.0%). The EXL3P duel (campaign-20261106-212157: solo
-108.9%, cold 414%, prefill 94.4%), the S2 duel (solo 109.2%, cold 340%) and the PAGED duel
-(solo 108.5%, cold 328%) are the history it superseded. The round-132 window-mode duel (campaign-20261102-210117: solo 110%, c2 127%, c4 80%,
+solo **112.3% — CROSSED** (65.9/66.2 vs 58.7/58.8 t/s — the side-stream overlap's +2.9%
+over the ATTN8 pair, two independent instruments agreeing: the A/B's steady-state probe
++3.0% and this duel), c2 **129% of production's floor** (113.1 vs 87.4 — past its
+top-of-range volley at ~111), c4: production **near its top this run** (158.6 vs 193.1 —
+its range 155-241 with cache state; ours +3.2% across the last three duels), TTFT overhead
+**99%** (187 vs 185 ms), ITL **110% — crossed** (15.4 vs 17.0 ms/token), **the cold depth
+cost CROSSED (429%)** — ours 4.0 s vs production's 17.1 s at d8192 cold (its slope 2.026
+ms/tok, slowing with depth; ours 0.464 flat, within the row's window drift of the ATTN8
+pair's 3,942) — and the **prefill front 96.0%** (1,458 vs 1,518 tok/s — ours the attnpref
+A/B's arm-on pair, campaign-20261107-010849; production the round-129 same-day pair,
+campaign-20261031-171731; exl3prompt took the front from 76% to 94.4%, the attention
+prefetch to 96.0%). The ATTN8 duel (campaign-20261107-020420: solo 109.4%, cold 434%), the
+EXL3P duel (solo 108.9%, cold 414%), the S2 duel (solo 109.2%, cold 340%) and the PAGED
+duel (solo 108.5%, cold 328%) are the history it superseded. The round-132 window-mode duel (campaign-20261102-210117: solo 110%, c2 127%, c4 80%,
 ITL 109%, cold 309%) is the pre-pages history it superseded; the Focus cell's round-130
 head-to-head and the round-131 prodcold receipt are the cold front's provenance (the
 round-131 receipt: production's TRUE cold on novel fills its persistent cache cannot hit).
@@ -68,7 +70,7 @@ gates PASS on both, including the modified checkpoint's battery.)*
 
 | | EXL3 recipe (production) | this repo |
 | --- | --- | --- |
-| Engine | TensorFold **Python 0.6.x** in a PyTorch-based image, plus a 122-patch recipe (Mia's series folded onto the python-0.6 tip, 2026-10-27) | TensorFold **native** (`tensorfold-native`, Zig, no Python) at a pinned commit — **v1.2.3 (`6ec5fa4cb…`) + the 7-patch stack (the re-anchored absorb port, the fp8-pages marriage, the pagerows fix, the selist fix, the packed-s2 two-stage prompt matmuls — adopted cont. 86: the content bit-identical, pp +3.4/+5.8/+6.7%, the duel re-paired solo 109.2% / cold 340% — round 133: ADOPTED on v1.2.2 (§2 gates PASS, the duel re-paired, hardmode 95 + the vision 4/4), re-anchored onto v1.2.3 the same day and re-validated — v123qual, campaign-20261106-065920: the replay 100 with the standing run's exact token profile (total_tokens 662,693 byte-identical), the probe 5/5, hardmode 95 + the vision 4/4); the exl3prompt one-call EXL3 prompt path (the down kernel writes the MoE slot rows; no target-MTP prompt absorption beside a drafter — Mia 1104 0007+0008 hand-ported, byte-identical to the port commit on a fresh checkout) — adopted cont. 89: the content bit-identical across arms (campaign-20261106-201824), pp +24.5/+22.7/+23.3% at d0/d4096/d8192 — exceeding Mia's +12.6-16% combined claim — §2 PASS, hardmode 95 (the fifth consecutive) + the vision 4/4, the duel re-paired solo 108.9% / cold 414% / prefill 94.4% (exl3qual, campaign-20261106-212157); the attnfetch8 FP8 key-tile prefetch (the latent attention loads 8 bytes at a time, a tile ahead — Mia 1104 0005+0011 hand-ported onto the paged marriage, `glm-zz-` named to sort after the stack) — adopted cont. 96: the content bit-identical everywhere incl. the 2048-token decode replies (campaign-20261107-010849), bench pp +1.7/+3.6-4.3% and tg +2.9-10.9% at depth, §2 PASS, hardmode 95 (the sixth consecutive) + the vision 4/4, the duel re-paired solo 109.4% / cold 434% / prefill 96.0% (attnqual, campaign-20261107-020420); TF_GLM_KV_SHARE=8 (the prompt states as pool pages — the concurrent 4-prefix resume −40%, the solo warm reliable; adopted 2026-11-06, cont. 74); paged KV mainline** |
+| Engine | TensorFold **Python 0.6.x** in a PyTorch-based image, plus a 122-patch recipe (Mia's series folded onto the python-0.6 tip, 2026-10-27) | TensorFold **native** (`tensorfold-native`, Zig, no Python) at a pinned commit — **v1.2.3 (`6ec5fa4cb…`) + the 7-patch stack (the re-anchored absorb port, the fp8-pages marriage, the pagerows fix, the selist fix, the packed-s2 two-stage prompt matmuls — adopted cont. 86: the content bit-identical, pp +3.4/+5.8/+6.7%, the duel re-paired solo 109.2% / cold 340% — round 133: ADOPTED on v1.2.2 (§2 gates PASS, the duel re-paired, hardmode 95 + the vision 4/4), re-anchored onto v1.2.3 the same day and re-validated — v123qual, campaign-20261106-065920: the replay 100 with the standing run's exact token profile (total_tokens 662,693 byte-identical), the probe 5/5, hardmode 95 + the vision 4/4); the exl3prompt one-call EXL3 prompt path (the down kernel writes the MoE slot rows; no target-MTP prompt absorption beside a drafter — Mia 1104 0007+0008 hand-ported, byte-identical to the port commit on a fresh checkout) — adopted cont. 89: the content bit-identical across arms (campaign-20261106-201824), pp +24.5/+22.7/+23.3% at d0/d4096/d8192 — exceeding Mia's +12.6-16% combined claim — §2 PASS, hardmode 95 (the fifth consecutive) + the vision 4/4, the duel re-paired solo 108.9% / cold 414% / prefill 94.4% (exl3qual, campaign-20261106-212157); the attnfetch8 FP8 key-tile prefetch (the latent attention loads 8 bytes at a time, a tile ahead — Mia 1104 0005+0011 hand-ported onto the paged marriage, `glm-zz-` named to sort after the stack) — adopted cont. 96: the content bit-identical everywhere incl. the 2048-token decode replies (campaign-20261107-010849), bench pp +1.7/+3.6-4.3% and tg +2.9-10.9% at depth, §2 PASS, hardmode 95 (the sixth consecutive) + the vision 4/4, the duel re-paired solo 109.4% / cold 434% / prefill 96.0% (attnqual, campaign-20261107-020420); the moeside side-stream overlap (a decode window's MoE shared expert on a second stream beside the routed experts — Mia 1104 0006+0010 hand-ported, `glm-zz-` named to sort after the stack; TF_GLM_SHARED_SIDE=0 the kill switch) — adopted cont. 100: the content bit-identical everywhere incl. the 2048-token essay replies (campaign-20261107-083254), the steady-state probe resolved (the off arm 51/51 s, both on-runs faster, +3.0% 4/4 sign-consistent), §2 PASS, hardmode 95 (the seventh consecutive) + the vision 4/4, the duel re-paired solo 112.3% / c2 129% of the floor / c4 158.6 (moesidequal, campaign-20261107-092913); TF_GLM_KV_SHARE=8 (the prompt states as pool pages — the concurrent 4-prefix resume −40%, the solo warm reliable; adopted 2026-11-06, cont. 74); paged KV mainline** |
 | Checkpoint | Mia-AiLab EXL3 4 bpw (~176 GB) stock + DFlash2 drafter | **the TR3-4bpw checkpoint (the (user) default, 2026-11-02) + DFlash2** — a different checkpoint from production's, chosen on the hardmode bar; the stock and top4cfg Mia cells remain serveable (`MODEL_ID`/`MODEL_REVISION`/`PATCHES` per the README). This line is EXL3 only — the NVFP4 route (NVIDIA's checkpoint, MTP drafts, the v1.0.x receipts) has its own repo (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing) |
 | Code carried locally | a patch series against TensorFold's site-packages | **none** — upstream code, built at a pinned commit |
 | Upgrade path | rebase the patch series by hand (see the old repo's REBASE-NOTES) | bump `TF_REF` (or take the default `latest-v1`); prepare rebuilds the image |

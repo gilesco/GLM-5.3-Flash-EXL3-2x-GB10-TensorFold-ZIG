@@ -693,3 +693,16 @@ solo cells (+2.9%/+3.1%, c2@d0 +6.0%) with depth concurrency flat
 (expected — the overlap gains shrink under saturation). moesidequal +
 the duel launched: the formality receipts + the duel's solo (the 0.2%
 instrument) decide the adoption.
+
+**The moeside ADOPTED (cont. 100)**: config.sh's PATCHES is the
+8-patch stack; the anchors + DELTAS + README re-paired on the MOESIDE
+duel — **solo 112.3%** (65.9/66.2 vs 58.7/58.8, two instruments
+agreeing), c2 129% of the floor (past production's top volley), c4
+158.6, ITL 110%, the cold 429%, prefill 96.0%. **The fork's
+pre-marriage series is now fully triaged** — every perf-relevant patch
+(0005/0006/0007/0008/0009/0011) is adopted or retired with a receipt;
+0012/0014/0015 are capacity/hygiene (no perf claim). The live options
+for the next lever: the loading wall's re-take (91% — the last open
+front), the upstream watch (docs/ECOSYSTEM.md — v1.2.4+ when it
+ships), or the capacity/hygiene ports when the resume front needs
+them.
