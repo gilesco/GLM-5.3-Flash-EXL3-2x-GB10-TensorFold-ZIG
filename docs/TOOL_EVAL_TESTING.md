@@ -1348,3 +1348,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       halt's shape on the ported serve), the §2 gates ALL PASS, hardmode 95 — the
       SEVENTEENTH consecutive — the vision 4/4. ADOPTED: config.sh's PATCHES default
       carries 018; the promoted repo follows on the next promotion sync.
+
+- [x] **The bench harness runs `--parallel 2` (user, round 139 cont. 10)**: the
+      tool-eval/hardmode batteries run two scenarios CONCURRENTLY against the serve —
+      two separate contexts coexist in the KV pool for the whole battery, which is a
+      standing cross-spill probe (the poolcanary class caught the store bug; the
+      battery now watches for its recurrence every run). NOT the serve's PARALLEL=
+      lanes: `PARALLEL=4` is the engine's stream count (config.sh), `--parallel 2` is
+      tool-eval-bench's scenario concurrency — they stack (2 bench scenarios × 4
+      server lanes). ALL 15 hardmode battery invocations in run-qualification.sh carry
+      it now (bench_cell already did). **Instrument note**: the consecutive-95 streak
+      ran its batteries at the harness default (parallel 1) — the next battery re-grounds
+      the instrument at parallel 2, so any score movement between them attributes to the
+      INSTRUMENT CHANGE first, the engine second.

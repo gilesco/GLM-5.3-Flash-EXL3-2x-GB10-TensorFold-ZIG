@@ -286,6 +286,11 @@ bench_cell() {     # the fixed matrix bench options against the running server
   mkdir -p "$dest"
   # --hardmode (user, round 132): hardmode is THE quality instrument and it INCLUDES
   # the standard batch — the plain 69-scenario run is retired; scores never cross-compare
+  # --parallel 2 is the BENCH HARNESS's scenario concurrency (tool-eval-bench's own
+  # option, user round 139 cont. 10) — two scenarios in flight against the serve, so
+  # two separate contexts coexist in the KV pool: a cross-spill probe. It is NOT the
+  # serve's PARALLEL= lanes (config.sh — the engine's stream count; the gates restart
+  # with PARALLEL=4). The two stack: 2 bench scenarios × 4 server lanes.
   PYTHONUNBUFFERED=1 "$BENCH" run \
     --base-url "http://127.0.0.1:$PORT/v1" \
     --model "$SERVED_NAME" \
@@ -1353,7 +1358,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "v124val" --output-dir "$OUT/v124hm" \
+    --hardmode --label "v124val" --output-dir "$OUT/v124hm" --parallel 2 \
     --json-file "$OUT/v124hm/hm.json" > "$OUT/v124hm/hm.log" 2>&1 || true
   grep -o '"final_score": [0-9]*' "$OUT/v124hm/hm.json" >> "$P" 2>/dev/null || true
   grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/v124hm/hm.log" >> "$P" 2>/dev/null || true
@@ -1857,7 +1862,7 @@ except Exception: print("")') || HM=""
       PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
         --model "$HM" --format openai --tokenizer "$MODEL_ID" \
         --seed 42 --variant-seed "$vs" --perf --parallel 2 --timeout 240 \
-        --hardmode --label "hm-vs$vs" --output-dir "$OUTD" \
+        --hardmode --label "hm-vs$vs" --output-dir "$OUTD" --parallel 2 \
         --json-file "$OUTD/hm-vs$vs.json" > "$OUTD/hm-vs$vs.log" 2>&1 || true
       grep -oE '"final_score": [0-9]+' "$OUTD/hm-vs$vs.json" >> "$P" 2>/dev/null || true
       grep -oE '"scenario_id": "TC-[0-9]+", "status": "fail"' "$OUTD/hm-vs$vs.json" 2>/dev/null | grep -oE "TC-[0-9]+" | sort -u | tr '\n' ' ' >> "$P" || true
@@ -1897,7 +1902,7 @@ except Exception: print("")') || SM=""
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$SM" --format openai --tokenizer "$MODEL_ID" \
       --seed 42 --temperature 1.0 --top-p 0.95 --perf --parallel 2 --timeout 240 \
-      --hardmode --label "hm-rec" --output-dir "$OUTD" \
+      --hardmode --label "hm-rec" --output-dir "$OUTD" --parallel 2 \
       --json-file "$OUTD/hm-rec.json" > "$OUTD/hm-rec.log" 2>&1 || true
     grep -oE '"final_score": [0-9]+' "$OUTD/hm-rec.json" >> "$P" 2>/dev/null || true
     tail -2 "$OUTD/hm-rec.log" >> "$P" 2>/dev/null || true
@@ -2065,7 +2070,7 @@ except Exception: print("")' 2>/dev/null) || AM=""
       echo "- leg $leg (CHAT_TEMPLATE=${CT:-empty}): $(serve_line)" >> "$P"
       PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
         --model "$AM" --format openai --tokenizer "$MODEL_ID" \
-        --hardmode --label "et-$leg" --output-dir "$ETOUT" \
+        --hardmode --label "et-$leg" --output-dir "$ETOUT" --parallel 2 \
         --json-file "$ETOUT/et-$leg.json" > "$ETOUT/et-$leg.log" 2>&1 || true
       grep -o '"final_score": [0-9]*' "$ETOUT/et-$leg.json" >> "$P" 2>/dev/null || true
       grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$ETOUT/et-$leg.log" >> "$P" 2>/dev/null || true
@@ -2120,7 +2125,7 @@ except Exception: print("")' 2>/dev/null) || AM=""
       echo "- leg $leg ($CT): $(serve_line)" >> "$P"
       PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
         --model "$AM" --format openai --tokenizer "$MODEL_ID" \
-        --hardmode --label "et-$leg" --output-dir "$ETOUT" \
+        --hardmode --label "et-$leg" --output-dir "$ETOUT" --parallel 2 \
         --json-file "$ETOUT/et-$leg.json" > "$ETOUT/et-$leg.log" 2>&1 || true
       grep -o '"final_score": [0-9]*' "$ETOUT/et-$leg.json" >> "$P" 2>/dev/null || true
       grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$ETOUT/et-$leg.log" >> "$P" 2>/dev/null || true
@@ -2169,7 +2174,7 @@ except Exception: print("")' 2>/dev/null) || model=""
     fi
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "etadopt" --output-dir "$ETOUT" \
+      --hardmode --label "etadopt" --output-dir "$ETOUT" --parallel 2 \
       --json-file "$ETOUT/etadopt.json" > "$ETOUT/etadopt.log" 2>&1 || true
     grep -o '"final_score": [0-9]*' "$ETOUT/etadopt.json" >> "$P" 2>/dev/null || true
     grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$ETOUT/etadopt.log" >> "$P" 2>/dev/null || true
@@ -2233,7 +2238,7 @@ except Exception: print("")' 2>/dev/null) || AM=""
         AM="${AM:-local/GLM-5.3-Flash-AZ-Focus-EXL3}"
         PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
           --model "$AM" --format openai --tokenizer "$MODEL_ID" \
-          --hardmode --label "rg-gemm" --output-dir "$RGOUT" \
+          --hardmode --label "rg-gemm" --output-dir "$RGOUT" --parallel 2 \
           --json-file "$RGOUT/rg-gemm.json" > "$RGOUT/rg-gemm.log" 2>&1 || true
         grep -o '"final_score": [0-9]*' "$RGOUT/rg-gemm.json" >> "$P" 2>/dev/null || true
         grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$RGOUT/rg-gemm.log" >> "$P" 2>/dev/null || true
@@ -3863,7 +3868,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "moefusequal" --output-dir "$OUT/mfhm" \
+      --hardmode --label "moefusequal" --output-dir "$OUT/mfhm" --parallel 2 \
       --json-file "$OUT/mfhm/hm.json" > "$OUT/mfhm/hm.log" 2>&1 || true
     grep -o '"final_score": [0-9]*' "$OUT/mfhm/hm.json" >> "$P" 2>/dev/null || true
     grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/mfhm/hm.log" >> "$P" 2>/dev/null || true
@@ -3963,7 +3968,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "exl3pqual" --output-dir "$OUT/ephm" \
+      --hardmode --label "exl3pqual" --output-dir "$OUT/ephm" --parallel 2 \
       --json-file "$OUT/ephm/hm.json" > "$OUT/ephm/hm.log" 2>&1 || true
     grep -o '"final_score": [0-9]*' "$OUT/ephm/hm.json" >> "$P" 2>/dev/null || true
     grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/ephm/hm.log" >> "$P" 2>/dev/null || true
@@ -4063,7 +4068,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "0080qual" --output-dir "$OUT/s2hm" \
+      --hardmode --label "0080qual" --output-dir "$OUT/s2hm" --parallel 2 \
       --json-file "$OUT/s2hm/hm.json" > "$OUT/s2hm/hm.log" 2>&1 || true
     grep -o '"final_score": [0-9]*' "$OUT/s2hm/hm.json" >> "$P" 2>/dev/null || true
     grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/s2hm/hm.log" >> "$P" 2>/dev/null || true
@@ -4170,7 +4175,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "0081qual" --output-dir "$OUT/shhm" \
+      --hardmode --label "0081qual" --output-dir "$OUT/shhm" --parallel 2 \
       --json-file "$OUT/shhm/hm.json" > "$OUT/shhm/hm.log" 2>&1 || true
     grep -o '"final_score": [0-9]*' "$OUT/shhm/hm.json" >> "$P" 2>/dev/null || true
     grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/shhm/hm.log" >> "$P" 2>/dev/null || true
@@ -4325,7 +4330,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
     PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
       --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "0082qual" --output-dir "$OUT/sthm" \
+      --hardmode --label "0082qual" --output-dir "$OUT/sthm" --parallel 2 \
       --json-file "$OUT/sthm/hm.json" > "$OUT/sthm/hm.log" 2>&1 || true
     grep -o '"final_score": [0-9]*' "$OUT/sthm/hm.json" >> "$P" 2>/dev/null || true
     grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/sthm/hm.log" >> "$P" 2>/dev/null || true
@@ -4403,7 +4408,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "callquotequal" --output-dir "$OUT/cqhm" \
+    --hardmode --label "callquotequal" --output-dir "$OUT/cqhm" --parallel 2 \
     --json-file "$OUT/cqhm/hm.json" > "$OUT/cqhm/hm.log" 2>&1 || true
   grep -o '"final_score": [0-9]*' "$OUT/cqhm/hm.json" >> "$P" 2>/dev/null || true
   grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cqhm/hm.log" >> "$P" 2>/dev/null || true
@@ -4454,7 +4459,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "tools256qual" --output-dir "$OUT/t2hm" \
+    --hardmode --label "tools256qual" --output-dir "$OUT/t2hm" --parallel 2 \
     --json-file "$OUT/t2hm/hm.json" > "$OUT/t2hm/hm.log" 2>&1 || true
   grep -o '"final_score": [0-9]*' "$OUT/t2hm/hm.json" >> "$P" 2>/dev/null || true
   grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/t2hm/hm.log" >> "$P" 2>/dev/null || true
@@ -4492,7 +4497,7 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "newprodqual" --output-dir "$OUT/nphm" \
+    --hardmode --label "newprodqual" --output-dir "$OUT/nphm" --parallel 2 \
     --json-file "$OUT/nphm/hm.json" > "$OUT/nphm/hm.log" 2>&1 || true
   grep -o '"final_score": [0-9]*' "$OUT/nphm/hm.json" >> "$P" 2>/dev/null || true
   grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/nphm/hm.log" >> "$P" 2>/dev/null || true
