@@ -22,8 +22,9 @@ STEPS="${STEPS:-900}"   # 15 s per step: ~3.75 h ceiling for the production stop
 echo "=== window block $(date): PHASES=$PHASES — waiting for production (the promoted glm53-native-tf) to stop ==="
 # the window wrapper (autonomous-window.sh) already stopped production through the production
 # repo's own scripts before calling this block; this wait is the hand-off's witness. Round 138:
-# the promoted stack is glm53-native-tf; the archived tip's glm53-flash-tf is NOT watched here
-# (it may legitimately serve as the duel baseline inside a later phase's 8001 dance).
+# the promoted stack is glm53-native-tf; the round-139 (user) retirement removed the old tip
+# recipe entirely — no glm53-flash-tf container exists anymore (the duel's baseline arm is
+# THIS repo's own config on the testing stack's own name).
 for _ in $(seq 1 "$STEPS"); do
   docker ps --format '{{.Names}}' 2>/dev/null | grep -qx glm53-native-tf || break
   sleep 15

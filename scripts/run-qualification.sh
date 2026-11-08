@@ -8,11 +8,11 @@
 #
 # What it does, in order (each phase lands a receipt in results/campaign-<id>/):
 #   preflight  guards (production untouched), marker, RoCE, CPU clocks, disk
-#   reference  one greedy probe captured from production 0.6.6 if it is still up
+#   reference  one greedy probe captured from production if it is still up
 #              (read-only, a single request) — the cross-engine output reference
 #              (the prodqual phase retired round 132 (user): metrics on the clean
-#              testing port 8001 only — the duel's production arm on 8001 is the
-#              production-vs-us instrument) + the same-harness tool-eval
+#              testing port 8001 only — the duel's baseline arm on 8001 is the
+#              native-vs-native instrument) + the same-harness tool-eval
 #              and perf runs, giving the native engine's 92 its like-for-like
 #              production baseline. Prompts to stop production only if GPU phases
 #              are also selected.
@@ -79,9 +79,9 @@ done
 # ---------------------------------------------------------------------------
 prod_running() {   # the PROMOTED production up here and on the worker? (round 138: the name-shared
                    # testing stack is glm53-native-tf-test (the -test suffix, the round-138 fix) — never
-                   # trips this; the archived tip's glm53-flash-tf serves only as the duel baseline on
-                   # 8001, started INSIDE a window while the wrapper already stopped production — also
-                   # never trips this)
+                   # trips this; the round-139 (user) directive retired the old tip recipe — the
+                   # baseline arm of a duel is THIS repo's own config on the testing stack's own
+                   # name, also never trips this)
   docker ps --format '{{.Names}}' | grep -qx '^glm53-native-tf$' && return 0
   ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" \
     'docker ps --format "{{.Names}}" | grep -qx "^glm53-native-tf$"' 2>/dev/null && return 0
@@ -427,7 +427,7 @@ if want preflight && ! phase_done preflight; then
 fi
 
 # ---------------------------------------------------------------------------
-# phase: reference (production 0.6.6 output capture; read-only, one request)
+# phase: reference (production's output capture; read-only, one request)
 # ---------------------------------------------------------------------------
 REF_PROMPT="List the first eight prime numbers in order, comma separated, then state the sum."
 if want reference && ! phase_done reference; then
@@ -439,7 +439,7 @@ if want reference && ! phase_done reference; then
          -H 'Content-Type: application/json' --data @"$OUT/ref-req.json" \
          > "$OUT/reference-prod.json"; then
       {
-        echo "# production reference (0.6.6 Python engine, read-only single request)"
+        echo "# production reference (the promoted native production, read-only single request)"
         echo "- sha256: $(sha_msg "$OUT/reference-prod.json")"
         echo '- content: '"$(content_of "$OUT/reference-prod.json" | head -c 400)"
       } >> "$P"
@@ -711,7 +711,7 @@ fi
 # TF_GLM_OVERLAP_PIECES=6 (a prompt chunk's RoCE exchanges in 6 row pieces,
 # default 3), TF_GLM_KDA_DECODE_WIDE=0 (KDA decode off the three-kernel chain).
 # Each cell is a TIMED restart — the engine's own "loaded in Ns" line is the
-# loading-time metric (production 0.6.6 loads in 93.7 s; our restart walls run
+# loading-time metric (the RETIRED Python recipe loaded in 93.7 s — kept for reference until the round-139 native-vs-native re-pair re-dates the pair; the promoted production boots in ~80 s; our restart walls run
 # ~265 s — the load-nodraft cell isolates the drafter's share). Baseline: the
 # dense4fp8 receipts (campaign-20261023-093827, and the 185520 A/B round).
 # ---------------------------------------------------------------------------
@@ -719,7 +719,7 @@ if want knobs && ! phase_done knobs; then
   log "=== knobs (untested TF_GLM_ decode/prefill knobs, dense4fp8 @ 512K)"
   P="$OUT/06-knobs.md"; : > "$P"
   echo "# knobs (dense4fp8 + fp8 KV + 524288 x4; each cell = timed restart + bench matrix)" >> "$P"
-  echo "- loading-time anchor: production 0.6.6 loads in 93.7 s (its serving line); our restart walls run ~265 s" >> "$P"
+  echo "- loading-time anchor: the retired Python recipe loaded in 93.7 s (kept for reference); the promoted production boots ~80 s; the native-vs-native re-pair re-dates this pair (round 139). Our restart walls run ~265 s" >> "$P"
   knob_cell() {   # $1 label, $2.. env pairs — timed restart, the engine's load line, bench
     local label="$1" S E loaded
     shift
@@ -1396,44 +1396,56 @@ fi
 # prompt follows the duel's production-arm pattern when it is up.
 # ---------------------------------------------------------------------------
 if want duel && ! phase_done duel; then
-  log "=== duel (the sharp head-to-head: production first, then ours)"
+  log "=== duel (the sharp head-to-head: the baseline arm first, then ours)"
   P="$OUT/07-duel.md"; : > "$P"
   echo "# duel (five direct instruments, same probes on both engines; no bench rows)" >> "$P"
 
-  if ! prod_running; then
-    # the autonomous head-to-head: production for TESTING starts on 8001 (the
-    # intent-keyed start, round 129 (user)); the window flow restores it on 8000.
-    # Separation runs through the window flow, never ad-hoc (user, round 132):
-    # our testing stack yields 8001 first — the two never share the port (the
-    # round-132 receipt: the knobs phase left the stack up and the 8001 start
-    # refused with "port 8001 is already in use") — the ours arm restarts it below.
-    log "duel: stopping our testing stack to free 8001"
-    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-    log "duel: production down — starting it FOR TESTING on 8001"
-    PORT=8001 "$HOME/$PROD_TIP/start.sh" </dev/null >>"$LOG" 2>&1 || true
-  fi
-  if prod_running; then
-    PROD_MODEL=$(curl -s -m 10 "http://127.0.0.1:8001/v1/models" | python3 -c '
+  # NATIVE-vs-NATIVE (the round-139 (user) directive): the Python recipe is retired —
+  # the baseline arm is THIS REPO's own promoted config, started FOR TESTING on 8001
+  # (the intent-keyed start; the promoted repo IS the baseline arm now). The
+  # candidate arm ("ours") carries the campaign's PATCHES (the standing stack by
+  # default; MMS2_DUEL_PATCHES overrides — the candidate-duel pattern).
+  # The failure shape the round-139 void fixed: the ours arm's restart happens ONLY
+  # after the baseline arm's stop, and a restart failure DIES the phase — the two
+  # arms must never share 8001, and a dead arm can never fall through silently
+  # (the round-139 void: the duel started the baseline on 8001, then restarted the
+  # ours arm WITHOUT stopping the baseline first — the round-132 port guard refused,
+  # the phase fell through, the baseline sat idle on both GPUs, and the window's
+  # docker-stop-then-die killed the wrapper before its EXIT trap).
+  log "duel: stopping the testing stack to free 8001"
+  ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+  log "duel: the baseline arm (the promoted config) starting FOR TESTING on 8001"
+  PORT=8001 ./scripts/start.sh </dev/null >>"$LOG" 2>&1 || {
+    echo "- the baseline arm refused to start on 8001 — its refusal is the receipt; the duel is void" >> "$P"
+    touch "$OUT/.duel.done"
+    log "duel: the baseline arm refused — phase void (fail-honest)"
+    exit 0
+  }
+  BASE_MODEL=$(curl -s -m 10 "http://127.0.0.1:8001/v1/models" | python3 -c '
 import json, sys
 try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")') || PROD_MODEL=""
-    PROD_MODEL="${PROD_MODEL:-$SERVED_NAME}"
-    echo "## production 0.6.6 (read-only on the testing port 8001; model $PROD_MODEL)" >> "$P"
-    PROD_PORT_SAVE="$PROD_PORT"
-    PROD_PORT=8001 duel_arm prod "$PROD_MODEL"
-    PROD_PORT="$PROD_PORT_SAVE"
-    log "production probed — stopping it for the ours arm (restored by the window flow's exit path)"
-    "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
-    prod_running && die "production still running after the autonomous stop — the ours arm needs the GPUs"
-  else
-    echo "- production not running: the prod arm skipped (the 8001 start failed — its refusal is the receipt)" >> "$P"
+except Exception: print("")') || BASE_MODEL=""
+  BASE_MODEL="${BASE_MODEL:-$SERVED_NAME}"
+  echo "## baseline (the promoted config, read-only on the testing port 8001; model $BASE_MODEL)" >> "$P"
+  PROD_PORT_SAVE="$PROD_PORT"
+  PROD_PORT=8001 duel_arm baseline "$BASE_MODEL"
+  PROD_PORT="$PROD_PORT_SAVE"
+  log "baseline probed — stopping it for the ours arm (restored by the window flow's exit path)"
+  ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+  if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
+    die "the baseline arm still runs after the stop — the ours arm needs the GPUs"
   fi
   # the ours arm rides the STANDING config's stack unless a candidate overrides it
   # (MMS2_DUEL_PATCHES — the candidate-duel pattern; a standalone duel launch has it
   # unset, and the bare ${MMS2_DUEL_PATCHES-} expanded to the EMPTY opt-out list —
   # the stock build refused the adopted fp8+pages mode and the first v1.2.4 duel
   # re-pair burned on exactly that, campaign-20261107-160107).
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${MMS2_DUEL_PATCHES-${PATCHES-}}"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${MMS2_DUEL_PATCHES-${PATCHES-}}" || {
+    echo "- the ours arm refused to start — the duel is void (fail-honest; the baseline arm is stopped, production comes back on the exit path)" >> "$P"
+    touch "$OUT/.duel.done"
+    log "duel: the ours arm refused — phase void (fail-honest)"
+    exit 0
+  }
   echo "## ours (dense4fp8 @ 512K x4${MMS2_DUEL_PATCHES:+, the MMS2_DUEL_PATCHES candidate}; ${MMS2_DUEL_PATCHES:-the standing stack})" >> "$P"
   duel_arm ours "$SERVED_NAME"
   touch "$OUT/.duel.done"
@@ -2493,7 +2505,7 @@ PYRC
     docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "prompt cache: [0-9]+ tokens.*" | tail -9 >> "$P" || true
   else
     echo "- production's per-request lines (its log, read-only):" >> "$P"
-    docker logs glm53-flash-tf 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -9 >> "$P" || true
+    docker logs glm53-native-tf 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -9 >> "$P" || true
   fi
   touch "$OUT/.resumecost.done"
 fi
@@ -2590,7 +2602,7 @@ fi
 # ---------------------------------------------------------------------------
 # phase: ncudepth (SESSION-SPECIFIC; the cold-depth front's instrument —
 # retires with the diagnosis). The round-130 rework made the cold depth cost
-# (= the prefill slope, ours 0.656 vs production's 0.266 ms/tok) the open
+# (= the prefill slope, ours 0.656 vs the RETIRED recipe's 0.266 ms/tok — historical; the native-vs-native re-pair re-dates) the open
 # front; this capture decomposes OUR slope into kernels. Vehicle: the proven
 # ncurouter wrapper (round 94/121) — ncu is tar-copied into the standing-config
 # serve, the image is committed, and rank 0's engine runs under ncu while rank
@@ -3041,69 +3053,13 @@ KS3
 fi
 
 # ---------------------------------------------------------------------------
-# phase: prodcold (SESSION-SPECIFIC; the depth front's last honest pair —
-# retires with the measurement). The round-130 rework priced our cold depth
-# cost (slope 0.656 ms/tok) against production's 2,363 ms at d8192 — but
-# every production probe in the receipts ran against production's PERSISTENT
-# prompt cache: the deterministic probe fills repeat across campaigns, and
-# its fresh numbers invert (d4096 2,580 > d8192 2,363 — flat-to-improving,
-# impossible cold). The duel's 8001 start is fresh in PROCESS but its cache
-# (the tip's persistent store) still holds the probe prompts from days of
-# identical probes. This phase fires NOVEL fills — a campaign-unique token
-# pattern no prior probe ever contained — so production's cache cannot hit:
-# the d8192 and d4096 first shots are production's TRUE cold prefills (two
-# points for the slope), and the b-shots re-fire the same novel prompts to
-# read its in-process cache speed. Read: production's cold slope vs ours 0.656 —
-# the depth frontier's final honest pair (if production's cold is also
-# ~linear at our slope, the frontier was its warm cache all along and
-# CLOSES; if it is ~0.27 even cold, its engine genuinely prefills faster).
-# The vehicle is the duel's proven production handling: production FOR
-# TESTING starts on 8001, the probes are read-only, the stop returns and
-# the window flow restores production on 8000.
+# phase: prodcold — RETIRED (the round-139 (user) directive): its question was
+# production's TRUE cold depth cost on the RETIRED Python engine (its persistent
+# cache vs our fresh-process probe fills). The Python recipe is retired; the
+# native engine's cold depth cost is measured directly on our own serve by the
+# depth/cliff phases. Nothing re-implements this.
 # ---------------------------------------------------------------------------
-if want prodcold && ! phase_done prodcold; then
-  log "=== prodcold (production's true cold depth cost, novel fills)"
-  P="$OUT/46-prodcold.md"; : > "$P"
-  echo "# prodcold (production's cold depth TTFT on novel fills; its cache cannot hit)" >> "$P"
-  PC_OUT="$OUT/prodcold"; mkdir -p "$PC_OUT"
-  if ! prod_running; then
-    log "prodcold: production down — starting it FOR TESTING on 8001"
-    PORT=8001 "$HOME/$PROD_TIP/start.sh" </dev/null >>"$LOG" 2>&1 || true
-  fi
-  if prod_running; then
-    PRODMODEL=$(curl -s -m 10 "http://127.0.0.1:8001/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")') || PRODMODEL=""
-    PRODMODEL="${PRODMODEL:-$SERVED_NAME}"
-    echo "## production 0.6.6 (read-only on the testing port 8001; model $PRODMODEL)" >> "$P"
-    FILL_WORDS="$FILL_WORDS" python3 - "$PC_OUT" "$OUT" <<'PCBODY'
-import json, os, sys
-out, camp = sys.argv[1:3]
-tag = camp.split("campaign-")[-1]  # the campaign stamp: novel across every prior probe
-words = os.environ["FILL_WORDS"].split()
-def fill(n):
-    return " ".join(f"{w}-{tag}-{i % 97}" for i, w in ((i, words[i % len(words)]) for i in range(n // 4)))
-for d in (4096, 8192):
-    body = {"temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": fill(d) + "\n\nAnswer with one word."}]}
-    json.dump(body, open(f"{out}/cold-d{d}.json", "w"))
-print(f"- bodies: novel d4096/d8192 fills (tag {tag}) — no prior probe contained these tokens")
-PCBODY
-    for d in 8192 4096 8192b 4096b; do
-      F="cold-d${d%b}.json"; [ "${d: -1}" = b ] && F="cold-d${d%b}.json"
-      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$PC_OUT/$F" "$PRODMODEL"
-      T=$(curl -s -m 300 "http://127.0.0.1:8001/v1/chat/completions" -H 'Content-Type: application/json' \
-        -o "$PC_OUT/reply-$d.json" -w "%{time_starttransfer}" --data @"$PC_OUT/$F" 2>/dev/null || echo 0)
-      echo "- $d: ttft_wall ${T}s" >> "$P"
-    done
-    log "prodcold: production probed — stopping it (the window flow restores it on 8000)"
-    "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
-    prod_running && die "production still running after the prodcold stop"
-  else
-    echo "- production not running: the 8001 start failed — its refusal is the receipt (fail-honest)" >> "$P"
-  fi
-  touch "$OUT/.prodcold.done"
-fi
+PRODCOLD_RETIRED=1
 
 # ---------------------------------------------------------------------------
 # phase: skipqual (SESSION-SPECIFIC; the full-hit-skip patch's battery —
@@ -3155,7 +3111,7 @@ fi
 # if it is compute, less). Same proven wrapper, TWO probes: the cold d8192
 # first (the fresh boot), then the same prompt again — the resume; the reader
 # splits the capture by position (the resume is the capture's tail). The round-130 rework made the cold depth cost
-# (= the prefill slope, ours 0.656 vs production's 0.266 ms/tok) the open
+# (= the prefill slope, ours 0.656 vs the RETIRED recipe's 0.266 ms/tok — historical; the native-vs-native re-pair re-dates) the open
 # front; this capture decomposes OUR slope into kernels. Vehicle: the proven
 # ncurouter wrapper (round 94/121) — ncu is tar-copied into the standing-config
 # serve, the image is committed, and rank 0's engine runs under ncu while rank
@@ -3391,7 +3347,7 @@ PYCU
     docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "prompt cache: [0-9]+ tokens.*" | tail -20 >> "$P" || true
   else
     echo "- production's cache lines (its log, read-only):" >> "$P"
-    docker logs glm53-flash-tf 2>&1 | grep -oE "prompt cache: [0-9]+ tokens.*" | tail -20 >> "$P" || true
+    docker logs glm53-native-tf 2>&1 | grep -oE "prompt cache: [0-9]+ tokens.*" | tail -20 >> "$P" || true
   fi
   touch "$OUT/.cachurn.done"
 fi

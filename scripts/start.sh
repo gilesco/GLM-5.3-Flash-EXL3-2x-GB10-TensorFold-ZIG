@@ -44,11 +44,15 @@ if [[ "$DRY" != 1 ]]; then
   command -v docker >/dev/null || die "docker is required here (this script runs on the head Spark)"
   docker image inspect "$IMAGE_REF" >/dev/null 2>&1 || { log "image $IMAGE_REF missing - running prepare"; ./scripts/prepare.sh; }
   [[ -z "$(docker ps -q --filter "name=^/${CONTAINER_NAME}$")" ]] || die "a $CONTAINER_NAME container is already running here (./scripts/stop.sh first)"
-  # Fail fast when the hosts are busy: the production EXL3 stack (glm53-flash-tf) holds both
-  # GPUs and serves on its own port (BOTH on the testing port 8001 — round 128 (user): production moved off 8000 so opencode cannot dirty its probes);
+  # Fail fast when the hosts are busy: PRODUCTION (glm53-native-tf — the promoted
+  # native stack, round 138) holds both GPUs and serves opencode on port 8000;
+  # a testing serve on this port means the round-132 separation is broken
+  # (BOTH on the testing port 8001 — round 128 (user), the round-139 (user)
+  # retirement: the old Python recipe is gone, the baseline arm IS this repo's
+  # own config on 8001);
   # nvidia-smi reports unified memory as [N/A], so busy is read from MemAvailable instead.
   if ss -tln 2>/dev/null | grep -q ":$PORT "; then
-    die "port $PORT is already listening on the head - the production stack probably still serves it; stop that first (docs/LAUNCH.md)"
+    die "port $PORT is already listening on the head - a testing stack (or production misconfigured onto it) already serves it; stop that first (docs/LAUNCH.md)"
   fi
   mem_busy() { # $1 empty for the head, else an ssh target; true when unified memory is mostly held
     local avail
@@ -56,10 +60,10 @@ if [[ "$DRY" != 1 ]]; then
     [[ -n "$avail" && "$avail" -lt 30000 ]]
   }
   if mem_busy; then
-    die "the head has only $(awk '/MemAvailable/{printf "%.0f GiB", $2/1048576}' /proc/meminfo) available - the production stack (glm53-flash-tf) is probably still up; stop it first (docs/LAUNCH.md)"
+    die "the head has only $(awk '/MemAvailable/{printf "%.0f GiB", $2/1048576}' /proc/meminfo) available - production (glm53-native-tf) is probably still up; stop it first (docs/LAUNCH.md)"
   fi
   if worker "$(declare -f mem_busy); mem_busy"; then
-    die "the worker ($WORKER) is low on available memory - the production rank is probably still up; stop it first (docs/LAUNCH.md)"
+    die "the worker ($WORKER) is low on available memory - production's rank is probably still up; stop it first (docs/LAUNCH.md)"
   fi
 fi
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/autonomous-window.sh — the self-contained window (round 90; production
 # lifecycle corrected round 92: it now stops and starts production through the
-# -tip checkout's stop.sh/start.sh, which handle BOTH ranks — the head and the
-# worker — and save each rank's log; the raw docker stop/start this script used
+# production repo's own stop.sh/start.sh, which handle BOTH ranks — the head and
+# the worker — and save each rank's log; the raw docker stop/start this script used
 # before only touched the head rank, which is why the early autonomous attempts
 # did not work). (user): the agent may stop/restart production for a staged
 # window, and THIS script is the only thing allowed to. Run detached from the
@@ -18,12 +18,10 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f scripts/local.sh ] && source scripts/local.sh
 : "${PROD_REPO:?set PROD_REPO (the production repo dir name) in scripts/local.sh}"
-: "${PROD_TIP:?set PROD_TIP (the ARCHIVED baseline checkout dir name) in scripts/local.sh — the duel baseline production-for-testing serve}"
 PHASES="${1:-preflight summary}"
 CONSOLE="${2:-/tmp/autonomous.console}"
 STATE=/tmp/autonomous-testing.flag
 PROD="$HOME/$PROD_REPO"
-TIP="$HOME/$PROD_TIP"
 WID="$$"
 note() { echo "[$(date '+%F %T')] [w$WID] $*" >> "$CONSOLE"; }
 STARTED=0

@@ -8785,3 +8785,21 @@ stands from the port sitting: the tool-parse host suite 46/46 PASS.
 
 **Production lands on the 15-patch image next** (the restart through the
 production repo's own scripts, after the digest commits).
+
+## (round 139, cont. 2) THE RENAME + THE RETIREMENT (user) — GitHub: …-ZIG-testing → …-ZIG; the old Python recipe's repo now points here; the promoted identity lands in the docs (2026-11-08)
+
+- **The rename (user)**: GitHub `gilesco/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-ZIG-testing`
+  → **`gilesco/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-ZIG`** — this is now the preferred
+  repo; the `-testing` suffix is gone. `origin` followed automatically.
+- **The old repo (user)**: `gilesco/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold`'s README
+  now opens with a retirement banner pointing at this repo: the Python recipe is
+  retired, the native (Zig) line owns the full lifecycle (production on 8000,
+  testing windows on 8001, native-vs-native comparisons).
+- **The identity, in the docs (user)**: the README's title and banner, AGENTS.md's
+  "what this repo is" and the port-separation rules now say what is true since the
+  round-138/139 promotion — this repo IS production, testing runs from the same
+  repo on 8001, the old tip recipe is retired and its checkout is gone from the
+  head, the duel re-targets NATIVE-vs-NATIVE (the promoted stack is the baseline
+  arm). The round-139 directive also fixed the duel's failure shape for the
+  rewrite: stop the 8000 stack first, start the 8001 arm, run both arms, restore
+  8000 on every exit path, then the poke.

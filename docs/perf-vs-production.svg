@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" width="1000" height="430" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
 
-  <text x="12" y="18" font-size="14.5" font-weight="700" fill="#e6edf3">The fronts — this line vs production 0.6.6 (same harness</text>
+  <text x="12" y="18" font-size="14.5" font-weight="700" fill="#e6edf3">The fronts — this line vs production (the retired Python recipe's pairs</text>
   <text x="412" y="18" font-size="10.5" fill="#8b949e" text-anchor="middle">production = 100%</text>
 
   <!-- rows: label | bar | % + raw values; higher is always better (time metrics inverted) -->

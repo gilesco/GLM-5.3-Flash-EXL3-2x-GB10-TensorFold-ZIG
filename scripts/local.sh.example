@@ -28,6 +28,15 @@
 WORKER=user@192.168.10.2         # rank 1's ssh target (key-based ssh); use the worker's
                                  # rail IP directly — do not rely on DNS or hostnames
 
+# The autonomous flow's production repo (the promoted native line): scripts/
+# autonomous-window.sh stop/restore and scripts/autonomous-cron.sh restart
+# production through ITS scripts (the repo dir name on this host's home);
+# scripts/autonomous-poke.sh's live check anchors it. The round-139 (user)
+# retirement: the old Python-recipe checkout is GONE — the duel's baseline arm
+# is this repo's own config started FOR TESTING on 8001 (PORT=8001
+# ./scripts/start.sh), so no second checkout exists anywhere.
+PROD_REPO=GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-production
+
 # The ConnectX-7 rails: NCCL's bootstrap listens on the head's rail-1 address; NCCL
 # discovers the rest from there. Required on both:
 HEAD_FABRIC_ADDR=192.168.10.1    # the head's rail-1 address
