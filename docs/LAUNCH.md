@@ -8670,3 +8670,35 @@ a trimmed tool list) needs no repo action. Nothing posted upstream
 
 **LAUNCHED: newprodqual + summary** — the promotion battery. THEN DARK
 (until the poke; the night runs the loop).
+
+## (round 138, cont. 5) THE PROMOTION-QUAL WINDOW DIED ON THE NAME COLLISION — the testing stack gets its own container name (-test); the stop-ownership moves wholly to the window wrapper; the window re- launches (2026-11-08)
+
+**The 12:15 window died pre-campaign** (rc=1, production restored
+fine): the campaign's `prod_running` guard — now correctly keyed to the
+PROMOTED name `glm53-native-tf` — fired on the TESTING stack, because
+both stacks shared the container name (the promotion copied config.sh
+verbatim; the testing stack was up from the modelcard phase and the
+promotion-qual restart reused the name). The receipt: the console's
+"ERROR: production (glm53-native-tf) is running — stop it first" at
+12:15:51, the campaign log ending right after the serve line.
+
+**The fix (three parts)**:
+- **The testing stack gets its own container name**:
+  config.sh's CONTAINER_NAME default is now `glm53-native-tf-test`
+  (production's own repo keeps the unsuffixed `glm53-native-tf`). The
+  guard greps anchor the EXACT production name (`^glm53-native-tf$`),
+  so the testing stack can never trip it again.
+- **The stop-ownership moves wholly to the window wrapper**: the
+  campaign's preflight no longer stops production itself — the wrapper
+  (autonomous-window.sh) stops the promoted production through the
+  production repo's own scripts before the block runs; the block's
+  wait loop now greps `glm53-native-tf` (the promoted name) as the
+  hand-off witness, and refuses GPU phases if production is STILL up
+  (the wrapper's stop failed).
+- **The duel's dance is untouched**: the archived tip starts on 8001
+  from inside the window (its own stop after its arm) — the prod arm's
+  guards read the promoted name, which is always down inside a window
+  by then.
+
+**LAUNCHED: newprodqual + summary (the re-launch)** — the promotion
+battery retries on the fixed split. THEN DARK (the night loop).

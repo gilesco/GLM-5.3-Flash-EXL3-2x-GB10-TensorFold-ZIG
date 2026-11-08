@@ -77,10 +77,14 @@ done
 # ---------------------------------------------------------------------------
 # shared helpers
 # ---------------------------------------------------------------------------
-prod_running() {   # production containers up here and on the worker? (the promoted native stack — round 138; the archived tip's glm53-flash-tf serves only as the duel baseline INSIDE windows and must not trip this)
-  docker ps --format '{{.Names}}' | grep -qx 'glm53-native-tf' && return 0
+prod_running() {   # the PROMOTED production up here and on the worker? (round 138: the name-shared
+                   # testing stack is glm53-native-tf-test (the -test suffix, the round-138 fix) — never
+                   # trips this; the archived tip's glm53-flash-tf serves only as the duel baseline on
+                   # 8001, started INSIDE a window while the wrapper already stopped production — also
+                   # never trips this)
+  docker ps --format '{{.Names}}' | grep -qx '^glm53-native-tf$' && return 0
   ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" \
-    'docker ps --format "{{.Names}}" | grep -qx glm53-native-tf' 2>/dev/null && return 0
+    'docker ps --format "{{.Names}}" | grep -qx "^glm53-native-tf$"' 2>/dev/null && return 0
   return 1
 }
 
@@ -397,13 +401,14 @@ EOF
 if want preflight && ! phase_done preflight; then
   log "=== preflight"
   P="$OUT/00-preflight.md"; : > "$P"
-  # preflight demands the stop only when GPU phases are selected
+  # preflight demands the stop only when GPU phases are selected. Round 138: the stop itself is
+  # the window wrapper's job (autonomous-window.sh stops the PROMOTED production through the
+  # production repo's own scripts before the block runs) — the block never stops production
+  # itself; if production is still up here, the wrapper's stop failed and the GPU phases must
+  # not start.
   if prod_running && [[ "$NEEDS_GPU" == 1 ]]; then
-    # the autonomous lifecycle (round 129, user): stop production for the GPU work;
-    # the window flow / the crash-net restores it on every exit path
-    log "PRODUCTION IS RUNNING — stopping it for the GPU phases (restored on every exit path)"
-    "$HOME/$PROD_TIP/stop.sh" </dev/null >/dev/null 2>&1 || true
-    prod_running && die "production still running after the autonomous stop — the GPU phases will not start"
+    log "PRODUCTION IS STILL RUNNING — the window wrapper's stop failed (or a no-window run): the GPU phases will not start"
+    prod_running && die "production still running — the GPU phases will not start; the window wrapper owns the stop"
   elif prod_running; then
     log "production is up — read-only phases only (reference); no restarts selected"
   fi
