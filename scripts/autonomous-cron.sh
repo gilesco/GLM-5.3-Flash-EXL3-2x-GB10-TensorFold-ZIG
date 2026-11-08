@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # scripts/autonomous-cron.sh — the head's crash net (cron every 5 min). If
-# production is DOWN and no window is running (no flag): restart it through the
-# -tip checkout's start.sh (both ranks) and log it — production must never stay
+# production is DOWN and no window is running (no flag): restart it through
+# the PROMOTED production repo's start.sh (both ranks; PROD_REPO in
+# scripts/local.sh) and log it — production must never stay
 # down. The wake/poke half lives on the agent host now (scripts/autonomous-
 # poke.sh, the opencode server's durable prompt inbox); this file only guards
 # production's lifecycle.
