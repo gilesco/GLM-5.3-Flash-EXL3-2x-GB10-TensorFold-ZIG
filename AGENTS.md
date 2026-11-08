@@ -68,6 +68,7 @@ Hard boundaries, never crossed:
 | Gate definitions + the native-line receipt | `docs/VALIDATION.md` | new gate docs |
 | Production-vs-native comparison | `docs/DELTAS.md` | — |
 | Upstream/community watch | `docs/ECOSYSTEM.md` | — |
+| Port queue + staged port recipes | `docs/PORT_QUEUE.md` | working notes in scratch files |
 | Context-ladder math and its outcome | `docs/CONTEXT_512K_PLAN.md` | — |
 | This site's real values | `docs/SITE.md` (git-ignored) | — |
 
