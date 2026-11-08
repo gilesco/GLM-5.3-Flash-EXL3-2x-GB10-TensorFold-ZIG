@@ -8752,3 +8752,36 @@ kernel file — order-free).
 image: the same-bits greedy witness (the fix must not move the
 deterministic probes), the §2 gates, the bench, hardmode's sixteenth
 95, the vision 4/4. THEN DARK.
+
+## (round 139) THE #256 PORT ADOPTED — the fifteenth patch; AND the outage caught, diagnosed, fixed (2026-11-08)
+
+**The outage, first** (the user reported "production is not starting"): the
+tools256qual window completed cleanly (rc=0) but production's restore DIED —
+and the window logged "production restored" around the failure. No container
+ran; the crash-net cron retried every 5 min into the same wall. The error:
+`failed to read dockerfile: open Dockerfile: no such file or directory`.
+Root cause: **the promotion repo was created without its tracked `image/`
+files** (the Dockerfile, the native build script, the vision template
+generator, the share templates) — the already-built image hid the void for
+hours until the window's fingerprint move forced the first real rebuild.
+Fixed: the 7 files restored verbatim from the testing line (md5-verified),
+committed as the production repo's `8ca3773`; production restarted through
+its own start.sh — healthy after a normal 81 s boot on 8000. The lesson is
+in the wake-loop skill's Gotchas (promotion handovers: diff the tracked file
+set and prepare once BEFORE the first unattended window).
+
+**The adoption** (the user's standing work: the #256 port): the
+tools256qual battery (campaign-20261108-140329) PASSED everything — the
+same-bits greedy witness IDENTICAL (the same 80cc3802… sha as every
+window), the §2 content gates ALL PASS (g1-g4 + the g5 note), the bench
+clean (pp d0 1,503 — inside the band; tg128 the known TOTAL-time artifact),
+hardmode **95 — the SIXTEENTH consecutive** (both scenario keys TC-51/TC-92
+pass), the vision 4/4. **ADOPTED**: glm-zz-tools256.patch is the fifteenth
+patch in config.sh (this repo) and the production repo's config follows
+(production commit 270adb9) — the forum reporter's bug dies in production
+too: an unoffered tool call now goes out under its own name, the client
+answers "unknown tool", the model self-corrects. The fix's primary witness
+stands from the port sitting: the tool-parse host suite 46/46 PASS.
+
+**Production lands on the 15-patch image next** (the restart through the
+production repo's own scripts, after the digest commits).
