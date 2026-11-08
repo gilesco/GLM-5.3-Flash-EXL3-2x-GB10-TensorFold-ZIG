@@ -8926,3 +8926,47 @@ content is byte-identical — the next prepare produces the same engine).
 subagent work (at most TWO in flight) while the main sitting keeps the hands-on,
 state-mutating work serialized; subagents never commit, push, launch, or touch
 production.
+
+## (round 139, cont. 8) THE 0103 PORT SHIPPED AS 018-callquote + the window launched (2026-11-08)
+
+**The first ship under the new numbering** — the parked fork-0103 port landed
+as `018-callquote.patch` (the next free number after the renumbering; the
+queue file is docs/PORT_QUEUE.md).
+
+**The cross-tree recipe worked byte-identically**: composed base (pristine
+v1.2.4 + 011-zclose) + the fork's final file state (`f202781d3`) = the commit
+tree EQUALS `f202781d3`'s tree (`18da977ab…`) — the suite-green state
+inherits: the tool-parse host suite 51/51 (the fork's 0103 suite + the two
+quoted-markup pins), compile RC=0 (fatbins + native, sm_121). The patch
+applies in stack order on pristine v1.2.4 and reproduces the suite-green tree
+byte-identically.
+
+**The battery**: `callquotequal` (session-specific, modeled on tools256qual) —
+the same-bits greedy witness (the 80cc3802… sha must hold), the quoted-markup
+live probe (the halt's shape, on the ported serve), the §2 content gates,
+hardmode 95, the vision 4/4. Adoption moves config.sh's PATCHES + the
+promoted repo's on the receipt.
+
+**The window**: `preflight confirm callquotequal summary` — the steps0 lead
+(c2@d8192 aggregate 17.3 → 33.1 t/s, campaign-20261023-200302) re-tested
+before the port's battery; the confirm restarts serve the unpatched 16-patch
+default while the callquotequal's restart carries 018 explicitly.
+
+**The sitting's other work**:
+- The patches renamed NNN-name.patch (cont. 7, user) — landed end to end,
+  byte-identity verified on the renamed 14-patch stack (the qualified tree
+  `190c7f2774…` reproduced exactly); both repos renamed; the guard enforces
+  the scheme.
+- The subagent rules (user): parallelizable reading is subagent work (max TWO
+  in flight), and a window may not launch while any subagent is in flight —
+  honored this sitting: BOTH subagents completed before this launch went out.
+- The upstream/fork scan (subagent 1, in docs/ECOSYSTEM.md): v1.2.5 = the
+  cheapest bump since the v1.2.2→v1.2.4 rebase (one hunk re-anchor in
+  003-fp8-pages; tool_parse byte-identical; all kernel files byte-identical);
+  the fork tail dispositioned (0104 warm-turns PORT — the agent-loop
+  re-prefill; 0108 CACHE_FIRST + 0110 KV_SHARD the 512K-plan candidates).
+- The port-queue file (docs/PORT_QUEUE.md, subagent 2's recipes staged):
+  0105/0092/0107 recipes precise and staged-watch; the test-count note
+  reconciled (51 = the whole host suite).
+- The next queue: the v1.2.5 bump window, the 0104 warm-turns port, 0108/0110
+  for the 512K plan, the three server recipes when the shape appears.
