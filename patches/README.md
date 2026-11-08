@@ -4,6 +4,15 @@ CUDA family and the no-patch serve is byte-identical on memory AND speed
 (campaign-20261103-235114 arm D: 14.1 GiB left, 68.8 s at an 87k fill — the same
 rate as the with-patch curve). The patch stays here as history and re-runs only
 if the line ever pins below v1.2.2. -->
+
+<!-- LAYOUT (round 139): patches/*.patch at the TOP level are the living set — the
+15 adopted (config.sh's PATCHES default, applied alphabetically by the image) plus
+glm-topk4b.patch (the sweep cells' opt-in). patches/archive/ holds the RETIRED,
+REJECTED and mainlined-upstream patches — NOT in any serve; each has its record
+below (or its retirement note). The build consumes ONLY the named PATCHES list
+(prepare copies each named file into the image staging), so the archive is inert
+by construction. Do not resurrect an archive patch into a serve without a new
+qualifying window. -->
 # Patch overlay policy
 
 This directory carries **optional local patches** applied to the TensorFold tree at image
@@ -385,6 +394,10 @@ as `router_tile`, so the math should be bit-identical — the content gate (vs t
 115242 stock reply) verifies. The cost read splits the prompt-router pathology:
 part ≈ tile (~1100 ms/chunk) → both kernels share it → replace with a real GEMM;
 part >> tile → the tile is better and the fix is its K-depth/w-layout.
+
+## glm-fork-rule.patch — RETIRED 2026-10-28 (round 45): the round-45 battery receipts-equal-or-better WITHOUT it — the fork rule (#1291's `snap_fork`) was staged against the v1.1.8 battery but the adoption served pristine v1.1.8: no measured delta, so it never entered the stack. Upstream's fork rule keeps a state where a new prompt parts from an already-kept one; v1.2.4's `TF_KV_SHARE` page-store carries the mechanism's modern form. Archived 2026-11-08.
+
+## glm-loud-weightshare.patch — RETIRED (the diagnostic era): weightShare's silent `catch return total` printed its failing stage during the round-26/44 memory-illusion forensics; the diagnosis closed when the top4 reference-shape work landed (glm-topk4b) and the admission arithmetic became valid. Nothing to adopt — the loudness was a diagnosis aid, not a feature. Archived 2026-11-08.
 
 ## glm-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
 

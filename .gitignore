@@ -1,10 +1,10 @@
-scripts/local.sh
+data/
+docs/SITE.md
 .env
+image/patches/*.patch
 *.log
 *.log.gz
-docs/SITE.md
-image/patches/*.patch
-results/
-__pycache__/
 *.pyc
-data/
+__pycache__/
+results/
+scripts/local.sh

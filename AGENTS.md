@@ -38,8 +38,10 @@ Hard boundaries, never crossed:
 - **Every quality/perf metric runs on the clean testing port 8001** — never
   tool-eval-bench or any load against production's live 8000 (user, round 132: it
   negates the testing environment; any such result is invalid). Production-vs-us
-  comparisons use production started FOR TESTING on 8001 (the duel's pattern — the
-  intent-keyed port).
+  comparisons are NATIVE-vs-NATIVE (the round-139 (user) directive): the duel's
+  baseline arm is THIS repo's own promoted config started FOR TESTING on 8001
+  (`PORT=8001 ./scripts/start.sh`) — the promoted repo IS the baseline arm; the
+  retired Python recipe's pairs are history.
 - **Vision tests use the repo's own vision assets — never ad-hoc fixtures, never
   files scavenged from other tools' trees (user, round 132)**: `assets/vision/`
   (`manifest.json`: the synthetic byte-verified `_quadrants.png` + 3 CC-licensed
@@ -101,21 +103,22 @@ Hard boundaries, never crossed:
   this repo**: `autonomous-launch.sh` (on the head; the ONLY launcher — syncs to
   origin/main, refuses a double launch via the flag file, starts the window
   detached) → `autonomous-window.sh` (detached; the only thing allowed to stop
-  production, always through the tip's own stop/start scripts which handle BOTH
-  ranks; runs the phases; restores production on EVERY exit path via the EXIT
-  trap) → `autonomous-cron.sh` (the head's 5-min cron: production down + no
-  window flag → restart; hands off while a window is in flight) →
-  `autonomous-poke.sh` (the agent host's 5-min cron: production up + the newest
-  campaign unpoked → POSTs the wake into this session's durable prompt inbox).
+  production, always through the production repo's own stop/start scripts which
+  handle BOTH ranks; runs the phases; restores production on EVERY exit path via
+  the EXIT trap) → `autonomous-cron.sh` (the head's 5-min cron: production down +
+  no window flag → restart through the production repo's start.sh; hands off
+  while a window is in flight) → `autonomous-poke.sh` (the agent host's 5-min
+  cron: production up + the newest campaign unpoked → POSTs the wake into this
+  session's durable prompt inbox).
   The woken sitting digests the receipt the same sitting and launches the next
   window last — the loop closes itself. The skills `autonomous-agent-wake-loop`
   and `opencode-agent-wake` carry the mechanism's generic form (the wake vector,
   the marker discipline, the two-cron split).
 - A round's digest updates **the same sitting**: LAUNCH.md (append), the ledger's
   status items, any affected plan doc, and the README status table when a qualified
-  fact changes. When a comparison metric changes, also update its anchors file
-  (`docs/*-anchors.tsv` — the standing chart, and `docs/duel-anchors.tsv` once the
-  duel phase has run) and re-run `scripts/render-perf-chart.sh <tsv>` — the chart
+  fact changes. When a comparison metric changes, also update `docs/perf-anchors.tsv`
+  (the standing chart's data) and re-run `scripts/render-perf-chart.sh <tsv>` — the
+  chart
   SVGs are generated, never hand-edited: one bar = our performance as % of
   production, time metrics inverted, higher always better; the truth, bad or good.
   The guard and the campaign's summary phase flag a stale chart via `--check`.
@@ -166,7 +169,8 @@ head's checkout under `results/` and are not committed — quote them from there
   land in the receipt, not hide in the campaign log (the resweep's first run didn't
   self-diagnose and the window was wasted).
 - **Thinking eats small `max_tokens`** — gate probes use ≥1024.
-- **`VAR=x func` persists in bash** — prodqual restores `SERVED_NAME` after its
-  override; keep that pattern for any new override.
+- **`VAR=x func` persists in bash** — any function that overrides a config variable
+  (e.g. `SERVED_NAME`) restores it after the override; keep that pattern for any new
+  override.
 - The engine's admission refusal prints its own arithmetic — a refusal is a receipt,
   not a failure; record it instead of retrying blind.

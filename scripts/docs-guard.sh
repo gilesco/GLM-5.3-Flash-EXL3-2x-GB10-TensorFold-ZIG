@@ -76,9 +76,9 @@ check_default() {  # $1 config var, $2 README grep pattern, $3 what must appear
     fail "README's $1 row does not carry the config.sh default ($3) — update the config table"
   fi
 }
-check_default CONTEXT   '| `CONTEXT` / `PARALLEL`'  "$(grep -m1 -oP '^CONTEXT="\$\{CONTEXT:-\K[^}]+' config.sh)"
+check_default CONTEXT   '| `CONTEXT`'  "$(grep -m1 -oP '^CONTEXT="\$\{CONTEXT:-\K[^}]+' config.sh)"
 check_default KV_CACHE  '| `KV_CACHE`'              "$(grep -m1 -oP '^KV_CACHE="\$\{KV_CACHE:?-?\K[^}]+' config.sh)"
-check_default DENSE_BITS '| `DENSE_BITS` / `HEAD_BITS`' "$(grep -m1 -oP '^DENSE_BITS="\$\{DENSE_BITS:-\K[^}]+' config.sh)"
+check_default DENSE_BITS '| `DENSE_BITS`' "$(grep -m1 -oP '^DENSE_BITS="\$\{DENSE_BITS:-\K[^}]+' config.sh)"
 
 # --- 6. receipt existence (the head only — results/ is not in git) ---------------
 if [[ -d results ]]; then
