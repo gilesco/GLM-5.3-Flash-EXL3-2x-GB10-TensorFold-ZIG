@@ -735,6 +735,46 @@ documented in LAUNCH.md round 119.
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
+## glm-zz-zstep.patch — the 4-bit read-once chain as dependent launches, exl3r c3 (round 138; Mia 1104's 0082 port)
+
+- What (Mia's subject: the 4-bit read-once chain as dependent launches
+  — rot_in, gate/up, epilogue, down; on their 0067 = our adopted
+  zshfl): the decode chain's kernels launch with programmatic stream
+  serialization — each one's launch and its prologue overlap the
+  kernel before it (the `.pdl` launch flag when both projections take
+  the new kernels; TF_EXL3_PDL=0 turns it off, the same bits). Hazard
+  rules as pdl5's: before griddepcontrol.wait only immutable loads and
+  the plan; every read of another grid's output and every scratch
+  write after it; every CTA waits (no exit before a wait).
+  tf_exl3_experts_rot_in and tf_exl3_gateup_epilogue: wait, then
+  trigger, at entry; the new tf_exl3_grouped_1_k8r8p/_k8r16p (Load
+  SHFL_PDL): before the wait the plan, the trellis pointer and width
+  tables and the first k tile's words; the rows' A fragments and the
+  partials after it. Fork-measured: the chain −6.9 to −14.5% at 1-32
+  rows (RTX PRO 6000, cold 4-bit, kernel trains), exact in 108/108
+  cells. A DECODE-window launch-overlap lever — the c2/c4 concurrency
+  cells its home (the 0030 lesson).
+- Port (v1.2.4 + the 13-patch stack, on v124-rebase): 7 of 9 hunks
+  applied clean via git apply --reject (the grouped_p/pdl fields, the
+  kernel resolves, the envOn TF_EXL3_PDL and all four `.pdl = chain`
+  launch flags); the 2 rejected .zig hunks hand-applied — the
+  tilesFor pdl field adapted to our single Layer.uniform_k2 form, the
+  chain insert after our core()'s v1.2.4 act_mode check. The fork's
+  text otherwise VERBATIM (line-verified: 15/15 .cu, 43/43 .cuh,
+  17/17 .zig). The fork's own knob **TF_EXL3_PDL=0**; no _cl twins
+  needed. The new p kernels ride the existing grouped_body_v2 template;
+  rot_in/gateup_epilogue gain wait+trigger at entry — their register
+  counts measured on our sm_121 build (see the commit message; the
+  fork shipped no records patch — the wait/trigger pair is
+  register-neutral).
+- Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
+  the builder base image); fresh-parent + the shipped patch = the commit
+  tree byte-identical. NAMED glm-zz-zstep TO SORT AFTER zshfl (zt > zh).
+- OWNER: this line; STATUS: **STAGED — the 0082qual A/B decides** (the
+  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's
+  fourteenth 95, the vision 4/4; the duel_arm c2/c4 cells are the
+  lever's primary read — the fork measured the chain to −14.5%).
+
 ## glm-zz-zshfl.patch — the 4-bit grouped experts read every trellis word once, exl3r (round 137; Mia 1104's 0081 port)
 
 - What (Mia's subject: 4-bit grouped experts read every trellis word

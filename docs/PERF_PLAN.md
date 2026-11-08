@@ -1033,3 +1033,22 @@ header + test-apply next sitting; the PDL set's concepts (the chain
 machinery) may already be in v1.2.4 (the engine's own PDL — glm_mm's
 pdl launches) or may need the fork's 0069-0071 line first. The PDL
 set and the HC-split set stay parked behind it.
+
+**THE 0082 PORT STAGED (round 138)**: the exl3r dependent-launch chain
+(0082, on the adopted 0081 base) applied 7 of 9 hunks clean; the 2
+rejected .zig hunks hand-applied (the tilesFor pdl field on our single
+uniform_k2 form; the chain insert after our act_mode check); the
+fork's text otherwise line-verbatim (15/15 .cu, 43/43 .cuh, 17/17
+.zig). The fork's own knob **TF_EXL3_PDL=0**. New kernels k8r8p/k8r16p
+ride the existing template; rot_in/gateup_epilogue gain wait+trigger
+(register-neutral per the fork's missing records patch — our cuobjdump
+confirms). Shipped as `glm-zz-zstep.patch` (zt > zh). **THE NEXT STEP:
+the 0082qual A/B** — both arms the same 14-patch image, the knob flips
+the path: content identity (the fork's 108/108 exactness), the
+duel_arm c2/c4 cells (the launch-overlap lever's home — the 0030
+lesson says launch savings show at concurrency), hardmode's fourteenth
+95, the §2 gates, the vision 4/4, the bench as the regression watch.
+At adoption: config.sh's fourteenth patch, the decode rows re-paired,
+the duel re-pair next window. Behind it: the PDL set (0069-0071 — the
+engine's glm_mm already chains; the exl3r chain may make the wider PDL
+line redundant), the HC-split set, and the fork's 0083+ tail.

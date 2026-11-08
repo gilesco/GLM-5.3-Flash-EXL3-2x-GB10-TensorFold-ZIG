@@ -4281,6 +4281,110 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
+# phase: 0082qual (SESSION-SPECIFIC; the fork's 0082 port — glm-zz-zstep.
+# The 4-bit read-once chain as dependent launches (exl3r c3, on the
+# adopted 0081 base): the decode chain's kernels (rot_in, the grouped
+# experts, the gate/up epilogue, the down combine) launch with
+# programmatic stream serialization — each one's launch and its prologue
+# overlap the kernel before it (the .pdl launch flag when both
+# projections take the new kernels; TF_EXL3_PDL=0 turns it off, the same
+# bits). Hazard rules as pdl5's: before griddepcontrol.wait only
+# immutable loads and the plan; every read of another grid's output and
+# every scratch write after it; every CTA waits (no exit before a wait).
+# New kernels tf_exl3_grouped_1_k8r8p/_k8r16p (Load SHFL_PDL). The fork
+# measured the chain −6.9 to −14.5% at 1-32 rows (RTX PRO 6000, cold
+# 4-bit, kernel trains) and exact in 108/108 cells; a DECODE-window
+# launch-overlap lever — the c2/c4 concurrency cells its home (the 0030
+# lesson: launch savings show at concurrency). OUR adaptations: the
+# tilesFor pdl field adapted to our single Layer.uniform_k2 form; the
+# chain insert sits after our core()'s v1.2.4 act_mode check; the rest
+# line-verbatim. The A/B: BOTH arms the same patched image, the knob
+# flips the path — greedy content identical is the same-bits claim; the
+# duel_arm c2/c4 cells are the lever's primary read; the §2 gates,
+# hardmode (the fourteenth 95) and the vision 4/4 qualify it. Retires
+# into the standing config at adoption.
+# ---------------------------------------------------------------------------
+if want 0082qual && ! phase_done 0082qual; then
+  log "=== 0082qual (the 0082 port A/B: the read-once chain as dependent launches)"
+  P="$OUT/09-0082qual.md"; : > "$P"
+  echo "# 0082qual (glm-zz-zstep: TF_EXL3_PDL=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  STPATCH="${PATCHES},glm-zz-zstep.patch"
+  log "0082qual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$STPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "0082qual: the image rebuild (prepare) failed - see the log"; fi
+  req_file "$OUT/st-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  echo "## the OFF arm (TF_EXL3_PDL=0: ordinary launches)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_EXL3_PDL=0 PATCHES="$STPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/st-greedy.json" > "$OUT/st-off-greedy.json" || true
+    echo "- the OFF greedy content sha: $(content_sha "$OUT/st-off-greedy.json")" >> "$P"
+    duel_arm stoff "$SERVED_NAME"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the ON arm (the knob unset — the engine default on)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$STPATCH"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    chat "$OUT/st-greedy.json" > "$OUT/st-on-greedy.json" || true
+    echo "- the ON greedy content sha: $(content_sha "$OUT/st-on-greedy.json")" >> "$P"
+    echo "- the arms' content: $([ "$(content_sha "$OUT/st-off-greedy.json")" = "$(content_sha "$OUT/st-on-greedy.json")" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+    duel_arm ston "$SERVED_NAME"
+    echo "## the §2 content gates (on the PDL-chain serve)" >> "$P"
+    run_gates st DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$STPATCH" || true
+    echo "## the bench pass (the regression watch — a decode-window lever; prefill flat expected)" >> "$P"
+    bench_perf st "$OUT/st-bench" 4 >> "$P" 2>&1 || true
+    bf=$(mktemp /tmp/std.XXXXXX.json)
+    python3 -c "
+import json, sys
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 2048, 'chat_template_kwargs': {'enable_thinking': False}, 'messages': [{'role': 'user', 'content': 'Write a detailed technical essay on the design and operation of harbor container cranes: structures, drive systems, control, safety interlocks, and maintenance regimes. Be exhaustive and keep going until the essay is complete.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/st-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/st-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+    echo "## hardmode (the 95 must hold — the fourteenth consecutive)" >> "$P"
+    mkdir -p "$OUT/sthm"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+      --model "$model" --format openai --tokenizer "$MODEL_ID" \
+      --hardmode --label "0082qual" --output-dir "$OUT/sthm" \
+      --json-file "$OUT/sthm/hm.json" > "$OUT/sthm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/sthm/hm.json" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/sthm/hm.log" >> "$P" 2>/dev/null || true
+    grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/sthm/hm.log" >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold)" >> "$P"
+    mkdir -p "$OUT/stvision"
+    if [ -f scripts/vision-suite-probe.py ]; then
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/stvision/vision.json" > "$OUT/stvision/vision.log" 2>&1 || true
+      tail -6 "$OUT/stvision/vision.log" >> "$P" 2>/dev/null || true
+    else
+      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    fi
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "- VERDICT: the arms content-identical + the gates PASS + hardmode holds + the vision 4/4 + the decode instruments read the launch overlap = the 0082 port qualifies (adoption moves config.sh's PATCHES and re-pairs the duel in a later sitting)" >> "$P"
+  touch "$OUT/.0082qual.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"
