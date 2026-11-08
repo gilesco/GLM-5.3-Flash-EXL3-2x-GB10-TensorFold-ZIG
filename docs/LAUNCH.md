@@ -8603,3 +8603,26 @@ TF_EXL3_PDL=0 vs unset):
 **LAUNCHED: duel + summary** — the v1.2.4+zstep duel re-pair
 (production-for-testing on 8001 vs ours on the adopted 14-patch
 stack): every speed row re-paired same-window. THEN DARK.
+
+## (round 138, cont. 2) THE ZSTEP DUEL RE-PAIRED — solo 116.8% (a new high), c2 136.4% of the floor, c4 169.2 (our best), overhead 100.0%, cold 450% (campaign-20261108-035708); THE (USER) PROMOTION COMMISSIONED (2026-11-08)
+
+**The same-window pair** (production-for-testing on 8001 vs ours on
+the adopted 14-patch engine): **solo 68.3/68.1 vs 58.4/58.4 — 116.8%,
+a new high**; **c2 118.5 vs 86.9 at its floor — 136.4% there** (its
+top ~110 — 107.7%); **c4 169.2 — our best c4** (vs production's floor
+154.5 — 109.2%); **ITL 14.7 vs 17.1 — 116%**; **overhead 184 vs 184 —
+100.0%**; the cold d8192 **3,809 ms — 450%**. The prefill row stands
+(100.1%). The anchors re-paired and the chart re-rendered; the docs
+updated.
+
+**THE (USER) PROMOTION (2026-11-08)**: "This completes our job. The
+current development becomes the production. Create a new repo for
+production on the head. Transfer the move to production to that repo.
+Archive the old production. Then start the new work from there. Work
+autonomously through the night, catch up with you in the morning."
+— the 14-patch native stack is PROMOTED to production (it serves
+opencode on 8000, the intent-keyed port); a new production repo owns
+the lifecycle; the old tip recipe archives (it remains the duel
+baseline on 8001, production-for-testing); the testing repo remains
+the dev line; the night runs the standing loop (the promotion-qual
+window first, then the fork's 0083+ scope).
