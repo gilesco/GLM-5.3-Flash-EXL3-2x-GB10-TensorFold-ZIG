@@ -4230,6 +4230,57 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: modelcard ((USER), 2026-11-08: the forum model card's bench — ONE
+# tool-eval-bench run on the adopted stack, the user's own recipe:
+# parallel=4, hardmode, perf on, needle find enabled (--seed 42 --perf
+# --needle --hardmode --parallel 4; timeout 900 — the deep needle cells'
+# ~500K-token prefills; a timeout there counts as a miss). Runs INSIDE the
+# window flow (production stopped by the flow, restored on every exit
+# path) — never on the live 8000. The numbers feed MODEL_CARD.md.
+# ---------------------------------------------------------------------------
+if want modelcard && ! phase_done modelcard; then
+  log "=== modelcard (the (user) bench: perf + needle + hardmode, parallel 4)"
+  P="$OUT/08-modelcard.md"; : > "$P"
+  echo "# modelcard bench (the (user) recipe: --perf --needle --hardmode --parallel 4, seed 42; the adopted stack, dense4fp8 @ 512K x4)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  mkdir -p "$OUT/mcbench"
+  S=$(date +%s)
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --seed 42 --perf --needle --hardmode --parallel 4 --timeout 900 \
+    --no-live --label "modelcard" --output-dir "$OUT/mcbench" \
+    --json-file "$OUT/mcbench/report.json" > "$OUT/mcbench/run.log" 2>&1 || true
+  echo "- wall $(( $(date +%s) - S )) s" >> "$P"
+  python3 - "$OUT" <<'EOF' >> "$P" 2>/dev/null || true
+import json, sys, re
+out = sys.argv[1]
+try:
+    d = json.load(open(f"{out}/mcbench/report.json"))
+    def walk(o, path=""):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                yield from walk(v, f"{path}.{k}")
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                yield from walk(v, f"{path}[{i}]")
+        else:
+            yield path, o
+    for path, v in walk(d):
+        s = str(path).lower()
+        if any(t in s for t in ("final_score", "effective_context", "total_score", "pass_rate", "needle", "hardmode")) and v is not None:
+            print(f"- {path.lstrip('.')}: {v}")
+except Exception as e:
+    print("- the report parse failed: " + repr(e))
+EOF
+  tail -30 "$OUT/mcbench/run.log" >> "$P" 2>/dev/null || true
+  touch "$OUT/.modelcard.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"

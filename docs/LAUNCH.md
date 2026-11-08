@@ -8505,3 +8505,38 @@ testing port 8001, tool-eval-bench's own one-shot recipe
 the deep needle cells); the card: MODEL_CARD.md at the repo root, no
 site identity (it gets posted publicly). The duel re-pair on the
 13-patch stack launches after the bench completes.
+
+## (round 137, cont. 9) THE GPU TAKE ABORTED — the (user) bench folds into the duel window as the modelcard phase; the crash-net re-armed; MODEL_CARD.md drafted (2026-11-08)
+
+**The incident** (the (user) bench's manual GPU take, 00:29): the flag
+set, production stopped — then our start.sh REFUSED ("only 7 GiB
+available — the production stack is probably still up": the heuristic
+misled, the real blocker was unverified) and the take stalled with
+production DOWN and the flag UP. The crash-net did exactly its job
+(hands-off at every tick — the log is clean), but the take never
+resumed; the USER noticed production down, restored it manually (~00:5x),
+and reported: "Production is back, something went wrong. But we are
+back." The flag was removed at ~01:05 and the crash-net re-armed
+(production 200, healthy).
+
+**The lesson** (recorded in the skill log): a manual GPU take collides
+with the user's production (their opencode serves through it); the
+memory-refusal heuristic must be verified (what actually holds the
+memory) BEFORE stopping production, not after; an aborted take must
+remove its flag immediately. User bench runs belong INSIDE the window
+flow, which does the production dance safely on every exit path.
+
+**THE RESHAPED (USER) BENCH**: a `modelcard` phase was added to
+scripts/run-qualification.sh (after the duel phase, before summary):
+restart ours with the standing config, then ONE tool-eval-bench run —
+the user's exact recipe (--seed 42 --perf --needle --hardmode
+--parallel 4, timeout 900 for the ~500K-token needle cells) — receipt
+08-modelcard.md. **MODEL_CARD.md drafted at the repo root** (no site
+identity — it gets posted publicly): the rig, the 13-patch stack, the
+crossed-fronts scoreboard, quality (hardmode 95 ×13, vision 4/4), the
+porting discipline, the opt-out knobs; the tool-eval section's numbers
+land at the next digest from the modelcard receipt.
+
+**LAUNCHED: duel + modelcard + summary** — the duel re-pairs the speed
+rows on the 13-patch SHFL engine; the modelcard phase runs the (user)
+bench; THEN DARK.
