@@ -1074,3 +1074,18 @@ side has now cost two non-transferring ports (0081, 0082) — both kept
 for the base chain; the prefill side is crossed; the next REAL lever
 may be the HC-split/overlap class (+36% at 50k) — scope it with fresh
 eyes against our 2k bench shape before committing to a port.
+
+**THE #256 PORT STAGED (round 138 cont. 7)**: from the forum thread's
+finding (post 973): the unoffered-tool-call leak — the fix (upstream
+be8bccbec, PR #415) is in v1.0.0-1.2.1, REVERTED before v1.2.2, so our
+promoted v1.2.4 engine lacks it. The port turned out SMALL: the rest
+of the #415 rework (parsedContent/kept/wholeEnvelope/prose_sent/the
+attach rework) is already in our tree — only callName's own-name rule
+was reverted with it. 2 files (+7/-2 + the test flip), no kernel
+work. Shipped as `glm-zz-tools256.patch` (sorts before the z- kernel
+patches alphabetically — it touches no kernel file, order-free).
+**THE NEXT STEP: the tools256qual battery** — the §2 gates, hardmode's
+sixteenth 95, the vision 4/4, the greedy content identity (the fix's
+own unit test is the primary witness; the A/B arms exercise the knob-
+free path — the patch has no env switch because the behavior IS the
+fix).

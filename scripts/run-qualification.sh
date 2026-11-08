@@ -4398,6 +4398,49 @@ fi
 # decode. The production serve itself is exercised by the cron's own
 # health checks and opencode's live traffic.
 # ---------------------------------------------------------------------------
+if want tools256qual && ! phase_done tools256qual; then
+  log "=== tools256qual (the #256 fix battery: the unoffered-tool-call leak re-applied)"
+  P="$OUT/09-tools256qual.md"; : > "$P"
+  echo "# tools256qual (glm-zz-tools256 staged: the 15-patch image; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  T2PATCH="${PATCHES},glm-zz-tools256.patch"
+  log "tools256qual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$T2PATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "tools256qual: the image rebuild (prepare) failed - see the log"; fi
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$T2PATCH"
+  req_file "$OUT/t2-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/t2-greedy.json" > "$OUT/t2-greedy-resp.json" || true
+  echo "- the greedy content sha: $(content_sha "$OUT/t2-greedy-resp.json")" >> "$P"
+  echo "- the same-bits witness: $([ "$(content_sha "$OUT/t2-greedy-resp.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  echo "- the unit test is the fix's primary witness: the tool-parse host suite 46/46 PASS on the ported tree (the commit's receipt)" >> "$P"
+  echo "## the §2 content gates" >> "$P"
+  run_gates t2 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$T2PATCH" || true
+  echo "## the bench pass" >> "$P"
+  bench_perf t2 "$OUT/t2-bench" 4 >> "$P" 2>&1 || true
+  echo "## hardmode (the 95 must hold — the sixteenth consecutive)" >> "$P"
+  mkdir -p "$OUT/t2hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "tools256qual" --output-dir "$OUT/t2hm" \
+    --json-file "$OUT/t2hm/hm.json" > "$OUT/t2hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/t2hm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/t2hm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/t2hm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/t2vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/t2vision/vision.json" > "$OUT/t2vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/t2vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "- VERDICT: the same-bits greedy + the gates PASS + hardmode holds + the vision 4/4 = the #256 fix qualifies (adoption moves config.sh's PATCHES; the promoted production repo's PATCHES follows)" >> "$P"
+  touch "$OUT/.tools256qual.done"
+fi
+
+# ---------------------------------------------------------------------------
 if want newprodqual && ! phase_done newprodqual; then
   log "=== newprodqual (the promotion battery on the promoted config)"
   P="$OUT/05-newprodqual.md"; : > "$P"

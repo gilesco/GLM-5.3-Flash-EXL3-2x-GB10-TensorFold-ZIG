@@ -735,6 +735,43 @@ documented in LAUNCH.md round 119.
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
+## glm-zz-tools256.patch — a call to a tool the request did not offer goes out under its own name (round 138; upstream PR #415, issue #256)
+
+- What (upstream's subject, carried here from the forum thread's
+  finding — post 973, 2026-11-08): with parallel_tool_calls false, a
+  call to a tool the request did not offer was dropped and the
+  one-call filter removed what was left, so the reply came back with
+  no content, no tool calls and finish "stop" — an agent retrying at
+  a fixed seed got the same empty reply and looped. With parallel
+  calls the call went back into the reply's text.
+  tool_parse.callName now picks the name a parsed call goes out
+  under: the offered tool's spelling, else the call's own name when
+  it is 1 to 64 of [A-Za-z0-9_-] and its arguments are a finite JSON
+  object, as vLLM's parsers do. The client can then answer "unknown
+  tool" and the model corrects itself. Any other block stays text in
+  both modes. Bare JSON outside an envelope still needs an offered
+  name (it is often a structured answer).
+- Provenance: upstream commit be8bccbec (PR #415 by Alexbob0, issue
+  #256) — in v1.0.0 through v1.2.1, REVERTED before v1.2.2, so
+  v1.2.2/1.2.3/1.2.4 lack it (our promoted engine included). The rest
+  of the #415 rework (Policy.parsedContent, Policy.kept,
+  wholeEnvelope, the prose_sent stream tail, the attach rework in
+  openai_calls.zig) is ALREADY in our v1.2.4 tree — only callName's
+  own-name rule was reverted with it. This patch re-applies exactly
+  that rule and flips the test back to the #415 behavior.
+- Port (v1.2.4 + the 14-patch stack, on v124-rebase): 2 files —
+  tool_parse.zig's callName (+7/-2), tool_parse_test.zig's test flip
+  to the upstream behavior (the kept cases: a name that is no
+  function name, arguments holding NaN; the new case: a well-formed
+  unoffered call goes out under its own name in BOTH modes). NO
+  kernel/record work — a server-layer change only.
+- Verify: the compile RC=0 (fatbins + native, sm_121); the unit test
+  runs in the native build's test step; the tools256qual A/B battery
+  (the §2 gates, hardmode, the vision) guards the serve.
+- OWNER: this line; STATUS: **STAGED — the tools256qual battery
+  decides** (the gates + hardmode's sixteenth 95 + the vision 4/4;
+  the fix's own unit test is the primary witness).
+
 ## glm-zz-zstep.patch — the 4-bit read-once chain as dependent launches, exl3r c3 (round 138; Mia 1104's 0082 port)
 
 - What (Mia's subject: the 4-bit read-once chain as dependent launches

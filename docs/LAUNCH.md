@@ -8729,3 +8729,26 @@ production.**
   production repo's own config).
 - **The launcher**: the double-launch flag, the sync, the phase list —
   exercised by both today's launches.
+
+## (round 138, cont. 7) THE #256 PORT STAGED — the unoffered-tool-call leak re-applied from the forum thread's finding; the tool-parse host suite 46/46 PASS; the tools256qual battery LAUNCHED (2026-11-08)
+
+**The port** (commit bfdee9b99 on v124-rebase, shipped as
+glm-zz-tools256.patch): the fix is upstream be8bccbec (PR #415,
+issue #256) — in v1.0.0..v1.2.1, **REVERTED before v1.2.2**, so our
+promoted v1.2.4 engine lacked it (the forum post 973's bug applies to
+us). The port turned out SMALL: the REST of the #415 rework
+(Policy.parsedContent/kept/wholeEnvelope/prose_sent/the attach
+rework) is already in our tree — upstream reverted only callName's
+own-name rule with it. 3 files (+9/-2 tool_parse.zig; the test flips:
+the own-name behavior test both-modes, the visibility bad-case
+renamed to a non-function name, the left-open entries likewise — an
+unoffered FUNCTION name closes now). **The tool-parse host suite
+46/46 PASS** (zig build test-tool-parse-host, the fix's primary
+witness); compile RC=0; byte-identity 0 diff (tree 190c7f27).
+Named tools256 to sort before the z- kernel patches (it touches no
+kernel file — order-free).
+
+**LAUNCHED: tools256qual + summary** — the battery on the 15-patch
+image: the same-bits greedy witness (the fix must not move the
+deterministic probes), the §2 gates, the bench, hardmode's sixteenth
+95, the vision 4/4. THEN DARK.

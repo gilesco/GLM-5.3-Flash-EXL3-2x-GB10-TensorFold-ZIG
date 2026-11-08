@@ -1,0 +1,138 @@
+From bfdee9b994404bae321bb4118c119b5fa3618dce Mon Sep 17 00:00:00 2001
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Date: Sun, 8 Nov 2026 14:02:03 +0000
+Subject: [PATCH] =?UTF-8?q?glm-zz-tools256:=20the=20upstream=20PR=20#415?=
+ =?UTF-8?q?=20re-apply=20(issue=20#256,=20from=20the=20forum=20thread=20po?=
+ =?UTF-8?q?st=20973)=20=E2=80=94=20a=20call=20to=20a=20tool=20the=20reques?=
+ =?UTF-8?q?t=20did=20not=20offer=20goes=20out=20under=20its=20own=20name:?=
+ =?UTF-8?q?=20tool=5Fparse.callName=20takes=20the=20offered=20tool=20spell?=
+ =?UTF-8?q?ing,=20else=20the=20call=20own=20name=20when=20it=20is=201=20to?=
+ =?UTF-8?q?=2064=20of=20[A-Za-z0-9=5F-]=20and=20its=20arguments=20a=20fini?=
+ =?UTF-8?q?te=20JSON=20object=20(as=20vLLMs=20parsers=20do),=20so=20the=20?=
+ =?UTF-8?q?client=20answers=20unknown=20tool=20and=20the=20model=20correct?=
+ =?UTF-8?q?s=20itself;=20any=20other=20block=20stays=20text=20in=20both=20?=
+ =?UTF-8?q?modes;=20bare=20JSON=20outside=20an=20envelope=20still=20needs?=
+ =?UTF-8?q?=20an=20offered=20name=20(a=20structured=20answer);=20PROVENANC?=
+ =?UTF-8?q?E:=20the=20fix=20is=20in=20v1.0.0..v1.2.1=20and=20was=20REVERTE?=
+ =?UTF-8?q?D=20before=20v1.2.2=20=E2=80=94=20v1.2.2/1.2.3/1.2.4=20(our=20p?=
+ =?UTF-8?q?romoted=20engine)=20lack=20it;=20the=20REST=20of=20the=20#415?=
+ =?UTF-8?q?=20rework=20(Policy.parsedContent/kept/wholeEnvelope/prose=5Fse?=
+ =?UTF-8?q?nt/the=20attach=20rework)=20is=20already=20in=20our=20tree=20?=
+ =?UTF-8?q?=E2=80=94=20only=20callName=20was=20reverted=20with=20it;=20the?=
+ =?UTF-8?q?=20test=20flips:=20the=20own-name=20behavior=20test=20(both=20m?=
+ =?UTF-8?q?odes),=20the=20visibility=20bad-case=20renamed=20to=20a=20non-f?=
+ =?UTF-8?q?unction=20name,=20the=20left-open=20entries=20renamed=20likewis?=
+ =?UTF-8?q?e=20(an=20unoffered=20FUNCTION=20name=20closes=20now);=20the=20?=
+ =?UTF-8?q?tool-parse=20host=20suite=2046/46=20PASS=20(zig=20build=20test-?=
+ =?UTF-8?q?tool-parse-host);=20compile=20RC=3D0=20(fatbins=20+=20native,?=
+ =?UTF-8?q?=20sm=5F121)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ zig/src/server/tool_parse.zig                 |  9 ++++--
+ zig/src/server/tool_parse_test.zig            | 30 ++++++++++++-------
+ zig/src/server/tool_parse_visibility_test.zig |  2 +-
+ 3 files changed, 27 insertions(+), 14 deletions(-)
+
+diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
+index 149f673ff..7b7640c79 100644
+--- a/zig/src/server/tool_parse.zig
++++ b/zig/src/server/tool_parse.zig
+@@ -193,10 +193,15 @@ fn argumentsClose(a: Allocator, body: []const u8) Allocator.Error![]const u8 {
+     return closed[body.len..];
+ }
+ 
+-/// The offered tool's spelling, or null when the request did not declare that name.
++/// ``call_name``: the offered tool's spelling; else the name itself when it is 1 to 64 of ``[A-Za-z0-9_-]`` and the
++/// arguments a finite object (a tool the request did not offer is the client's to refuse — the client answers
++/// "unknown tool" and the model corrects itself; upstream PR #415, issue #256); else null.
+ fn callName(a: Allocator, c: Call, known: *const std.StringArrayHashMapUnmanaged([]const u8)) Allocator.Error!?[]const u8 {
+     const name = strip(c.name);
+-    return if (known.get(try std.ascii.allocLowerString(a, name))) |offered| offered else null;
++    if (known.get(try std.ascii.allocLowerString(a, name))) |offered| return offered;
++    if (name.len == 0 or name.len > 64 or c.arguments != .object or !tool_params.finite(c.arguments)) return null;
++    for (name) |ch| if (!(std.ascii.isAlphanumeric(ch) or ch == '_' or ch == '-')) return null;
++    return name;
+ }
+ 
+ /// ``_openai_tool_call``: the call under ``name`` (``callName``), arguments as compact JSON.
+diff --git a/zig/src/server/tool_parse_test.zig b/zig/src/server/tool_parse_test.zig
+index ff656e820..3d1964a51 100644
+--- a/zig/src/server/tool_parse_test.zig
++++ b/zig/src/server/tool_parse_test.zig
+@@ -182,23 +182,30 @@ test "replies that end outside a call close nothing" {
+     for (replies) |text| try std.testing.expectEqualStrings("", try closeCall(a, text, tools));
+ }
+ 
+-test "a call to a tool the request did not declare stays text" {
++test "a call to a tool the request did not offer goes out under its own name" {
+     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+     defer arena.deinit();
+     const a = arena.allocator();
+     const tools = (try json.parse(a, "[{\"type\":\"function\",\"function\":{\"name\":\"lookup\"}}]")).ok.array;
+-    const whole = [_][]const u8{
+-        "<tool_call><function=launch><parameter=when>now</parameter></function></tool_call>",
++    // an unoffered call whose name is a function name and whose arguments are a finite object goes out under its own
++    // name (upstream PR #415, issue #256): the client answers "unknown tool" and the model corrects itself; a name
++    // that is no function name, or arguments holding NaN, stay the reply's text
++    const launch = "<tool_call><function=launch><parameter=when>now</parameter></function></tool_call>";
++    const kept = [_][]const u8{
+         "<tool_call>{\"name\": \"launch rocket!\", \"arguments\": {\"when\": \"now\"}}</tool_call>",
+         "<tool_call>{\"name\": \"launch\", \"arguments\": {\"when\": NaN}}</tool_call>",
+     };
+-    for (whole) |text| {
+-        const parallel = try parse(a, text, tools, null);
+-        try std.testing.expect(parallel.calls == null);
+-        try std.testing.expectEqualStrings(text, parallel.content);
+-        const single = try parse(a, text, tools, 1);
+-        try std.testing.expect(single.calls == null);
+-        try std.testing.expectEqualStrings(text, single.content);
++    for ([_]?usize{ null, 1 }) |max_calls| {
++        const r = try parse(a, launch, tools, max_calls);
++        try std.testing.expectEqual(@as(usize, 1), if (r.calls) |calls| calls.len else 0);
++        try std.testing.expectEqualStrings("launch", r.calls.?[0].get("function").?.get("name").?.string);
++        try std.testing.expectEqualStrings("{\"when\":\"now\"}", r.calls.?[0].get("function").?.get("arguments").?.string);
++        try std.testing.expectEqualStrings("", r.content);
++        for (kept) |text| {
++            const k = try parse(a, text, tools, max_calls);
++            try std.testing.expect(k.calls == null);
++            try std.testing.expectEqualStrings(text, k.content);
++        }
+     }
+     // an unclosed envelope is not a call in either mode, so the reply keeps it
+     const open = "<tool_call>{\"name\":\"launch\",\"arguments\":{\"when\":\"now\"}";
+@@ -207,6 +214,7 @@ test "a call to a tool the request did not declare stays text" {
+         try std.testing.expect(k.calls == null);
+         try std.testing.expectEqualStrings(open, k.content);
+     }
++    // a call malformed under the one-call reading stays text too
+     const prose = "Launching. <tool_call><function=launch><parameter=when>now</function></tool_call>";
+     try std.testing.expectEqualStrings(prose, (try parse(a, prose, tools, 1)).content);
+     // an offered tool keeps its offered spelling; bare JSON naming one not offered stays content
+@@ -471,7 +479,7 @@ test "a GLM call the end token left open closes as #285 closed it" {
+     const left_open = [_][]const u8{
+         "no call at all",
+         "<tool_call>now</tool_call>", // closed already
+-        "<tool_call>launch<arg_key>x</arg_key><arg_value>1", // a tool the client did not offer
++        "<tool_call>none tool<arg_key>x</arg_key><arg_value>1", // a name that is no function name (an unoffered FUNCTION name closes now — the own-name rule)
+         "<tool_call>run<arg_key>comm", // a key with no value
+         "<tool_call>run<arg_key>command</arg_key>", // ... or no value yet
+         "<tool_call>run command=ls", // not GLM's markup
+diff --git a/zig/src/server/tool_parse_visibility_test.zig b/zig/src/server/tool_parse_visibility_test.zig
+index 40e8da2c9..7558000f9 100644
+--- a/zig/src/server/tool_parse_visibility_test.zig
++++ b/zig/src/server/tool_parse_visibility_test.zig
+@@ -26,7 +26,7 @@ test "tool visibility: rejected text does not consume a valid call and the secon
+     defer arena.deinit();
+     const a = arena.allocator();
+     const tools = (try json.parse(a, "[{\"type\":\"function\",\"function\":{\"name\":\"execute\"}}]")).ok.array;
+-    const bad = "<tool_call>{\"name\":\"unknown\",\"arguments\":{}}</tool_call>";
++    const bad = "<tool_call>{\"name\":\"unknown tool!\",\"arguments\":{}}</tool_call>";
+     const good = "<tool_call>{\"name\":\"execute\",\"arguments\":{}}</tool_call>";
+     const result = try parse(a, bad ++ good ++ good, tools, 1);
+     try std.testing.expectEqualStrings(bad, result.content);
+-- 
+2.43.0
+
