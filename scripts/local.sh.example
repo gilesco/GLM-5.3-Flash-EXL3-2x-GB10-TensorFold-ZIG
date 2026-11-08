@@ -54,9 +54,8 @@ NCCL_SOCKET_IFNAME=enp1s0f1np1,enP2p1s0f1np1
 # + the DFlash2 drafter). The NVFP4 route has its own repo
 # (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing).
 
-# Serving (defaults in config.sh; the config default window is 40960 — the EXL3 route is
-# unmeasured on this line at every window). The production recipe's zig-engine branch ran
-# this checkpoint at 131072/8 on GB10s — a sane target once the first runs are green:
+# Serving (defaults in config.sh — the qualified optimum: CONTEXT=524288, PARALLEL=4).
+# Override only with a measured reason; every default's receipt is cited in config.sh:
 # CONTEXT=131072
 # PARALLEL=8
 # SERVED_NAME=GLM-5.3-Flash-EXL3
