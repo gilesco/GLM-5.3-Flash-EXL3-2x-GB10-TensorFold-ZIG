@@ -8868,3 +8868,20 @@ suite run is the deployment witness.
 restores the full 15-patch stack plus zclose (the user's round-triage
 removals were symptom management — the root defect is upstream engine code,
 present in every build; the kernel/load patches never touched tool parsing).
+
+**Deployment verified live (the same sitting)**: the user ran the rebuild +
+restart on the production repo (commit f761755, the 16-patch default); the
+image layers rebuilt 20:05; the LIVE REPRO now reads clean end to end — the
+same write-call probe that returned EMPTY arguments plus leaked content
+before the fix returned `finish: tool_calls`, `content: None`, and COMPLETE
+arguments with the quoted markup riding inside the content value
+(`{"content":"fixture Qwen's <tool_call>launch</tool_call>
+end","path":"/tmp/probe.txt"}`). The halt is dead on the serving stack; the
+self-improvement loop can write files that quote the engine's own tool-call
+markup again. The stack serves the full adopted set: the 14 kernel/load
+patches restored (the round-triage removals were symptom management — the
+root defect is upstream engine code) + glm-zz-tools256 + glm-zz-zclose.
+NO LAUNCH — the halt fix is deployed directly (the user's direct order in
+the halt incident); the fork-tail queue (the 0103 port sits on the rebase
+tree at f202781d3 with the strict-retry composition) waits for its own
+qualification window under the standing loop.
