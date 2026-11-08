@@ -8474,3 +8474,34 @@ The port ships as glm-zz-zshfl.patch (zh > z2) once the compile check
 lands; the 0081qual A/B launches at the sitting's end — the duel_arm
 c2/c4 cells are the lever's primary read (the fork measured to −14% at
 16-32 rows).
+
+## (round 137, cont. 8) THE 0081 PORT QUALIFIED AND ADOPTED — content identical, hardmode 95 (the THIRTEENTH consecutive), but the fork's measured decode gain did NOT transfer (decode flat — the first claim not to); config.sh's thirteenth patch; the (USER) BENCH + model card commissioned (2026-11-08)
+
+**The 0081qual A/B receipt** (both arms the SAME 13-patch image,
+TF_EXL3_SHFL=0 vs unset):
+- **The arms' greedy content IDENTICAL** (the same 80cc3802… sha as
+  every window); the §2 gates ALL PASS; **hardmode 95** (the
+  THIRTEENTH consecutive); the vision 4/4; prefill flat (the
+  read-once kernels serve decode windows only — the bench pp d0
+  1,525, inside the noise).
+- **The fork's measured decode gain did NOT transfer to our shape**:
+  c2 118.1 vs 118.2, c4 168.1 vs 168.2, ITL −0.3%, solo flat — the
+  L2-gather saving matters on their cold-expert trains, not our hot
+  hierarchy. The first fork claim not to transfer (the prefill-side
+  claims went three for three).
+- **ADOPTED anyway** ((agent) judgment recorded): bit-safe, knobbed
+  (TF_EXL3_SHFL=0), neutral on every instrument here, and the fork's
+  0082 (the chain as dependent launches) builds on this exact base.
+  config.sh's PATCHES carries glm-zz-zshfl.patch (the thirteenth; the
+  edit verified per the sourced-config skill — the 13-name probe,
+  config_line RC=0).
+
+**THE (USER) TASK (2026-11-08)**: "When this run ends, run a single
+tool eval bench on our best candidate, run it parallel=4, hardmode,
+perf on, with the needle find enabled, produce the model card so I can
+post it on the forums." — the run: the adopted 13-patch stack on the
+testing port 8001, tool-eval-bench's own one-shot recipe
+(--seed 42 --perf --needle --hardmode --parallel 4, timeout 900 for
+the deep needle cells); the card: MODEL_CARD.md at the repo root, no
+site identity (it gets posted publicly). The duel re-pair on the
+13-patch stack launches after the bench completes.

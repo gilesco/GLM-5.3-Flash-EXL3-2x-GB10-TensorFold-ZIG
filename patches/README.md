@@ -768,11 +768,17 @@ documented in LAUNCH.md round 119.
 - Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
   the builder base image); fresh-parent + the shipped patch = the commit
   tree byte-identical. NAMED glm-zz-zshfl TO SORT AFTER zs2 (zh > z2).
-- OWNER: this line; STATUS: **STAGED — the 0081qual A/B decides** (the
-  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's
-  thirteenth 95, the vision 4/4; the duel_arm c2/c4 cells are the
-  lever's primary read — the fork measured the read-once loads to
-  −14% at 16-32 rows).
+- OWNER: this line; STATUS: **ADOPTED (round 137 cont. 8, the 0081qual
+  A/B — campaign-20261107-232039: both arms the SAME 13-patch image,
+  TF_EXL3_SHFL=0 vs unset; the arms' greedy content IDENTICAL — the
+  same 80cc3802… sha as every window; the §2 gates ALL PASS, hardmode
+  95 (the THIRTEENTH consecutive), the vision 4/4, prefill flat; the
+  fork's measured decode gain did NOT transfer to our shape — the
+  c2/c4/ITL/solo cells read FLAT within the arm spread (the L2-gather
+  saving matters on their cold-expert trains, not our hot hierarchy);
+  ADOPTED anyway: bit-safe, knobbed, neutral on every instrument here,
+  and the fork's 0082 builds on this exact base; config.sh's thirteenth
+  patch).
 
 ## glm-zz-zs2.patch — the packed prompt GEMMs' loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps, P2 (round 137; Mia 1104's 0080 port)
 

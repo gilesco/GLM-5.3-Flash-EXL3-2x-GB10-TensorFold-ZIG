@@ -928,3 +928,16 @@ The user's spec: GLM-5.3-Flash (the architecture name IS glm5_next), vision,
   vLLM/L40 at 8K; vision unqualified. Deep-bit, low priority.
 - On site already: the Focus (93/104 hardmode on v1.2.1 — receipted today),
   the AZ, Mia-AiLab 4bpw-TensorFold + TR3, the DFlash2 drafters.
+
+**Addendum (round 137 cont. 8, 2026-11-08)**: the fork's 0081 (the exl3r
+read-once trellis — the 4-bit grouped experts read every trellis word
+once) is PORTED AND ADOPTED here as `glm-zz-zshfl.patch` (the thirteenth
+patch): content identical, hardmode 95 (the thirteenth consecutive) —
+but **its measured decode gain did not transfer to our shape** (decode
+flat on every instrument; the L2-gather saving matters on their
+cold-expert trains, not our hot hierarchy). The fork's measured claims:
+three for three on the prefill side (0030 decode-side transferred at
+concurrency; 0078+0079 and 0080 prefill-side transferred whole-prefill),
+this one the first not to. Adopted for bit-safety + the 0082 base. The
+exl3r series continues (0082: the chain as dependent launches) — the
+next candidate to scope.

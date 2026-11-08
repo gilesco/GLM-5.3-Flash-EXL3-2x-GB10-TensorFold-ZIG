@@ -991,3 +991,26 @@ serve decode windows only). At adoption: config.sh's thirteenth patch,
 the decode rows re-paired, the duel re-pair next window. 0082 (the
 chain as dependent launches) stays behind it — needs the fork's
 dependent-launch concepts checked first.
+
+**THE 0081 PORT QUALIFIED AND ADOPTED (round 137 cont. 8)**: the
+0081qual A/B (campaign-20261107-232039) — the arms' content IDENTICAL,
+the §2 gates ALL PASS, **hardmode 95 (the THIRTEENTH consecutive)**,
+the vision 4/4, prefill flat. **The fork's measured decode gain did
+NOT transfer to our shape** — the c2/c4/ITL/solo cells read FLAT (the
+first fork claim not to transfer; the L2-gather saving matters on
+their cold-expert trains, not our hot hierarchy). ADOPTED anyway:
+bit-safe, knobbed (TF_EXL3_SHFL=0), neutral everywhere, and the fork's
+0082 builds on this exact base. config.sh carries the thirteenth patch.
+
+**THE (USER) BENCH (2026-11-08)**: the user asked for a single
+tool-eval bench run on the best candidate — parallel=4, hardmode, perf
+on, needle find enabled — and a forum-ready model card. The run: the
+adopted 13-patch stack on the testing port 8001,
+`tool-eval-bench run --seed 42 --perf --needle --hardmode --parallel
+4` (the README's own one-shot recipe). The card: MODEL_CARD.md at the
+repo root, built from the standing receipts + this run, no site
+identity (it gets posted publicly).
+
+**THE NEXT STEP: the duel re-pair on the adopted 13-patch stack** —
+launched after the (user) bench completes; every speed row re-pairs
+same-window on the SHFL engine.

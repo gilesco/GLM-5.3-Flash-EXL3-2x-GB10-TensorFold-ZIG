@@ -832,6 +832,30 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       The prefill row stands at the 0080qual reading (100.1% — the
       duel carries no bench rows; the duel's own slope 0.442
       re-confirms the prefill gains at depth).
+      **THE 0081 PORT QUALIFIED AND ADOPTED (round 137 cont. 8, the
+      0081qual A/B — campaign-20261107-232039)**: glm-zz-zshfl (Mia
+      1104's 0081 — the exl3r read-once trellis: the grouped decode
+      kernels' lanes each loaded the two words their windows span,
+      every trellis word fetched twice; now one 128-byte warp load a
+      tile + __shfl_sync hand-off, the next tile issued a tile ahead,
+      the mcg mask in a register). TF_EXL3_SHFL=0 restores the old
+      choice (THE FORK'S OWN KNOB — no _cl twins needed). The port: 3
+      of 4 hunks clean, the tilesFor choice line hand-adapted to our
+      single Layer.uniform_k2, the fork's text otherwise line-verbatim
+      (14/14 .cu, 97/97 .cuh, 12/12 .zig). The A/B: BOTH arms the SAME
+      13-patch image — **the arms' greedy content IDENTICAL** (the
+      same 80cc3802… sha as every window), the §2 gates ALL PASS,
+      **hardmode 95 (the THIRTEENTH consecutive)**, the vision 4/4;
+      prefill flat (the read-once kernels serve decode windows only —
+      the bench pp d0 1,525, inside the noise). **The fork's measured
+      decode gain did NOT transfer to our shape**: the c2/c4/ITL/solo
+      cells read FLAT within the arm spread (c2 118.1 vs 118.2, c4
+      168.1 vs 168.2, ITL −0.3%, solo flat) — the L2-gather saving
+      matters on their cold-expert trains, not our hot hierarchy; the
+      first fork claim not to transfer (the prefill-side claims went
+      three for three). **ADOPTED anyway**: bit-safe, knobbed, neutral
+      on every instrument here, and the fork's 0082 (the chain as
+      dependent launches) builds on this exact base.
       **THE STEPLINK RETIRED (cont. 103-104): the steplink A/B
       (campaign-20261107-105455) — the content shas IDENTICAL
       everywhere (no arithmetic changes, as claimed) but the gain at
