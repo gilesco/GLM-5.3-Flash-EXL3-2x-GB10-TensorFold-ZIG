@@ -1089,3 +1089,27 @@ sixteenth 95, the vision 4/4, the greedy content identity (the fix's
 own unit test is the primary witness; the A/B arms exercise the knob-
 free path — the patch has no env switch because the behavior IS the
 fix).
+
+**THE FORK TAIL SCOPED (round 139, the 0083-0108 read)**: 26 patches remain
+beyond our 0082. The T3 glue set is the perf substance: 0086 (the hc
+finish-split — warp 0 publishes, Sinkhorn runs beside the collapse; exact,
+TF_GLM_HC_SPLIT) + 0089 (the hc partial-split — the decode dots over more
+blocks, TF_GLM_HC_PART steps) are self-contained ports; 0088 (the batched
+shared-window writes) rides the fork's 0070 batched shared windows, which we
+do not carry — a two-patch port if wanted; 0090 (PDL waits) only matters
+after the splits. Translated to our shape: ~-83 us (0086) + ~-64 us (0089) a
+plain step ~ 1% of our ~15 ms decode step — at the edge of the ±2% band,
+the same class as the two decode-side non-transfers (0081 L2-gather, 0082
+launch-overlap): their claims were real on cold 4-bit trains, not our hot
+serving hierarchy. The rest of the tail is server-side behavior (0092/0103/
+0105/0107 — the #256 class), warm turns (0104), the prompt-cache set-aside
+(0108), and DFlash2 tuning knobs (0094-0102) for the drafter line we don't
+measure. **JUDGMENT: no fork-tail port is committed now** — the decode side
+has cost two non-transferring ports; the HC-split set waits for a decode-
+side instrument that resolves 1% (the duel re-pair first, then re-judge).
+The server-side behavior ports (the #256 class) are cheap and safe — they
+queue AFTER the perf frontier, not before it.
+
+**THE NEXT STEP (unchanged in substance): the duel re-pair on the adopted
+stack** — every speed row re-pairs same-window on the 15-patch engine
+(the fifteenth is perf-neutral server work; the re-pair re-dates the rows).
