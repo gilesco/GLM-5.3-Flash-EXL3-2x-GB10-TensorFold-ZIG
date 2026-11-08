@@ -1,0 +1,156 @@
+From b88c6618f9d8d93916de06424a17050c52cf0481 Mon Sep 17 00:00:00 2001
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Date: Sun, 8 Nov 2026 19:53:42 +0000
+Subject: glm-zz-zclose: the tool-call envelope closer scans value-aware
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+A closer tag inside the payload's own data — a quoted markup example inside a
+JSON string value, or inside an arg_value/parameter region of the XML forms —
+is the model's data, not the envelope closer. THE WRITE-CALL HALT: a reply
+whose JSON arguments quote tool-call markup was cut mid-string, its payload
+invalid, the real call lost as content, and the fragment after the cut
+re-scanned as a phantom call. Reproduced live against the serving stack: a
+write call with markup quoted in its arguments returned empty arguments and
+the tail as content; the client saw "Arguments provided: {}" and the model
+retried forever. The shape every fixture-writing reply produces.
+
+envelopeCloser() tracks JSON string state and arg_value/parameter regions
+across the three envelope scans (the JSON/XML loop, the pipe-spelling loop,
+openCall), falling back to the plain first-tag find when the payload does not
+open as JSON or the JSON never closes outside its strings — a malformed
+payload cuts and is rejected exactly as before, so nothing regresses.
+
+The host suite pins the two quoted-markup shapes (the write-call fixture and
+the pipe spelling). The fork kept-list case (the strict-retry composition)
+follows in the next commit.
+---
+ zig/src/server/tool_parse.zig      | 49 ++++++++++++++++++++++++++++--
+ zig/src/server/tool_parse_test.zig | 32 +++++++++++++++++++
+ 2 files changed, 78 insertions(+), 3 deletions(-)
+
+diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
+index 7b7640c79..c6c4b731c 100644
+--- a/zig/src/server/tool_parse.zig
++++ b/zig/src/server/tool_parse.zig
+@@ -32,6 +32,49 @@ fn find(hay: []const u8, needle: []const u8, from: usize) ?usize {
+     return std.mem.indexOfPos(u8, hay, from, needle);
+ }
+ 
++/// The first ``close`` tag at or after ``from`` that closes an envelope: a tag inside the payload's own data
++/// is the model's quoted markup, not the closer. A JSON string value (the ``{...}`` form) or an
++/// ``<arg_value>``/``<parameter=..>`` region (the XML forms) is skipped, so a call may quote tool-call
++/// markup inside its arguments — the shape every fixture-writing reply produces. When the payload does
++/// not open as JSON the scan keeps the plain first-tag find; when the JSON never closes outside its
++/// strings the plain find is the fallback, so a malformed payload cuts and is rejected as before.
++fn envelopeCloser(text: []const u8, from: usize, close: []const u8, any_case: bool, skip_values: bool) ?usize {
++    var i = from;
++    while (i < text.len and space(text[i])) i += 1;
++    const json_form = i < text.len and (text[i] == '{' or text[i] == '[');
++    var in_string = false;
++    var region: []const u8 = "";
++    var j = i;
++    while (j < text.len) : (j += 1) {
++        const ch = text[j];
++        if (in_string) {
++            if (ch == '\\') {
++                j += 1; // the escaped byte is data even when it reads the tag
++            } else if (ch == '"') {
++                in_string = false;
++            }
++            continue;
++        }
++        if (json_form and ch == '"') {
++            in_string = true;
++            continue;
++        }
++        if (region.len > 0) {
++            if (std.mem.startsWith(u8, text[j..], region)) region = "";
++            continue;
++        }
++        if (std.mem.startsWith(u8, text[j..], close)) return j;
++        if (skip_values) {
++            if (std.mem.startsWith(u8, text[j..], "<arg_value>")) {
++                region = "</arg_value>";
++            } else if (std.mem.startsWith(u8, text[j..], "<parameter=")) {
++                region = "</parameter>";
++            }
++        }
++    }
++    return if (any_case) findCI(text, close, from) else find(text, close, from);
++}
++
+ /// Python's ``\w`` on one byte, non-ASCII bytes counting as letters.
+ fn word(ch: u8) bool {
+     return std.ascii.isAlphanumeric(ch) or ch == '_' or ch >= 0x80;
+@@ -54,7 +97,7 @@ fn envelopes(a: Allocator, text: []const u8) Allocator.Error![]Envelope {
+             pos = tool_dsml.blockEnd(text, outer) orelse break;
+             continue;
+         };
+-        const e = findCI(text, "</tool_call>", s + 11) orelse break;
++        const e = envelopeCloser(text, s + 11, "</tool_call>", true, true) orelse break;
+         try found.append(a, .{ .start = s, .end = e + 12, .payload = strip(text[s + 11 .. e]) });
+         pos = e + 12;
+     }
+@@ -74,7 +117,7 @@ fn envelopes(a: Allocator, text: []const u8) Allocator.Error![]Envelope {
+     }
+     pos = 0;
+     while (find(text, "<|tool_call>", pos)) |s| {
+-        const e = find(text, "<tool_call|>", s + 12) orelse break;
++        const e = envelopeCloser(text, s + 12, "<tool_call|>", false, false) orelse break;
+         try found.append(a, .{ .start = s, .end = e + 12, .payload = strip(text[s + 12 .. e]) });
+         pos = e + 12;
+     }
+@@ -176,7 +219,7 @@ pub fn openCall(text: []const u8) ?usize {
+             pos = tool_dsml.blockEnd(text, outer) orelse return null;
+             continue;
+         };
+-        pos = (findCI(text, "</tool_call>", s + 11) orelse break s) + 12;
++        pos = (envelopeCloser(text, s + 11, "</tool_call>", true, true) orelse break s) + 12;
+     } else null;
+ }
+ 
+diff --git a/zig/src/server/tool_parse_test.zig b/zig/src/server/tool_parse_test.zig
+index 3d1964a51..80d908938 100644
+--- a/zig/src/server/tool_parse_test.zig
++++ b/zig/src/server/tool_parse_test.zig
+@@ -584,3 +584,35 @@ test "GLM pairs from the cached key and value ends are the pairs each key's own
+ test {
+     _ = @import("tool_parse_visibility_test.zig");
+ }
++test "a JSON envelope's strings may quote tool-call markup" {
++    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
++    defer arena.deinit();
++    const a = arena.allocator();
++    const tools = (try json.parse(a, "[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"parameters\":{\"properties\":{\"path\":{\"type\":\"string\"},\"content\":{\"type\":\"string\"}}}}}]")).ok.array;
++    // the arguments' string value quotes the tool-call markup itself (a test fixture's source):
++    // markup inside a JSON string value is the value's data, not the envelope's closer —
++    // the first closer must not cut the payload mid-string (the write-call halt)
++    const text = "<tool_call>{\"name\":\"write\",\"arguments\":{\"path\":\"/tmp/t.txt\",\"content\":\"the fixture .{ \\\"Qwen's <tool_call>launch<arg_key>n</arg_key><arg_value>7</arg_value></tool_call>\\\", null },\"}}</tool_call>";
++    const r = try parse(a, text, tools, null);
++    try std.testing.expectEqual(@as(usize, 0), r.rejected_envelopes);
++    try std.testing.expectEqualStrings("", r.content);
++    try std.testing.expectEqualStrings("write", r.calls.?[0].get("function").?.get("name").?.string);
++    const doc = (try json.parseText(a, r.calls.?[0].get("function").?.get("arguments").?.string)).ok;
++    try std.testing.expectEqualStrings("/tmp/t.txt", doc.object.get("path").?.string);
++    try std.testing.expectEqualStrings("the fixture .{ \"Qwen's <tool_call>launch<arg_key>n</arg_key><arg_value>7</arg_value></tool_call>\", null },", doc.object.get("content").?.string);
++}
++
++test "a <|tool_call> envelope's strings may quote its own closer" {
++    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
++    defer arena.deinit();
++    const a = arena.allocator();
++    const tools = (try json.parse(a, "[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"parameters\":{\"properties\":{\"content\":{\"type\":\"string\"}}}}}]")).ok.array;
++    // the value quotes the envelope's own closer tag: string state decides where the envelope ends
++    const text = "<|tool_call>{\"name\":\"write\",\"arguments\":{\"content\":\"a literal <tool_call|> inside\"}}<tool_call|>";
++    const r = try parse(a, text, tools, null);
++    try std.testing.expectEqual(@as(usize, 0), r.rejected_envelopes);
++    try std.testing.expectEqualStrings("", r.content);
++    try std.testing.expectEqualStrings("write", r.calls.?[0].get("function").?.get("name").?.string);
++    const doc = (try json.parseText(a, r.calls.?[0].get("function").?.get("arguments").?.string)).ok;
++    try std.testing.expectEqualStrings("a literal <tool_call|> inside", doc.object.get("content").?.string);
++}
+-- 
+2.43.0
+

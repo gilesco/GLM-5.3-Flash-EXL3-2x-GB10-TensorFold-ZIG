@@ -399,6 +399,43 @@ part >> tile → the tile is better and the fix is its K-depth/w-layout.
 
 ## glm-loud-weightshare.patch — RETIRED (the diagnostic era): weightShare's silent `catch return total` printed its failing stage during the round-26/44 memory-illusion forensics; the diagnosis closed when the top4 reference-shape work landed (glm-topk4b) and the admission arithmetic became valid. Nothing to adopt — the loudness was a diagnosis aid, not a feature. Archived 2026-11-08.
 
+## glm-zz-zclose.patch — ADOPTED 2026-11-08 (the sixteenth patch; the halt fix)
+
+The tool-call envelope closer scans VALUE-AWARE: a closer tag inside the
+payload's own data — a quoted markup example inside a JSON string value, or
+inside an `arg_value`/`parameter` region of the XML forms — is the model's
+data, not the envelope closer. The upstream scan took the first `</tool_call>`
+after the opener with no string/region awareness, so any reply whose JSON
+arguments quoted tool-call markup — the shape EVERY fixture-writing reply
+produces — was cut mid-string: its payload invalid, the real call lost as
+content, and the fragment after the cut re-scanned as a phantom call (with
+glm-zz-tools256, as a phantom "unknown tool" invocation). Live-reproduced
+against the serving stack on 2026-11-08: a `write` call with the markup
+quoted in its `content` argument returned **empty arguments** (`"{}"`) and
+the tail leaked as content — the client saw `Arguments provided: {}`, and
+the model retried the same write forever: THE HALT that blocked the
+self-improvement loop (the model could not write a file that mentioned its
+own tool-call format).
+
+`envelopeCloser()` tracks JSON string state and `arg_value`/`parameter`
+regions across all three envelope scans (the JSON/XML loop in
+`tool_parse.envelopes`, the pipe-spelling loop, and `openCall`), falling back
+to the plain first-tag find when the payload does not open as JSON or the
+JSON never closes outside its strings — a malformed payload cuts and is
+rejected exactly as before, so nothing regresses. A companion change
+(committed with the port) makes the fork-0103 retry-salvage path require an
+OFFERED name: the own-name rule is a whole envelope's rule; an example the
+model quotes in prose stays prose.
+
+Receipts: the tool-parse host suite 48/48 on the production base and 51/51
+on the rebase tree (the fork's 0103 suite + the two new quoted-markup pins);
+compile RC=0 (fatbins + native, sm_121); the patch applies clean on the
+tools256 base and reproduces the verified tree byte-identically. The
+`Qwen's <tool_call>...` fixture class — the engine writing about its own
+tool-call format — now round-trips end to end.
+
+**Knob**: none (server-layer behavior; no env surface).
+
 ## glm-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
 
 Renamed from glm-topk4.patch: the config fingerprint hashes the patch LIST (names), not

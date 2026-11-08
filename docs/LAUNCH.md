@@ -8823,3 +8823,48 @@ everywhere, inside the ±2% band. **The scoreboard's meaning has changed**:
 Python-engine pairs are HISTORY (the anchors' header carries the re-target).
 Future duel windows compare a candidate arm against THIS baseline arm and
 re-date the rows from the candidate receipts.
+
+## (round 139, cont. 6) THE HALT FIXED — glm-zz-zclose, the sixteenth patch (2026-11-08)
+
+**The model-halt root cause found and fixed live.** The engine's tool-call
+envelope scan took the FIRST closer tag after the opener — with no awareness
+that the tag can be quoted DATA inside the payload's own arguments. Any reply
+whose JSON arguments quoted tool-call markup — the shape EVERY
+fixture-writing reply produces — was cut mid-string: the payload invalid, the
+real call lost as content, the fragment after the cut re-scanned as a phantom
+call (with glm-zz-tools256, out as a phantom "unknown tool" invocation). The
+model retried the same write forever: the halt that blocked the
+self-improvement loop (the engine could not write a file mentioning its own
+tool-call format — "Qwen's <tool_call>…" fixtures died on every attempt).
+
+**The reproduction** (against the serving stack's own API, 2026-11-08): a
+write call with the markup quoted in its content argument returned EMPTY
+arguments and the tail as content — the client's "Arguments provided: {}";
+the engine log printed `kept 1 malformed or unoffered tool envelopes as
+content` while the streamed path had already emitted the broken call. The
+full mechanism on video in the SSE capture: the streamed args cut at the
+quoted closer, the tail leaked as content deltas, finish_reason tool_calls.
+
+**The fix (glm-zz-zclose)**: `envelopeCloser()` in tool_parse.zig scans
+value-aware — a closer inside a JSON string value (the `{...}` form) or
+inside an arg_value/parameter region (the XML forms) is the model's data,
+not the closer; applied at all three envelope scans (the JSON/XML loop, the
+pipe-spelling loop, openCall). The plain first-tag find remains the fallback
+for non-JSON payloads and for JSON that never closes (a malformed payload
+cuts and is rejected exactly as before — nothing regresses). Companion
+change: the fork-0103 retry-salvage path requires an OFFERED name (the
+own-name rule is a whole envelope's rule; a quoted example stays prose) —
+the fork's kept-list test passes unchanged on our tree.
+
+**The receipts**: the tool-parse host suite 51/51 on the rebase tree (the
+fork's 0103 suite + the two new quoted-markup pins: the write-call fixture
+and the pipe spelling); 48/48 on the production base (the cherry-pick);
+compile RC=0 (fatbins + native, sm_121); the patch applies clean on the
+tools256 base and reproduces the verified tree byte-identically. The
+production engine state is EXACTLY bfdee9b99 (tools256) — the prod-base
+suite run is the deployment witness.
+
+**Deployment**: the patch ships to BOTH repos; production's PATCHES default
+restores the full 15-patch stack plus zclose (the user's round-triage
+removals were symptom management — the root defect is upstream engine code,
+present in every build; the kernel/load patches never touched tool parsing).
