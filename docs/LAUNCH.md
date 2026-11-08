@@ -8702,3 +8702,30 @@ promotion-qual restart reused the name). The receipt: the console's
 
 **LAUNCHED: newprodqual + summary (the re-launch)** — the promotion
 battery retries on the fixed split. THEN DARK (the night loop).
+
+## (round 138, cont. 6) THE PROMOTION QUALIFIED — newprodqual (campaign-20261108-124147): the §2 gates ALL PASS, hardmode 95 (the FIFTEENTH consecutive), the vision 4/4, the greedy sha identical; the poke re-pointed and verified (the scripts/config.sh path was wrong — the production repo's config lives at the root); ALL THE AUTONOMOUS WORKFLOWS VERIFIED ON THE PROMOTED STACK (2026-11-08)
+
+**The promotion-qual receipt** (the promoted 14-patch config on the
+testing port): the §2 content gates ALL PASS (g1-g5), **hardmode 95
+(the FIFTEENTH consecutive; TC-51/TC-92 pass)**, the vision 4/4, the
+greedy content sha **80cc3802… — identical to every window** (the
+promotion carried the same bits end to end); the bench pp d0 1,526 /
+tg 54.9 solo / TTFT 1,342 ms. **The promoted config qualifies as
+production.**
+
+**The autonomous-workflow verification sweep** ((user) ask):
+- **The window flow**: the relaunched promotion-qual window ran the
+  full battery on the -test container and RESTORED the promoted
+  production on its exit path (rc=0; production healthy on 8000;
+  the console's restore line present). The -test name split works.
+- **The cron crash-net**: the hands-off lines fired correctly through
+  the window (13:05-13:20), no false restarts; the guard keys on
+  glm53-native-tf (production) only.
+- **The poke**: BROKEN AND FIXED — the health check sourced
+  scripts/config.sh in the production repo; the config lives at the
+  repo ROOT. The poke would have believed production down forever and
+  never woken the agent. Fixed (the root path), syntax-checked, and
+  the live check returned 200 (container up + health OK through the
+  production repo's own config).
+- **The launcher**: the double-launch flag, the sync, the phase list —
+  exercised by both today's launches.
