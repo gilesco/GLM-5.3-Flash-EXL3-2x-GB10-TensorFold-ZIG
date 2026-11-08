@@ -8885,3 +8885,44 @@ NO LAUNCH — the halt fix is deployed directly (the user's direct order in
 the halt incident); the fork-tail queue (the 0103 port sits on the rebase
 tree at f202781d3 with the strict-retry composition) waits for its own
 qualification window under the standing loop.
+
+## (round 139, cont. 7) THE PATCHES RENUMBERED NNN-name.patch — the filename IS the apply order (2026-11-08, user)
+
+**The user's call**: "we should probably fix the patches so they all start with a
+three digit number, so we can name them appropriately, and have the numbers
+determine the order of application."
+
+**What changed**: every living patch file is `NNN-name.patch` now — the number IS
+the image build's apply order (the build applies `/build/patches/*.patch` in
+shell-glob order, which sorts the numbers). The old `glm-mia-*`/`glm-zz-*` names
+carried sort-duty naming hacks (tools256 named `-256` to sort before the z-
+kernels; zs2/zshfl/zstep named for their sort-after partners) — all retired. The
+mapping preserves today's exact qualified order: 001-absorb-mma, 002-exl3prompt,
+003-fp8-pages, 004-packed-s2, 005-pagerows-fix, 006-selist-fix, 007-attnfetch8,
+008-loaddirect, 009-moeside, 010-tools256, 011-zclose, 012-zmoe-fuse, 013-zprompt,
+014-zs2, 015-zshfl, 016-zstep (the serving 16) + 017-topk4b (the sweep cells'
+opt-in, numbered too). The next port takes the next free number (018).
+patches/archive/ keeps the retired patches' old names as history;
+patches/README.md carries the old→new decode map so the historical receipts
+staying readable.
+
+**The load-bearing verify**: the renamed 14-patch stack applied in glob order on
+pristine v1.2.4 reproduces the qualified engine tree BYTE-IDENTICALLY
+(`190c7f2774fd…` = the reference tree of bfdee9b99, production's current engine
+state). The rename is proven inert.
+
+**The guard grew a check** (docs-guard.sh §4b): the patch names must be
+NNN-name.patch, numbered 1..max with no gaps and no duplicates, and config.sh's
+PATCHES default must resolve into patches/. A retired number compacts only with
+a round entry.
+
+**Both repos renamed**: the testing repo (this one, commit dd9bbd5) and the
+production repo (bbd1b57 — its PATCHES default renamed, image/patches/ restaged,
+PORT=8000 + the container name + their comments production's own). Production's
+LIVE serve is untouched (the running image predates the rename and the patch
+content is byte-identical — the next prepare produces the same engine).
+
+**Subagent rule added to AGENTS.md (user, round 139)**: parallelizable reading is
+subagent work (at most TWO in flight) while the main sitting keeps the hands-on,
+state-mutating work serialized; subagents never commit, push, launch, or touch
+production.
