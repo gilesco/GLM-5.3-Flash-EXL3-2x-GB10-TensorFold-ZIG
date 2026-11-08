@@ -8803,3 +8803,23 @@ production repo's own scripts, after the digest commits).
   arm). The round-139 directive also fixed the duel's failure shape for the
   rewrite: stop the 8000 stack first, start the 8001 arm, run both arms, restore
   8000 on every exit path, then the poke.
+
+## (round 139, cont. 4) THE FIRST NATIVE-vs-NATIVE DUEL — the calibration pair (2026-11-08)
+
+**The duel re-pair window (campaign-20261108-162810) ran the REWRITTEN flow
+end-to-end**: the baseline arm (the promoted config) started FOR TESTING on
+8001 through THIS repo's own scripts, both arms probed, the baseline stopped,
+the ours arm restarted, production restored healthy on 8000 (80 s boot) —
+the round-139 void's failure shape is dead (the baseline stop is verified
+before the ours arm starts; a dead arm dies the phase).
+
+**The receipt is the instrument's CALIBRATION pair** ((user) round-139:
+comparisons are native-vs-native — this duel's arms both carry the promoted
+15-patch config, so the pair reads the instruments' noise floor): solo
+68.8/68.8 vs 68.2/68.1 (99.1%), c2 119.7 vs 119.0 (99.4%), c4 169.7 vs 168.5
+(99.3%), ITL mean 57.3 vs 57.2 ms, the TTFT slope 0.443 vs 0.442 — FLAT
+everywhere, inside the ±2% band. **The scoreboard's meaning has changed**:
+"production" is now the native promoted stack itself; the standing rows'
+Python-engine pairs are HISTORY (the anchors' header carries the re-target).
+Future duel windows compare a candidate arm against THIS baseline arm and
+re-date the rows from the candidate receipts.
