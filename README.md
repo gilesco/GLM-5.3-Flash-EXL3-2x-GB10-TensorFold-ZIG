@@ -1,4 +1,4 @@
-# GLM-5.3-Flash EXL3 on 2× GB10 — TensorFold native (ZIG testing line)
+# GLM-5.3-Flash EXL3 on 2× GB10 — TensorFold native (the promoted line)
 
 > ## 🤖 Provenance disclaimer
 >
@@ -9,7 +9,7 @@
 > [docs/LAUNCH.md](docs/LAUNCH.md), not from imagination. Where a claim has no
 > receipt behind it, the docs say so.
 
-> ## ⚠️ Testing line — significantly different from the production recipe
+> ## ⚠️ This repo is the production line
 >
 > **This line is EXL3 only**: it serves the site's **TR3-4bpw** EXL3 checkpoint
 > (Mia-AiLab's TR3 quant — the round-132 (user) swap after the 4bpw sweep: 94/104
@@ -22,16 +22,21 @@
 > loads BF16 from the checkpoint's 347 `model.visual.*` tensors; verified
 > production-equivalent perception — [docs/DELTAS.md](docs/DELTAS.md)).
 >
-> This is **not** the production deployment: production is the EXL3/Python recipe
-> ([MiaAI-Lab's EXL3 recipe](https://github.com/MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold),
-> the `-tip` checkout on the head) and remains the prefill and quality reference.
+> **This is production** (the (user) round-138/139 promotion): the promoted native
+> stack serves opencode on port 8000, and this same repo owns the lifecycle —
+> testing windows stop it, run the candidate on port 8001, and restore it on
+> every exit path (the autonomous loop: launch → window → cron crash-net → the
+> poke wakes the digest). The old Python-based production recipe is RETIRED
+> ([MiaAI-Lab's EXL3 recipe](https://github.com/MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold)
+> — its repo now points here); comparisons are native-vs-native: current
+> production against current testing.
 
 One GLM-5.3-Flash instance, tensor-parallel over the ConnectX-7 link: rank 0 runs the
 engine and the API, rank 1 holds its share of every axis and follows rank 0's steps over
 NCCL. Everything is Docker; the hosts need nothing but docker, ssh and the NVIDIA driver.
 
 <p align="center">
-  <img src="docs/architecture.svg" alt="Two GB10 hosts serving one GLM-5.3-Flash instance: rank 0 on the head (engine + API on the testing port 8001), rank 1 on the worker, tensor-parallel over two ConnectX-7 RoCE rails" width="740">
+  <img src="docs/architecture.svg" alt="Two GB10 hosts serving one GLM-5.3-Flash instance: rank 0 on the head (engine + API; production on port 8000, testing windows on 8001), rank 1 on the worker, tensor-parallel over two ConnectX-7 RoCE rails" width="740">
 </p>
 
 ## Current status
@@ -51,8 +56,8 @@ its tracker.
 
 | question | answer |
 | --- | --- |
-| Does it serve? | Yes — **v1.2.4 + the 14-patch stack + TF_KV_SHARE=16** on both ranks (the round-133/134 adoptions: absorb + the fp8-pages marriage + the pagerows/selist fixes + packed-s2 + exl3prompt + attnfetch8 + moeside — rebased onto v1.2.4 in round 135 — plus glm-zz-loaddirect, the layer loads on v1.2.4's checkpoint.direct; TF_KV_PAGES=on, the prompt cache over the pool's pages). Qualified on v1.2.4 (v124val, campaign-20261107-132414): §2 gates ALL PASS, hardmode 95 + the vision 4/4, zero strict-TF_ refusals under #2405, the arms content-identical. The v1.2.3-era receipts stand: §2 gates ALL PASS on the fp8-paged cell (pagedgatesv123, campaign-20261106-084338) and the bf16 cell (kvqual4P, campaign-20261106-081942), the depth ladder 12/12, the replay 100 + the probe 5/5 (v123qual, campaign-20261106-065920), the bare-config smoke verified (adoptsmoke2, campaign-20261106-103510), RoCE gather up (2 HCAs, RDMA writes, no fallback). **The loading front CROSSED (112.9% — 83 s on the direct reads)** — the second of the (user) bar's three fronts (solo 112.3% crossed; prefill 96.0% remains the closest gap); the duel re-pair re-dates the v1.2.3-era speed rows |
-| Ports | **This line always serves the testing port 8001** — opencode never connects to it. Production serves opencode on 8000 and testing on 8001 (intent-keyed starts). [AGENTS.md](AGENTS.md) carries the lifecycle rules |
+| Does it serve? | Yes — **v1.2.4 + the 15-patch stack + TF_KV_SHARE=16** on both ranks (the fifteenth is the round-139 #256 port glm-zz-tools256 — the unoffered-tool-call leak from the forum thread post 973's finding; tools256qual campaign-20261108-140329: the same-bits greedy witness IDENTICAL, the §2 gates ALL PASS, hardmode 95 the SIXTEENTH consecutive, the vision 4/4; the underlying adoptions: absorb + the fp8-pages marriage + the pagerows/selist fixes + packed-s2 + exl3prompt + attnfetch8 + moeside — rebased onto v1.2.4 in round 135 — plus glm-zz-loaddirect, the layer loads on v1.2.4's checkpoint.direct; TF_KV_PAGES=on, the prompt cache over the pool's pages). The v1.2.3-era receipts stand: §2 gates ALL PASS on the fp8-paged cell (pagedgatesv123, campaign-20261106-084338) and the bf16 cell (kvqual4P, campaign-20261106-081942), the depth ladder 12/12, the replay 100 + the probe 5/5 (v123qual, campaign-20261106-065920), the bare-config smoke verified (adoptsmoke2, campaign-20261106-103510), RoCE gather up (2 HCAs, RDMA writes, no fallback). **The loading front CROSSED (112.9% — 83 s on the direct reads)** and the prefill front CROSSED at 100.1% (round 137) — the third front (solo) crossed at 112.3%. The round-139 duel re-pair was VOIDED by the port-collision incident (docs/LAUNCH.md round 139) and re-targets NATIVE-vs-NATIVE (the (user) round-139 directive: the promoted stack is the baseline arm); the speed rows re-date when its replacement window lands |
+| Ports | **Production serves opencode on 8000; testing windows serve on 8001** (intent-keyed starts: a start FOR OPENCODE is 8000, a start FOR TESTING is 8001 — the same repo, the port names the intent). Opencode never connects to 8001; the quality gates never touch 8000. [AGENTS.md](AGENTS.md) carries the lifecycle rules |
 | Exactness | All §2 gates **PASS** (content form) on the current stack: drafted=plain, resumed=fresh (the pool-page resume path receipted), concurrent=solo, seeded sampling stable — pagedgatesv123, campaign-20261106-084338 — [docs/VALIDATION.md](docs/VALIDATION.md) §2 |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k, re-receipted on the paged v1.2.3 stack (campaign-20261106-081942) — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
 | Quality | **Hardmode 95** on the shipping config — receipted seven times with **total_tokens 662,693 byte-identical to the standing run's profile** (v123qual campaign-20261106-065920, pagedquality3 campaign-20261106-043015, kvsharequal campaign-20261106-093921, mms2qual campaign-20261106-185208, exl3qual campaign-20261106-212157, attnqual campaign-20261107-020420, moesidequal campaign-20261107-092913 on the moeside adoption) — a point **above** production's current-bench anchor 94/104 (the prodbench receipt, campaign-20261102-213954: the same instrument, bench_cell v3.0.1, on the clean 8001). The vision suite **4/4** on every receipt. The sweep's scorecards are the **CURRENT ranking** — the re-sweep (2026-11-06) put all four packs on the shipping stack: **TR3 95** (the served pack, 3 points clear), production's stock 92, the Focus 92, the AZ top-4 87 at the top perf numbers: [docs/bpw4-sweep-cards.svg](docs/bpw4-sweep-cards.svg) — [docs/DELTAS.md](docs/DELTAS.md) |
@@ -166,7 +171,7 @@ The ones that matter:
 | `TF_GLM_ABSORB_MMA` | `1` | a prompt pass's absorb_q/expand_v as head-batched bf16 tensor-core GEMMs with fp32 sums (the Mia-1104 0041 port; decode windows keep the SIMT kernels) — the deep fills −6.8/−7.0/−6.9%; the fp32 summation order differs from SIMT, hence the opt-out `0`; the numerics ride every rank fingerprint (layout 17), so disagreeing ranks refuse to start; needs `PATCHES` |
 | `PDL` | `0` | `1` → programmatic dependent launch on the mm kernels (hurt dense4 in the matrix — the ledger) |
 | `RECALL` / `PROMPT_CACHE_GIB` | `0` / engine default | the drafts-copy-from-text cache; the kept-states store's size cap |
-| `SERVED_NAME` / `PORT` / `HOST` | `GLM-5.3-Flash-EXL3` / `8001` / `0.0.0.0` | API surface — **this line always serves the testing port 8001** |
+| `SERVED_NAME` / `PORT` / `HOST` | `GLM-5.3-Flash-EXL3` / `8001` / `0.0.0.0` | API surface — the repo's default is the **testing port 8001** (production overrides it to 8000 in its own config; intent-keyed starts) |
 | `API_KEY` | empty | recommended; sent as `Authorization: Bearer` |
 | `MEMORY_LIMIT_GB` | engine default | → `TENSORFOLD_CUDA_MEMORY_LIMIT_GB` |
 | `BASE_IMAGE` / `ZIG_VERSION` / `SM_ARCH` | NGC pytorch 26.07 / `0.17.0` / `121` | the builder |

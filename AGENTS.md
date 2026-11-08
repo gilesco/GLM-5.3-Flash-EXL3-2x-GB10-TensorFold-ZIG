@@ -6,13 +6,15 @@
 
 ## What this repo is
 
-The EXL3-only **testing line** for GLM-5.3-Flash on a two-GB10 pair — one **head**
+The EXL3-only **promoted native line** for GLM-5.3-Flash on a two-GB10 pair — one **head**
 host (rank 0 + API) and one **worker** host (rank 1); this site's real hostnames,
 addresses and devices live in git-ignored `scripts/local.sh` / `docs/SITE.md` —
 served by TensorFold's **native CUDA
-engine**. It is not the production deployment — production is the EXL3/Python recipe
-(the `-tip` checkout on the head, container
-`glm53-flash-tf`, serving opencode on 8000) and it outranks everything here.
+engine**. It **IS the production deployment** ((user) round-138/139 promotion): the
+promoted native stack serves opencode on 8000 from this repo's config, and testing
+windows run from the same repo — the old Python recipe is retired (its GitHub repo
+points here), and comparisons are native-vs-native: current production against
+current testing.
 
 Hard boundaries, never crossed:
 
@@ -20,14 +22,16 @@ Hard boundaries, never crossed:
   flow and test dances stop production for GPU work and restart it on EVERY exit
   path; the crash-net restarts it whenever it is down with no window running. The
   guardrails: production always comes back; production's code/config is never
-  modified beyond the intent-keyed port; the duel probes production-for-testing
+  modified beyond the intent-keyed port; test phases probe the testing serve
   read-only. **The ports are intent-keyed (user)**: production started FOR OPENCODE
-  serves 8000; production started FOR TESTING serves 8001 (`PORT=8001
-  $TIP/start.sh`); our testing stack always serves 8001 — opencode never connects
-  to testing. **Separation runs through the autonomous window flow, never ad-hoc
-  (user, round 132)**: when a phase starts production-for-testing on 8001 it stops
-  our testing stack first (the two never share the port — the round-132 duel
-  refusal: "port 8001 is already in use") and restarts ours after; production
+  serves 8000 (the promoted repo's config); a stack started FOR TESTING serves
+  8001 (`PORT=8001 ./scripts/start.sh` — the promoted repo IS the baseline arm now);
+  opencode never connects to 8001. **Separation runs through the autonomous window flow, never ad-hoc
+  (user, round 132)**: when a phase starts a testing serve on 8001 it stops the
+  8000 stack first (the two never share the port — the round-132 duel
+  refusal: "port 8001 is already in use", the round-139 void: the duel restarted
+  the ours arm without stopping the 8001 stack first) and restarts the 8000
+  stack after; production
   itself is stopped/restored only by the window flow's entry/exit paths.
 - This line is **EXL3 only** (the NVFP4 route has its own repo) and the context goal is
   **524,288 tokens — nothing above**.
