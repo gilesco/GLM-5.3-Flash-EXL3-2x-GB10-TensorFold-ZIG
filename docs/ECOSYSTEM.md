@@ -319,7 +319,7 @@ validation battery.
 **The plan**: rebase the 8-patch stack onto v1.2.4 (the re-anchoring is
 the next sitting's opener), wire GLM's weights loader onto
 checkpoint_direct following the gemma4/qwen3_5 pattern (a small patch —
-glm-zz-loaddirect), then ONE validation window covers both (the gates +
+008-loaddirect), then ONE validation window covers both (the gates +
 the smoke + the loading wall's re-take on the direct reads). The
 loading front could cross.
 
@@ -334,7 +334,7 @@ verbatim once the stack sits beneath them (the bare-tree failures were
 anchor shifts the stack re-aligns); absorb-mma, fp8-pages and moeside
 were hand-re-anchored (the Fingerprint at layout 20, the snapshot tests
 after v1.2.4's KV_SHARE adapter test, the side field around pair/l2pf).
-glm-zz-loaddirect is written (cuda_load_ahead.zig; TF_LOAD_DIRECT=0 keeps
+008-loaddirect is written (cuda_load_ahead.zig; TF_LOAD_DIRECT=0 keeps
 #1928's read-ahead; 23 shards < max_sources 64 so the path engages on our
 checkpoint). The pin is bumped; the v124val window covers it.
 
@@ -499,7 +499,7 @@ capture rerun stands — the overlap findings strengthen the bubbles hypothesis.
 
 **Addendum (round 136, 2026-11-07)**: the fork's engine-series 0030 (a decode window's
 MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b pair launch) is PORTED AND
-ADOPTED here as `glm-zz-zmoe-fuse.patch` (the tenth patch): the A/B content identical to
+ADOPTED here as `012-zmoe-fuse.patch` (the tenth patch): the A/B content identical to
 the byte, hardmode 95 (the tenth consecutive), c4 +4.2% (our best c4, 166.1 t/s), solo
 flat, prefill flat by design (campaign-20261107-172250). The fork's decode-side launch
 savings transfer; its prefill-class levers (the 0009+0033 packed-prompt/pair-launch line)
@@ -508,7 +508,7 @@ remain the untriaged tail.
 **Addendum (round 137, 2026-11-07)**: the fork's exl3p pair 0078+0079 (the prompt
 experts' main loop reworked — 8-member column blocks, the next k tile decoded among the
 current MMAs, per-item cp.async, mcg2/decode_a8/fwht128f, vector stores) is PORTED AND
-ADOPTED here as `glm-zz-zprompt.patch` (the eleventh patch): the A/B content identical to
+ADOPTED here as `013-zprompt.patch` (the eleventh patch): the A/B content identical to
 the byte, hardmode 95 (the eleventh consecutive), **the prefill front 96.0% → 98.5%**
 (the bench pp d0 1,495; the TTFT slope −2.4% — the fork's kernel claims, gu 1.177× /
 down 1.161×, transfer to our whole-prefill at ~2-2.5%), decode flat
@@ -518,7 +518,7 @@ tail; the HC-split/overlap set stays parked behind it.
 
 **Addendum (round 137 cont. 4, 2026-11-07)**: the fork's 0080 (the packed prompt GEMMs'
 loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps — mm_kernel's P2 +
-bpairs8_fast) is PORTED AND ADOPTED here as `glm-zz-zs2.patch` (the twelfth patch): the
+bpairs8_fast) is PORTED AND ADOPTED here as `014-zs2.patch` (the twelfth patch): the
 A/B content identical to the byte, hardmode 95 (the twelfth consecutive), **the prefill
 front CROSSED at 100.1%** (bench pp d0 1,519 vs production's 1,518; the TTFT slope −1.6%
 agrees — the fork's 1.116-1.138× claim at GLM's prompt shapes transfers as ~+1.6%
@@ -931,7 +931,7 @@ The user's spec: GLM-5.3-Flash (the architecture name IS glm5_next), vision,
 
 **Addendum (round 137 cont. 8, 2026-11-08)**: the fork's 0081 (the exl3r
 read-once trellis — the 4-bit grouped experts read every trellis word
-once) is PORTED AND ADOPTED here as `glm-zz-zshfl.patch` (the thirteenth
+once) is PORTED AND ADOPTED here as `015-zshfl.patch` (the thirteenth
 patch): content identical, hardmode 95 (the thirteenth consecutive) —
 but **its measured decode gain did not transfer to our shape** (decode
 flat on every instrument; the L2-gather saving matters on their
@@ -943,7 +943,7 @@ exl3r series continues (0082: the chain as dependent launches) — the
 next candidate to scope.
 
 **Addendum (round 138, 2026-11-08)**: the fork's 0082 (the exl3r chain
-as dependent launches) is PORTED AND ADOPTED here as `glm-zz-zstep.patch`
+as dependent launches) is PORTED AND ADOPTED here as `016-zstep.patch`
 (the fourteenth patch): content identical (the fork's 108/108 exactness
 confirmed), hardmode 95 (the fourteenth consecutive) — **its measured
 chain gain did not transfer to our shape** (decode flat; the second

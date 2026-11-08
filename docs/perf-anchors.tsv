@@ -16,7 +16,7 @@
 # receipts=round 135 — checkpoint.direct's 64-source fd budget) on TensorFold v1.2.4 (267c5af6a) + the NINE-patch
 # receipts=stack: the eight adopted (absorb + the fp8-pages marriage + pagerows-fix + selist-fix + packed-s2 +
 # receipts=exl3prompt + attnfetch8 + moeside — rebased onto v1.2.4 in round 135, the re-anchoring light: five
-# receipts=verbatim, three hand-anchored) + glm-zz-loaddirect (the layer loads on v1.2.4's checkpoint.direct,
+# receipts=verbatim, three hand-anchored) + 008-loaddirect (the layer loads on v1.2.4's checkpoint.direct,
 # receipts=the next layer read on the thread while one packs; TF_LOAD_DIRECT=0 keeps the read-ahead). QUALIFIED
 # receipts=on v1.2.4 (v124val, campaign-20261107-150250: the §2 gates ALL PASS, hardmode 95 — the NINTH
 # receipts=consecutive — the vision 4/4, the arms content-identical to the byte, zero strict-TF_ refusals under

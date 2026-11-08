@@ -76,6 +76,12 @@ Hard boundaries, never crossed:
 - **Every number in the docs quotes a receipt** — a file in `results/` or a LAUNCH.md
   entry. No number without a run behind it. Correcting a wrong number gets a round
   entry explaining the withdrawal; never edit it silently.
+- **Parallelizable reading is subagent work (user, round 139)** — independent,
+  read-only scans (upstream/fork reviews, reference inventories, doc digests)
+  are delegated to subagents (at most TWO in flight) while the main sitting
+  keeps the hands-on, state-mutating work (commits, patches, launches)
+  serialized. Subagents report findings; they never commit, push, launch, or
+  touch production.
 - **A new measurement is a phase in `scripts/run-qualification.sh`**, not a one-off
   script. The campaign is phased (`.done` markers, `PHASES=` selectable, `FORCE=1`
   re-run), production-guarded, and its receipts ARE the evidence chain. Session-specific

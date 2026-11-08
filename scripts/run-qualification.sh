@@ -1203,7 +1203,7 @@ fi
 # round-132 sweep's four local packs re-measured on the SHIPPING stack
 # (v1.2.3 + the 4-patch paged KV + TF_GLM_KV_SHARE=8 — every serving
 # default from config.sh; only the pack's MODEL_ID/REVISION vary per
-# cell, plus the AZ top-4 cell's glm-topk4b.patch, verified applying
+# cell, plus the AZ top-4 cell's 017-topk4b.patch, verified applying
 # clean on v1.2.3+the-4-patches). All four cells in ONE window (~40 min
 # each: load, g1 determinism, bench_cell, bench_perf). Each cell emits a
 # TSVROW| line (pack|hardmode|pp_d0|tg_d0|tg_d4096|tg_d8192|tg_c4_d8192)
@@ -1268,14 +1268,14 @@ PWE
   resweep_cell tr3 "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw" "MODEL_REVISION=main"
   resweep_cell mia "MODEL_ID=Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold" "MODEL_REVISION=main"
   resweep_cell focus "MODEL_ID=local/GLM-5.3-Flash-AZ-Focus-EXL3" "MODEL_REVISION=main"
-  resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=glm-mia-absorb-mma.patch,glm-mia-fp8-pages.patch,glm-mia-pagerows-fix.patch,glm-mia-selist-fix.patch,glm-topk4b.patch"
+  resweep_cell az4 "MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3" "MODEL_REVISION=main" "PATCHES=001-absorb-mma.patch,003-fp8-pages.patch,005-pagerows-fix.patch,006-selist-fix.patch,017-topk4b.patch"
   echo "- VERDICT: the four TSVROW lines replace docs/bpw4-sweep.tsv's data (the cards re-render, the README re-frames — the cards become the CURRENT ranking; the round-132 sweep moves to history: LAUNCH + results/bpw4sweep/); a FAIL cell keeps its round-132 row with a note" >> "$P"
   touch "$OUT/.resweep.done"
 fi
 
 # ---------------------------------------------------------------------------
 # phase: v124val (SESSION-SPECIFIC; retires with the receipt). The v1.2.4
-# rebase + glm-zz-loaddirect validation: the engine is now v1.2.4 (267c5af6a)
+# rebase + 008-loaddirect validation: the engine is now v1.2.4 (267c5af6a)
 # + the rebased 8-patch stack + the direct-reads wiring. The receipt carries:
 # the explicit prepare (the fingerprint moved: TF_COMMIT + the patch bodies),
 # the OFF-arm insurance (TF_LOAD_DIRECT=0 restarts and probes the old
@@ -1290,7 +1290,7 @@ fi
 if want v124val && ! phase_done v124val; then
   log "=== v124val (the v1.2.4 rebase + the direct reads: gates + battery + vision + the wall)"
   P="$OUT/29-v124val.md"; : > "$P"
-  echo "# v124val (v1.2.4 267c5af6a + the 9-patch stack + glm-zz-loaddirect on the resharded pack)" >> "$P"
+  echo "# v124val (v1.2.4 267c5af6a + the 9-patch stack + 008-loaddirect on the resharded pack)" >> "$P"
   log "v124val: explicit prepare (the fingerprint moved)"
   if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v124val: the image rebuild (prepare) failed - see the log"; fi
   echo "## the OFF arm (TF_LOAD_DIRECT=0: the old read-ahead path, insurance)" >> "$P"
@@ -1712,7 +1712,7 @@ fi
 # phase: top4qual (SESSION-SPECIFIC; the quality battery on real topk=4 —
 # PERF_PLAN Front 2 Lever A's gate; retires with the lever's decision).
 # The (user) bar: a new checkpoint/model behavior means seriously more quality
-# checks. The battery on the top4cfg serve (PATCHES=glm-topk4b):
+# checks. The battery on the top4cfg serve (PATCHES=017-topk4b):
 #   1) the §2 gates, content form (greedy determinism, drafted==plain,
 #      cache-hit==computed, concurrency, seeded reproducibility);
 #   2) the full tool-eval suite (run-bench-matrix PHASE=tools — the
@@ -1729,11 +1729,11 @@ if want top4qual && ! phase_done top4qual; then
   echo "# top4qual (the quality battery on real topk=4; dense4fp8 @ 512K x4)" >> "$P"
   echo "- reference: production's v3.0.1 anchors (round 35): tool-eval 96/100 (133/138), hardmode subset 63/70 = 90%; the top4cfg's own rows are v1.1.2-era (93/89, old bench) until this battery" >> "$P"
   echo "- the model behavior changes by design (the unretrained top-4 selector): the gates and the score decide" >> "$P"
-  run_gates top4cfg MODEL_REVISION=top4cfg PATCHES=glm-topk4b.patch DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  run_gates top4cfg MODEL_REVISION=top4cfg PATCHES=017-topk4b.patch DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
   # the duel arm + c4 reprobe (round 36 addition): the scoreboard's solo/c2/c4/TTFT
   # rows need the top4cfg's own v1.1.6 steady-state probes against production's
   # fresh duel receipt (round 33 addendum) — the scores alone don't move those rows.
-  if restart MODEL_REVISION=top4cfg PATCHES=glm-topk4b.patch DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+  if restart MODEL_REVISION=top4cfg PATCHES=017-topk4b.patch DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
     T4MODEL=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
 import json, sys
 try: print(json.load(sys.stdin)["data"][0]["id"])
@@ -1759,7 +1759,7 @@ fi
 # phase: azqual (SESSION-SPECIFIC; the battery + the probes on the AZ-EXL3
 # serve — the retrained selector, Experiment 2; retires with the AZ route's
 # decision). The serve: local/GLM-5.3-Flash-AZ-EXL3 (the requant output, placed
-# by scripts/az-window.sh) under the topk=4 reference (glm-topk4b). The battery
+# by scripts/az-window.sh) under the topk=4 reference (017-topk4b). The battery
 # mirrors top4qual's: §2 gates, the full tool-eval, hardmode; then the duel arm
 # for the perf probes. The references: top4cfg's 135458/142659 receipts.
 # ---------------------------------------------------------------------------
@@ -1768,7 +1768,7 @@ if want azqual && ! phase_done azqual; then
   P="$OUT/14-azqual.md"; : > "$P"
   echo "# azqual (the AZ-EXL3 serve: the retrained top-4 selector; dense4fp8 @ 512K x4)" >> "$P"
   echo "- references: top4cfg perf (135458: solo 63.6, c2 90.0, c4 120.4, slope 0.593) and battery (142659: gates PASS, tool-eval 93, hardmode 89)" >> "$P"
-  AZENV="MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=glm-topk4b.patch"
+  AZENV="MODEL_ID=local/GLM-5.3-Flash-AZ-EXL3 MODEL_REVISION=main PATCHES=017-topk4b.patch"
   run_gates azexl3 $AZENV DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
   if restart $AZENV DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
     AZMODEL=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
@@ -3788,7 +3788,7 @@ if want cardrun && ! phase_done cardrun; then
 fi
 
 # ---------------------------------------------------------------------------
-# phase: moefusequal (SESSION-SPECIFIC; the fork's 0030 port — glm-zz-zmoe-fuse.
+# phase: moefusequal (SESSION-SPECIFIC; the fork's 0030 port — 012-zmoe-fuse.
 # A decode window's MoE glue fused: tf_glm_topk_group (the select, the compact
 # picks and the EXL3 grouping in one 1024-thread block), the grouped experts
 # core with no slot-row copies (no put_slot, no glue.combine; the shared
@@ -3806,8 +3806,8 @@ fi
 if want moefusequal && ! phase_done moefusequal; then
   log "=== moefusequal (the 0030 port A/B: the fused decode MoE glue)"
   P="$OUT/08-moefusequal.md"; : > "$P"
-  echo "# moefusequal (glm-zz-zmoe-fuse: TF_GLM_MOE_FUSE=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
-  MFPATCH="${PATCHES},glm-zz-zmoe-fuse.patch"
+  echo "# moefusequal (012-zmoe-fuse: TF_GLM_MOE_FUSE=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  MFPATCH="${PATCHES},012-zmoe-fuse.patch"
   log "moefusequal: explicit prepare (the fingerprint moved)"
   if ! PATCHES="$MFPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "moefusequal: the image rebuild (prepare) failed - see the log"; fi
   req_file "$OUT/mf-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
@@ -3884,7 +3884,7 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
-# phase: exl3pqual (SESSION-SPECIFIC; the fork's 0078+0079 port — glm-zz-zprompt.
+# phase: exl3pqual (SESSION-SPECIFIC; the fork's 0078+0079 port — 013-zprompt.
 # The prompt experts' main loop reworked (exl3p): compiled for an item's
 # 8-member column blocks (NBA 1..8, no predicate, no dead MMA), the next k
 # tile's trellis decode issued among the current MMAs across the stage barrier
@@ -3906,8 +3906,8 @@ fi
 if want exl3pqual && ! phase_done exl3pqual; then
   log "=== exl3pqual (the 0078+0079 port A/B: the prompt experts' main loop)"
   P="$OUT/09-exl3pqual.md"; : > "$P"
-  echo "# exl3pqual (glm-zz-zprompt: TF_GLM_EXL3P=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
-  EPPATCH="${PATCHES},glm-zz-zprompt.patch"
+  echo "# exl3pqual (013-zprompt: TF_GLM_EXL3P=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  EPPATCH="${PATCHES},013-zprompt.patch"
   log "exl3pqual: explicit prepare (the fingerprint moved)"
   if ! PATCHES="$EPPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "exl3pqual: the image rebuild (prepare) failed - see the log"; fi
   req_file "$OUT/ep-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
@@ -3984,7 +3984,7 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
-# phase: 0080qual (SESSION-SPECIFIC; the fork's 0080 port — glm-zz-zs2.
+# phase: 0080qual (SESSION-SPECIFIC; the fork's 0080 port — 014-zs2.
 # The packed prompt GEMMs' loads fixed once a block and 8-bit codes to
 # bf16 pairs in fewer steps (the same bits): glm_mm{4,6,8}_128s2 keep
 # their tiles, B fragments, the four-K16 MMA chain from zero a 64-group
@@ -4006,8 +4006,8 @@ fi
 if want 0080qual && ! phase_done 0080qual; then
   log "=== 0080qual (the 0080 port A/B: the packed prompt linears' loads)"
   P="$OUT/09-0080qual.md"; : > "$P"
-  echo "# 0080qual (glm-zz-zs2: TF_GLM_MM_P2=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
-  S2PATCH="${PATCHES},glm-zz-zs2.patch"
+  echo "# 0080qual (014-zs2: TF_GLM_MM_P2=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  S2PATCH="${PATCHES},014-zs2.patch"
   log "0080qual: explicit prepare (the fingerprint moved)"
   if ! PATCHES="$S2PATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "0080qual: the image rebuild (prepare) failed - see the log"; fi
   req_file "$OUT/s2-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
@@ -4084,7 +4084,7 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
-# phase: 0081qual (SESSION-SPECIFIC; the fork's 0081 port — glm-zz-zshfl.
+# phase: 0081qual (SESSION-SPECIFIC; the fork's 0081 port — 015-zshfl.
 # The 4-bit grouped experts read every trellis word once (exl3r): the
 # grouped decode kernel's lanes each loaded the two 32-bit words their
 # 16-bit windows span — every trellis word fetched twice (the fork's NCU:
@@ -4113,8 +4113,8 @@ fi
 if want 0081qual && ! phase_done 0081qual; then
   log "=== 0081qual (the 0081 port A/B: the grouped experts read every trellis word once)"
   P="$OUT/09-0081qual.md"; : > "$P"
-  echo "# 0081qual (glm-zz-zshfl: TF_EXL3_SHFL=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
-  SHPATCH="${PATCHES},glm-zz-zshfl.patch"
+  echo "# 0081qual (015-zshfl: TF_EXL3_SHFL=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  SHPATCH="${PATCHES},015-zshfl.patch"
   log "0081qual: explicit prepare (the fingerprint moved)"
   if ! PATCHES="$SHPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "0081qual: the image rebuild (prepare) failed - see the log"; fi
   req_file "$OUT/sh-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
@@ -4242,7 +4242,7 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# phase: 0082qual (SESSION-SPECIFIC; the fork's 0082 port — glm-zz-zstep.
+# phase: 0082qual (SESSION-SPECIFIC; the fork's 0082 port — 016-zstep.
 # The 4-bit read-once chain as dependent launches (exl3r c3, on the
 # adopted 0081 base): the decode chain's kernels (rot_in, the grouped
 # experts, the gate/up epilogue, the down combine) launch with
@@ -4268,8 +4268,8 @@ fi
 if want 0082qual && ! phase_done 0082qual; then
   log "=== 0082qual (the 0082 port A/B: the read-once chain as dependent launches)"
   P="$OUT/09-0082qual.md"; : > "$P"
-  echo "# 0082qual (glm-zz-zstep: TF_EXL3_PDL=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
-  STPATCH="${PATCHES},glm-zz-zstep.patch"
+  echo "# 0082qual (016-zstep: TF_EXL3_PDL=0 vs unset, the SAME patched image; dense4fp8 @ 512K x4)" >> "$P"
+  STPATCH="${PATCHES},016-zstep.patch"
   log "0082qual: explicit prepare (the fingerprint moved)"
   if ! PATCHES="$STPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "0082qual: the image rebuild (prepare) failed - see the log"; fi
   req_file "$OUT/st-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
@@ -4357,8 +4357,8 @@ fi
 if want tools256qual && ! phase_done tools256qual; then
   log "=== tools256qual (the #256 fix battery: the unoffered-tool-call leak re-applied)"
   P="$OUT/09-tools256qual.md"; : > "$P"
-  echo "# tools256qual (glm-zz-tools256 staged: the 15-patch image; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
-  T2PATCH="${PATCHES},glm-zz-tools256.patch"
+  echo "# tools256qual (010-tools256 staged: the 15-patch image; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  T2PATCH="${PATCHES},010-tools256.patch"
   log "tools256qual: explicit prepare (the fingerprint moved)"
   if ! PATCHES="$T2PATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "tools256qual: the image rebuild (prepare) failed - see the log"; fi
   restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$T2PATCH"

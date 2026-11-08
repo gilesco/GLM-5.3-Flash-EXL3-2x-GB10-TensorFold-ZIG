@@ -153,25 +153,28 @@ site's). The ones that matter:
 
 ### The 15-patch stack (`PATCHES`)
 
-The image applies the list **alphabetically**. What each patch does:
+The image applies the patches **in filename order — the three-digit prefix IS the
+application order** (`001-` first, `.done` numbers are never reused; the next
+port takes the next free number). What each does:
 
 | Patch | What it does |
 | --- | --- |
-| `glm-mia-absorb-mma` | a prompt pass's absorb_q/expand_v as tensor-core GEMMs (`TF_GLM_ABSORB_MMA=0` off) |
-| `glm-mia-fp8-pages` | E4M3 latent KV caches on the elastic page pool (the `TF_KV_PAGES=on` mode) |
-| `glm-mia-pagerows-fix` | the paged E4M3 tables' page_rows correction |
-| `glm-mia-selist-fix` | the prefill's sparse selection stays logical for E4M3 |
-| `glm-mia-packed-s2` | the packed-prompt matmuls in two stages (`TF_GLM_MM_P2=0` the pre-port path) |
-| `glm-mia-exl3prompt` | the EXL3 prompt path in one call a pass; the down kernel writes slot rows straight (`TF_GLM_EXL3P=0` the pre-port path) |
-| `glm-zz-attnfetch8` | the latent attention's FP8 key tiles load 8 bytes a time, a tile ahead |
-| `glm-zz-loaddirect` | the layer loads stream via checkpoint.direct (`TF_LOAD_DIRECT=0` keeps the read-ahead) |
-| `glm-zz-moeside` | the shared expert runs beside the routed experts on a second stream (`TF_GLM_SHARED_SIDE=0` off) |
-| `glm-zz-zmoe-fuse` | the decode MoE glue fused into single kernels (`TF_GLM_MOE_FUSE=0` unfuses) |
-| `glm-zz-zprompt` | the prompt experts' main loop reworked (`TF_GLM_EXL3P=0` the pre-port kernels) |
-| `glm-zz-zs2` | the packed prompt GEMMs' per-block loads + bf16 pair decode (`TF_GLM_MM_P2=0`) |
-| `glm-zz-zshfl` | the 4-bit grouped experts read every trellis word once (`TF_EXL3_SHFL=0`) |
-| `glm-zz-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
-| `glm-zz-tools256` | a call to a tool the request did not offer goes out under its own name (server-layer; no knob) |
+| `001-absorb-mma` | a prompt pass's absorb_q/expand_v as tensor-core GEMMs (`TF_GLM_ABSORB_MMA=0` off) |
+| `002-exl3prompt` | the EXL3 prompt path in one call a pass; the down kernel writes slot rows straight (`TF_GLM_EXL3P=0` the pre-port path) |
+| `003-fp8-pages` | E4M3 latent KV caches on the elastic page pool (the `TF_KV_PAGES=on` mode) |
+| `004-packed-s2` | the packed-prompt matmuls in two stages (`TF_GLM_MM_P2=0` the pre-port path) |
+| `005-pagerows-fix` | the paged E4M3 tables' page_rows correction |
+| `006-selist-fix` | the prefill's sparse selection stays logical for E4M3 |
+| `007-attnfetch8` | the latent attention's FP8 key tiles load 8 bytes a time, a tile ahead |
+| `008-loaddirect` | the layer loads stream via checkpoint.direct (`TF_LOAD_DIRECT=0` keeps the read-ahead) |
+| `009-moeside` | the shared expert runs beside the routed experts on a second stream (`TF_GLM_SHARED_SIDE=0` off) |
+| `010-tools256` | a call to a tool the request did not offer goes out under its own name (server-layer; no knob) |
+| `011-zclose` | the tool-call envelope closer scans value-aware — quoted markup inside a call's own arguments is data, not the closer (server-layer; no knob) |
+| `012-zmoe-fuse` | the decode MoE glue fused into single kernels (`TF_GLM_MOE_FUSE=0` unfuses) |
+| `013-zprompt` | the prompt experts' main loop reworked (`TF_GLM_EXL3P=0` the pre-port kernels) |
+| `014-zs2` | the packed prompt GEMMs' per-block loads + bf16 pair decode (`TF_GLM_MM_P2=0`) |
+| `015-zshfl` | the 4-bit grouped experts read every trellis word once (`TF_EXL3_SHFL=0`) |
+| `016-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
 
 Every patch's provenance, port receipts and knobs: [patches/README.md](patches/README.md).
 
@@ -181,8 +184,8 @@ Every patch's provenance, port receipts and knobs: [patches/README.md](patches/R
 | --- | --- |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` *(default)* | Mia's TR3 4bpw (topk=8, mcg); real files on both hosts |
 | `local/GLM-5.3-Flash-AZ-Focus-EXL3` | AxonZeta's efficiency-track Focus (topk=8, old-format mcg, integer bits); real files on both hosts |
-| `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the top-4 variant of the stock pack (needs `PATCHES=glm-topk4b.patch`) |
-| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (needs `PATCHES=glm-topk4b.patch`) — the sweep's perf leader at 87/104 hardmode |
+| `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the top-4 variant of the stock pack (needs `PATCHES=017-topk4b.patch`) |
+| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (needs `PATCHES=017-topk4b.patch`) — the sweep's perf leader at 87/104 hardmode |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` *(stock)* | the stock pack; already in both caches |
 | `incoai/GLM-5.3-Flash-DFlash2` | the drafter; already in both caches (non-commercial terms) |
 

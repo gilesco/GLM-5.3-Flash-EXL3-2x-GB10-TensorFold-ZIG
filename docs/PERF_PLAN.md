@@ -278,7 +278,7 @@ Prompt chunks are 90% router+routed (a 2,048-row chunk: router 910 + routed 793 
   the agent silent (solo 55.8/55.7 Δ0.2%, c4 101.0, slope 0.660).
   **Experiment 1 MEASURED (2026-10-24, campaign-20261024-135458 — the real topk=4 serve,
   unretrained selector, after the full gate ladder: the parse's `want` pin + the EXL3
-  module-global `top_k`, both patched in glm-topk4b.patch)**: routed 18.45 → 11.0 ms at
+  module-global `top_k`, both patched in 017-topk4b.patch)**: routed 18.45 → 11.0 ms at
   2 rows (−40%; the weight-traffic union isn't slot-proportional, hence not −44%),
   verify 40 → 32.3 ms, 8-row shared rounds 76.5 → 53.3 ms. **Solo 63.5/63.6 (Δ0.2%) =
   108% of production's 58.7 — the generation-tok/s front crosses the bar at solo**; c2
@@ -293,7 +293,7 @@ Prompt chunks are 90% router+routed (a 2,048-row chunk: router 910 + routed 793 
   line's first hardmode datum — no stock reference exists). **The fork (user)**: adopt
   top-4-unretrained as the default now, or hold stock and route through the AZ full
   checkpoint (the retrained selector). **(user, 2026-10-24): ADOPTED** — config.sh's
-  qualified defaults serve top4cfg + glm-topk4b (round 27; the scoreboard regenerated:
+  qualified defaults serve top4cfg + 017-topk4b (round 27; the scoreboard regenerated:
   solo 108%, c2 103%, c4 78%, streaming ~189%, prefill 45%, loading 27%).
   **Experiment 2 (the AZ full checkpoint — the quality-safe upgrade to the same lever)**:
   the download is COMPLETE (the Xet CAS survived the reboot; 170 G materialized,
@@ -301,7 +301,7 @@ Prompt chunks are 90% router+routed (a 2,048-row chunk: router 910 + routed 793 
   auto-round int4 → EXL3 4bpw (the engine's format; try exllamav3's streaming convert
   first — it may dequant per-layer with no intermediate; else dequant→bf16 ~640 GB
   intermediate with the disk choreography, then quant, then delete the intermediate),
-  serve with glm-topk4b (the reference is already topk=4), then the battery + the perf
+  serve with 017-topk4b (the reference is already topk=4), then the battery + the perf
   probes. GPU work: hours, window-gated. If the battery passes, the default upgrades to
   the retrained selector.
   **Discovered en route (a separate lever, recorded)**: `AxonZeta/GLM-5.3-Flash-AZ-Focus-EXL3`
@@ -360,7 +360,7 @@ clean stack (97).**
 4. **The v1.1.5 candidate test**: released Oct 25; visible glm content = functional,
    no measured perf — the gate holds, BUT **#1218 (our slot-leak) is MERGED and slated**
    — the first correctness reason to test a bump. Protocol: build 1.1.5's tree,
-   rebase glm-topk4b, run the §2 gates + the perf probes; adopt only receipts-equal-or-better.
+   rebase 017-topk4b, run the §2 gates + the perf probes; adopt only receipts-equal-or-better.
 5. **The pages×fp8 marriage** (#1163 mergeable-clean, #1211 stacks): when paging×fp8
    lands, the 512K window admits 8 streams ON fp8 — concurrency and cache bytes together.
 6. **The concurrency references**: reproduce bernisse's native-217 cell (workload-matched:
@@ -413,7 +413,7 @@ notes are history in LAUNCH.md). Requants themselves are OUT OF SCOPE (user, rou
   saturation fix, the cold-prompt-state fix, `return_token_ids` instrumentation, the
   tool-call max_tokens fix) — the perf gate holds, but the **#1218 slot-leak is MERGED
   and slated** → the first correctness reason to run the v1.1.5 candidate test (with
-  the glm-topk4b rebase). Also: NVIDIA's FP4-Local and XSFP4 checkpoint formats land in
+  the 017-topk4b rebase). Also: NVIDIA's FP4-Local and XSFP4 checkpoint formats land in
   the engine's model catalog (the README's Pick-a-model row) — the checkpoint-class watch.
 - 2026-10-25: **the forum (914 posts)**: bernisse's second-pair bake-off (the roadmap's
   numbers + the TC-92/TC-51 quality instrument + the fork-as-field-reference) — the
@@ -570,7 +570,7 @@ groups run in the same order — Mia measured 0 differing outputs on all
 eight shapes). Mia's measurement: 1.07-1.09x on GLM's prompt shapes on
 sm_120 (RTX PRO 6000, 400 W sustained), with the caveat that under their
 power cap most of the occupancy gain became power — the GB10's envelope
-differs, so our A/B decides. **Ported as `glm-mia-packed-s2.patch`**
+differs, so our A/B decides. **Ported as `004-packed-s2.patch`**
 (staged, the header carries the provenance + the measurements). **The
 mms2 window launched**: arm off (the standing 4-patch stack) vs arm on
 (+ the s2 patch; the rebuild rides the restart), each with the greedy
@@ -588,7 +588,7 @@ trellis decodes once a pass instead of twice) + the down kernel writing
 the MoE slot rows straight (yrow — the cuMemcpy2D of [rows][8][4096] fp32
 per call dropped) + no target-MTP prompt absorption beside a drafter (a
 whole DSA+MoE layer a pass, 3.4-4.4% of a traced pass — pure waste on
-our DFlash2 shape). **Hand-ported as `glm-mia-exl3prompt.patch`** (the
+our DFlash2 shape). **Hand-ported as `002-exl3prompt.patch`** (the
 fork's hunks drifted: no k6 kernels here, the v1.2.x engine delegates to
 prompt_solo.mtpRows, the test files dropped — the content gate verifies);
 **verified byte-identical to the port commit on a fresh checkout**. Mia's
@@ -649,7 +649,7 @@ rows + the steady-state decode probe (the honest tg instrument).
 (campaign-20261107-003829)**: the arm-on build refused — the image
 applies the stack ALPHABETICALLY and glm-mia-attnfetch8 sorted before
 the fp8-pages marriage whose PAGED8 file-state the hunks assume.
-Renamed glm-zz-attnfetch8.patch (the dsasel3 convention). The arm-off
+Renamed 007-attnfetch8.patch (the dsasel3 convention). The arm-off
 baseline is banked (the content shas + bench + the steady-state
 probes). Relaunched.
 
@@ -671,7 +671,7 @@ duel re-pair on the 7-patch candidate decide the adoption.
 the routed experts (the fork right after the block's input, the join
 before the slot combine; the kernels and the combine's order unchanged,
 the bits the same; TF_GLM_SHARED_SIDE=0 the kill switch; 0010's drain
-on error/teardown). **Hand-ported as `glm-zz-moeside.patch`** — our
+on error/teardown). **Hand-ported as `009-moeside.patch`** — our
 drift: the two Forward constructions carry .absorb_mma, the port adds
 .side beside it; upstream's flashnext has the same pattern so the
 Stream/Event API matches. **Mia's claim: 70.6 → 60.6 µs a MoE layer at
@@ -854,7 +854,7 @@ work, then the exl3pqual A/B (content identity — the same bits are
 the claim — + the bench pp rows, hardmode, gates, vision).
 
 **THE EXL3P PORT STAGED (round 137)**: 0078+0079 landed on v124-rebase as
-`glm-zz-zprompt.patch` (the eleventh; zp > zmoe-fuse). The fork's text
+`013-zprompt.patch` (the eleventh; zp > zmoe-fuse). The fork's text
 verified line-identical (244/244 .cuh, 18/18 .cu) except the documented
 adaptations (4-bit-only tree: K2 at 8 only, our helper forms kept, the
 classic loop kept as the _cl twins behind TF_GLM_EXL3P=0, 0079's _k6
@@ -920,7 +920,7 @@ line) hand-applied keeping v1.2.4's signature; the fork's text otherwise
 verbatim (line-verified). The classic packed-prompt kernels kept as the
 _128s2_cl twins behind **TF_GLM_MM_P2=0**; no contract-record work (the
 _128s2 kernels are unlisted in our registry). Shipped as
-`glm-zz-zs2.patch` (zs > zprompt). **THE NEXT STEP: the 0080qual A/B** —
+`014-zs2.patch` (zs > zprompt). **THE NEXT STEP: the 0080qual A/B** —
 both arms the same 12-patch image, the knob flips the path: content
 identity, the bench pp rows (the prefill lever's primary read — the
 fork measured the packed prompt linears 1.116-1.138x at GLM's prompt
@@ -981,7 +981,7 @@ the fork's text otherwise line-verbatim (14/14 .cu, 97/97 .cuh, 12/12
 .zig). The fork's own knob **TF_EXL3_SHFL=0** restores the old choice —
 no _cl twins needed. New kernels k8r8s/k8r16s ride the existing
 grouped_body_v2 template (no existing-kernel changes, no record work).
-Shipped as `glm-zz-zshfl.patch` (zh > z2). **THE NEXT STEP: the
+Shipped as `015-zshfl.patch` (zh > z2). **THE NEXT STEP: the
 0081qual A/B** — both arms the same 13-patch image, the knob flips the
 path: content identity, the duel_arm c2/c4 cells (the decode lever's
 home — the fork measured the read-once loads to −14% at 16-32 rows),
@@ -1042,7 +1042,7 @@ fork's text otherwise line-verbatim (15/15 .cu, 43/43 .cuh, 17/17
 .zig). The fork's own knob **TF_EXL3_PDL=0**. New kernels k8r8p/k8r16p
 ride the existing template; rot_in/gateup_epilogue gain wait+trigger
 (register-neutral per the fork's missing records patch — our cuobjdump
-confirms). Shipped as `glm-zz-zstep.patch` (zt > zh). **THE NEXT STEP:
+confirms). Shipped as `016-zstep.patch` (zt > zh). **THE NEXT STEP:
 the 0082qual A/B** — both arms the same 14-patch image, the knob flips
 the path: content identity (the fork's 108/108 exactness), the
 duel_arm c2/c4 cells (the launch-overlap lever's home — the 0030
@@ -1082,7 +1082,7 @@ promoted v1.2.4 engine lacks it. The port turned out SMALL: the rest
 of the #415 rework (parsedContent/kept/wholeEnvelope/prose_sent/the
 attach rework) is already in our tree — only callName's own-name rule
 was reverted with it. 2 files (+7/-2 + the test flip), no kernel
-work. Shipped as `glm-zz-tools256.patch` (sorts before the z- kernel
+work. Shipped as `010-tools256.patch` (sorts before the z- kernel
 patches alphabetically — it touches no kernel file, order-free).
 **THE NEXT STEP: the tools256qual battery** — the §2 gates, hardmode's
 sixteenth 95, the vision 4/4, the greedy content identity (the fix's

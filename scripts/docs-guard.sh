@@ -65,6 +65,32 @@ _unknown=$(comm -23 <(printf '%s\n' "$readme_phases") <(printf '%s\n' "$script_d
 [[ -z $_unknown ]] && pass "README's PHASES example names known phases" \
   || fail "README's PHASES example names unknown phases: $_unknown"
 
+# --- 4b. the patch names (round 139: NNN-name.patch, the number IS the order) -----
+_pfiles=$(ls patches/*.patch 2>/dev/null | xargs -n1 basename | grep -E '^[0-9]{3}-.*\.patch$' | sort)
+[[ -n $_pfiles ]] || fail "no NNN-name.patch files in patches/ (the round-139 scheme)"
+_pnums=$(printf '%s\n' $_pfiles | cut -d- -f1)
+_pdup=$(printf '%s\n' $_pnums | sort | uniq -d)
+[[ -z $_pdup ]] || fail "duplicate patch numbers:$_pdup — renumber"
+_pmax=$(printf '%s\n' "$_pfiles" | tail -1 | cut -d- -f1)
+_pmax=$((10#$_pmax))
+# every number 1..max present (no gaps: the next port takes the next free number,
+# and a retired one compacts only with a round entry — gaps would suggest reuse mistakes)
+_gap=""
+for n in $(seq 1 "$_pmax"); do
+  printf '%03d\n' "$n" | grep -qxF "$_pnums" || _gap+=" $n"
+done
+[[ -z $_gap ]] || fail "patch numbers gap:$_gap — renumber or record the freed number in a round entry"
+_cfg=$(grep -m1 -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh | tr ' ' '\n' | grep '.patch$')
+_for_cfg=""
+for f in $_cfg; do
+  printf '%s\n' "$_pfiles" | grep -qxF "$f" || _for+=" $f"
+done
+[[ -z $_for_cfg ]] || fail "config.sh's PATCHES names files that are not in patches/:$_for_cfg"
+grep -q "^PATCHES=" config.sh || fail "config.sh lost its PATCHES line"
+pass "patch names are NNN-name, numbered 1..$_pmax with no gaps; the PATCHES default resolves"
+
+# --- 5. config defaults in the README table --------------------------------------
+
 # --- 5. config defaults in the README table --------------------------------------
 check_default() {  # $1 config var, $2 README grep pattern, $3 what must appear
   local d

@@ -3,7 +3,7 @@
 # reflect what a user gets if they download and use the current version"):
 # all four packs on the SHIPPING stack (TF v1.2.3 + the 4-patch stack, paged
 # KV + TF_GLM_KV_SHARE=8, dense4fp8, 512K x4, vision, DFlash2 drafts — every
-# serving default from config.sh; the AZ top-4 cell adds glm-topk4b.patch).
+# serving default from config.sh; the AZ top-4 cell adds 017-topk4b.patch).
 # Receipts: results/resweep/ on the head (campaign-20261106-112022 — the
 # resweep phase: g1 determinism per cell, the 104-scenario battery (bench
 # v3.0.1), the benchy matrix). Rendered by scripts/render-sweep-cards.sh
@@ -16,4 +16,4 @@
 Focus|92|1116|48.4|47.3|43.4|14.2|local/GLM-5.3-Flash-AZ-Focus-EXL3
 Mia-AiLab 4bpw|92|1114|46.7|47.8|49.0|14.3|production's own pack family
 TR3-4bpw (the served default)|95|1115|48.8|50.0|43.0|14.2|the quality leader on the current stack — 3 points clear
-AZ top-4|87|1295|60.8|65.7|54.8|17.0|the perf leader (glm-topk4b.patch on the 4-patch stack)
+AZ top-4|87|1295|60.8|65.7|54.8|17.0|the perf leader (017-topk4b.patch on the 4-patch stack)

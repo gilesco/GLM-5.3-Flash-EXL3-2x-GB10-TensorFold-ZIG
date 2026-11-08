@@ -6,13 +6,27 @@ rate as the with-patch curve). The patch stays here as history and re-runs only
 if the line ever pins below v1.2.2. -->
 
 <!-- LAYOUT (round 139): patches/*.patch at the TOP level are the living set — the
-15 adopted (config.sh's PATCHES default, applied alphabetically by the image) plus
-glm-topk4b.patch (the sweep cells' opt-in). patches/archive/ holds the RETIRED,
-REJECTED and mainlined-upstream patches — NOT in any serve; each has its record
-below (or its retirement note). The build consumes ONLY the named PATCHES list
-(prepare copies each named file into the image staging), so the archive is inert
-by construction. Do not resurrect an archive patch into a serve without a new
-qualifying window. -->
+16 adopted (config.sh's PATCHES default) plus 017-topk4b.patch (the sweep cells'
+opt-in). patches/archive/ holds the RETIRED, REJECTED and mainlined-upstream
+patches — NOT in any serve; each has its record below (or its retirement note).
+The build consumes ONLY the named PATCHES list (prepare copies each named file
+into the image staging), so the archive is inert by construction. Do not
+resurrect an archive patch into a serve without a new qualifying window.
+
+NAME MAP (the round-139 renumbering, user): every living patch is NNN-name.patch
+now — the number IS the build's apply order (the image applies the glob
+alphabetically), replacing the old glm-mia-*/glm-zz-* names and their
+sort-duty naming hacks (tools256 named -256 to sort before the z- kernels,
+zs2/zshfl/zstep named for their sort-after partners). 001-absorb-mma was
+001-absorb-mma, 002-exl3prompt 002-exl3prompt, 003-fp8-pages
+003-fp8-pages, 004-packed-s2 004-packed-s2, 005-pagerows-fix
+005-pagerows-fix, 006-selist-fix 006-selist-fix, 007-attnfetch8
+007-attnfetch8, 008-loaddirect 008-loaddirect, 009-moeside
+009-moeside, 010-tools256 010-tools256, 011-zclose 011-zclose,
+012-zmoe-fuse 012-zmoe-fuse, 013-zprompt 013-zprompt, 014-zs2
+014-zs2, 015-zshfl 015-zshfl, 016-zstep 016-zstep, 017-topk4b
+017-topk4b. Historical receipts quote the old names — this map decodes them.
+-->
 # Patch overlay policy
 
 This directory carries **optional local patches** applied to the TensorFold tree at image
@@ -39,7 +53,7 @@ records — the header note supersedes them.
   `Pages.waiting` and the host-test step re-anchored), moeside (the side field,
   `sideStream`/`freeSide`, the constructor, deinit and both Forward call sites
   re-anchored around `pair` and `l2pf`).
-- **New: glm-zz-loaddirect.patch** — GLM's layer loads wired onto v1.2.4's
+- **New: 008-loaddirect.patch** — GLM's layer loads wired onto v1.2.4's
   `checkpoint.direct` (#2282/#1901), following the gemma4/qwen3_5 pattern in
   `cuda_load_ahead.zig`: each layer's tensors read past the page cache while the
   previous layer packs; `TF_LOAD_DIRECT=0` keeps #1928's read-ahead. Our
@@ -53,7 +67,7 @@ records — the header note supersedes them.
   (the ninth consecutive), the vision 4/4, zero strict-TF_ refusals under
   #2405, the arms content-identical to the byte; **the loading front CROSSED
   on loaddirect (the walls 83/83 s vs production's 93.7 — 112.9%)** on the
-  resharded 55-shard pack. glm-zz-loaddirect's STATUS: **QUALIFIED** (the
+  resharded 55-shard pack. 008-loaddirect's STATUS: **QUALIFIED** (the
   round-135 receipts, campaign-20261107-150250).
 
 ## The rules
@@ -67,7 +81,12 @@ records — the header note supersedes them.
    ported against, and who owns rebasing it at the next bump.
 3. **One concern per patch.** A patch that bundles several changes cannot be measured or
    dropped independently.
-4. **Rebase cost is the bill.** The ecosystem's 77-patch stack (jayleaton's repo) targets
+4. **One file name, one number.** A living patch file is `NNN-name.patch` (three
+   digits, zero-padded): the number IS the image build's apply order (`/build/patches/*.patch`
+   applies in shell-glob order), retired patches move to `patches/archive/` with their
+   names intact, and a new patch takes the NEXT free number even if it sorts outside the
+   order today (an opt-in patch is numbered too — 017-topk4b.patch is opt-in).
+5. **Rebase cost is the bill.** The ecosystem's 77-patch stack (jayleaton's repo) targets
    TensorFold 0.3.4 and buys ~3% over its own control — their headline numbers come from
    configuration, not patches. Port a patch only when its measured win is worth the
    rebase tax on every future version bump.
@@ -120,7 +139,7 @@ vs the 94 control is within scenario noise). Mia's "throughput effect is
 their noise" does not hold on our shape. Keep as history; re-run only if
 the draft-rule front ever needs the learner fed (with a c2-first judgment).
 
-## glm-mia-absorb-mma.patch — ADOPTED (the qualified optimum, 2026-11-05)
+## 001-absorb-mma.patch — ADOPTED (the qualified optimum, 2026-11-05)
 
 The ABSORB_MMA port (Mia 0041, Apache-2.0): a prompt pass's absorb_q and
 expand_v MLA matmuls run as head-batched bf16 tensor-core GEMMs with fp32
@@ -134,7 +153,7 @@ exactly (9 files, 247 insertions, 7 deletions); glm_glue_num.cuh (the
 6000, 2048 rows × 32 heads): absorb 1.212 → 0.113 ms, expand 1.471 →
 0.093 ms per matmul, +8% prefill end-to-end, sampled outputs bit-equal to
 SIMT. SHIPPED with glm-mia-cost-tables.patch via
-`RC_PATCHES="glm-mia-absorb-mma.patch,glm-mia-cost-tables.patch"` in the
+`RC_PATCHES="001-absorb-mma.patch,glm-mia-cost-tables.patch"` in the
 "preflight resumecost deepfills hmcheck summary" window; judged by the
 content gate (sampled-bit-equal → the greedy sha must hold), the resumecost
 rows (the small-prompt front must NOT regress — the chunk pair's lesson),
@@ -144,7 +163,7 @@ receipts: the deep fills −6.8/−7.0/−6.9%, the small prompts −5-6%, greed
 byte-identical everywhere, the vision 4/4, the duel fronts solo 110% /
 c2 ~99% of production's top volley / cold 334% / ITL ~107% crossed.
 
-## glm-mia-fp8-pages.patch — PORTED + RE-ANCHORED ONTO ABSORB (the composed candidate); byte-identity REFUTED (control-verified) — the judgment is the quality instruments
+## 003-fp8-pages.patch — PORTED + RE-ANCHORED ONTO ABSORB (the composed candidate); byte-identity REFUTED (control-verified) — the judgment is the quality instruments
 
 The fp8+pages marriage (Mia 1104 0017-0025, Apache-2.0, adapted to v1.2.2;
 0026-0033 are separate optimizations, not ported): E4M3 latent caches on the
@@ -170,7 +189,7 @@ defect — the same class as ABSORB's own adopted fp32-summation change; the
 judgment moves to the quality instruments (hardmode + the vision suite) on
 the composed paged stack.
 
-**STAGING: applies AFTER glm-mia-absorb-mma.patch only** (alphabetical:
+**STAGING: applies AFTER 001-absorb-mma.patch only** (alphabetical:
 absorb-mma < fp8-pages). The compose initially FAILED (cuda_glue.zig:58 ×2
 Kernels hunks — absorb's latent_mma fields drifted the trailing context);
 RE-ANCHORED (2026-11-05): the paged fields sit before `merge`, the init
@@ -180,7 +199,7 @@ serves: the paged cold fill 38.1 s ≈ marriage-unpaged 37.9 s at 46k
 (paging adds ~nil); the standing config's 35.3 s carries absorb's −7%.
 config.sh defaults unchanged pending the quality receipt.
 
-## glm-mia-pagerows-fix.patch — THE CONTAMINATION FIX (staged, 2026-11-05; judged by the canary + the battery re-run)
+## 005-pagerows-fix.patch — THE CONTAMINATION FIX (staged, 2026-11-05; judged by the canary + the battery re-run)
 
 The E4M3 Tables' page_rows was `c.ps/(l.lw*2)` — the WHOLE-page stride over
 the bf16 row bytes = 3,481 instead of 512. The selection kernel indexes
@@ -194,10 +213,10 @@ ps, where the formula coincidentally yields 512; the engine's Caches carry
 the whole-page ps. THE FIX: the three Table sites take `latent.chunk` (512)
 for E4M3; bf16 keeps its formula (its lists are page rows, a different
 unit; its path is receipted correct — the poolcanary3 bisect). STAGING:
-sorts AFTER glm-mia-fp8-pages.patch (the first name sorted before it and
+sorts AFTER 003-fp8-pages.patch (the first name sorted before it and
 the build's alphabetical apply failed — the rename is the receipt).
 
-## glm-mia-packed-s2.patch — the packed-prompt matmuls in two stages, two blocks an SM (staged 2026-11-06; the mms2 A/B decides)
+## 004-packed-s2.patch — the packed-prompt matmuls in two stages, two blocks an SM (staged 2026-11-06; the mms2 A/B decides)
 
 Mia 1104 0009, adapted to v1.2.3 (applies clean — glm_mm.cu/cuda_mm.zig are
 untouched by the 4-patch stack). glm_mm{4,6,8}_128s2: __launch_bounds__(256, 2)
@@ -231,7 +250,7 @@ commit); NAMED glm-zz- TO SORT AFTER THE STACK (the engine hunks
 assume the moeside port's side field). OWNER: this line; STATUS:
 RETIRED (cont. 104: the steplink A/B — content identical everywhere but the gain at parity: the steady-state +1.0% avg inside the probe's ±2%, the bench tg mixed-sign noise; the mechanism is real but sub-resolution on our shape — a 1-row window does one gather either way, and the verify-window round trips are cheaper than the claim's context assumed; the patch stays staged for a future re-judgment if 0030's fusion changes the economics).
 
-## glm-zz-moeside.patch — a decode window's MoE shared expert on a side stream beside the routed experts (staged 2026-11-07; the moeside A/B decides)
+## 009-moeside.patch — a decode window's MoE shared expert on a side stream beside the routed experts (staged 2026-11-07; the moeside A/B decides)
 
 Mia 1104 0006+0010 hand-ported to v1.2.3 + the adopted stack (our
 drift: the two Forward constructions carry .absorb_mma — the port adds
@@ -249,7 +268,7 @@ commit); NAMED glm-zz- TO SORT AFTER THE STACK (the hunks assume the
 absorb-mma port's .absorb_mma field). OWNER: this line; STATUS:
 EXPERIMENTAL.
 
-## glm-zz-attnfetch8.patch — the latent attention FP8 key tiles load 8 bytes at a time, a tile ahead (staged 2026-11-07; the attnpref A/B decides; NAMED glm-zz- TO SORT AFTER THE STACK — the image applies patches alphabetically and the port depends on the fp8-pages marriage's PAGED8 file state; the first attnpref window burned on exactly this)
+## 007-attnfetch8.patch — the latent attention FP8 key tiles load 8 bytes at a time, a tile ahead (staged 2026-11-07; the attnpref A/B decides; NAMED glm-zz- TO SORT AFTER THE STACK — the image applies patches alphabetically and the port depends on the fp8-pages marriage's PAGED8 file state; the first attnpref window burned on exactly this)
 
 Mia 1104 0005+0011 hand-ported to v1.2.3 + the paged marriage (our
 chunks_wide carries PAGED8 — the port folds the page-table addressing
@@ -265,7 +284,7 @@ Mia's measurements: decode dense chunks 58 → 35 µs, sparse 72 → 41-44
 byte-identical to the port commit). OWNER: this line; STATUS:
 EXPERIMENTAL.
 
-## glm-mia-exl3prompt.patch — the EXL3 prompt path in one call + no MTP beside a drafter (staged 2026-11-06; the exl3call A/B decides)
+## 002-exl3prompt.patch — the EXL3 prompt path in one call + no MTP beside a drafter (staged 2026-11-06; the exl3call A/B decides)
 
 Mia 1104 0007+0008 hand-ported to v1.2.3 (the fork's hunks drifted: no k6
 kernels here, the v1.2.x engine delegates the MTP absorption to
@@ -397,9 +416,9 @@ part >> tile → the tile is better and the fix is its K-depth/w-layout.
 
 ## glm-fork-rule.patch — RETIRED 2026-10-28 (round 45): the round-45 battery receipts-equal-or-better WITHOUT it — the fork rule (#1291's `snap_fork`) was staged against the v1.1.8 battery but the adoption served pristine v1.1.8: no measured delta, so it never entered the stack. Upstream's fork rule keeps a state where a new prompt parts from an already-kept one; v1.2.4's `TF_KV_SHARE` page-store carries the mechanism's modern form. Archived 2026-11-08.
 
-## glm-loud-weightshare.patch — RETIRED (the diagnostic era): weightShare's silent `catch return total` printed its failing stage during the round-26/44 memory-illusion forensics; the diagnosis closed when the top4 reference-shape work landed (glm-topk4b) and the admission arithmetic became valid. Nothing to adopt — the loudness was a diagnosis aid, not a feature. Archived 2026-11-08.
+## glm-loud-weightshare.patch — RETIRED (the diagnostic era): weightShare's silent `catch return total` printed its failing stage during the round-26/44 memory-illusion forensics; the diagnosis closed when the top4 reference-shape work landed (017-topk4b) and the admission arithmetic became valid. Nothing to adopt — the loudness was a diagnosis aid, not a feature. Archived 2026-11-08.
 
-## glm-zz-zclose.patch — ADOPTED 2026-11-08 (the sixteenth patch; the halt fix)
+## 011-zclose.patch — ADOPTED 2026-11-08 (the sixteenth patch; the halt fix)
 
 The tool-call envelope closer scans VALUE-AWARE: a closer tag inside the
 payload's own data — a quoted markup example inside a JSON string value, or
@@ -409,7 +428,7 @@ after the opener with no string/region awareness, so any reply whose JSON
 arguments quoted tool-call markup — the shape EVERY fixture-writing reply
 produces — was cut mid-string: its payload invalid, the real call lost as
 content, and the fragment after the cut re-scanned as a phantom call (with
-glm-zz-tools256, as a phantom "unknown tool" invocation). Live-reproduced
+010-tools256, as a phantom "unknown tool" invocation). Live-reproduced
 against the serving stack on 2026-11-08: a `write` call with the markup
 quoted in its `content` argument returned **empty arguments** (`"{}"`) and
 the tail leaked as content — the client saw `Arguments provided: {}`, and
@@ -436,7 +455,7 @@ tool-call format — now round-trips end to end.
 
 **Knob**: none (server-layer behavior; no env surface).
 
-## glm-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
+## 017-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
 
 Renamed from glm-topk4.patch: the config fingerprint hashes the patch LIST (names), not
 contents — the amended patch needs a new name to force a rebuild (the round-7 lesson's
@@ -785,7 +804,7 @@ documented in LAUNCH.md round 119.
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
-## glm-zz-tools256.patch — a call to a tool the request did not offer goes out under its own name (round 138; upstream PR #415, issue #256)
+## 010-tools256.patch — a call to a tool the request did not offer goes out under its own name (round 138; upstream PR #415, issue #256)
 
 - What (upstream's subject, carried here from the forum thread's
   finding — post 973, 2026-11-08): with parallel_tool_calls false, a
@@ -822,7 +841,7 @@ documented in LAUNCH.md round 119.
   decides** (the gates + hardmode's sixteenth 95 + the vision 4/4;
   the fix's own unit test is the primary witness).
 
-## glm-zz-zstep.patch — the 4-bit read-once chain as dependent launches, exl3r c3 (round 138; Mia 1104's 0082 port)
+## 016-zstep.patch — the 4-bit read-once chain as dependent launches, exl3r c3 (round 138; Mia 1104's 0082 port)
 
 - What (Mia's subject: the 4-bit read-once chain as dependent launches
   — rot_in, gate/up, epilogue, down; on their 0067 = our adopted
@@ -856,7 +875,7 @@ documented in LAUNCH.md round 119.
   register-neutral).
 - Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
   the builder base image); fresh-parent + the shipped patch = the commit
-  tree byte-identical. NAMED glm-zz-zstep TO SORT AFTER zshfl (zt > zh).
+  tree byte-identical. NAMED 016-zstep TO SORT AFTER zshfl (zt > zh).
 - OWNER: this line; STATUS: **ADOPTED (round 138, the 0082qual A/B —
   campaign-20261108-024926: both arms the SAME 14-patch image,
   TF_EXL3_PDL=0 vs unset; the arms' greedy content IDENTICAL — the
@@ -871,7 +890,7 @@ documented in LAUNCH.md round 119.
   and the fork's 0083+ builds on this exact base; config.sh's
   fourteenth patch).
 
-## glm-zz-zshfl.patch — the 4-bit grouped experts read every trellis word once, exl3r (round 137; Mia 1104's 0081 port)
+## 015-zshfl.patch — the 4-bit grouped experts read every trellis word once, exl3r (round 137; Mia 1104's 0081 port)
 
 - What (Mia's subject: 4-bit grouped experts read every trellis word
   once, and decode with fewer instructions; the same bits): the grouped
@@ -903,7 +922,7 @@ documented in LAUNCH.md round 119.
   variants — only SHFL instantiates.
 - Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
   the builder base image); fresh-parent + the shipped patch = the commit
-  tree byte-identical. NAMED glm-zz-zshfl TO SORT AFTER zs2 (zh > z2).
+  tree byte-identical. NAMED 015-zshfl TO SORT AFTER zs2 (zh > z2).
 - OWNER: this line; STATUS: **ADOPTED (round 137 cont. 8, the 0081qual
   A/B — campaign-20261107-232039: both arms the SAME 13-patch image,
   TF_EXL3_SHFL=0 vs unset; the arms' greedy content IDENTICAL — the
@@ -916,7 +935,7 @@ documented in LAUNCH.md round 119.
   and the fork's 0082 builds on this exact base; config.sh's thirteenth
   patch).
 
-## glm-zz-zs2.patch — the packed prompt GEMMs' loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps, P2 (round 137; Mia 1104's 0080 port)
+## 014-zs2.patch — the packed prompt GEMMs' loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps, P2 (round 137; Mia 1104's 0080 port)
 
 - What (Mia's subject: the packed prompt GEMMs' loads fixed once a block
   and 8-bit codes to bf16 pairs in fewer steps; the same bits):
@@ -950,7 +969,7 @@ documented in LAUNCH.md round 119.
   sm_121 fatbin CONFIRMS the fork's register claim: glm_mm8_128s2
   122 → 125 (the _cl twins at the pre-port 122/119/122); the _128s2
   kernels are not in our registry → unchecked, no record work. NAMED
-  glm-zz-zs2 TO SORT AFTER zprompt (zs > zp).
+  014-zs2 TO SORT AFTER zprompt (zs > zp).
 - OWNER: this line; STATUS: **ADOPTED (round 137 cont. 4, the 0080qual
   A/B — campaign-20261107-214342: both arms the SAME 12-patch image,
   TF_GLM_MM_P2=0 vs unset; the arms' greedy content IDENTICAL — the
@@ -961,7 +980,7 @@ documented in LAUNCH.md round 119.
   −1.6% agrees); decode flat within the arm spread; the load walls
   unchanged (86/89 s); config.sh's twelfth patch).
 
-## glm-zz-zprompt.patch — the prompt experts' main loop reworked, exl3p (round 137; Mia 1104's 0078+0079 port)
+## 013-zprompt.patch — the prompt experts' main loop reworked, exl3p (round 137; Mia 1104's 0078+0079 port)
 
 - What (Mia's 0078 subject: the prompt kernels' main loop compiled for an
   item's 8-member column blocks, the next k tile decoded among the current
@@ -993,7 +1012,7 @@ documented in LAUNCH.md round 119.
   (envOn, default on — the 0030 knob pattern; no #2405 surface).
 - Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0, the
   builder base image); fresh-parent + the shipped patch = the commit tree
-  byte-identical (0 diff lines). NAMED glm-zz-zprompt TO SORT AFTER
+  byte-identical (0 diff lines). NAMED 013-zprompt TO SORT AFTER
   zmoe-fuse (the .cu hunks assume the post-0030 experts file; zp > zm).
 - OWNER: this line; STATUS: **ADOPTED (round 137, the exl3pqual A/B —
   campaign-20261107-200411: both arms the SAME 11-patch image,
@@ -1010,7 +1029,7 @@ documented in LAUNCH.md round 119.
   re-grounds the decode rows); the load walls unchanged (83/87 s);
   config.sh's eleventh patch).
 
-## glm-zz-zmoe-fuse.patch — a decode window's MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b in one launch (round 136; Mia 1104's 0030 port)
+## 012-zmoe-fuse.patch — a decode window's MoE glue fused + one-width EXL3 decode tiles + KDA's f_b/g_b in one launch (round 136; Mia 1104's 0030 port)
 
 - What (Mia's subject, three keep-the-bits fusions for decode windows):
   (1) the MoE glue fused — tf_glm_topk_group runs a window's top-k
@@ -1040,7 +1059,7 @@ documented in LAUNCH.md round 119.
   0031 (the engine field + envOn + both Forward constructions carry .moe_fuse).
 - Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0, the
   builder base image); fresh-parent + the shipped patch = the commit tree
-  byte-identical (0 diff lines). NAMED glm-zz-zmoe-fuse TO SORT AFTER moeside
+  byte-identical (0 diff lines). NAMED 012-zmoe-fuse TO SORT AFTER moeside
   (the engine hunks assume the side field and the fork's 0030 followed 0006).
 - OWNER: this line; STATUS: **ADOPTED (round 136, the moefusequal A/B —
   campaign-20261107-172250: both arms the SAME 10-patch image, the knob flips

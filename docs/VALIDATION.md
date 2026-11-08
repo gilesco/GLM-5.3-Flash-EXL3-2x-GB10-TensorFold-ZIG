@@ -31,7 +31,7 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 
 - [x] **The modified checkpoint's battery** (`campaign-20261024-142659/13-top4qual.md`,
       round 26): ALL of the above PASS on real top-4 routing (`num_experts_per_tok` 4,
-      `glm-topk4b`) — the exactness guarantees hold on the site's served model.
+      `017-topk4b`) — the exactness guarantees hold on the site's served model.
       Tool-eval 93 (production's anchor: 95); hardmode 89 (production's anchor: 91).
 
 > **Native 1.1.x receipt (2026-10-23, corrected same day): the gates bind on content,

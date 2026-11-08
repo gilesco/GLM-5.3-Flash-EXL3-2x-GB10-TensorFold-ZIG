@@ -254,7 +254,7 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       the served TR3 TIES it; the phase retired, its receipt stands.
       The bpw4sweep (the 4bpw local packs, one per window): **Mia-AiLab 4bpw
       94/104** (production's own family, the best) · **Focus 93** · **AZ 90**
-      (glm-topk4b applies on v1.2.1; the perf leader) · TR3 **94** (the sweep complete: TR3 94 · MIA 94 · Focus 93 · AZ 90;
+      (017-topk4b applies on v1.2.1; the perf leader) · TR3 **94** (the sweep complete: TR3 94 · MIA 94 · Focus 93 · AZ 90;
       **the 3bpw track CLOSED on the engine's 4-bit expert floor** — the CUDA
       family reads 4-bit EXL3 experts: turboderp 3.05bpw refused (campaign-
       20261102-180405), sc_3.10 skipped as pack-generic, androidli's
@@ -393,7 +393,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       and the tests' fixtures use one, masking it): the selection kernel
       indexed pt[row/3481] and read PAGE 0's pooled keys for every row
       below 3,481 — the sparse lists garbage, the model attending to the
-      wrong tokens. **THE FIX (glm-mia-fp8-pages-pagerows.patch, 47
+      wrong tokens. **THE FIX (003-fp8-pages-pagerows.patch, 47
       lines): E4M3 page_rows = latent.chunk (512) at the three Table
       sites; bf16 keeps its formula (its lists are page rows).** The
       CudaContextLost crash: the selection's garbage indexes under poison.
@@ -510,7 +510,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       even sat under dense_limit) and corrupting once pages recycle
       (the battery's churn): the model mis-attends from the first
       sparse rows and long thinking generations loop. THE FIX:
-      glm-mia-selist-fix.patch (34 lines) — tk carries .logical =
+      006-selist-fix.patch (34 lines) — tk carries .logical =
       c.ls != 0 (E4M3 lists stay positions end-to-end; bf16 unchanged).
       **sparsefix
       (campaign-20261106-035856): THE FIX VALIDATES COMPLETELY** — the
@@ -682,7 +682,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       anchors + DELTAS + README re-paired (solo 112.3%, ITL 110%, the
       cold 429%, prefill 96.0%).
       **THE v1.2.4 REBASE QUALIFIED (round 135): the 8-patch stack
-      rebased onto v1.2.4 (267c5af6a) + glm-zz-loaddirect (the layer
+      rebased onto v1.2.4 (267c5af6a) + 008-loaddirect (the layer
       loads on checkpoint.direct) — the v124val receipts
       (campaign-20261107-125114/-132414): the §2 gates ALL PASS, the
       arms content-identical, zero strict-TF_ refusals (#2405 passes),
@@ -705,7 +705,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       the anchors (112.9%) and the chart re-rendered; the duel rows
       stay v1.2.3-era — the v1.2.4 duel re-pair re-dates them.
       **THE 0030 PORT QUALIFIED AND ADOPTED (round 136, the
-      moefusequal A/B — campaign-20261107-172250)**: glm-zz-zmoe-fuse
+      moefusequal A/B — campaign-20261107-172250)**: 012-zmoe-fuse
       (Mia 1104's 0030 — a decode window's MoE glue fused:
       tf_glm_topk_group = the select + the compact picks + the EXL3
       grouping in ONE 1024-thread block; the grouped experts core with
@@ -743,7 +743,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       96.0% — the fusion is decode-side; the prefill lever is the next
       scope (the fork's untriaged 0033+ tail).
       **THE EXL3P PORT QUALIFIED AND ADOPTED (round 137, the
-      exl3pqual A/B — campaign-20261107-200411)**: glm-zz-zprompt (Mia
+      exl3pqual A/B — campaign-20261107-200411)**: 013-zprompt (Mia
       1104's 0078+0079 — the prompt experts' main loop reworked:
       compiled for an item's 8-member column blocks NBA 1..8, the next
       k tile's trellis decode issued among the current MMAs across the
@@ -791,7 +791,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       too, and the duel's own slope re-confirms the prefill gain
       same-window). The anchors re-paired and the chart re-rendered.
       **THE 0080 PORT QUALIFIED AND ADOPTED (round 137 cont. 4, the
-      0080qual A/B — campaign-20261107-214342)**: glm-zz-zs2 (Mia
+      0080qual A/B — campaign-20261107-214342)**: 014-zs2 (Mia
       1104's 0080 — the packed prompt GEMMs' loads fixed once a block +
       8-bit codes to bf16 pairs in fewer steps: mm_kernel's P2 — each
       thread's cp.async sources/destinations/bounds worked out once a
@@ -855,7 +855,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (no site identity — postable; the needle artifact's engine table
       carries the host name — the card does not quote it).
       **THE 0082 PORT QUALIFIED AND ADOPTED (round 138, the 0082qual
-      A/B — campaign-20261108-024926)**: glm-zz-zstep (Mia 1104's 0082
+      A/B — campaign-20261108-024926)**: 016-zstep (Mia 1104's 0082
       — the exl3r dependent-launch chain on the adopted 0081 base: the
       decode chain's kernels launch with programmatic stream
       serialization, each launch and its prologue overlapping the
@@ -880,7 +880,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       knobbed, neutral everywhere, and the fork's 0083+ builds on this
       exact base.
       **THE 0081 PORT QUALIFIED AND ADOPTED (round 137 cont. 8, the
-      0081qual A/B — campaign-20261107-232039)**: glm-zz-zshfl (Mia
+      0081qual A/B — campaign-20261107-232039)**: 015-zshfl (Mia
       1104's 0081 — the exl3r read-once trellis: the grouped decode
       kernels' lanes each loaded the two words their windows span,
       every trellis word fetched twice; now one 128-byte warp load a
@@ -934,7 +934,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (leases + the store as holders), leaving a RANK DIVERGENCE in the
       store lifecycle (rank 1 has no pool, never reclaims) as the prime
       suspect — only concurrent traffic exercises it.
-- [x] **THE #256 PORT LANDED AND ADOPTED (round 138-139, the forum thread post 973's finding)**: the unoffered-tool-call leak — with parallel_tool_calls false, a call to a tool the request did not offer was dropped and the one-call filter removed what was left, so the reply came back empty and a fixed-seed agent looped; the fix (upstream be8bccbec, PR #415) is in v1.0.0..v1.2.1 and was REVERTED before v1.2.2, so every 1.2.x including our promoted engine lacked it. The port (glm-zz-tools256, the round-139 FIFTEENTH patch) turned out small: the rest of the #415 rework (Policy.parsedContent/kept/wholeEnvelope/prose_sent/the attach rework) was already in our v1.2.4 tree — only callName's own-name rule was reverted with it; a well-formed unoffered call now goes out under its own name (the client answers "unknown tool", the model self-corrects), names that are no function name and non-finite arguments stay text, bare JSON outside an envelope still needs an offered name. The primary witness: the tool-parse host suite 46/46 PASS (two older tests that pinned the reverted rule flipped to the #415 behavior); the tools256qual battery (campaign-20261108-140329): the same-bits greedy witness IDENTICAL (the same 80cc3802… sha as every window), the §2 gates ALL PASS, hardmode 95 — the SIXTEENTH consecutive — the vision 4/4. ADOPTED in this repo's config and mirrored to the promoted production repo (production commit 270adb9). Server-layer only: no kernel work, no knob (the behavior IS the fix). ALSO this round: the promotion repo was created without image/ — every prepare-time build failed reading the dockerfile behind docker's layer cache until the window's fingerprint move forced one; the 7 files restored verbatim (production 8ca3773) and production re-landed healthy on 8000 through its own start.sh; deep's poke local.sh was missing the promotion's PROD_REPO (the poke's :? guard exited every tick) — fixed and the poke smoke-verified silent from cron's own host.
+- [x] **THE #256 PORT LANDED AND ADOPTED (round 138-139, the forum thread post 973's finding)**: the unoffered-tool-call leak — with parallel_tool_calls false, a call to a tool the request did not offer was dropped and the one-call filter removed what was left, so the reply came back empty and a fixed-seed agent looped; the fix (upstream be8bccbec, PR #415) is in v1.0.0..v1.2.1 and was REVERTED before v1.2.2, so every 1.2.x including our promoted engine lacked it. The port (010-tools256, the round-139 FIFTEENTH patch) turned out small: the rest of the #415 rework (Policy.parsedContent/kept/wholeEnvelope/prose_sent/the attach rework) was already in our v1.2.4 tree — only callName's own-name rule was reverted with it; a well-formed unoffered call now goes out under its own name (the client answers "unknown tool", the model self-corrects), names that are no function name and non-finite arguments stay text, bare JSON outside an envelope still needs an offered name. The primary witness: the tool-parse host suite 46/46 PASS (two older tests that pinned the reverted rule flipped to the #415 behavior); the tools256qual battery (campaign-20261108-140329): the same-bits greedy witness IDENTICAL (the same 80cc3802… sha as every window), the §2 gates ALL PASS, hardmode 95 — the SIXTEENTH consecutive — the vision 4/4. ADOPTED in this repo's config and mirrored to the promoted production repo (production commit 270adb9). Server-layer only: no kernel work, no knob (the behavior IS the fix). ALSO this round: the promotion repo was created without image/ — every prepare-time build failed reading the dockerfile behind docker's layer cache until the window's fingerprint move forced one; the 7 files restored verbatim (production 8ca3773) and production re-landed healthy on 8000 through its own start.sh; deep's poke local.sh was missing the promotion's PROD_REPO (the poke's :? guard exited every tick) — fixed and the poke smoke-verified silent from cron's own host.
 - [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460
@@ -1163,13 +1163,13 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
     deeper each — the `weightShare` parse-failure billing (a 163.6-GiB budget illusion from
     the silent catch-return-total), the snapshot config's SYMLINK aliasing (fixed with a REAL
     file + byte-surgical edits), the parse's `want` pin and the EXL3 experts' module-global
-    (both to topk=4 in `glm-topk4b.patch`). **Real top-4 routing measured**: routed
+    (both to topk=4 in `017-topk4b.patch`). **Real top-4 routing measured**: routed
     18.45→11.0 ms; **solo 63.6 t/s = 108% of production — CROSSED**; c2 103%;
     **c4 120.4 = 78% (was 65%)**; slope 0.593 (−10%); acceptance 4.8 tok/chunk (was 3.37).
   - **top4qual battery** (`campaign-20261024-142659`): §2 gates ALL PASS on the modified
     checkpoint; tool-eval **93** (above stock's 92; production's anchor 95); hardmode
     **89** (production's anchor 91; the line's first hardmode datum).
-  - **(user) the served default = top4cfg + PATCHES=glm-topk4b** (round 27); the anchors
+  - **(user) the served default = top4cfg + PATCHES=017-topk4b** (round 27); the anchors
     and the chart regenerated from the receipts (4 rows over the 100% line).
   - **the AZ route**: azampatti's retrained selector downloaded (the Xet CAS survived the
     site's reboot); the requant pipeline staged (az_dequant → az_conv_fix → convert
@@ -1209,7 +1209,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 - [ ] **The pages×fp8 marriage watch** (#1163 mergeable-clean; #1211 stacks): when
       paging×fp8 lands, 512K admits 8 streams on fp8 — re-qualify the ladder then.
 - [ ] **The v1.1.5 candidate test**: #1218 (the slot-leak) is merged and slated upstream —
-      the first correctness reason to test a bump (rebase glm-topk4b, gates + probes decide).
+      the first correctness reason to test a bump (rebase 017-topk4b, gates + probes decide).
 - [x] ~~Publish the AZ quant to huggingface.co~~ CLOSED by the (user) (round 58): "there is nothing to be published, what we run is already out there" — the served checkpoint is AxonZeta's public release. The disk choreography landed with it (the mirrors/TR3/stubs deleted; the requant working dir kept as the repack source). gated on the AZ
       battery passing — repo under gilesco, the ~154-GiB EXL3 upload, and a model card
       carrying the quant contract (`-b 4 -hb 16 -eb 16 -vb 16`), provenance (azampatti's
