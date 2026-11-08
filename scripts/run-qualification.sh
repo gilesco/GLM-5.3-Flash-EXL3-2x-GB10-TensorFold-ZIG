@@ -44,7 +44,7 @@
 #   rung       the 524288x1 ladder rung: admission line + a depth probe
 #   summary    CAMPAIGN.md: verdict per gate + the way-forward recommendations
 #
-# Safety: this script never touches production (glm53-flash-tf). If production is
+# Safety: this script never touches production (glm53-native-tf, the promoted stack — round 138). If production is
 # running it captures the reference probe and then STOPS and asks you to stop
 # production yourself; with PROMPT=0 it refuses and exits instead.
 set -euo pipefail
@@ -77,16 +77,16 @@ done
 # ---------------------------------------------------------------------------
 # shared helpers
 # ---------------------------------------------------------------------------
-prod_running() {   # production containers up here and on the worker?
-  docker ps --format '{{.Names}}' | grep -qx 'glm53-flash-tf' && return 0
+prod_running() {   # production containers up here and on the worker? (the promoted native stack — round 138; the archived tip's glm53-flash-tf serves only as the duel baseline INSIDE windows and must not trip this)
+  docker ps --format '{{.Names}}' | grep -qx 'glm53-native-tf' && return 0
   ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" \
-    'docker ps --format "{{.Names}}" | grep -qx glm53-flash-tf' 2>/dev/null && return 0
+    'docker ps --format "{{.Names}}" | grep -qx glm53-native-tf' 2>/dev/null && return 0
   return 1
 }
 
 restart() {        # restart the testing stack with env pairs: restart K=V ...
   local kv rc=0
-  if prod_running; then die "production (glm53-flash-tf) is running — stop it first; this script never touches it"; fi
+  if prod_running; then die "production (glm53-native-tf) is running — stop it first; this script never touches it"; fi
   log "restarting the testing stack (${*:-defaults})"
   local ST0=$(date +%s)
   ./scripts/stop.sh < /dev/null >/dev/null 2>&1 || true
@@ -4382,6 +4382,52 @@ except Exception: print("")' 2>/dev/null) || model=""
   fi
   echo "- VERDICT: the arms content-identical + the gates PASS + hardmode holds + the vision 4/4 + the decode instruments read the launch overlap = the 0082 port qualifies (adoption moves config.sh's PATCHES and re-pairs the duel in a later sitting)" >> "$P"
   touch "$OUT/.0082qual.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: newprodqual (SESSION-SPECIFIC; the promotion-qual — (user), round
+# 138: the 14-patch native stack is PROMOTED to production (the new repo on
+# the head serves opencode on 8000); this battery qualifies the promoted
+# config end to end on the testing port: the §2 content gates, hardmode
+# (the fifteenth 95), the vision 4/4, the bench pass, the steady-state
+# decode. The production serve itself is exercised by the cron's own
+# health checks and opencode's live traffic.
+# ---------------------------------------------------------------------------
+if want newprodqual && ! phase_done newprodqual; then
+  log "=== newprodqual (the promotion battery on the promoted config)"
+  P="$OUT/05-newprodqual.md"; : > "$P"
+  echo "# newprodqual (the promoted 14-patch config: dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  req_file "$OUT/np-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/np-greedy.json" > "$OUT/np-greedy-resp.json" || true
+  echo "- the greedy content sha: $(content_sha "$OUT/np-greedy-resp.json")" >> "$P"
+  echo "## the §2 content gates" >> "$P"
+  run_gates np DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  echo "## the bench pass" >> "$P"
+  bench_perf np "$OUT/np-bench" 4 >> "$P" 2>&1 || true
+  echo "## hardmode (the 95 must hold — the fifteenth consecutive)" >> "$P"
+  mkdir -p "$OUT/nphm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "newprodqual" --output-dir "$OUT/nphm" \
+    --json-file "$OUT/nphm/hm.json" > "$OUT/nphm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/nphm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/nphm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/nphm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/npvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/npvision/vision.json" > "$OUT/npvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/npvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "- VERDICT: the gates PASS + hardmode holds + the vision 4/4 = the promoted config qualifies as production" >> "$P"
+  touch "$OUT/.newprodqual.done"
 fi
 
 # ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f scripts/local.sh ] && source scripts/local.sh
 : "${SSH_TARGET:?set SSH_TARGET (user@head) in scripts/local.sh}"
-: "${PROD_TIP:?set PROD_TIP (the production checkout dir name) in scripts/local.sh}"
+: "${PROD_REPO:?set PROD_REPO (the production repo dir name) in scripts/local.sh}"
 : "${OPENCODE_API:?set OPENCODE_API (the opencode server API base URL) in scripts/local.sh}"
 : "${OPENCODE_UNIT:?set OPENCODE_UNIT (the opencode server systemd unit path) in scripts/local.sh}"
 PROJ="GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-ZIG-testing"   # this repo's dir name, same on both hosts (renamed round 127 — the old name broke the poke silently)
@@ -25,7 +25,7 @@ API="$OPENCODE_API"
 AUTH="opencode:$PW"
 # 1. production fully up on the head? (container AND its health endpoint)
 if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$SSH_TARGET" \
-     "docker ps --format '{{.Names}}' | grep -qx glm53-flash-tf && cd ~/$PROD_TIP 2>/dev/null && source ./scripts/config.sh >/dev/null 2>&1; curl -s -m 5 -o /dev/null \"http://127.0.0.1:\$PORT/health\"" 2>/dev/null; then
+     "docker ps --format '{{.Names}}' | grep -qx glm53-native-tf && cd ~/$PROD_REPO 2>/dev/null && source ./scripts/config.sh >/dev/null 2>&1; curl -s -m 5 -o /dev/null \"http://127.0.0.1:\$PORT/health\"" 2>/dev/null; then
   exit 0   # down: a window in flight or a crash — the head's cron crash-net handles it
 fi
 # a window in flight (even with production crash-net-restored mid-window) — hands off

@@ -10,14 +10,14 @@ cd "$(dirname "$0")/.."
 exec 9>/tmp/autonomous-cron.lock
 flock -n 9 || exit 0
 [ -f scripts/local.sh ] && source scripts/local.sh
-: "${PROD_TIP:?set PROD_TIP (the production checkout dir name) in scripts/local.sh}"
+: "${PROD_REPO:?set PROD_REPO (the production repo dir name) in scripts/local.sh}"
 STATE=/tmp/autonomous-testing.flag
 LOG="$HOME/autonomous-cron.log"
-TIP="$HOME/$PROD_TIP"
-if ! docker ps --format "{{.Names}}" | grep -qx glm53-flash-tf; then
+PROD="$HOME/$PROD_REPO"
+if ! docker ps --format "{{.Names}}" | grep -qx glm53-native-tf; then
   if [ ! -f "$STATE" ]; then
-    echo "[$(date '+%F %T')] production down with no active window — restarting via the tip's start.sh" >> "$LOG"
-    "$TIP/start.sh" >> "$LOG" 2>&1 || echo "[$(date '+%F %T')] start.sh rc=$? — will retry next tick" >> "$LOG"
+    echo "[$(date '+%F %T')] production down with no active window — restarting via the production repo's start.sh" >> "$LOG"
+    "$PROD/scripts/start.sh" >> "$LOG" 2>&1 || echo "[$(date '+%F %T')] start.sh rc=$? — will retry next tick" >> "$LOG"
   else
     echo "[$(date '+%F %T')] production down, window in flight — hands off" >> "$LOG"
   fi

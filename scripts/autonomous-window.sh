@@ -17,10 +17,12 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f scripts/local.sh ] && source scripts/local.sh
-: "${PROD_TIP:?set PROD_TIP (the production checkout dir name) in scripts/local.sh}"
+: "${PROD_REPO:?set PROD_REPO (the production repo dir name) in scripts/local.sh}"
+: "${PROD_TIP:?set PROD_TIP (the ARCHIVED baseline checkout dir name) in scripts/local.sh — the duel baseline production-for-testing serve}"
 PHASES="${1:-preflight summary}"
 CONSOLE="${2:-/tmp/autonomous.console}"
 STATE=/tmp/autonomous-testing.flag
+PROD="$HOME/$PROD_REPO"
 TIP="$HOME/$PROD_TIP"
 WID="$$"
 note() { echo "[$(date '+%F %T')] [w$WID] $*" >> "$CONSOLE"; }
@@ -28,8 +30,8 @@ STARTED=0
 restore() {
   # a refused double-launch never touched production — restore only what we stopped
   [ "$STARTED" = 1 ] || return 0
-  note "production restore: the tip's start.sh (both ranks, waits for the API)"
-  if ! "$TIP/start.sh" >>"$CONSOLE" 2>&1; then
+  note "production restore: the production repo's start.sh (both ranks, waits for the API)"
+  if ! "$PROD/scripts/start.sh" >>"$CONSOLE" 2>&1; then
     note "START.SH FAILED — production may be DOWN; the cron crash-net retries every 5 min"
   fi
   rm -f "$STATE"
@@ -41,7 +43,7 @@ touch "$STATE"
 STARTED=1
 sleep 30   # let the launching ssh detach and the agent's closing message flush
 note "autonomous window starting: $PHASES"
-"$TIP/stop.sh" >>"$CONSOLE" 2>&1
+"$PROD/scripts/stop.sh" >>"$CONSOLE" 2>&1
 note "production stopped (both ranks) — the window runs"
 PHASES="$PHASES" FORCE=1 scripts/run-window-block.sh </dev/null >>"$CONSOLE" 2>&1
 rc=$?
