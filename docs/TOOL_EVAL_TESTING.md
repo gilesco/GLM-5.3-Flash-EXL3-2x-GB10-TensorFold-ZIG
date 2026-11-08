@@ -832,6 +832,28 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       The prefill row stands at the 0080qual reading (100.1% — the
       duel carries no bench rows; the duel's own slope 0.442
       re-confirms the prefill gains at depth).
+      **THE SHFL DUEL RE-PAIRED (cont. 9, campaign-20261108-010714 —
+      both engines the same window, the adopted 13-patch engine)**:
+      solo **67.2/67.7 vs 58.6/58.5 — 115.2%**; c2 **118.0 vs 110.1 at
+      its top-of-range volley — 107.2%** (its floor 86.4 — 136.6%
+      there; the record 118.6 stands); c4 **168.0 vs 154.5 at its
+      floor — 108.7%** (the record 168.9, held at 168+ four windows);
+      ITL **14.8 vs 17.1 ms/token — 116%**; overhead 183 vs 184 ms;
+      the cold d8192 **3,812 ms, slope 0.443 — 449%**. Every row holds
+      within noise — the SHFL adoption was decode-neutral on the duel
+      instruments too, as the A/B read.
+      **THE (USER) MODEL-CARD BENCH RAN (cont. 8's commission,
+      08-modelcard.md — the full battery in the same campaign)**:
+      tool-eval-bench `--perf --needle --hardmode --parallel 4`, seed
+      42, ~66 min wall — **final 95/100** (104 hard-mode scenarios:
+      Trivial 100%, Easy 94%, Moderate 100%, Hard 91%, Very Hard 79%);
+      **needle 80.0% (16/20), effective context ~174,762 tokens
+      (estimated)** on the 524,288 window — all depths retrieved at
+      ~170K, 14 of 15 cells at ~340K/~510K (the misses cluster at the
+      extreme corners); the perf cells pp d0 1,511 / tg 56.5 solo /
+      48.5 at 4-stream. **MODEL_CARD.md completed at the repo root**
+      (no site identity — postable; the needle artifact's engine table
+      carries the host name — the card does not quote it).
       **THE 0081 PORT QUALIFIED AND ADOPTED (round 137 cont. 8, the
       0081qual A/B — campaign-20261107-232039)**: glm-zz-zshfl (Mia
       1104's 0081 — the exl3r read-once trellis: the grouped decode

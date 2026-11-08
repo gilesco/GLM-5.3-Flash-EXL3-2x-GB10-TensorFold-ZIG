@@ -1014,3 +1014,22 @@ identity (it gets posted publicly).
 **THE NEXT STEP: the duel re-pair on the adopted 13-patch stack** —
 launched after the (user) bench completes; every speed row re-pairs
 same-window on the SHFL engine.
+
+**THE SHFL DUEL RE-PAIRED + THE (USER) BENCH LANDED (round 137
+cont. 10)**: the same-window pair on the adopted 13-patch engine
+(campaign-20261108-010714) — solo **115.2%**, c2 **107.2% at its
+top**, c4 **108.7% at its floor**, ITL **116%**, overhead **99.5%**,
+cold **449%** — every row holds within noise (the SHFL adoption
+decode-neutral on the duels too, as the A/B read). The (user)
+model-card bench ran in the same campaign: **final 95/100**, needle
+**80.0% (16/20), effective context ~174,762 tokens (estimated)**,
+perf cells pp d0 1,511 / tg 56.5 solo. **MODEL_CARD.md is COMPLETE**
+(postable). The anchors re-paired, the chart re-rendered.
+
+**THE NEXT STEP: scope 0082** (the exl3r chain as dependent launches,
+250 lines — rot_in, gate/up, epilogue, down as a dependent-launch
+chain): it builds on 0081's read-once base (adopted ✓). Read its
+header + test-apply next sitting; the PDL set's concepts (the chain
+machinery) may already be in v1.2.4 (the engine's own PDL — glm_mm's
+pdl launches) or may need the fork's 0069-0071 line first. The PDL
+set and the HC-split set stay parked behind it.

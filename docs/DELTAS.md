@@ -24,20 +24,21 @@ times: campaign-20261106-043015/-065920/-093921 — byte-identical token profile
 receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families
-or bench versions). **The CURRENT scoreboard (the P2 duel re-pair, 2026-11-07 —
-campaign-20261107-225124: production-for-testing on 8001 vs ours on the adopted
-12-patch engine, both engines the same window, the same probes)**: loading **112.9% — CROSSED** (83 vs 93.7 s —
+or bench versions). **The CURRENT scoreboard (the SHFL duel re-pair, 2026-11-08 —
+campaign-20261108-010714: production-for-testing on 8001 vs ours on the adopted
+13-patch engine, both engines the same window, the same probes)**: loading **112.9% — CROSSED** (83 vs 93.7 s —
 the v1.2.4 wall on the direct reads, glm-zz-loaddirect on the resharded pack, the
 timed walls 83/83 s, v124val campaign-20261107-150250; the v1.2.3-era wall 103 s = 91%),
-solo **116.2% — CROSSED** (68.0/68.1 vs 58.5/58.6 t/s), c2 **107.6% — above production
-even at its top-of-range volley** (118.6 vs 110.2 this run — our best c2; its floor
-86.4 — 137% there), c4: production **at its floor this run** (168.9 vs 154.8 — **109.1%**; its
+solo **115.2% — CROSSED** (67.2/67.7 vs 58.6/58.5 t/s — every row holds within noise on
+the SHFL engine, decode-neutral as the A/B read), c2 **107.2% — above production
+even at its top-of-range volley** (118.0 vs 110.1 this run; its floor
+86.4 — 136.6% there; the record 118.6 stands), c4: production **at its floor this run** (168.0 vs 154.5 — **108.7%**; its
 range 155-241 with cache state; ours 153.7 → 157.4
-→ 158.6 → 160.2 → 166.1 → 168.8 → **168.9** across the windows — our best c4, held three
-windows), TTFT overhead
-**98.9%** (183 vs 185 ms), ITL **116% — crossed** (14.7 vs 17.1 ms/token), **the cold depth
-cost CROSSED (450%)** — ours 3.8 s vs production's 17.1 s true cold at d8192 (ours 3,803 ms,
-slope 0.442 — the prefill levers show at depth too; production's cold slope 2.026 ms/tok,
+→ 158.6 → 160.2 → 166.1 → 168.8 → 168.9 → 168.0 across the windows — the record 168.9, held
+at 168+ four windows), TTFT overhead
+**99.5%** (183 vs 184 ms), ITL **116% — crossed** (14.8 vs 17.1 ms/token), **the cold depth
+cost CROSSED (449%)** — ours 3.8 s vs production's 17.1 s true cold at d8192 (ours 3,812 ms,
+slope 0.443 — the prefill levers show at depth too; production's cold slope 2.026 ms/tok,
 slowing with depth; the 2.5 s it
 shows in-window is its persistent cache, not cold) — and the **prefill front 100.1% — CROSSED, the last uncrossed (user)-bar front falls**
 (1,519 vs 1,518 tok/s — the P2 packed-prompt loads' lever, bench pp d0 1,519 vs the 1,495 the exl3p window read

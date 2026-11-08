@@ -70,12 +70,41 @@ rework) → **1,519** (the packed-prompt loads) — the last uncrossed front fel
 - The cost tables were dropped after an attribution duel showed they cost the
   2-stream aggregate ~16% and bought nothing measurable.
 
-## Benchmarks (tool-eval-bench)
+## Benchmarks (tool-eval-bench v3.0.1, seed 42, parallel=4)
 
-A single full run on the adopted stack — parallel=4, hardmode on, perf on,
-needle-in-a-haystack enabled (`--seed 42 --perf --needle --hardmode --parallel 4`)
-— is in flight in the current window; this section's numbers land with the next
-digest. The standing hardmode score on this stack is 95.
+One full run on the adopted stack — hardmode on, perf on, needle-in-a-haystack
+enabled (`--perf --needle --hardmode --parallel 4`, ~66 minutes wall,
+campaign-20261108-010714):
+
+- **Overall: 95/100** (104 hard-mode scenarios; the ceiling-holding battery).
+- **By difficulty tier** (tool-calling scenarios):
+
+| Tier | Scenarios | Passed | Rate |
+|---|:---:|:---:|:---:|
+| Trivial | 4 | 4 | 100% |
+| Easy | 17 | 16 | 94% |
+| Moderate | 31 | 31 | 100% |
+| Hard | 33 | 30 | 91% |
+| Very Hard | 19 | 15 | 79% |
+
+- **Needle-in-a-haystack** (a 524,288-token window, 4 haystack sizes × 5 depths):
+  retrieval accuracy **80.0% (16/20)**, **effective context ~174,762 tokens
+  (estimated)** — every depth of the ~170K haystack retrieved, and 14 of 15
+  cells at ~340K and ~510K retrieved (the misses cluster at the extreme
+  corners: document start at ~340K, and two cells at ~510K). The full grid
+  at ~510K (≈97% of the window) still retrieves 3 of 5 depths.
+
+| Depth | ~1K | ~170K | ~340K | ~510K |
+|---|---|---|---|---|
+| 0% | ✅ | ✅ | ❌ | ❌ |
+| 25% | ✅ | ✅ | ✅ | ✅ |
+| 50% | ✅ | ✅ | ✅ | ❌ |
+| 75% | ✅ | ✅ | ✅ | ❌ |
+| 100% | ✅ | ✅ | ✅ | ✅ |
+
+- **Throughput** (llama-benchy cells inside the same run): prefill 1,511 t/s
+  at d0 (1,460 at d4096, 1,508 at d8192); decode 56.5 t/s solo, 44.4 at
+  2-stream, 48.5 at 4-stream (d0); TTFT 1,356 ms at d0.
 
 ## Serving notes
 
