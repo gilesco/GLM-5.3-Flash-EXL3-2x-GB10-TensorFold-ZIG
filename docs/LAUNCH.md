@@ -8626,3 +8626,47 @@ the lifecycle; the old tip recipe archives (it remains the duel
 baseline on 8001, production-for-testing); the testing repo remains
 the dev line; the night runs the standing loop (the promotion-qual
 window first, then the fork's 0083+ scope).
+
+## (round 138, cont. 4) THE PROMOTION COMPLETE — the 14-patch native stack IS production (the new repo on the head, serving opencode on 8000 since the boot); the old tip recipe ARCHIVED as the duel baseline; the thread's #256 finding applies to us too — the fix (be8bccbec) is missing from every 1.2.x (2026-11-08)
+
+**The promotion** ((user), 2026-11-08: "the current development becomes
+the production"):
+- **The new production repo**: ~/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-production
+  on the head (scripts/ + patches/ + config.sh from the testing line,
+  PORT default 8000, the README with the knobs and the rollback path;
+  commits 7946eaa + c7eabf8).
+- **The archive**: the old tip checkout renamed
+  GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold-tip-archive — the duel's
+  production-for-testing baseline (8001, started from the archive by
+  the window flow).
+- **The loop re-anchored** (the committed prep, c4d20c9): the window
+  flow stops/restores production via the production repo's own
+  scripts; the cron guards glm53-native-tf and restarts via the
+  production repo; the poke health-checks through the production
+  repo's config; the campaign's prod_running guard follows production
+  to glm53-native-tf. local.sh: PROD_REPO = the new repo, PROD_TIP =
+  the archive.
+- **The promoted serve is LIVE**: healthy after 80 s on 8000
+  (glm53-native-tf, the 14-patch engine); opencode rides it again.
+- **The promotion-qual window** launches now (the night's first):
+  newprodqual (the §2 gates, hardmode's fifteenth 95, the vision 4/4,
+  the bench on the promoted config) + summary; then the loop continues
+  autonomously.
+
+**FROM THE FORUM THREAD (post 973, the (user) ask)**: the unoffered-
+tool-call leak — a call naming a tool not in the request's tools list
+leaks its markup as plain content; agents strip it, see an empty
+reply, and loop. The reporter runs the OLD recipe, but the investigation
+shows **the fix (be8bccbec, upstream PR #415 — the call goes out under
+its own name so the client can answer "unknown tool" and the model
+self-corrects) is in v1.0.0..v1.2.1 and MISSING from v1.2.2, v1.2.3
+and v1.2.4 — our promoted engine included**. The port is staged
+(/tmp/f415.patch on the head; 16 hunks rejected across
+tool_parse/tool_stream/reply_text/openai — the server layer evolved
+heavily since Oct 6): **the first new-work item after the
+promotion-qual window**. The reporter's own workaround (eager tools +
+a trimmed tool list) needs no repo action. Nothing posted upstream
+(the rule stands — findings land in docs/ECOSYSTEM.md).
+
+**LAUNCHED: newprodqual + summary** — the promotion battery. THEN DARK
+(until the poke; the night runs the loop).
