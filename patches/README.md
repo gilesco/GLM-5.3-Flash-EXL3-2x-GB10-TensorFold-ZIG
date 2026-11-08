@@ -455,7 +455,7 @@ tool-call format — now round-trips end to end.
 
 **Knob**: none (server-layer behavior; no env surface).
 
-## 018-callquote.patch — STAGED (the fork 0103 port; the callquotequal A/B decides)
+## 018-callquote.patch — ADOPTED 2026-11-08 (the seventeenth patch; the fork 0103 port)
 
 The fork's 0103: a call quoted inside prose still parses, and the envelope
 scan never cuts a call's own data. Two behaviors, one concern (the call's
@@ -481,6 +481,17 @@ quoted-markup pins from 011-zclose), compile RC=0 (fatbins + native, sm_121),
 and the fork's 0103 kept-list test passes unchanged.
 
 **Knob**: none (server-layer behavior; no env surface).
+
+**The qualifying battery** (callquotequal, campaign-20261108-214221, the
+17-patch image on the testing port): the greedy content sha IDENTICAL (the
+same `80cc3802…` as every window — the port must not move the deterministic
+probes), the quoted-markup live probe PASS (the halt's shape on the ported
+serve: `finish: tool_calls`, `content: None`, complete arguments with the
+quoted markup inside), the §2 content gates ALL PASS, hardmode 95 (the
+SEVENTEENTH consecutive), the vision 4/4. ADOPTED: the port fixes the
+quoted-example class (a call quoted inside prose parses whole; the engine
+describing its own tool-call format round-trips) — the same-bits claim held,
+so the behavior is the only change.
 
 ## 017-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
 

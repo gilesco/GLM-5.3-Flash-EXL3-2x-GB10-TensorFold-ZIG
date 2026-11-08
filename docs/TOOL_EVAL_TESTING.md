@@ -192,8 +192,15 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       2.7× gap to production's 93.7 s is the native loader's convert-and-pack path —
       patch candidate: a packed-weights cache beside the byte-verify digest cache.
       The drafter's decode value confirmed: 29.6 vs 49.9 t/s solo without it.
-- [ ] **steps0 confirm cell** — one re-run of `TF_GLM_PROMPT_STEPS=0` (plus the duel
-      phase with production up first) before the 1.9× goes in the anchors.
+- [x] **steps0 CONFIRMED and ADOPTED as the serving default (round 139 cont. 9, the
+      `confirm` phase, campaign-20261108-214221)**: two independent restarts of
+      `TF_GLM_PROMPT_STEPS=0` (dense4fp8 @ 512K x4) — d8192 c2 **48.2/37.0** t/s vs the
+      17.3 baseline (the original lead was 33.1; the criterion "near 33 reproduces, near
+      17 retires" is EXCEEDED), d0 58.1/56.8 vs 49.9, d4096 c2 31.0/31.3 vs 24.0. The
+      within-campaign control (the callquotequal bench, no steps0) read d8192 c2 23.8 —
+      the delta attributes to the knob. The same-bits greedy sha held on the ported
+      serve (the callquotequal arm) — the knob does not move the deterministic probes.
+      `config.sh` adopts `TF_GLM_PROMPT_STEPS=0`.
 
 - [ ] **Loading time — behind 2.8× and unexplained** (part of the knobs phase):
       production 0.6.6 logs **"loaded in 93.7 s"**; our restart walls run ~265 s. The
@@ -1324,3 +1331,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (prefill 68%, decode solo 86%, c4 aggregate 61%, c4@depth 68% of production).
       The cards: `docs/cards/prod-definitive.svg` + `focus-definitive.svg`; the README's
       card section carries the pair (the per-suite cards remain as history).
+
+- [x] **THE 0103 PORT SHIPPED AND ADOPTED (round 139 cont. 8-9, the fork's callquote fix —
+      the halt class's last shape)**: a call quoted inside prose still parses (the fork's
+      kept-list semantics, composed with our strict-retry rule: a salvaged call names an
+      OFFERED tool — the own-name rule is a whole envelope's rule) and the envelope scan
+      never cuts a call's own data (011-zclose's value-aware closer, carried onto the
+      composed base). The port landed as **018-callquote** — the first ship under the
+      NNN-name scheme — via the cross-tree recipe: composed base (pristine v1.2.4 +
+      011-zclose) + the fork's final file state = the commit tree EQUALS the suite-green
+      tree `f202781d3` (`18da977ab…`), so the tool-parse host suite 51/51 and compile
+      RC=0 (sm_121) inherit unchanged; the patch applies in stack order on pristine
+      v1.2.4 and reproduces the tree byte-identically. The battery (callquotequal,
+      campaign-20261108-214221, the 17-patch image): the greedy content sha IDENTICAL
+      (the same 80cc3802… as every window), the quoted-markup live probe PASS (the
+      halt's shape on the ported serve), the §2 gates ALL PASS, hardmode 95 — the
+      SEVENTEENTH consecutive — the vision 4/4. ADOPTED: config.sh's PATCHES default
+      carries 018; the promoted repo follows on the next promotion sync.
