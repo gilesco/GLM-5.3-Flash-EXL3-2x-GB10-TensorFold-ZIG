@@ -8970,3 +8970,37 @@ default while the callquotequal's restart carries 018 explicitly.
   reconciled (51 = the whole host suite).
 - The next queue: the v1.2.5 bump window, the 0104 warm-turns port, 0108/0110
   for the 512K plan, the three server recipes when the shape appears.
+
+## (round 139, cont. 9) THE WINDOW QUALIFIED BOTH — the 0103 port ADOPTED + the steps0 lead CONFIRMED (2026-11-08)
+
+**The window** (campaign-20261108-214221, `preflight confirm callquotequal
+summary`, rc=0, production restored healthy after 81 s):
+
+- **callquotequal: 018-callquote QUALIFIED AND ADOPTED** — the seventeenth
+  patch. The greedy content sha IDENTICAL (the same 80cc3802… as every
+  window — the port must not move the deterministic probes and didn't), the
+  quoted-markup live probe PASS (the halt's shape on the ported serve:
+  finish tool_calls, content None, complete arguments), the §2 content gates
+  ALL PASS, hardmode 95 (the SEVENTEENTH consecutive), the vision 4/4. The
+  tree was byte-identical to the suite-green f202781d3 state before the
+  window, so the suite 51/51 + compile RC=0 inherited unchanged.
+- **confirm: the steps0 lead REPRODUCED AND EXCEEDED** — two independent
+  restarts of TF_GLM_PROMPT_STEPS=0: d8192 c2 **48.2/37.0** t/s vs the 17.3
+  floor (the criterion "near 33 reproduces, near 17 retires" — EXCEEDED);
+  d0 58.1/56.8 vs 49.9; d4096 c2 31.0/31.3 vs 24.0. The within-campaign
+  control (the callquotequal bench, no steps0) read d8192 c2 23.8 — the
+  delta attributes to the knob. **ADOPTED as the serving default**
+  (config.sh's `export TF_GLM_PROMPT_STEPS=0`; the anchors gained the
+  depth-decode row, the chart regenerated).
+
+**Deployment**: both repos adopted — the testing repo committed the digest;
+the production repo carries 018 + the steps0 default (commit 3818c9a) and
+was restarted through its own stop/start (healthy on 8000, the steps0 env
+verified live in the container). The standing chart is re-dated on the
+adopted state.
+
+**The next window (the perf plan's re-set next step)**: the duel re-pair on
+the adopted 17-patch stack with the steps0 serving default — every speed row
+re-pairs same-window on the state production now serves. The queue after it:
+the v1.2.5 bump (the cheapest since the v1.2.2→v1.2.4 rebase), then the 0104
+warm-turns port (the agent-loop re-prefill).

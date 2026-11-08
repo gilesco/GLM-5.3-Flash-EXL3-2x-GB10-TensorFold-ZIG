@@ -1110,6 +1110,23 @@ side instrument that resolves 1% (the duel re-pair first, then re-judge).
 The server-side behavior ports (the #256 class) are cheap and safe — they
 queue AFTER the perf frontier, not before it.
 
-**THE NEXT STEP (unchanged in substance): the duel re-pair on the adopted
-stack** — every speed row re-pairs same-window on the 15-patch engine
-(the fifteenth is perf-neutral server work; the re-pair re-dates the rows).
+**UPDATE (round 139 cont. 9): the 0103 port is SHIPPED AND ADOPTED as
+018-callquote** (the halt class's last shape; the battery campaign-20261108-
+214221 — the seventeenth patch), and the round-139 cont. 7 scan re-set the
+fork-tail dispositions (docs/ECOSYSTEM.md + docs/PORT_QUEUE.md): 0104
+warm-turns is the next fork port (the agent-loop re-prefill — the 512K
+workload's own front, not a decode-side micro-win), 0108 CACHE_FIRST +
+0110 KV_SHARD the 512K-plan candidates; the HC-split set stays parked
+per the judgment above; 0105/0107 stay watch. The **v1.2.5 bump is
+receipted as the cheapest since the v1.2.2→v1.2.4 rebase** (one hunk
+re-anchor in 003-fp8-pages; tool_parse and all our kernel files
+byte-identical) — it queues BEFORE the fork ports (the bump takes 0104
+onto the newer base afterward).
+
+**THE NEXT STEP (re-set, round 139 cont. 9): the duel re-pair on the
+adopted 17-patch stack with the steps0 serving default** — every speed row
+re-pairs same-window (the seventeenth is perf-neutral server work; steps0
+moved the DEPTH-DECODE row materially: d8192 c2 48.2/37.0 vs the 17.3
+floor — the anchors carry it). The re-pair re-dates the chart on the
+adopted state and re-grounds the duel instrument before the 512K ladder
+resumes.
