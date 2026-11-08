@@ -9004,3 +9004,31 @@ the adopted 17-patch stack with the steps0 serving default — every speed row
 re-pairs same-window on the state production now serves. The queue after it:
 the v1.2.5 bump (the cheapest since the v1.2.2→v1.2.4 rebase), then the 0104
 warm-turns port (the agent-loop re-prefill).
+
+## (round 139, cont. 10) THE DUEL RE-PAIRED ON THE ADOPTED STACK — every row flat; the bench runs --parallel 2 (user) (2026-11-08)
+
+**The window** (campaign-20261108-231705, `preflight duel summary`, rc=0,
+production restored healthy after 81 s): the duel re-paired on the adopted
+17-patch + steps0 stack — the perf plan's next step. Every instrument flat
+inside the band: solo 67.9/68.3 vs 67.2/67.9 (the best arm **99.1%** of the
+first pair), c2 118.4 vs 119.2, c4 167.4 vs 168.6, ITL 57.8 vs 57.4 ms/chunk,
+TTFT slope 0.439 vs 0.440, overhead 182 vs 185 ms, cold d8192 3,777 vs
+3,810 ms. The duel instrument is stable across both native-vs-native pairs;
+the anchors re-dated on the second pair (solo/c2/c4/overhead/cold/ITL), the
+chart regenerated, guard PASS.
+
+**The (user) directive — the bench harness runs `--parallel 2`**: all 15
+tool-eval/hardmode battery invocations in run-qualification.sh carry it now
+(bench_cell already did). NOT the serve's PARALLEL= lanes — config.sh's
+PARALLEL=4 is untouched; the two stack (2 bench scenarios × 4 server lanes).
+The rationale recorded in the ledger: two scenarios concurrently against the
+serve put two live contexts in the KV pool for the whole battery — a standing
+cross-spill probe (the poolcanary class). Instrument note: the 95-streak ran
+its batteries at the harness default (parallel 1); the next battery re-grounds
+the instrument at 2, and any score movement attributes to the instrument
+change first, the engine second.
+
+**The queue after this**: the v1.2.5 bump window (the cheapest since the
+v1.2.2→v1.2.4 rebase — one hunk re-anchor in 003-fp8-pages), then the 0104
+warm-turns port (the agent-loop re-prefill). The 512K plan resumes on the
+re-based base.
