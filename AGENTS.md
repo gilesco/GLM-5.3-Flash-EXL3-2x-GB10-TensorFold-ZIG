@@ -81,7 +81,10 @@ Hard boundaries, never crossed:
   are delegated to subagents (at most TWO in flight) while the main sitting
   keeps the hands-on, state-mutating work (commits, patches, launches)
   serialized. Subagents report findings; they never commit, push, launch, or
-  touch production.
+  touch production. **A window may not launch while any subagent is still in
+  flight** — the window stops production, and a scan reading the head mid-stop
+  reads a moving machine; every subagent completes (its findings digested) or
+  is explicitly cancelled before the launch goes out.
 - **A new measurement is a phase in `scripts/run-qualification.sh`**, not a one-off
   script. The campaign is phased (`.done` markers, `PHASES=` selectable, `FORCE=1`
   re-run), production-guarded, and its receipts ARE the evidence chain. Session-specific
