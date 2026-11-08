@@ -455,6 +455,33 @@ tool-call format — now round-trips end to end.
 
 **Knob**: none (server-layer behavior; no env surface).
 
+## 018-callquote.patch — STAGED (the fork 0103 port; the callquotequal A/B decides)
+
+The fork's 0103: a call quoted inside prose still parses, and the envelope
+scan never cuts a call's own data. Two behaviors, one concern (the call's
+survival):
+
+1. **A call quoted inside prose still parses.** Prose that quotes the opener
+   (`Qwen's <tool_call>...`) ahead of a real call begins the envelope, so the
+   call does not parse as its payload: the retry path takes the LAST opener
+   inside the envelope (or one before that, when a value quotes the opener
+   too), and the quoting prose stays content.
+2. **The strict-retry composition** (this line's own rule, folded with the
+   port): a call salvaged from inside a rejected envelope must name an
+   OFFERED tool — the own-name rule (010-tools256) is a whole envelope's
+   rule, so an example the model quotes inside a cut region stays prose and
+   never goes out as a phantom call.
+
+The port is the fork's patch 0103 (its final file state) over our composed
+base (011-zclose first; both touch only `tool_parse.zig` + its test, order-
+free against every kernel patch). The tree it produces is byte-identical to
+the line's v124-rebase state `f202781d3` — the suite-green state inherits:
+the tool-parse host suite 51/51 (the fork's 0103 suite + the two
+quoted-markup pins from 011-zclose), compile RC=0 (fatbins + native, sm_121),
+and the fork's 0103 kept-list test passes unchanged.
+
+**Knob**: none (server-layer behavior; no env surface).
+
 ## 017-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
 
 Renamed from glm-topk4.patch: the config fingerprint hashes the patch LIST (names), not

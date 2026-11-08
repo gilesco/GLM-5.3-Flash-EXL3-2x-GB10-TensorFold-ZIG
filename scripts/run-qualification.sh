@@ -4346,6 +4346,81 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: callquotequal (SESSION-SPECIFIC; the fork's 0103 port — 018-callquote.
+# The port is staged (patches/018-callquote.patch); the byte-identity verify
+# against the suite-green tree f202781d3 passed. This battery qualifies the
+# port on the real model: the same-bits greedy witness (the 80cc3802… sha —
+# the port must not move the deterministic probes), the §2 content gates,
+# hardmode 95, the vision 4/4, the bench pass. Retires with the receipt; the
+# adoption moves config.sh's PATCHES default and the promoted repo's.
+# ---------------------------------------------------------------------------
+if want callquotequal && ! phase_done callquotequal; then
+  log "=== callquotequal (the 0103 port battery: a call quoted inside prose still parses)"
+  P="$OUT/09-callquotequal.md"; : > "$P"
+  echo "# callquotequal (018-callquote staged: the 16-patch image + the callquote port; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  CQPATCH="${PATCHES},018-callquote.patch"
+  log "callquotequal: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$CQPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "callquotequal: the image rebuild (prepare) failed - see the log"; fi
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$CQPATCH"
+  req_file "$OUT/cq-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/cq-greedy.json" > "$OUT/cq-greedy-resp.json" || true
+  echo "- the greedy content sha: $(content_sha "$OUT/cq-greedy-resp.json")" >> "$P"
+  echo "- the same-bits witness: $([ "$(content_sha "$OUT/cq-greedy-resp.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  echo "- the unit test is the port's primary witness: the tool-parse host suite 51/51 PASS on the ported tree (the commit's receipt: the fork's 0103 suite + the two quoted-markup pins)" >> "$P"
+  echo "## the quoted-markup live probe (the halt's shape, on the ported serve)" >> "$P"
+  cqprobe="$OUT/cq-probe.json"
+  python3 - "$PORT" "$SERVED_NAME" "$cqprobe" <<'PYEOF' >> "$P" 2>&1 || true
+import json, sys, urllib.request
+port, model, out = sys.argv[1], sys.argv[2], sys.argv[3]
+OP = "<" + "tool_call" + ">"
+CL = "</" + "tool_call" + ">"
+tools = [{"type": "function", "function": {"name": "write",
+          "parameters": {"type": "object",
+                         "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
+                         "required": ["path", "content"]}}}]
+body = {"model": model,
+        "messages": [{"role": "user", "content": "Call the write tool with path /tmp/probe.txt and content set to exactly: fixture Qwen's " + OP + "launch" + CL + " end"}],
+        "max_tokens": 400, "stream": False, "temperature": 0, "tools": tools}
+req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
+r = json.load(urllib.request.urlopen(req, timeout=300))
+ch = r["choices"][0]; m = ch["message"]
+print("- finish:", ch.get("finish_reason"))
+print("- content:", repr(m.get("content"))[:120])
+tc = m.get("tool_calls") or []
+print("- tool_calls:", json.dumps(tc)[:300])
+ok = ch.get("finish_reason") == "tool_calls" and not (m.get("content") or "") and tc
+print("- the quoted-markup probe:", "PASS" if ok else "FAIL")
+PYEOF
+  echo "## the §2 content gates" >> "$P"
+  run_gates cq DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$CQPATCH" || true
+  echo "## the bench pass" >> "$P"
+  bench_perf cq "$OUT/cq-bench" 4 >> "$P" 2>&1 || true
+  echo "## hardmode (the 95 must hold)" >> "$P"
+  mkdir -p "$OUT/cqhm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "callquotequal" --output-dir "$OUT/cqhm" \
+    --json-file "$OUT/cqhm/hm.json" > "$OUT/cqhm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/cqhm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cqhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/cqhm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/cqvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/cqvision/vision.json" > "$OUT/cqvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/cqvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "- VERDICT: the same-bits greedy + the quoted-markup probe PASS + the gates PASS + hardmode holds + the vision 4/4 = the 0103 port qualifies (adoption moves config.sh's PATCHES + the promoted repo's)" >> "$P"
+  touch "$OUT/.callquotequal.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: newprodqual (SESSION-SPECIFIC; the promotion-qual — (user), round
 # 138: the 14-patch native stack is PROMOTED to production (the new repo on
 # the head serves opencode on 8000); this battery qualifies the promoted
