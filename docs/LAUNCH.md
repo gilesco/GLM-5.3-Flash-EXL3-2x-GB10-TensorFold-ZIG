@@ -8575,3 +8575,31 @@ host name, the card does not quote it).
 
 **NO LAUNCH** — nothing staged to test; 0082 (the exl3r chain as
 dependent launches) is the next sitting's scope-and-port work.
+
+## (round 138) THE 0082 PORT QUALIFIED AND ADOPTED — content identical (the fork's 108/108 exactness confirmed), hardmode 95 (the FOURTEENTH consecutive), but the measured chain gain did NOT transfer (decode flat — the second decode-side non-transfer); config.sh's fourteenth patch; the duel re-pair LAUNCHED (campaign-20261108-024926) (2026-11-08)
+
+**The 0082qual A/B receipt** (both arms the SAME 14-patch image,
+TF_EXL3_PDL=0 vs unset):
+- **The arms' greedy content IDENTICAL** (the same 80cc3802… sha as
+  every window — the dependent chain is bit-exact on the real model,
+  the fork's 108/108 cells confirmed); the §2 gates ALL PASS;
+  **hardmode 95** (the FOURTEENTH consecutive; TC-51/TC-92 pass); the
+  vision 4/4; prefill flat (the bench pp d0 1,528, inside the band —
+  the prefill row stands at the 0080qual crossing).
+- **The fork's measured chain gain did NOT transfer to our shape**:
+  c2 118.0 vs 119.1, c4 169.6 vs 170.4, ITL −0.3%, solo flat. The
+  pattern: the launch-COUNT reduction (0030's fusion) transferred at
+  concurrency; the launch-OVERLAP of the same kernels (0082) and the
+  L2-gather saving (0081) did not. The second decode-side
+  non-transfer.
+- **ADOPTED anyway** ((agent) judgment recorded): bit-safe, knobbed
+  (TF_EXL3_PDL=0), neutral on every instrument here, register-neutral
+  on our sm_121 build (rot_in 19, gateup_epilogue 40, the p kernels
+  79 = the s kernels — no record work), and the fork's 0083+ builds
+  on this exact base. config.sh's PATCHES carries glm-zz-zstep.patch
+  (the fourteenth; the edit verified per the sourced-config skill —
+  the 14-name probe, config_line RC=0).
+
+**LAUNCHED: duel + summary** — the v1.2.4+zstep duel re-pair
+(production-for-testing on 8001 vs ours on the adopted 14-patch
+stack): every speed row re-paired same-window. THEN DARK.

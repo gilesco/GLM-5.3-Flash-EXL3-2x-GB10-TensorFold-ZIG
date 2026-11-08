@@ -1052,3 +1052,25 @@ At adoption: config.sh's fourteenth patch, the decode rows re-paired,
 the duel re-pair next window. Behind it: the PDL set (0069-0071 — the
 engine's glm_mm already chains; the exl3r chain may make the wider PDL
 line redundant), the HC-split set, and the fork's 0083+ tail.
+
+**THE 0082 PORT QUALIFIED AND ADOPTED (round 138)**: the 0082qual A/B
+(campaign-20261108-024926) — the arms' content IDENTICAL (the fork's
+108/108 exactness confirmed on the real model), the §2 gates ALL PASS,
+**hardmode 95 (the FOURTEENTH consecutive)**, the vision 4/4, prefill
+flat (the bench pp d0 1,528, inside the band). **The fork's measured
+chain gain did NOT transfer to our shape** (c2/c4/ITL/solo flat — the
+launch-COUNT class of 0030 transferred at concurrency; the
+launch-OVERLAP class doesn't — the second decode-side non-transfer).
+ADOPTED anyway: bit-safe, knobbed (TF_EXL3_PDL=0), neutral everywhere,
+and the fork's 0083+ builds on this exact base. config.sh carries the
+fourteenth patch.
+
+**THE NEXT STEP: the duel re-pair on the adopted 14-patch stack** —
+every speed row re-pairs same-window on the zstep engine. THEN the
+frontier: the fork's 0083+ tail (read its headers — what follows the
+exl3r line), the PDL set (possibly redundant with the engine's own
+glm_mm chaining + the zstep chain), and the HC-split set. The decode
+side has now cost two non-transferring ports (0081, 0082) — both kept
+for the base chain; the prefill side is crossed; the next REAL lever
+may be the HC-split/overlap class (+36% at 50k) — scope it with fresh
+eyes against our 2k bench shape before committing to a port.

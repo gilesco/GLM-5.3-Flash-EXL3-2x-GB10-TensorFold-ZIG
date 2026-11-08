@@ -941,3 +941,15 @@ concurrency; 0078+0079 and 0080 prefill-side transferred whole-prefill),
 this one the first not to. Adopted for bit-safety + the 0082 base. The
 exl3r series continues (0082: the chain as dependent launches) — the
 next candidate to scope.
+
+**Addendum (round 138, 2026-11-08)**: the fork's 0082 (the exl3r chain
+as dependent launches) is PORTED AND ADOPTED here as `glm-zz-zstep.patch`
+(the fourteenth patch): content identical (the fork's 108/108 exactness
+confirmed), hardmode 95 (the fourteenth consecutive) — **its measured
+chain gain did not transfer to our shape** (decode flat; the second
+decode-side non-transfer after 0081). Pattern so far: the fork's
+PREFILL-side kernel claims transfer whole-prefill (three for three:
+0078+0079, 0080); its DECODE-side claims (0030 excepted — a launch-count
+reduction, which did transfer at concurrency) do not. The exl3r series
+continues (0083+); the HC-split/overlap set remains the biggest unported
+claim (+36% at 50k prompts).

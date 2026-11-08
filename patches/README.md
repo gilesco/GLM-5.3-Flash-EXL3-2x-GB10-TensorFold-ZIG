@@ -770,10 +770,19 @@ documented in LAUNCH.md round 119.
 - Verify: the compile RC=0 (fatbins + native, nvcc sm_121, zig 0.17.0,
   the builder base image); fresh-parent + the shipped patch = the commit
   tree byte-identical. NAMED glm-zz-zstep TO SORT AFTER zshfl (zt > zh).
-- OWNER: this line; STATUS: **STAGED — the 0082qual A/B decides** (the
-  arms' greedy content must be IDENTICAL; the §2 gates, hardmode's
-  fourteenth 95, the vision 4/4; the duel_arm c2/c4 cells are the
-  lever's primary read — the fork measured the chain to −14.5%).
+- OWNER: this line; STATUS: **ADOPTED (round 138, the 0082qual A/B —
+  campaign-20261108-024926: both arms the SAME 14-patch image,
+  TF_EXL3_PDL=0 vs unset; the arms' greedy content IDENTICAL — the
+  same 80cc3802… sha as every window, the fork's 108/108 exactness
+  confirmed on the real model; the §2 gates ALL PASS, hardmode 95 (the
+  FOURTEENTH consecutive), the vision 4/4, prefill flat (the bench pp
+  d0 1,528, inside the band); the fork's measured chain gain did NOT
+  transfer to our shape — c2/c4/ITL/solo FLAT within the arm spread
+  (the launch-COUNT reduction of 0030 transferred at concurrency; the
+  launch-OVERLAP of the same kernels doesn't — the second decode-side
+  non-transfer); ADOPTED anyway: bit-safe, knobbed, neutral everywhere,
+  and the fork's 0083+ builds on this exact base; config.sh's
+  fourteenth patch).
 
 ## glm-zz-zshfl.patch — the 4-bit grouped experts read every trellis word once, exl3r (round 137; Mia 1104's 0081 port)
 

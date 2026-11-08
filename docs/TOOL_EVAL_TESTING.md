@@ -854,6 +854,31 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       48.5 at 4-stream. **MODEL_CARD.md completed at the repo root**
       (no site identity — postable; the needle artifact's engine table
       carries the host name — the card does not quote it).
+      **THE 0082 PORT QUALIFIED AND ADOPTED (round 138, the 0082qual
+      A/B — campaign-20261108-024926)**: glm-zz-zstep (Mia 1104's 0082
+      — the exl3r dependent-launch chain on the adopted 0081 base: the
+      decode chain's kernels launch with programmatic stream
+      serialization, each launch and its prologue overlapping the
+      predecessor; hazard rules as pdl5's; new kernels k8r8p/k8r16p,
+      Load SHFL_PDL). TF_EXL3_PDL=0 turns it off (the fork's own
+      knob). The port: 7 of 9 hunks clean, the 2 .zig hunks
+      hand-applied (the tilesFor pdl field on our single uniform_k2
+      form, the chain insert after our act_mode check), the fork's
+      text otherwise line-verbatim (15/15 .cu, 43/43 .cuh, 17/17
+      .zig); register-neutral on our sm_121 build (rot_in 19,
+      gateup_epilogue 40, the p kernels 79 = the s kernels — no
+      record work). The A/B: BOTH arms the SAME 14-patch image —
+      **the arms' greedy content IDENTICAL** (the same 80cc3802… sha
+      as every window — the fork's 108/108 exactness confirmed), the
+      §2 gates ALL PASS, **hardmode 95 (the FOURTEENTH consecutive)**,
+      the vision 4/4, prefill flat (the bench pp d0 1,528, inside the
+      band). **The fork's measured chain gain did NOT transfer to our
+      shape** — c2 118.0 vs 119.1, c4 169.6 vs 170.4, ITL −0.3%, solo
+      flat: the launch-COUNT reduction of 0030 transferred at
+      concurrency; the launch-OVERLAP of the same kernels doesn't (the
+      second decode-side non-transfer). **ADOPTED anyway**: bit-safe,
+      knobbed, neutral everywhere, and the fork's 0083+ builds on this
+      exact base.
       **THE 0081 PORT QUALIFIED AND ADOPTED (round 137 cont. 8, the
       0081qual A/B — campaign-20261107-232039)**: glm-zz-zshfl (Mia
       1104's 0081 — the exl3r read-once trellis: the grouped decode
