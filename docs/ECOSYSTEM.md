@@ -953,3 +953,42 @@ PREFILL-side kernel claims transfer whole-prefill (three for three:
 reduction, which did transfer at concurrency) do not. The exl3r series
 continues (0083+); the HC-split/overlap set remains the biggest unported
 claim (+36% at 50k prompts).
+
+## 2026-11-08 — v1.2.5 released + the fork's 0104-0111 scan (the round-139 cont. 7 subagent)
+
+**Upstream v1.2.5** (262 commits past our v1.2.4 pin): the CHEAPEST bump since
+the v1.2.2→v1.2.4 rebase. `tool_parse.zig` byte-identical v1.2.4→v1.2.5 — both
+server-layer patches (010-tools256, 011-zclose) survive untouched, and upstream
+STILL lacks the #415 own-name rule (rule 1 keeps them alive). Of the ~60 files
+our 16 patches touch, only THREE drift: the KV-pool rewrite (#2358 — one hard
+re-anchor: 003-fp8-pages' contract-registry append must re-cut onto v1.2.5's
+new `registry_joins.zig`; `glm_family_host.zig` likely one line), the engine's
+gate/shared block moving to `cuda_engine_gate.zig` (mechanical; all `e.*` call
+sites keep working), and the peer warm-up deadline `7ead07c92` (additive, a
+rank-hang-class robustness win for our pair). All nine kernel patches stand on
+byte-identical kernel files. What the bump buys: #2358 TF_KV_SHARE plan
+integrity, #2533 kept-state eviction control, #2442 disk-state restore retry,
+#2304 prompt-width telemetry. **Verdict: schedule a v1.2.5 qualification window
+after the 018-callquote receipt — moderate priority, one hunk re-anchor + the
+§2/hardmode/vision battery guards it.** (Nothing posted upstream.)
+
+**The fork's engine patches 0104-0111** (its pair is now the SAME topology as
+ours — two Sparks, TP=2 direct split; its TP=4 recipe was removed):
+
+| # | What | Disposition |
+|---|---|---|
+| 0104 | warm turns for GLM: the server background-prefills conversation+reply+next-turn-opening after a reply (`warm_quiet` 150 ms), so an agent loop's next turn stops re-prefilling the whole prefix from the loop's start (their measurement: 4,096 of 9,335 tokens resumed; 50-100K prefills 10-30 s) | **PORT — the highest-value of the set.** Our 512K tool-calling agent workload is exactly the shape; needs our own window; merges with our `cuda_lanes.zig` hunk |
+| 0105 | an untyped tool parameter decodes into the JSON the model wrote | WATCH — our tools are typed; zclose/tools256 cover the halt-class failures |
+| 0106 | warmPeers follows the prefill reduce mode | SKIP — we are TP=2 direct split, the patch leaves direct unchanged |
+| 0107 | `TF_TOOL_CALL_GUARD=1` hides unoffered call markup | WATCH — interacts with 010-tools256's surface-it contract (deliberately different) |
+| 0108 | `CACHE_FIRST=1` (`TF_PROMPT_CACHE_FIRST`): the prompt cache set aside BEFORE the streams' windows — a 380k conversation resumed 99% cached (3.0 s vs 234 s) at their PARALLEL=8/1M | **PORT candidate for the 512K plan** (the resume front); our own window + the memory arithmetic re-check |
+| 0109 | LEARN_GIB: kept states to disk (their backport of upstream #1411) | SKIP — v1.2.4/5 carry #1411 natively; the v1.2.5 bump gives us it |
+| 0110 | `KV_SHARD=1`: each stream's FP8 latent rows on its owner Spark alone → the pool holds ~2× tokens (4,098→8,196 pages), paid 1.6-3.6% decode | **PORT candidate for the 512K plan — the interesting trade**; touches our fp8-pages ground, decide after the v1.2.5 rebase lands |
+| 0111 | the image build compiles warning-free (unused decls; byte-identical fatbins) | SKIP as a port — zero effect by construction |
+
+**Adjacent fork facts**: their 2026-11-07/08 `SERVE_EXTRA_ARGS='--top-k 20'` +
+`EFFORT_LINE=thinking` pair — the effort-line change moved their sparkDash QA
+79.3%→86.0% thinking-off and cut malformed-markup lines from 30-36% to 3 of
+1,419 (the same symptom class our zclose/tools256 address from the parse side;
+worth a look when the quality instruments next run). Their raw-markup incident
+never reproduced on the pair; the top-k 20 mitigation stays.
