@@ -4726,30 +4726,40 @@ BUILDEOF
   COMMON_RUN=(--gpus all --ipc=host --network host --shm-size 16g --device /dev/infiniband
               --cap-add IPC_LOCK --ulimit memlock=-1 --ulimit stack=67108864)
 
-  # rank 0: writes the id file into /ids (the campaign out dir), blocks in NCCL init
+  # rank 0: writes the id file into /ids (the campaign out dir), then blocks in NCCL
+  # init until rank 1 joins — the file is on disk BEFORE it blocks (openComm writes,
+  # THEN ncclCommInitRank waits)
   docker run --rm "${COMMON_RUN[@]}" "${COMMON_ENV[@]}" \
     -v "$OUT/tf-cuda-test:/tf-cuda-test:ro" -v "$HF_CACHE/$ckpt_rel:/ckpt:ro" -v "$OUT:/ids" \
     --entrypoint "" "$R0IMG" timeout 2400 /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
     > "$OUT/kshardcheck-r0.log" 2>&1 &
   R0PID=$!
 
-  # the id file across to the worker the moment rank 0 writes it
-  ( for _ in $(seq 1 480); do
-      if [[ -s "$OUT/kv-shard-id.txt" ]]; then
-        rsync -a "$OUT/kv-shard-id.txt" "$WORKER:/tmp/kshardcheck-w/kv-shard-id.txt" && exit 0
-      fi
-      sleep 0.5
-    done; exit 1 ) &
-  IDP=$!
+  # the id file across to the worker SYNCHRONOUSLY, before rank 1 starts (the second
+  # gate window burned on this: the background poller raced rank 1's ssh, rank 1 read
+  # a missing id file and FAILed FileNotFound in ~2 s, and set -e killed the phase
+  # before its receipt's rc lines — production restored healthy on the exit path)
+  for _ in $(seq 1 240); do
+    [[ -s "$OUT/kv-shard-id.txt" ]] && break
+    kill -0 "$R0PID" 2>/dev/null || break
+    sleep 0.5
+  done
+  if [[ -s "$OUT/kv-shard-id.txt" ]]; then
+    rsync -a "$OUT/kv-shard-id.txt" "$WORKER:/tmp/kshardcheck-w/kv-shard-id.txt" || die "kshardcheck: the id file rsync to the worker failed"
+  else
+    die "kshardcheck: rank 0 never wrote the id file (see kshardcheck-r0.log)"
+  fi
+  log "kshardcheck: the id file is on the worker — rank 1 joins now (releasing rank 0's NCCL init)"
 
-  # rank 1: reads the id file (rank 0 wrote it), joins the comm
+  # rank 1: reads the id file, joins the comm; the || RC=$? pattern keeps the phase
+  # alive through a failing rank so the receipt ALWAYS carries both ranks' tails
+  R1RC=0
   ssh -o BatchMode=yes "$WORKER" "docker run --rm ${COMMON_RUN[*]} ${COMMON_ENV[*]} \
     -v /tmp/kshardcheck-w/tf-cuda-test:/tf-cuda-test:ro -v \$HOME/.cache/huggingface/$ckpt_rel:/ckpt:ro -v /tmp/kshardcheck-w:/ids \
     --entrypoint '' $R1IMG timeout 2400 /tf-cuda-test ${CHECK_ARGS[*]} 1 2 /ids/kv-shard-id.txt" \
-    > "$OUT/kshardcheck-r1.log" 2>&1
-  R1RC=$?
-  wait $R0PID; R0RC=$?
-  wait $IDP 2>/dev/null || true
+    > "$OUT/kshardcheck-r1.log" 2>&1 || R1RC=$?
+  R0RC=0
+  wait $R0PID || R0RC=$?
 
   echo "## rank 0 (the leader: the seven paths, byte-for-byte against the twin)" >> "$P"
   tail -24 "$OUT/kshardcheck-r0.log" >> "$P" 2>/dev/null || echo "- no rank 0 log" >> "$P"
