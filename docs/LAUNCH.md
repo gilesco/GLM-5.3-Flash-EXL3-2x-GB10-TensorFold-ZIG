@@ -9298,3 +9298,35 @@ battery phase (the four-arm off/on/off2/on2 A/B with the witnessed-state
 gate), then the adoption decision — the user's call (−1.6/−3.6% old-engine
 decode vs ~1.8× pool tokens; the verify-width and DFlash2-acceptance
 questions are unmeasured on this engine).
+
+## (round 139, cont. 23) THE 0110 PORT: COMPILE-CLEAN END TO END — AND THE STRATEGIC CROSSROADS (2026-11-09)
+
+**Compile-clean end to end**: `compile-cuda-tests` RC=0 with the check's
+dispatch landed and its body type-checked. The last rounds caught the
+trap the usage-text-only registration had set: the check was registered in
+main.zig's usage text but never dispatched — it would have died at RUNTIME
+with an unknown-command error after a wasted GPU window. The dispatch-forced
+analysis then surfaced seven more check-only fixes (keepAt/kept_id, the
+Options mtp adaptation, the e.link vestige, the snapshots arity, the prefill
+call mapping, three beginOn calls), each in its own commit. The disk cases
+stripped (the seven non-disk paths are the gate on our tree).
+
+**The strategic crossroads** (the user's call, pending): the upstream scan
+found the SAME mechanism by the SAME author actively landing upstream —
+issue #1431 active since 10-27, ashhart's design agreed 10-30, and
+**PR #2415** (part 1: `TF_GLM_KV_SPLIT`, owner classes in core `kv_pool`)
+in review as of 11-08 with all five of ashhart's points addressed; wojo
+confirmed the full split already runs on their two GB10s at TP=2 with the
+same numbers this line was porting toward (2.10M → 4.20M tokens,
+byte-identical over 8 request sets, decode −1.6/−3.6%). The fork port and
+the upstream PR are architecturally different (GLM-side two-pool vs
+core-kv_pool owner classes; `TF_GLM_KV_SHARD` vs `TF_GLM_KV_SPLIT`), so the
+fork port would need re-doing on upstream's shape anyway.
+
+**The recommendation recorded in PORT_QUEUE.md**: SUSPEND the fork port —
+the tree (compile-clean at `f28bb46` + the check rounds) stays as the
+working reference; watch #1411 → #2415 part 1 → parts 2-4; adopt upstream
+via the version bump (the v1.2.5→v1.2.6 rebase was the cheapest of the
+line) + the config change + the standard battery when it lands in a
+release. The GPU check and the kshardqual battery are parked until the
+user's call. Nothing ships either way without it.
