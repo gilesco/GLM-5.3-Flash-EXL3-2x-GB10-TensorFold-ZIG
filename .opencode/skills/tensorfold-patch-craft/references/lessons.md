@@ -55,3 +55,17 @@
   own glm.X.Y/e./x. references and verify each against the tree before compiling —
   the one-error-per-compile grind was all pre-computable; scan patterns must cover
   pub const aliases, not just fns).
+
+## 2026-11-09 — the kshardcheck gate burned two windows on instrument bugs before touching the GPUs
+- Skill: tensorfold-patch-craft (extended)
+- Symptom: window 1 died before any GPU work ("invalid characters for a local
+  volume name"); window 2 built the binary fine but rank 1 FAILed
+  FileNotFound in ~2 s and the phase died before its receipt's rc lines.
+- Root cause: (1) relative docker -v host paths become named volumes; (2) a
+  background id-file poller raced the consumer it fed, and the consumer's
+  nonzero rc hit set -e, killing the phase mid-receipt.
+- Fix: absolute paths at the phase head; the handoff synchronous (poll →
+  rsync → THEN start the consumer); every rc capture `|| RC=$?`.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
+- Note: rank 1 probed SOLO (blocked in ncclCommInitRank, rc 124) proved the
+  whole runtime path sound without rank 0 — the cheap two-rank debug order.

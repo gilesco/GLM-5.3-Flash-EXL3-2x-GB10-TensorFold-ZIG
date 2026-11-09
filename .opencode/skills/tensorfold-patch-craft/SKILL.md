@@ -155,6 +155,32 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   pre-computable from the check's own text. The scan's grep patterns must
   cover `pub const` ALIASES too (`keepState`/`dropState` are alias
   constants, not fns — a `pub fn`-only scan reports false misses).
+- **`docker run -v` with a RELATIVE host path silently becomes a named
+  volume** (2026-11-09, the kshardcheck phase): `-v "$OUT:/ids"` where
+  `$OUT` is `results/campaign-...` (relative) is parsed as a NAMED VOLUME,
+  and the run dies before any GPU work with "includes invalid characters
+  for a local volume name". Every `docker run -v` host path must be
+  absolute (`readlink -f` at the phase head). The same ssh layers that eat
+  `find -exec`'s `;` also eat quoted fallbacks — do the path fix in the
+  script, not on the command line.
+- **A background coordination poller races the process it feeds — and
+  `set -e` turns the loser's failure into a dead phase** (2026-11-09, the
+  kshardcheck gate): the "rsync the NCCL id file the moment it appears"
+  poller raced rank 1's ssh, rank 1 read the missing file and FAILed in
+  ~2 s, and rank 1's nonzero rc hit the campaign script's
+  `set -euo pipefail` — the phase died before writing its receipt's rank
+  tails and rc lines. Fix BOTH halves: make the handoff SYNCHRONOUS (poll
+  for the file's existence in the foreground, rsync, THEN start the
+  consumer) and make every rc capture set-e-proof (`cmd || RC=$?`) so a
+  failing rank can never kill a phase before its receipt completes. A
+  phase that captures another host's rc must NEVER rely on the command's
+  success to continue.
+- **A two-rank NCCL handshake debugged one rank at a time is the cheap
+  path** (2026-11-09, the kshardcheck gate): with the id file present and
+  rank 0 absent, rank 1 alone sits BLOCKED in ncclCommInitRank (rc 124 on
+  a `timeout N` wrapper) — that silence IS the correct state, proving the
+  binary, mounts, env and NCCL env are all sound without rank 0 running.
+  Probe each rank's full runtime path solo before blaming the handshake.
 - **A scripted-edit helper's idempotency guard silently skips REMOVALS**
   (2026-11-09, the 0110 port): the natural pattern —
   `if new_text in file: print("already applied"); return` — is vacuously
