@@ -25,9 +25,16 @@ readiness.
    staged, NOT in the PATCHES default. The battery hardening (the
    witnessed-state gate, the four-arm drift control) is the A/B pattern now.
 
-3. **0108 CACHE_FIRST / 0110 KV_SHARD** — the 512K-plan candidates; decide
-   after the v1.2.5 rebase lands (0110 touches the same pool ground as
-   003-fp8-pages + 005-pagerows-fix).
+3. **0108 CACHE_FIRST** — PORTED (round 139 cont. 16, `020-cachefirst.patch`,
+   STAGED): the cache set aside before the windows, composed with our tree's
+   `asked` flag (v1.2.5's own cache priority) — the flag changes the ROOM the
+   windows count; the fund-report line makes the room drift (the fork's
+   issue-16, caught by our warmturnsqual battery: the room moved 11.8 → 11.0
+   GiB between starts) visible at boot. The battery (`cachefirstqual`) is the
+   four-arm OFF/ON plan A/B reading the serve lines' arithmetic. Our serving
+   default's `--prompt-cache-gib 3` already carries the priority semantics in
+   the common case — the port's value is the drift visibility plus the
+   multi-window remainder sharing. Adoption moves the env default.
 4. **0105 / 0107 / 0092** — recipes staged below, but DISPOSITIONED watch:
    port when the shape appears in a receipt (the patch policy: the measured
    win must be worth the rebase tax).
