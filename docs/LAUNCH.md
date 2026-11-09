@@ -9227,3 +9227,43 @@ campaign-20261109-140604 instrument note; the gates' own probes carry
 `enable_thinking: False` and were never vacuous); the testing README
 refreshed to the adopted state (v1.2.5 + 18 patches, both new env defaults
 documented).
+
+## (round 139, cont. 19-20) THE 0110 KV_SHARD PORT: TRANCHE 2 LANDED — all 79 rejects anchored (2026-11-09)
+
+**The sitting's shape**: the digest landed (the design-note read — no new
+kernels, no 0109 dependency, the GPU check the primary validator), then
+tranche 1 (the 10 new files verbatim + every clean hunk, 79 hunks rejecting),
+then tranche 2: every reject hand-anchored through scripted exact-anchor
+edits, plus the line-level fidelity check (3,853 fork `+` lines vs the tree)
+catching what the apply had silently dropped.
+
+**The catches the discipline earned**:
+- The scoping run's leftover had contaminated the first reject inventory
+  (102 reported vs the true 79) — `git reset --hard` + the untracked-new-file
+  cleanup before the honest run.
+- Two "clean" hunks from tranche 1 had NOT landed (`Switches.read` in
+  cuda_ranks, `KvParts` in engine_status) — the fidelity check caught both.
+- The lane-host trio (`kv_parts`/`kv_status` fields, the publish, the
+  test) and the own-sequence sharded sizing were also unaccounted — the
+  check surfaced all; all landed.
+- The mangled-literal hazard is real: one `cuda_native.zig` sub() swallowed
+  the finishRank literal's tail mid-edit and was repaired in place before
+  commit.
+
+**The adaptation record** (each in its commit): the fingerprint at OUR layout
+21; our `tables()` plural + `pk` host-key fields preserved in dsa_block (the
+005/006 `page_rows` rule carried INTO `latTable`); our `adopted`/`openWith`
+flow preserved in pagesFor; our `heldPages`/`shared` snapshot params
+preserved; `copyOut` composed for our single-arena Pool; the deliberate
+skips: the fork's disk-image machinery (~250 lines; our kept-states flow has
+no counterpart), the shared-segs batching (our `.mla` is per-segment), the
+`pageable()` gate (our engine never unsets pages; the refusal anchors before
+ownSequence).
+
+**State**: the port tree at `/tmp/v125-rebase/tf`, WIP `f83bd57..4cc5c4f`
+(14 WIP commits, tranche 1 + 2a-2n), the tree clean, the host suite
+(test-tool-parse-host) RC=0. The compile-cuda-tests gate (the fork's
+`glm_kv_shard_check` inside tf-cuda-test) in flight. Next: the gate's
+receipt, then the GPU check on the pair, then the `kshardqual` battery, then
+the adoption decision (the trade-off is the user's: −1.6/−3.6% old-engine
+decode vs ~1.8× pool tokens).
