@@ -135,6 +135,26 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   Same class: an engine-level change the server modules never reference is
   invisible to every server-side host suite — the GPU-check receipt is the
   only witness (VALIDATION §6).
+- **Zig's lazy analysis makes a usage-text-only registration compile-clean
+  and dead at runtime** (2026-11-09, the 0110 port): the check program was
+  imported and listed in the usage text but never dispatched in `run()` —
+  `compile-cuda-tests` passed RC=0 because Zig never analyzed the
+  never-referenced module's body (its own compile errors invisible). It
+  would have died with an unknown-command error AFTER a wasted GPU window.
+  Before any check-program run: verify the command string appears in the
+  DISPATCH table (`if (std.mem.eql(u8, cmd, "<name>")) return <mod>.run`),
+  not just the usage block — and note that landing the dispatch line is
+  what finally forced the body's errors out (eight more rounds). The
+  dispatch is the compile gate's real trigger.
+- **Port a check program by scanning ITS OWN references first** (2026-11-09,
+  the 0110 port, the discipline that ends one-error-per-compile): after
+  landing the dispatch, extract every `glm.X.Y` path, `e.`/`x.` member and
+  call arity from the check's source and verify each against the tree
+  BEFORE compiling — the eight-round grind (keepAt, Options.mtp, e.link,
+  snapshots arity, prefill mapping, three beginOn calls) was all
+  pre-computable from the check's own text. The scan's grep patterns must
+  cover `pub const` ALIASES too (`keepState`/`dropState` are alias
+  constants, not fns — a `pub fn`-only scan reports false misses).
 - **A scripted-edit helper's idempotency guard silently skips REMOVALS**
   (2026-11-09, the 0110 port): the natural pattern —
   `if new_text in file: print("already applied"); return` — is vacuously

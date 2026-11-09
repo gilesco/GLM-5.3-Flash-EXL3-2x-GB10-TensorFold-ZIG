@@ -39,3 +39,19 @@
 - Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
 - Note: the engine-level GPU checks (VALIDATION §6) remain the only witness
   for behavior the server modules never reference.
+
+## 2026-11-09 — the lazy-analysis trap: a usage-text-only registration compiles and dies at runtime
+- Skill: tensorfold-patch-craft (extended)
+- Symptom: compile-cuda-tests passed RC=0 with the check program registered in the
+  usage text only; the check would have failed at RUNTIME with unknown-command after
+  a wasted GPU window.
+- Root cause: Zig analyzes a module lazily — the never-dispatched module's body (and
+  its compile errors) never reached the compiler. Landing the DISPATCH line is what
+  forced the body's eight error rounds out.
+- Fix: verify the command string appears in main.zig's dispatch table before any GPU
+  run; land the dispatch FIRST, then fix the body's errors, then compile.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
+- Note: the same sitting recorded the reference-scan discipline (extract the check's
+  own glm.X.Y/e./x. references and verify each against the tree before compiling —
+  the one-error-per-compile grind was all pre-computable; scan patterns must cover
+  pub const aliases, not just fns).
