@@ -9069,3 +9069,32 @@ consistent local pair while the pushed tree carried the old one) — landed now
 with the 003 commit; the guard's chart check reads the committed pair.
 
 **The window**: `preflight v125val summary`.
+
+## (round 139, cont. 12) THE V1.2.5 BUMP QUALIFIED — the pin HOLDS, production serves the bumped engine (2026-11-09)
+
+**The window** (campaign-20261109-000818, `preflight v125val summary`, rc=0,
+production restored healthy after 81 s — on the v1.2.5 engine
+`8be9c408c…`): the v125val battery passed on every instrument.
+
+- **The same-bits greedy witness: IDENTICAL** — the engine bump did not move
+  the deterministic probes (the 80cc3802… sha holds across v1.2.4 → v1.2.5
+  with the full 17-patch stack).
+- **The §2 content gates ALL PASS**, zero strict-TF_ refusals at boot.
+- **Hardmode 95 — the EIGHTEENTH consecutive, and the first on the
+  re-grounded --parallel 2 harness** (the user's cont. 10 directive: the
+  instrument re-grounded and the 95 held immediately).
+- **The vision 4/4**; steady-state decode 73.1 tok/s; the load walls
+  **83/83 s** (the loading row re-dated; the v1.2.4-era 80 s held within the
+  band); prefill 1,523 at d0 (the band); d8192 c2 68.3 (the steps0
+  depth-decode holding on the bumped engine).
+
+**The adoption**: the pin holds at v1.2.5 — the anchors' loading row
+re-dated (83/83 s), the chart regenerated, the ledger closed. The promoted
+production repo mirrors the bump (its config + 003 re-anchor land on its
+next promotion sync; its LIVE serve was already restarted on the v1.2.5
+engine through the window's restore path).
+
+**The next queue** (docs/PORT_QUEUE.md): the **0104 warm-turns port** — the
+fork's highest-value patch for our line (the agent-loop re-prefill; the
+512K/agent workload's own front), ported onto the v1.2.5 base now. Then
+0108 CACHE_FIRST + 0110 KV_SHARD for the 512K plan.

@@ -1349,6 +1349,22 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       SEVENTEENTH consecutive — the vision 4/4. ADOPTED: config.sh's PATCHES default
       carries 018; the promoted repo follows on the next promotion sync.
 
+- [x] **THE V1.2.5 BUMP QUALIFIED AND ADOPTED (round 139 cont. 11-12, the v125val battery,
+      campaign-20261109-000818)**: the engine is v1.2.5 (8be9c408c) + the full 17-patch
+      stack with 003-fp8-pages re-anchored (15 of 17 patches applied verbatim; the
+      re-anchored 003 carries the glm_kv_paged_records join onto v1.2.5's
+      registry_joins.zig, keeps v1.2.5's shareSlot beside our layout rewrite, drops the
+      patch's old TF_KV_PAGES test rename — v1.2.5's title already carries — and
+      re-anchors the snapshots step). The receipt: the greedy content sha IDENTICAL
+      (the same 80cc3802… as every window — the engine bump did not move the
+      deterministic probes), the §2 content gates ALL PASS, zero strict-TF_ refusals at
+      boot, **hardmode 95 — the EIGHTEENTH consecutive AND the first on the re-grounded
+      --parallel 2 harness** (see the instrument note above), the vision 4/4,
+      steady-state decode 73.1 tok/s, the load walls 83/83 s (the loading row re-dated),
+      prefill 1,523 at d0 (in the band), d8192 c2 68.3 (the steps0 depth-decode holding
+      on the bumped engine). BOTH repos' pins moved: the promoted production repo
+      carries the bump and its restarted serve (healthy on 8000) IS the v1.2.5 engine.
+
 - [x] **The bench harness runs `--parallel 2` (user, round 139 cont. 10)**: the
       tool-eval/hardmode batteries run two scenarios CONCURRENTLY against the serve —
       two separate contexts coexist in the KV pool for the whole battery, which is a
