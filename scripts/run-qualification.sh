@@ -4515,6 +4515,8 @@ PYEOF
       Y=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "stepped aside" || true)
       F=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "failed:" || true)
       echo "- the warm-pass log lines: $W done, $Y stepped aside, $F failed" >> "$P"
+      # the boot witness: the warm state the engine printed at serve
+      docker logs "$CONTAINER_NAME" 2>&1 | grep "warm turns:" | tail -2 >> "$P" || echo "- the boot witness line ABSENT" >> "$P"
       # the final user message: its TTFT is the instrument (the warm pass resumed the prefix)
       python3 - "$A/tf.json" "$SERVED_NAME" "$A" <<'PYEOF'
 import json, sys
