@@ -4677,6 +4677,7 @@ fi
 # ---------------------------------------------------------------------------
 if want kshardcheck && ! phase_done kshardcheck; then
   log "=== kshardcheck (the 0110 port's GPU gate: glm-kv-shard-check on both ranks)"
+  OUT="$(readlink -f "$OUT")"; PORT_TREE="$(readlink -f "${PORT_TREE:-/tmp/v125-rebase/tf}")"; HF_CACHE="$(readlink -f "$HF_CACHE")" # docker -v needs ABSOLUTE host paths (the relative ones become named volumes and the run dies before any GPU work — the first kshardcheck window burned on exactly this)
   P="$OUT/12-kshardcheck.md"; : > "$P"
   echo "# kshardcheck (glm-kv-shard-check: the sharded stream vs its whole-window twin, byte for byte, 7 paths)" >> "$P"
 
