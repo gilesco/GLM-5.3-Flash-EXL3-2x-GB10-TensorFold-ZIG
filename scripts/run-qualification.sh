@@ -4682,10 +4682,10 @@ if want kshardcheck && ! phase_done kshardcheck; then
   echo "# kshardcheck (glm-kv-shard-check: the sharded stream vs its whole-window twin, byte for byte, 7 paths)" >> "$P"
 
   PORT_TREE="${PORT_TREE:-/tmp/v125-rebase/tf}"
-  WANT_COMMIT="$(grep -oE '[0-9a-f]\{7\}' "$PORT_TREE/.commit-want" 2>/dev/null || echo f538c45)"
+  WANT_COMMIT="$(cat "$PORT_TREE/.commit-want" 2>/dev/null || echo f538c45)"  # the last compile-qualified head; update after every re-qualified compile
   GOT_COMMIT="$(git -C "$PORT_TREE" log --oneline -1 | cut -c1-7)"
   echo "- the port tree: $PORT_TREE at $GOT_COMMIT (the gate qualified f538c45's compile)" >> "$P"
-  [[ "$GOT_COMMIT" == f538c45* ]] || die "kshardcheck: the port tree moved ($GOT_COMMIT != f538c45) — re-verify the compile gate first"
+  [[ "$GOT_COMMIT" == "$WANT_COMMIT"* ]] || die "kshardcheck: the port tree moved ($GOT_COMMIT != $WANT_COMMIT) — re-verify the compile gate first"
 
   R0IMG="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^glm53-native-tf:' | head -1)"
   R1IMG="$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -E '^glm53-native-tf:' | head -1)"
