@@ -26,3 +26,16 @@
 - Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
 - Note: same sitting's compile round also adapted the fork's heads() helper
   to our bool fields (o.mtp and !o.drafter).
+
+## 2026-11-09 — the host suite never compiles the GLM family modules
+- Skill: tensorfold-patch-craft (extended)
+- Symptom: test-tool-parse-host returned RC=0 while the family tree carried
+  12 compile errors; they surfaced only in compile-cuda-tests.
+- Root cause: the suite's build target compiles the server's tool-parse
+  module only; the tf-cuda-test runner (compile-cuda-tests) is what imports
+  glm_cuda.
+- Fix: after any family-module port, run compile-cuda-tests before trusting
+  the suite.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
+- Note: the engine-level GPU checks (VALIDATION §6) remain the only witness
+  for behavior the server modules never reference.

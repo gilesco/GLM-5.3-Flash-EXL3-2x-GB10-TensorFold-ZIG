@@ -124,6 +124,17 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   exist`). The store is the source of truth; the image dir is
   build-generated. After any promotion sync, verify every named patch
   exists in the store before the next window re-prepares production.
+- **The t256 host suite does NOT compile the GLM family modules** (2026-11-09,
+  the 0110 port): `/tmp/t256_full.sh` runs `zig build test-tool-parse-host`,
+  which compiles only the server's tool-parse module — the whole
+  `zig/src/families/glm/` tree can be broken and the suite stays green
+  (RC=0 while 12 family errors existed). The family compile gate is
+  `zig build compile-cuda-tests` (the tf-cuda-test runner imports
+  `glm_cuda`), or `zig build test-cuda-host` for the host tests. After ANY
+  family-module port: run compile-cuda-tests BEFORE trusting the suite.
+  Same class: an engine-level change the server modules never reference is
+  invisible to every server-side host suite — the GPU-check receipt is the
+  only witness (VALIDATION §6).
 - **A scripted-edit helper's idempotency guard silently skips REMOVALS**
   (2026-11-09, the 0110 port): the natural pattern —
   `if new_text in file: print("already applied"); return` — is vacuously
