@@ -9365,3 +9365,40 @@ again kill the phase before its receipt completes).
 **The state**: the fix landed and synced (9751843), production healthy on
 8000, no window flag. The third launch carries the complete gate: both
 ranks, the seven paths, byte-for-byte against the twin.
+
+## (round 139, cont. 25) THE WIRE CONTRACT FIXED — THE GATE RUNS PAST PLACEMENT, THEN THE CUDA FAULT (2026-11-09)
+
+**Window 3** (campaign-20261109-214043) burned on the begin-step wire
+contract: our pre-port follower consumed the kept count from `h.a`, but the
+fork's design keeps `h.a` for the kept count TOO and re-purposes `h.depth`
+(the chunk-start word, unused on a begin) for the TWIN count. The tranche-2
+anchor had mapped them swapped (`mapWith(..., h.a as twin, h.depth as
+kept)`), rank 1 read the wrong word as the twin count, and
+`FAIL glm-kv-shard-check: KvShardPlacement` — the placement check refused
+the page ids before any GPU work. The fix (tranche 2zh, 332353d):
+`mapWith(slot, ids, twin=h.depth, kept=h.a)`, matching `beginOn`'s
+`h.depth = twinCount` line already landed from the fork.
+
+**Window 4** (campaign-20261109-225337, the wire fix in): the gate ran the
+REAL engine path for the first time — both ranks verified the checkpoint
+digest (163.6 GiB, ~45 s each), loaded the weights direct, and crossed the
+steps over the wire. The placement check passed. Then, inside the FIRST
+prefill of the sharded stream (before any of the seven paths completed):
+
+    cuLaunchKernel: CUDA_ERROR_ILLEGAL_ADDRESS (700); kernel ?, grid 92x1x1, block 256x1x1
+
+Both ranks faulted identically; the context turned bad so
+`cuFuncGetName` answered `?` — the victim kernel is unnamed, and the
+launches before it (the culprit among them) were invisible. VERDICT:
+FAILED, the port does not qualify this iteration. Production restored
+healthy after every window (now 5/5, rc=0).
+
+**The instrument** (tranche 2zi, 89faa5d): the launch ring — every kernel
+launch records its name and shape BEFORE launching (while the context is
+still healthy), and a failed launch or checked call dumps the ring
+(oldest first, the LAST entry the newest). The next window names the
+victim and everything that led to it.
+
+**The state**: the ring compiled clean (CC-RC=0), the binary rebuilt,
+`.commit-want` pinned to 89faa5d. Production healthy on 8000. The next
+window carries the ring into the same first prefill.
