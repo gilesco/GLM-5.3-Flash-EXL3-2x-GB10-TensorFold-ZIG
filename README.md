@@ -19,7 +19,7 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold v1.2.4 + **the adopted 15-patch stack** (`PATCHES` below;
+- **Engine**: TensorFold v1.2.5 + **the adopted 18-patch stack** (`PATCHES` below;
   each patch's full record: [patches/README.md](patches/README.md)).
 - **Testing runs from this same repo**: a start FOR OPENCODE serves 8000; a start FOR
   TESTING serves 8001 (intent-keyed ports). Opencode never touches 8001; the quality
@@ -131,7 +131,7 @@ site's). The ones that matter:
 | `PROD_REPO` | *(required by the autonomous scripts)* | the production checkout's dir name on this host — the window flow's stop/restore path and the poke's live check anchor it |
 | `TF_REF` / `TF_COMMIT` / `TF_REPO` | latest v1.\* release / upstream | the TensorFold line to track; **pin in `local.sh`, never the session env** — `start.sh`'s auto-prepare re-resolves the default whenever the config fingerprint changes and silently drops a shell pin |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint; present on both hosts |
-| `PATCHES` | the 15-patch stack (below) | the adopted engine modifications; empty = stock engine |
+| `PATCHES` | the 18-patch stack (below) | the adopted engine modifications; empty = stock engine |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` | `524288` | the window — the qualified optimum |
 | `PARALLEL` | `4` | concurrent streams |
@@ -144,14 +144,16 @@ site's). The ones that matter:
 | `VISION` | `1` | `--vision --vision-image-tokens 2048`; `0` serves text-only |
 | `TF_GLM_INDEX_CUDA` | `1` | the DSA indexer's dedicated CUDA kernels — the TTFT gains grow with depth; `0` compares |
 | `TF_GLM_ABSORB_MMA` | `1` | a prompt pass's absorb_q/expand_v as tensor-core GEMMs (fp32 sums; decode windows keep the SIMT kernels); `0` off |
+| `TF_GLM_PROMPT_STEPS` | `0` | the draft prompt-steps builder off — the depth-decode serving default (d8192 c2 48.2/37.0 vs the 17.3 floor with the builder on; the confirm receipt campaign-20261108-214221) |
 | `PDL` | `0` | `1` → programmatic dependent launch on the mm kernels (hurt dense4 — retired from the default) |
 | `RECALL` / `PROMPT_CACHE_GIB` | `0` / engine default | the drafts-copy-from-text cache; the kept-states store's size cap |
+| `TF_PROMPT_CACHE_FIRST` | `1` | the prompt cache is set aside before the streams' windows are counted (020-cachefirst); `0` restores windows-first |
 | `SERVED_NAME` / `PORT` / `HOST` | `GLM-5.3-Flash-EXL3` / `8001` / `0.0.0.0` | the API surface |
 | `API_KEY` | empty | recommended; sent as `Authorization: Bearer` |
 | `MEMORY_LIMIT_GB` | engine default | → `TENSORFOLD_CUDA_MEMORY_LIMIT_GB` |
 | `BASE_IMAGE` / `ZIG_VERSION` / `SM_ARCH` | NGC pytorch 26.07 / `0.17.0` / `121` | the builder |
 
-### The 15-patch stack (`PATCHES`)
+### The 18-patch stack (`PATCHES`)
 
 The image applies the patches **in filename order — the three-digit prefix IS the
 application order** (`001-` first, `.done` numbers are never reused; the next
@@ -175,6 +177,8 @@ port takes the next free number). What each does:
 | `014-zs2` | the packed prompt GEMMs' per-block loads + bf16 pair decode (`TF_GLM_MM_P2=0`) |
 | `015-zshfl` | the 4-bit grouped experts read every trellis word once (`TF_EXL3_SHFL=0`) |
 | `016-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
+| `018-callquote` | a call after prose that quotes its opener is still a call — the envelope closer scans value-aware (server-layer; no knob) |
+| `020-cachefirst` | the prompt cache is set aside before the streams' windows are counted (`TF_PROMPT_CACHE_FIRST=0` windows-first); the fund-report line prints when the room funds less than `PROMPT_CACHE_GIB` asks |
 
 Every patch's provenance, port receipts and knobs: [patches/README.md](patches/README.md).
 
