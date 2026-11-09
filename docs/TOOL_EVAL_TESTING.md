@@ -1349,6 +1349,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       SEVENTEENTH consecutive — the vision 4/4. ADOPTED: config.sh's PATCHES default
       carries 018; the promoted repo follows on the next promotion sync.
 
+- [x] **THE 0104 PORT STAGED AND DISPOSITIONED INERT-ON-OUR-MODE (round 139 cont. 13, the
+      warmturnsqual A/B, campaigns-083530/-093727/-102456)**: the port is bit-safe and
+      receipted (the greedy sha IDENTICAL on every arm, the §2 gates ALL PASS, hardmode
+      95 — the NINETEENTH consecutive, the vision 4/4) but the warm-pass mechanism never
+      engages on our serving mode: the boot witness (added to the port for exactly this)
+      printed `turns=false quiet=0ns host_warm_quiet=0ns` on BOTH arms — the store the
+      warm pass attaches to (`snap_save` + the warm_quiet declaration) is created only
+      under `!share`, and our adopted serving mode TF_KV_SHARE=16 keeps prompts as pool
+      pages instead. The fork's 0104 was developed against their base without the
+      KV_SHARE store — the substrate differs, not the port. The trade-off (KV_SHARE vs
+      warm-turns) is the user's; the port stays staged (019), NOT in the PATCHES default.
+
 - [x] **THE V1.2.5 BUMP QUALIFIED AND ADOPTED (round 139 cont. 11-12, the v125val battery,
       campaign-20261109-000818)**: the engine is v1.2.5 (8be9c408c) + the full 17-patch
       stack with 003-fp8-pages re-anchored (15 of 17 patches applied verbatim; the
