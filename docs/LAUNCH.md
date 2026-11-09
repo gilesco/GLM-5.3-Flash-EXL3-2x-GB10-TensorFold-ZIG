@@ -9267,3 +9267,34 @@ ownSequence).
 receipt, then the GPU check on the pair, then the `kshardqual` battery, then
 the adoption decision (the trade-off is the user's: −1.6/−3.6% old-engine
 decode vs ~1.8× pool tokens).
+
+## (round 139, cont. 21) THE 0110 PORT IS COMPILE-CLEAN — the GPU check is next (2026-11-09)
+
+**The gates**: `zig build compile-cuda-tests` **RC=0** — the fork's
+`glm-kv-shard-check` runner compiles inside `tf-cuda-test` against the
+ported modules — AND the host suite (`test-tool-parse-host`) still RC=0.
+The port tree at `/tmp/v125-rebase/tf` stands at `5c7f4f2` (WIP
+`f83bd57..2w`, twenty-two commits), the tree clean.
+
+**Seven error rounds** the compile gate caught after the host suite passed
+green — the suite compiles only the tool-parse module and is blind to the
+whole GLM family (the skill gotcha now recorded). The errors, each fixed in
+its own commit: the engine_status field ordering (declarations between
+fields); the idempotent-rerun's quintupled `kv_parts` export; the re-added
+`host_tier` import (our tree has no `cuda_snapshot_host.zig`); the fork's
+`heads()` helper adapted to ours (`o.mtp and !o.drafter`); the fork's `f.ce`
+gate lines at two sites (our Forward has no CE field — theirs alone); the
+`pagedBytesFor` arity (our stateSizes has no head param); `Plan.max_parts`
+(ours at +2); `latent.max_segs` defined on our latent module (the fork
+0075's value 16 — our per-segment `.mla` never needed it); and the lanes
+`pagesFor` routing (the adopted prompt-cache pages are a POOL lease through
+`openWith`; the shard home only on the `openFor` path — the two flows never
+compose, and that composition rule is now the record).
+
+**Next**: the GPU check on the pair — `tf-cuda-test glm-kv-shard-check` on
+both ranks inside the builder-stage image (VALIDATION §6's pattern; the
+first engine-level GPU check this line has ever run), then the `kshardqual`
+battery phase (the four-arm off/on/off2/on2 A/B with the witnessed-state
+gate), then the adoption decision — the user's call (−1.6/−3.6% old-engine
+decode vs ~1.8× pool tokens; the verify-width and DFlash2-acceptance
+questions are unmeasured on this engine).
