@@ -138,19 +138,26 @@ readiness.
      marks maps onto our ids,from,cancel,marks exactly), three beginOn
      calls gaining our kept arg. The disk cases stripped (our tree has no
      disk-image machinery) — the seven non-disk paths are the gate.
-   - **THE STRATEGIC QUESTION (the user's, pending)**: upstream #1431 is
-     the SAME mechanism by the SAME author, actively landing — PR #2415
-     (part 1, TF_GLM_KV_SPLIT: owner classes in core kv_pool) is in
-     review with all of ashhart's points addressed, parts 2-4 pre-committed
-     with the same numbers we were porting toward (2.10M → 4.20M tokens,
-     byte-identical, decode −1.3/−3.6% at TP=2 on two GB10s). The fork
-     port and the upstream PR are architecturally DIFFERENT (GLM-side
-     two-pool vs core-kv_pool owner classes; TF_GLM_KV_SHARD vs
-     TF_GLM_KV_SPLIT), so the fork port would need re-doing on upstream's
-     shape anyway. The recommendation recorded: SUSPEND the fork port
-     (the tree stays as the reference), watch #1411 → #2415 → parts 2-4,
-     adopt upstream via the version bump when it lands in a release. The
-     port tree's GPU check + battery work is parked until that call.
+   - **THE STRATEGIC QUESTION RESOLVED (the user, round 139)**: "Finish the
+     fork port now for a single iteration" — the watch is superseded;
+     upstream #1431/#2415 remains background context only. The GPU gate
+     (`kshardcheck`) is the iteration's goal, then the `kshardqual` battery
+     on a PASS.
+   - **THE GPU GATE ON THE REAL PAIR (cont. 25)**: two instrument failures
+     fixed (the relative `-v` named-volume trap; the id-file poller race +
+     the set-e kill — the handoff is synchronous now, the RC captures
+     `|| RC=$?`). Window 3 failed the PLACEMENT check — the begin-step wire
+     contract was mapped swapped (the fork keeps `h.a` = kept and
+     re-purposes `h.depth` = the TWIN count on a begin; fixed, tranche 2zh).
+     Window 4 RAN THE REAL ENGINE PATH: checkpoint digests verified on both
+     ranks, weights loaded direct, steps crossed the wire, placement
+     passed — then BOTH ranks faulted inside the first prefill of the
+     sharded stream: `CUDA_ERROR_ILLEGAL_ADDRESS (700); kernel ?, grid
+     92x1x1, block 256x1x1` (the sticky fault poisoned the context, so
+     cuFuncGetName answered `?`). The launch-ring instrument landed
+     (tranche 2zi, 89faa5d): every launch records its name+shape BEFORE
+     launching, and a fault dumps the ring — the next window names the
+     victim and the predecessors the culprit hides among.
 
 ## The test-count note (do not re-litigate)
 
