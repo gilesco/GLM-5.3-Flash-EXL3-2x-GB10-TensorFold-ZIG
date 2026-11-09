@@ -4592,6 +4592,68 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: cachefirstqual (SESSION-SPECIFIC; the fork's 0108 port — 020-cachefirst.
+# The battery: the plan A/B — the OFF arm (the standing plan) vs the ON arm
+# (TF_PROMPT_CACHE_FIRST=1) — reads the serve line's own arithmetic: the pages
+# the streams get, the cache's funded GiB, and the fund-report line when the
+# room does not fund the ask. The room-drift watch: FOUR restarts per arm (the
+# fork's issue-16 class: the room moves between starts with no config change)
+# and the receipt records every serve's funded-cache line. The §2 gates +
+# hardmode 95 + the vision 4/4 + the greedy same-bits sha guard the ON arm.
+# Retires with the receipt; adoption moves config.sh's env default.
+# ---------------------------------------------------------------------------
+if want cachefirstqual && ! phase_done cachefirstqual; then
+  log "=== cachefirstqual (the 0108 port: the cache set aside before the streams' windows)"
+  P="$OUT/11-cachefirstqual.md"; : > "$P"
+  echo "# cachefirstqual (020-cachefirst: TF_PROMPT_CACHE_FIRST=1 vs unset; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  CFPATCH="${PATCHES},020-cachefirst.patch"
+  log "cachefirstqual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$CFPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "cachefirstqual: the image rebuild (prepare) failed - see the log"; fi
+  for arm in off on off2 on2; do
+    case "$arm" in off2|on2) base="${arm%2}";; *) base="$arm";; esac
+    S=$(date +%s)
+    if [ "$base" = on ]; then CFENV="TF_PROMPT_CACHE_FIRST=1"; else CFENV=""; fi
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$CFPATCH" $CFENV; then
+      echo "## the $arm arm (the $base mode; load $(( $(date +%s) - S )) s)" >> "$P"
+      echo "- the serve line: $(serve_line | grep -oE 'taking [0-9]+ pages of 512 rows \([0-9.]+ GiB\)|no prompt cache[^;]*|prompt cache[^;]*')" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | grep "prompt cache: the room funds" | tail -1 >> "$P" || echo "- no fund-report line (the room funded the ask)" >> "$P"
+      # the cache's state after one conversation round
+      req_file "$OUT/cf-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 64}'
+      chat "$OUT/cf-$arm-req.json" > "$OUT/cf-$arm-resp.json" || true
+      echo "- the greedy content sha: $(content_sha "$OUT/cf-$arm-resp.json")" >> "$P"
+    else
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$CFPATCH" TF_PROMPT_CACHE_FIRST=1 || true
+  run_gates cf DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$CFPATCH" TF_PROMPT_CACHE_FIRST=1 || true
+  echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
+  mkdir -p "$OUT/cfhm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "cachefirstqual" --output-dir "$OUT/cfhm" --parallel 2 \
+    --json-file "$OUT/cfhm/hm.json" > "$OUT/cfhm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/cfhm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cfhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/cfhm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/cfvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/cfvision/vision.json" > "$OUT/cfvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/cfvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "- VERDICT: the ON arms' serve lines fund the cache FIRST (the streams' pages drop or the fund-report line prints where the OFF arms' cache took leftovers), the greedy sha holds, the gates PASS, hardmode holds, the vision 4/4 = the 0108 port qualifies (adoption moves config.sh's env default)" >> "$P"
+  touch "$OUT/.cachefirstqual.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: callquotequal (SESSION-SPECIFIC; the fork's 0103 port — 018-callquote.
 # The port is staged (patches/018-callquote.patch); the byte-identity verify
 # against the suite-green tree f202781d3 passed. This battery qualifies the

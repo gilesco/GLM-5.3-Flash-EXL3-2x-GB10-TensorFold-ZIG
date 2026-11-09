@@ -1,0 +1,103 @@
+From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
+Subject: glm-cachefirst: the fork 0108 port — TF_PROMPT_CACHE_FIRST=1 sets the prompt cache aside before the streams' windows
+
+PROVENANCE: ported from MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104's engine
+patch 0108 (Apache-2.0, (c) MiaAI Lab), against our v1.2.5 + the 18-patch
+stack tree, 2026-11-09, by this line. The cache (--prompt-cache-gib) is set
+aside before the room is counted in whole windows, so the streams share the
+pages left (the engine's own window at least) instead of the cache taking
+what whole windows leave; unset, the plan is as before.
+
+ADAPTATION: our tree's plan gate carries the `asked` flag (v1.2.5's own
+--prompt-cache-gib priority — the windows stop at the engine's own when the
+cache is asked), so cache_first composes with it: the flag changes the ROOM
+the windows count (`room -| cache`), not the window cap. The value-add on
+our mode: the FUND-REPORT line prints whenever the room funds less than the
+ask — the fork's issue-16 room drift (our battery caught the same: none of
+TF_KV_SHARE=16 kept states' slots fit on a second start, the room moving
+11.8 -> 11.0 GiB with no config change) becomes VISIBLE at boot instead of
+silently serving without the cache.
+
+THE KNOB: TF_PROMPT_CACHE_FIRST=1 (the A/B arm); unset, the plan is as
+before — our serving default carries --prompt-cache-gib 3 whose `asked`
+priority already covers the common case.
+
+STATUS: STAGED for the cachefirstqual battery (the four-arm OFF/ON plan
+A/B: the serve lines' own arithmetic — the streams' pages, the funded cache,
+the fund-report line — plus the §2 gates, hardmode 95, the vision 4/4, the
+greedy same-bits sha). Adoption moves config.sh's env default.
+
+diff --git a/zig/src/core/kv_pool.zig b/zig/src/core/kv_pool.zig
+index f3e4eaf..a4f44d3 100644
+--- a/zig/src/core/kv_pool.zig
++++ b/zig/src/core/kv_pool.zig
+@@ -96,6 +96,9 @@ pub const Budget = struct {
+     window: u64 = 0,
+     /// The engine's own rows are pages too: a window of them first, then the cache after the windows the room holds.
+     engine_paged: bool = false,
++    /// The cache is set aside before the room is counted in windows (TF_PROMPT_CACHE_FIRST=1): the other streams
++    /// share the pages left, at least the engine's own window, instead of the cache taking what whole windows leave.
++    cache_first: bool = false,
+     /// Parts per million of the cache that kept states hold as pool pages (TF_KV_SHARE): made pages past the windows.
+     kept_ppm: u32 = 0,
+     /// TF_KV_SHARE with a slot a state (GLM): the cache is its slots, `snaps` at most, and the rest is made pages.
+@@ -158,8 +161,9 @@ fn held(l: Layout, b: Budget, fit: u64, more: u64) u64 {
+ /// Windows set aside before the cache, the engine's own among them: as many as the room holds when its rows are pages.
+ fn windows(l: Layout, b: Budget) u64 {
+     if (!b.engine_paged or b.window == 0 or b.asked) return 1; // an asked cache comes before all but the engine's own
++    const room = if (b.cache_first) b.room -| b.cache else b.room; // cache_first: the cache is set aside first, the streams share the left
+     const own = ownPages(l, b);
+-    return @min(b.lanes, 1 + (b.room - own) / (own + l.fixed_bytes));
++    return @min(b.lanes, 1 + (room -| own) / (own + l.fixed_bytes));
+ }
+ 
+ /// The bytes of the engine's own window as pages, set aside first when its rows are pages (0 when it has a window).
+diff --git a/zig/src/native/cuda_kv_pool.zig b/zig/src/native/cuda_kv_pool.zig
+index 65b0644..2678a47 100644
+--- a/zig/src/native/cuda_kv_pool.zig
++++ b/zig/src/native/cuda_kv_pool.zig
+@@ -146,7 +146,7 @@ pub fn placeHost(comptime F: type, a: Allocator, loaded: anytype, o: api.Open, a
+ fn fits(comptime F: type, loaded: anytype, o: api.Open, room: u64, window: u64, stream_bytes: u64) bool {
+     const want = budget.cacheBytes(o.prompt_cache_gib, std.math.maxInt(u64), 0);
+     const rows: u64 = if (comptime @hasDecl(F, "window_rows")) F.window_rows else 0;
+-    if (layout(loaded)) |l| return kv_pool.holds(l, .{ .room = room, .engine = 0, .lanes = o.lanes, .fixed = o.lanes_fixed, .cache = want, .snaps = named(o), .window = window + rows, .engine_paged = enginePaged(loaded), .asked = o.prompt_cache_gib != null });
++    if (layout(loaded)) |l| return kv_pool.holds(l, .{ .room = room, .engine = 0, .lanes = o.lanes, .fixed = o.lanes_fixed, .cache = want, .snaps = named(o), .window = window + rows, .engine_paged = enginePaged(loaded), .asked = o.prompt_cache_gib != null, .cache_first = cacheFirst() });
+     const n = budget.admit(room, stream_bytes, loaded.free_streams, o.lanes, o.lanes_fixed) catch return false;
+     return room -| stream_bytes * (n -| loaded.free_streams) >= want;
+ }
+@@ -155,13 +155,17 @@ fn fits(comptime F: type, loaded: anytype, o: api.Open, room: u64, window: u64,
+ pub fn plan(comptime F: type, a: Allocator, l: kv_pool.Layout, room: u64, o: api.Open, window: u64, problem: *[]const u8, host_mode: bool, engine_paged: bool, kept_ppm: u32, slots: ?usize) !?Plan {
+     const rows: u64 = if (comptime @hasDecl(F, "window_rows")) F.window_rows else 0;
+     const want = if (host_mode) 0 else budget.cacheBytes(o.prompt_cache_gib, std.math.maxInt(u64), 0);
+-    return kv_pool.plan(l, .{ .room = room, .engine = 0, .lanes = o.lanes, .fixed = o.lanes_fixed, .cache = want, .snaps = slots orelse named(o), .window = window + rows, .engine_paged = engine_paged, .kept_ppm = if (host_mode) 0 else kept_ppm, .slots_only = slots != null, .asked = o.prompt_cache_gib != null }) catch |e| {
++    const b_cache_first = cacheFirst();
++    const p = kv_pool.plan(l, .{ .room = room, .engine = 0, .lanes = o.lanes, .fixed = o.lanes_fixed, .cache = want, .snaps = slots orelse named(o), .window = window + rows, .engine_paged = engine_paged, .kept_ppm = if (host_mode) 0 else kept_ppm, .slots_only = slots != null, .asked = o.prompt_cache_gib != null, .cache_first = b_cache_first }) catch |e| {
+         problem.* = switch (e) {
+             error.NoStream => if (engine_paged) try std.fmt.allocPrint(a, "the CUDA memory budget fits no stream beside the model: one at a {d}-token window takes {d:.2} GiB of KV pages, and the budget leaves {d:.2} GiB", .{ window, toGib(l.pages(window + rows) * l.pageBytes()), toGib(room) }) else "the CUDA memory budget fits no stream beside the model",
+             error.TooMany => try std.fmt.allocPrint(a, "--parallel {d} needs {d:.2} GiB for its other streams' fixed parts, state runs and a page each, and the CUDA memory budget leaves {d:.2} GiB: serve fewer, or free device memory", .{ o.lanes, toGib((o.lanes - 1) * (l.fixed_bytes + (1 + l.runPages()) * l.pageBytes())), toGib(room) }),
+         };
+         return null;
+     };
++    if (!host_mode and engine_paged and o.prompt_cache_gib != null and p.copied + (256 << 20) < want)
++        std.log.info("prompt cache: the room funds {d:.1} GiB of the {d:.1} GiB --prompt-cache-gib asks, after {d} pages for the streams; a lower --context or --parallel leaves more{s}", .{ @as(f64, @floatFromInt(p.copied)) / (1 << 30), @as(f64, @floatFromInt(want)) / (1 << 30), p.pages, if (b_cache_first) "" else ", or TF_PROMPT_CACHE_FIRST=1 sets the cache aside before the streams' windows" });
++    return p;
+ }
+ 
+ /// The planned streams' sequences and pages made now; false: `problem` says why they could not be.
+@@ -244,6 +248,13 @@ pub fn cacheText(a: Allocator, over_pages: bool, asked: ?usize, paged: ?Plan, l:
+     return std.fmt.allocPrint(a, ", {d} kept states' slots ({d:.1} GiB) and the prompt cache over the pool's pages", .{ snaps, toGib(snaps * slot) });
+ }
+ 
++/// TF_PROMPT_CACHE_FIRST=1: the prompt cache (--prompt-cache-gib) is set aside before the room is counted in whole
++/// windows, so the streams share what is left (the engine's own window at least). Unset or 0: windows first, as before.
++fn cacheFirst() bool {
++    const v = std.c.getenv("TF_PROMPT_CACHE_FIRST") orelse return false;
++    return std.mem.eql(u8, std.mem.span(v), "1");
++}
++
+ fn named(o: api.Open) ?usize {
+     return if (o.keep) |k| @intCast(@max(k, 0)) else null;
+ }
+-- 
+2.43.0
+
