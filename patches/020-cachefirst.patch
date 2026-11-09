@@ -25,7 +25,7 @@ priority already covers the common case.
 STATUS: STAGED for the cachefirstqual battery (the four-arm OFF/ON plan
 A/B: the serve lines' own arithmetic — the streams' pages, the funded cache,
 the fund-report line — plus the §2 gates, hardmode 95, the vision 4/4, the
-greedy same-bits sha). Adoption moves config.sh's env default.
+greedy same-bits sha). The compile RC=0 (fatbins + native, sm_121) receipted on the ported tree. Adoption moves config.sh's env default.
 
 diff --git a/zig/src/core/kv_pool.zig b/zig/src/core/kv_pool.zig
 index f3e4eaf..a4f44d3 100644
