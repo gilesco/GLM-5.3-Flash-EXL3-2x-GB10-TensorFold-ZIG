@@ -32,12 +32,22 @@ cuda_startup_phase.zig; the lane_host_warm_test import rides our tree's
 existing wiring). The tool-parse host suite: PASS on the final tree;
 compile RC=0 (fatbins + native, sm_121) receipted on the final tree.
 
+THE SUBSTRATE FIX (round 139 cont. 14): the first three batteries found
+the mechanism INERT on our serving mode — the warm state rode the snap_save
+store, and TF_KV_SHARE=16 keeps prompts as pool pages instead (the store is
+created only under !share). The port now opens warm turns on EITHER store:
+`warm_turns = (h.store != null or h.prompts != null) and @hasDecl(F,
+"warm_quiet")` — the share store's radix rules already carry tail=true (the
+pass's end state planned) and the lane's marksOf keeps at every mark through
+share_mod.Keeps, so the warm pass needs NO family change on the share path.
+The family's warm_quiet copies in both modes (the wiring's kill switch
+unchanged). The suite PASS + compile RC=0 re-receipted on the final tree.
+
 STATUS: STAGED for the warmturnsqual A/B battery (the off arm runs
 TF_GLM_WARM_TURNS=0): the fork's measured shape is ours to confirm — the
-next user message after a tool loop resumes past the loop (their 9.3K loop
-cached 8,192 of its tokens vs 4,096 before; 1.6 s to answer vs 3.5 s), the
-§2 gates PASS, hardmode 95, the vision 4/4, the greedy same-bits sha holds.
-Adoption moves config.sh's PATCHES + the promoted repo's.
+next user message after a tool loop resumes past the loop, the §2 gates
+PASS, hardmode 95, the vision 4/4, the greedy same-bits sha holds. Adoption
+moves config.sh's PATCHES + the promoted repo's.
 
 From 9f0ecb7e9c4a4667402c1d16c93489d829a16f2a Mon Sep 17 00:00:00 2001
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
@@ -226,7 +236,7 @@ index 304e771..63b0963 100644
  pub const snap_tail = "TF_GLM_PROMPT_TAIL";
  /// `explain` words this family's open refusals too (where to set the rank and the id).
 diff --git a/zig/src/native/cuda.zig b/zig/src/native/cuda.zig
-index 53c41e3..fa36d89 100644
+index 53c41e3..0b51349 100644
 --- a/zig/src/native/cuda.zig
 +++ b/zig/src/native/cuda.zig
 @@ -62,6 +62,7 @@ pub const Host = struct {
@@ -237,14 +247,26 @@ index 53c41e3..fa36d89 100644
      kv: kv_pages.Watch = .{}, // what the load ledger hears of the KV pool (cuda_kv_pool.zig)
      kv_count: ?*@import("core").kv_pool.Pool = null, // the paged pool the lane host's ledger admits (#1943)
      kv_plan: ?@import("cuda_ledger.zig").Plan = null, // the KV ledger's budget and cost, read by the lane host
-@@ -393,6 +394,7 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
-         }
-         try kv_pages.store(F, store, loaded, kept); // its snapshot slots, before a disk probe takes one
-         h.store = store;
-+        if (@hasDecl(F, "warm_quiet")) h.warm_quiet = F.warm_quiet;
-         if (o.learn_conversations) if (o.learn) |root| {
-             if (F == nemotron.native) try cuda_disk.attach(a, io, &g.ctx, o, root, kernels, loaded, store);
-             if (comptime cuda_disk.keptDisk(F)) |K| try cuda_disk.attachKept(K, F.model_type, a, io, &g.ctx, o, root, kernels, loaded, store);
+@@ -400,6 +401,7 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
+     }
+     errdefer if (h.store) |store| kv_pages.closeStore(gpa, store);
+     const share_limit = if (!share) 0 else if (counted.slots != null) paged.?.snaps else try @import("core").kv_prompts.sharing(); // what its slots hold
++    if (@hasDecl(F, "warm_quiet")) h.warm_quiet = F.warm_quiet; // both store modes: the quiet value carries the family's wait
+     if (comptime @hasDecl(F, "share_attach")) if (@import("cuda_streams.zig").opensStore(F, share, cache, share_limit)) {
+         h.prompts = try prompt_pages.Adapter.open(F, gpa, loaded.target, @intCast(layout.?.page_tokens), share_limit);
+     };
+@@ -451,7 +453,10 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
+         .prompt_cache = h.store != null,
+         .decode_share = o.decode_share,
+         .prompt_cache_capacity = cache_capacity,
+-        .warm_turns = h.store != null and @hasDecl(F, "warm_quiet"),
++        // warm turns on either store: the snap store (kept states as copies) or the
++        // share store (TF_KV_SHARE's pool pages — the pass's end state is planned by
++        // the radix rules' tail, and the lane's marksOf keeps at every mark).
++        .warm_turns = (h.store != null or h.prompts != null) and @hasDecl(F, "warm_quiet"),
+         .logprobs = served.backend.vtable.first_row != null,
+         .prompt_logprobs = served.backend.vtable.prompt_rows,
+         .penalties = served.backend.penalties,
 diff --git a/zig/src/native/cuda_startup_phase.zig b/zig/src/native/cuda_startup_phase.zig
 index abb2d1e..2c3112d 100644
 --- a/zig/src/native/cuda_startup_phase.zig
