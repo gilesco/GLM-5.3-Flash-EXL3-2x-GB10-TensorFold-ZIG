@@ -4464,12 +4464,12 @@ import json, sys
 out, prior = sys.argv[1], sys.argv[2]
 filler = "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks "
 turns = [
-    {"role": "user", "content": "Remember this inventory: " + filler * 40},
+    {"role": "user", "content": "Remember this inventory: " + filler * 200},
     {"role": "assistant", "content": None, "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "lookup", "arguments": json.dumps({"q": "inventory"})}}]},
     {"role": "tool", "content": "the inventory is recorded (42 items)"},
-    {"role": "assistant", "content": prior + "Recorded. " + filler * 20},
+    {"role": "assistant", "content": prior + "Recorded. " + filler * 60},
     {"role": "tool", "content": "acknowledged"},
-    {"role": "assistant", "content": prior + "Inventory noted and held. " + filler * 20},
+    {"role": "assistant", "content": prior + "Inventory noted and held. " + filler * 60},
     {"role": "tool", "content": "acknowledged"},
 ]
 print(json.dumps(turns))
@@ -4504,13 +4504,13 @@ import json, sys
 out, model, adir, t = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 history = []
 filler = "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks "
-history.append({"role": "user", "content": "Remember this inventory: " + filler * 40})
+history.append({"role": "user", "content": "Remember this inventory: " + filler * 200})
 for i in range(2, t):
     if i % 2 == 0:
         history.append({"role": "assistant", "content": None, "tool_calls": [{"id": f"c{i}", "type": "function", "function": {"name": "lookup", "arguments": json.dumps({"q": f"inventory-{i}"})}}]})
         history.append({"role": "tool", "content": f"the inventory is recorded ({i} items)"})
     else:
-        history.append({"role": "assistant", "content": f"Recorded item {i}. " + filler * 20})
+        history.append({"role": "assistant", "content": f"Recorded item {i}. " + filler * 60})
 b = {"model": model, "messages": history + [{"role": "user", "content": f"Summarize part {t} in one word."}], "max_tokens": 64, "temperature": 0, "seed": 42, "tools": [{"type": "function", "function": {"name": "lookup", "parameters": {"type": "object", "properties": {"q": {"type": "string"}}, "required": ["q"]}}}], "chat_template_kwargs": {"enable_thinking": False}}
 json.dump(b, open(out, "w"))
 PYEOF
@@ -4532,13 +4532,13 @@ import json, sys
 out, model, adir = sys.argv[1], sys.argv[2], sys.argv[3]
 history = []
 filler = "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks "
-history.append({"role": "user", "content": "Remember this inventory: " + filler * 40})
+history.append({"role": "user", "content": "Remember this inventory: " + filler * 200})
 for i in range(2, 5):
     if i % 2 == 0:
         history.append({"role": "assistant", "content": None, "tool_calls": [{"id": f"c{i}", "type": "function", "function": {"name": "lookup", "arguments": json.dumps({"q": f"inventory-{i}"})}}]})
         history.append({"role": "tool", "content": f"the inventory is recorded ({i} items)"})
     else:
-        history.append({"role": "assistant", "content": f"Recorded item {i}. " + filler * 20})
+        history.append({"role": "assistant", "content": f"Recorded item {i}. " + filler * 60})
 b = {"model": model, "messages": history + [{"role": "user", "content": "What is the third item in the inventory? Answer with just the words."}], "max_tokens": 16, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}
 json.dump(b, open(out, "w"))
 PYEOF
