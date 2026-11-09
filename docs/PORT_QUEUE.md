@@ -16,15 +16,18 @@ readiness.
    byte-identical; the engine's gate/shared block moved to
    `cuda_engine_gate.zig` but all `e.*` call sites keep working. Guarded by
    the §2/hardmode/vision battery as usual.
-2. **0104 warm-turns** — PORTED (round 139 cont. 13, `019-warmturns.patch`,
-   STAGED): the family declares `warm_quiet` (150 ms), the chunk gate yields,
-   `quiet()` waits on `warmBlocked` (the fill-queue case), setup ends visibly,
-   the tool-message dummy turn, and the `TF_GLM_WARM_TURNS=0` kill switch (the
-   A/B arm). Fidelity 104/104 fork lines; the suite PASS; compile RC=0. The
-   battery (`warmturnsqual`) runs the OFF/ON arms over a tool-loop
-   conversation with the final user message's wall as the instrument — the
-   fork's measured shape (their 9.3K loop: 8,192 of its tokens cached vs
-   4,096 before; 1.6 s to answer vs 3.5 s). Adoption on the receipt.
+2. **0104 warm-turns** — PORTED but DISPOSITIONED **INERT-ON-OUR-MODE**
+   (round 139 cont. 13): the port is bit-safe and receipted (the greedy sha
+   IDENTICAL, the §2 gates PASS, hardmode 95 — the NINETEENTH, the vision
+   4/4) but the mechanism never engages: the boot witness printed
+   `turns=false quiet=0ns` on both arms — the `snap_save` store the warm
+   pass attaches to is created only under `!share`, and our adopted serving
+   mode TF_KV_SHARE=16 keeps prompts as pool pages. The fork's 0104 was
+   built without the KV_SHARE store. The trade-off is the user's:
+   (a) teach the warm pass to keep its states through the KV_SHARE path
+   (new engine work), (b) a serving-mode split (019 with KV_SHARE off for
+   agent-loop workloads), or (c) park (019 stays staged, NOT in the
+   PATCHES default).
 3. **0108 CACHE_FIRST / 0110 KV_SHARD** — the 512K-plan candidates; decide
    after the v1.2.5 rebase lands (0110 touches the same pool ground as
    003-fp8-pages + 005-pagerows-fix).
