@@ -493,6 +493,35 @@ quoted-example class (a call quoted inside prose parses whole; the engine
 describing its own tool-call format round-trips) — the same-bits claim held,
 so the behavior is the only change.
 
+## 020-cachefirst.patch — ADOPTED 2026-11-09 (the twenty-first patch; the fork 0108 port)
+
+The prompt cache (--prompt-cache-gib) is set aside BEFORE the room is counted
+in the streams' windows (TF_PROMPT_CACHE_FIRST=1): the streams share the pages
+left (the engine's own window at least) instead of the cache taking what whole
+windows leave. ADAPTED to our tree: the plan gate already carried v1.2.5's
+`asked` flag (--prompt-cache-gib's own priority — the windows stop at the
+engine's own when the cache is asked), so cache_first composes with it — the
+flag changes the ROOM the windows count (`room -| cache`), not the window cap.
+The value-add on our mode: the FUND-REPORT line prints whenever the room funds
+less than the ask — the fork's issue-16 room drift (our warmturnsqual battery
+caught the same: none of TF_KV_SHARE=16 kept states' slots fit on a second
+start, the room moving 11.8 -> 11.0 GiB with no config change) becomes VISIBLE
+at boot instead of silently serving without the cache.
+
+**The qualifying battery** (cachefirstqual, campaign-20261109-140604, the
+21-patch image on the testing port): the four-arm OFF/ON plan A/B — the ON
+arms' streams ceded pages to the cache-first reserve (3110/3115 -> 3103/3083
+pages), the fund-report line never fired at our 3 GiB ask (the drift never
+reached the cache's need on this window's serves), the §2 content gates ALL
+PASS, hardmode 95 (the TWENTY-FIRST consecutive — the third on the re-grounded
+--parallel 2 harness), the vision 4/4; the greedy same-bits witness held (the
+battery's own probe returned empty content at max_tokens 64 — the thinking
+model ate the budget — the gates' probes carried the real content witness).
+ADOPTED: the env default TF_PROMPT_CACHE_FIRST=1 moves into config.sh; the
+promoted repo follows on its next promotion sync.
+
+**Knob**: `TF_PROMPT_CACHE_FIRST=0` restores the old plan (windows first).
+
 ## 017-topk4b.patch (staged 2026-10-24, probe three v2 — Front 2 A2 / the AZ Experiment 1)
 
 Renamed from glm-topk4.patch: the config fingerprint hashes the patch LIST (names), not

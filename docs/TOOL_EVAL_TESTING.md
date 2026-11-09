@@ -1403,3 +1403,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       ran its batteries at the harness default (parallel 1) — the next battery re-grounds
       the instrument at parallel 2, so any score movement between them attributes to the
       INSTRUMENT CHANGE first, the engine second.
+
+- [x] **THE 0108 PORT SHIPPED AND ADOPTED (round 139 cont. 16-17, the fork's CACHE_FIRST —
+      the room-drift visibility)**: the prompt cache set aside before the streams' windows
+      (TF_PROMPT_CACHE_FIRST=1), adapted to compose with our tree's `asked` flag (v1.2.5's
+      own cache priority) — the flag changes the ROOM the windows count. The value-add on
+      our mode: the FUND-REPORT line makes the fork's issue-16 room drift (our
+      warmturnsqual battery caught the same: the room moved 11.8 -> 11.0 GiB between starts
+      with no config change) VISIBLE at boot. The battery (cachefirstqual,
+      campaign-20261109-140604): the four-arm OFF/ON plan A/B — the ON arms' streams ceded
+      pages to the reserve (3110/3115 -> 3103/3083), the fund-report never fired at our
+      3 GiB ask, the §2 gates ALL PASS, hardmode 95 — the TWENTY-FIRST consecutive — the
+      vision 4/4. ADOPTED: the env default TF_PROMPT_CACHE_FIRST=1 + the 020 patch in
+      config.sh's PATCHES; the promoted repo follows on its next promotion sync.
+      (Instrument note: the battery's own greedy probe returned EMPTY content at
+      max_tokens 64 — the thinking model ate the budget; the gates' probes carried the
+      real content witness. The battery's probe needs a larger budget next revision.)
