@@ -9166,3 +9166,32 @@ question it answered: our KV_SHARE mode already carries the agent-loop
 resume behavior the fork built warm turns to add. The A/B instruments and
 the battery hardening (the witnessed-state gate, the four-arm drift
 control) stay in the campaign script as the pattern for future A/B ports.
+
+## (round 139, cont. 16-17) THE 0108 CACHE-FIRST PORT QUALIFIED AND ADOPTED — the twenty-first patch (2026-11-09)
+
+**The port** (020-cachefirst, the fork's 0108): the prompt cache set aside
+before the streams' windows (`TF_PROMPT_CACHE_FIRST=1`), adapted to compose
+with our tree's `asked` flag — the flag changes the ROOM the windows count
+(`room -| cache`), not the window cap. The value-add on our serving mode: the
+**fund-report line** — the fork's issue-16 room drift (our warmturnsqual
+battery caught the same: the room moving 11.8 -> 11.0 GiB between starts with
+no config change, none of TF_KV_SHARE=16's slots fitting on a second start)
+becomes VISIBLE at boot instead of silently serving without the cache.
+
+**The receipt** (campaign-20261109-140604, `preflight cachefirstqual
+summary`, rc=0, production restored healthy after 80 s): the four-arm OFF/ON
+plan A/B — the ON arms' streams ceded pages to the cache-first reserve
+(3110/3115 -> 3103/3083 pages), the fund-report line never fired at our
+3 GiB ask (the drift never reached the cache's need on this window's serves),
+the §2 content gates ALL PASS, **hardmode 95 — the TWENTY-FIRST consecutive
+(the third on the re-grounded --parallel 2 harness)** — the vision 4/4.
+
+**The adoption**: the env default `TF_PROMPT_CACHE_FIRST=1` + the 020 patch
+in config.sh's PATCHES (the twenty-first patch); the promoted repo follows on
+its next promotion sync. Instrument note recorded: the battery's own greedy
+probe returned empty content at max_tokens 64 (the thinking model ate the
+budget) — the gates' probes carried the real content witness; the probe
+needs a larger budget next revision.
+
+**The queue after this**: 0110 KV_SHARD (the pool ~2× tokens for the 512K
+plan — decide against our fp8-pages ground), then the perf plan's next step.
