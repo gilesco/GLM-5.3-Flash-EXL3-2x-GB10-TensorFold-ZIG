@@ -9195,3 +9195,35 @@ needs a larger budget next revision.
 
 **The queue after this**: 0110 KV_SHARD (the pool ~2× tokens for the 512K
 plan — decide against our fp8-pages ground), then the perf plan's next step.
+
+## (round 139, cont. 18) THE 020 PROMOTION SYNC — the promoted repo carries the twenty-first patch (2026-11-09)
+
+**The sync** (production repo on the head, four commits): the v1.2.5
+re-anchored `003-fp8-pages.patch` COMMITTED (it had sat uncommitted in the
+working tree since the v1.2.5 rebase — the window's exit-path restore would
+have died the next fingerprint re-prepare); `020-cachefirst.patch` mirrored
+into BOTH `patches/` (the store prepare stages from) and `image/patches/`
+(the build consumes) — byte-identical `1517e2ab3935` across both repos;
+`config.sh`: the 020 patch appended to the PATCHES default +
+`TF_PROMPT_CACHE_FIRST=1` (the adopted default with its receipt comment);
+the README status row updated (v1.2.5 + the 18-patch stack, hardmode 95
+twenty-one consecutive).
+
+**The store hazard closed**: production's `patches/` still carries the 29
+retired `glm-*` files from before the renumbering — they are INERT by
+construction (prepare stages only the named PATCHES list into
+`image/patches/` after a `find -delete`; the build globs
+`/build/patches/*.patch` which holds only the staged copies). Verified: all
+18 named patches present in the store.
+
+**Deployment timing**: production keeps serving the v1.2.5 17-patch image
+on 8000 until the NEXT window's exit-path restore — the restart rereads
+config.sh, the fingerprint moved, and start.sh re-prepares (the 020 image
+build) before production returns. No manual serve touch.
+
+**Also this sitting**: the cachefirstqual greedy probe's budget fixed
+(max_tokens 64 → 1024; the thinking model ate the 64 budget — the
+campaign-20261109-140604 instrument note; the gates' own probes carry
+`enable_thinking: False` and were never vacuous); the testing README
+refreshed to the adopted state (v1.2.5 + 18 patches, both new env defaults
+documented).
