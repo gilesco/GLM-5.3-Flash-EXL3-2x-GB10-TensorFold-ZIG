@@ -124,6 +124,19 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   exist`). The store is the source of truth; the image dir is
   build-generated. After any promotion sync, verify every named patch
   exists in the store before the next window re-prepares production.
+- **A scripted-edit helper's idempotency guard silently skips REMOVALS**
+  (2026-11-09, the 0110 port): the natural pattern —
+  `if new_text in file: print("already applied"); return` — is vacuously
+  TRUE for removal edits (the empty or shorter new string is always
+  "in" the file), so the removal never happens and the helper LIES
+  ("already applied"). The compile gate then fails on the undeclared
+  import you thought you had removed. For removal edits, guard on the
+  OLD text (`if old_text in file`) or assert the count of the line being
+  removed. Same class: an anchor edit that CONSUMES a needed line (here
+  the `layout` import line was the anchor and got replaced instead of
+  kept) surfaces as `use of undeclared identifier` several errors later
+  — grep the post-edit file for every import the new code references
+  BEFORE spending a compile.
 
 ## Cross-tree ports (a fork patch generated against a different base)
 

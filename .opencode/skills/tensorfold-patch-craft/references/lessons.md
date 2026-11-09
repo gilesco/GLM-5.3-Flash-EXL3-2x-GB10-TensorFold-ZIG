@@ -12,3 +12,17 @@
 - Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
 - Note: the same sitting also extended the skill with the patches/-store
   promotion-sync gotcha (the image/patches dir alone dies the re-prepare).
+
+## 2026-11-09 — the idempotency guard silently skipped removals
+- Skill: tensorfold-patch-craft (extended)
+- Symptom: the compile gate kept failing on `use of undeclared identifier
+  'layout'` and a FileNotFound import after the "already applied" removal
+  edit reported success.
+- Root cause: the `if new in s: skip` idempotency guard is vacuously true
+  for removals (empty replacement), and a prior anchor edit had consumed a
+  needed import line.
+- Fix: guard removals on the OLD text's presence; grep the post-edit file
+  for every import the new code references before the next compile.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
+- Note: same sitting's compile round also adapted the fork's heads() helper
+  to our bool fields (o.mtp and !o.drafter).
