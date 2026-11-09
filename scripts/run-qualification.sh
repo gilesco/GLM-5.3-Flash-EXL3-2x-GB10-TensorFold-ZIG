@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP resweep knobs hmcheck duel confirm prof4 top4 routerks2 routerpart top4qual azqual focusqual hmtrials pinbump settingsab ncurouter profchunk profload efforttail etreminder etadopt routergemm hcfuse kshardcheck depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -4654,6 +4654,113 @@ except Exception: print("")' 2>/dev/null) || model=""
   fi
   echo "- VERDICT: the ON arms' serve lines fund the cache FIRST (the streams' pages drop or the fund-report line prints where the OFF arms' cache took leftovers), the greedy sha holds, the gates PASS, hardmode holds, the vision 4/4 = the 0108 port qualifies (adoption moves config.sh's env default)" >> "$P"
   touch "$OUT/.cachefirstqual.done"
+fi
+
+# ---------------------------------------------------------------------------
+# phase: kshardcheck (SESSION-SPECIFIC; the 0110 KV_SHARD port's GPU gate).
+# The fork's own check program on the REAL pair: `tf-cuda-test glm-kv-shard-check`
+# on both ranks — a sharded paged stream against its whole-window twin, byte
+# for byte, over seven paths (twins both parts, owner-computed prompts past
+# the dense limit, kept states resumed at home and carried), plus the
+# liveness gate (the check FAILS if a path never engaged). The runtime image
+# ships no test programs (VALIDATION §6), so the phase BUILDS tf-cuda-test
+# from the port tree (PORT_TREE, commit-guarded) inside the NGC devel
+# container, then runs the binary inside each host's RUNTIME image with
+# production's own container flags (--gpus all --ipc=host --network host
+# --shm-size --device /dev/infiniband). Rank 0 writes the NCCL unique-id file
+# and blocks in ncclCommInitRank; the phase polls the file across to the
+# worker, then starts rank 1, whose join releases rank 0. The fork's
+# disk-image paths are NOT in our port — the seven non-disk paths are the
+# gate. No serve restart, no port: production is down (the window owns the
+# GPUs) and the check takes both GPUs directly.
+# Retires with the receipt; a PASS stages the kshardqual serve battery.
+# ---------------------------------------------------------------------------
+if want kshardcheck && ! phase_done kshardcheck; then
+  log "=== kshardcheck (the 0110 port's GPU gate: glm-kv-shard-check on both ranks)"
+  P="$OUT/12-kshardcheck.md"; : > "$P"
+  echo "# kshardcheck (glm-kv-shard-check: the sharded stream vs its whole-window twin, byte for byte, 7 paths)" >> "$P"
+
+  PORT_TREE="${PORT_TREE:-/tmp/v125-rebase/tf}"
+  WANT_COMMIT="$(grep -oE 'f538c45[0-9a-f]*' "$PORT_TREE/.commit-want" 2>/dev/null || echo f538c45)"
+  GOT_COMMIT="$(git -C "$PORT_TREE" log --oneline -1 | cut -c1-7)"
+  echo "- the port tree: $PORT_TREE at $GOT_COMMIT (the gate qualified f538c45's compile)" >> "$P"
+  [[ "$GOT_COMMIT" == f538c45* ]] || die "kshardcheck: the port tree moved ($GOT_COMMIT != f538c45) — re-verify the compile gate first"
+
+  R0IMG="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^glm53-native-tf:' | head -1)"
+  R1IMG="$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -E '^glm53-native-tf:' | head -1)"
+  [[ -n "$R0IMG" && -n "$R1IMG" ]] || die "kshardcheck: the runtime image is missing (head '$R0IMG' / worker '$R1IMG')"
+  echo "- the runtime images: head $R0IMG, worker $R1IMG" >> "$P"
+
+  log "kshardcheck: building tf-cuda-test from the port tree (the compile-cuda-tests cache is warm)"
+  cat > "$OUT/build-tf-cuda-test.sh" <<'BUILDEOF'
+#!/usr/bin/env bash
+set -uo pipefail
+if ! command -v zig >/dev/null; then
+  URL="$(curl -s https://ziglang.org/download/index.json | python3 -c 'import json,sys;print(json.load(sys.stdin)["0.17.0"]["aarch64-linux"]["tarball"])')"
+  curl -sL "$URL" -o /tmp/zig.tar.xz
+  mkdir -p /usr/local/zig && tar -xJf /tmp/zig.tar.xz -C /usr/local/zig --strip-components=1
+  ln -sf /usr/local/zig/zig /usr/local/bin/zig
+fi
+cd /src
+zig build compile-cuda-tests -Dtarget=aarch64-linux-gnu -Dcpu=baseline -Dsm=121 -Dnvcc=/usr/local/cuda/bin/nvcc
+BIN="$(find zig-out .zig-cache -name tf-cuda-test -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)"
+[[ -n "$BIN" ]] || { echo "no tf-cuda-test artifact anywhere in zig-out or .zig-cache" >&2; exit 1; }
+cp "$BIN" /out/tf-cuda-test
+BUILDEOF
+  if ! docker run --rm -v "$PORT_TREE":/src -v "$OUT:/out" -v "$OUT/build-tf-cuda-test.sh:/build/c.sh" \
+      --entrypoint bash nvcr.io/nvidia/pytorch:26.07-py3 /build/c.sh >> "$OUT/kshardcheck-build.log" 2>&1; then
+    die "kshardcheck: the tf-cuda-test build failed - see kshardcheck-build.log"
+  fi
+  [[ -x "$OUT/tf-cuda-test" ]] || die "kshardcheck: no tf-cuda-test artifact after the build"
+  echo "- the binary: $(du -h "$OUT/tf-cuda-test" | cut -f1), $(strings "$OUT/tf-cuda-test" | grep -c 'glm-kv-shard-check') dispatch hits" >> "$P"
+
+  ckpt_rel="hub/models--${MODEL_ID//\//--}/snapshots/$MODEL_REVISION"
+  log "kshardcheck: the binary to the worker, rank 0 first (it writes the NCCL id and blocks), then rank 1 on the join"
+  ssh -o BatchMode=yes "$WORKER" "mkdir -p /tmp/kshardcheck-w" || die "kshardcheck: the worker's staging dir failed"
+  rsync -a "$OUT/tf-cuda-test" "$WORKER:/tmp/kshardcheck-w/tf-cuda-test" || die "kshardcheck: the binary rsync failed"
+
+  CHECK_ARGS=(glm-kv-shard-check /ckpt)
+  COMMON_ENV=(-e TF_GLM_KV_SHARD=1 -e HF_HUB_OFFLINE=1 -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME")
+  [[ -z "$NCCL_IB_HCA" ]] || COMMON_ENV+=(-e NCCL_IB_HCA="$NCCL_IB_HCA")
+  COMMON_RUN=(--gpus all --ipc=host --network host --shm-size 16g --device /dev/infiniband
+              --cap-add IPC_LOCK --ulimit memlock=-1 --ulimit stack=67108864)
+
+  # rank 0: writes the id file into /ids (the campaign out dir), blocks in NCCL init
+  docker run --rm "${COMMON_RUN[@]}" "${COMMON_ENV[@]}" \
+    -v "$OUT/tf-cuda-test:/tf-cuda-test:ro" -v "$HF_CACHE/$ckpt_rel:/ckpt:ro" -v "$OUT:/ids" \
+    --entrypoint "" "$R0IMG" timeout 2400 /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
+    > "$OUT/kshardcheck-r0.log" 2>&1 &
+  R0PID=$!
+
+  # the id file across to the worker the moment rank 0 writes it
+  ( for _ in $(seq 1 480); do
+      if [[ -s "$OUT/kv-shard-id.txt" ]]; then
+        rsync -a "$OUT/kv-shard-id.txt" "$WORKER:/tmp/kshardcheck-w/kv-shard-id.txt" && exit 0
+      fi
+      sleep 0.5
+    done; exit 1 ) &
+  IDP=$!
+
+  # rank 1: reads the id file (rank 0 wrote it), joins the comm
+  ssh -o BatchMode=yes "$WORKER" "docker run --rm ${COMMON_RUN[*]} ${COMMON_ENV[*]} \
+    -v /tmp/kshardcheck-w/tf-cuda-test:/tf-cuda-test:ro -v \$HOME/.cache/huggingface/$ckpt_rel:/ckpt:ro -v /tmp/kshardcheck-w:/ids \
+    --entrypoint '' $R1IMG timeout 2400 /tf-cuda-test ${CHECK_ARGS[*]} 1 2 /ids/kv-shard-id.txt" \
+    > "$OUT/kshardcheck-r1.log" 2>&1
+  R1RC=$?
+  wait $R0PID; R0RC=$?
+  wait $IDP 2>/dev/null || true
+
+  echo "## rank 0 (the leader: the seven paths, byte-for-byte against the twin)" >> "$P"
+  tail -24 "$OUT/kshardcheck-r0.log" >> "$P" 2>/dev/null || echo "- no rank 0 log" >> "$P"
+  echo "## rank 1 (the follower: the mapped pages, the owner-computed attention, the carries)" >> "$P"
+  tail -12 "$OUT/kshardcheck-r1.log" >> "$P" 2>/dev/null || echo "- no rank 1 log" >> "$P"
+  echo "## rc: rank0=$R0RC rank1=$R1RC (0 0 required)" >> "$P"
+  if [ "$R0RC" = 0 ] && [ "$R1RC" = 0 ]; then
+    echo "- VERDICT: both ranks PASS — the port's seven paths byte-for-byte against the unsharded twin; the kshardqual battery may stage" >> "$P"
+  else
+    echo "- VERDICT: FAILED — the receipts above name the path and the rank; the port does NOT qualify this iteration" >> "$P"
+  fi
+  touch "$OUT/.kshardcheck.done"
 fi
 
 # ---------------------------------------------------------------------------
