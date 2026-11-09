@@ -9032,3 +9032,40 @@ change first, the engine second.
 v1.2.2→v1.2.4 rebase — one hunk re-anchor in 003-fp8-pages), then the 0104
 warm-turns port (the agent-loop re-prefill). The 512K plan resumes on the
 re-based base.
+
+## (round 139, cont. 11) THE V1.2.5 BUMP SHIPPED — the rebase receipted, the pin flipped (2026-11-09)
+
+**The rebase, empirically grounded**: the subagent's scan verdict ("the
+cheapest bump; one hunk re-anchor") was tested against the real trees and
+CORRECTED — the true drift map is 6 files (registry.zig's joins move #2422,
+cuda_engine.zig's gate/shared extraction, cuda_lanes/cuda_native/cuda_pages'
+additive changes, glm_family_host's dependOn), 40 of 46 files unchanged. With
+the proper apply recipe (no reset-on-failure), **15 of 17 patches apply
+verbatim on v1.2.5** — only 003-fp8-pages needed re-anchoring (4 hunks: the
+glm_kv_paged_records join onto registry_joins.zig, v1.2.5's shareSlot
+preserved beside our layout rewrite, the TF_KV_PAGES test title v1.2.5
+already carries, the snapshots step re-anchored). The first probe's
+"11 of 17 fail" was MY probe script's reset artifact — the lesson: an apply
+probe must never reset the tree between patches.
+
+**The receipts on the final tree** (`4b8d7c91…`, v1.2.5 + the 17-patch
+stack): byte-identical across TWO independent reconstructions (the direct
+stack apply and the staged iso recipe); the tool-parse host suite 51/51;
+compile RC=0 (fatbins + native, sm_121). The shipped 003-fp8-pages.patch was
+verified END TO END as the file that ships: pristine v1.2.5 + the stack in
+order from the shipped files = the verified tree exactly.
+
+**The pin**: TF_COMMIT 267c5af6a (v1.2.4) → 8be9c408c (v1.2.5) in the head's
+local.sh. The v125val battery decides whether it holds: the same-bits greedy
+witness (the 80cc3802… sha must hold across the engine bump), the §2 gates,
+the boot witnesses under #2405's strict TF_ validation, the bench +
+steady-state decode, ONE hardmode run at the harness's new --parallel 2 (the
+instrument re-grounds — see the ledger), the vision suite, TWO timed load
+walls. Any FAIL holds the pin at v1.2.4.
+
+**The bookkeeping correction caught on the way**: the last two digests'
+commits left the anchors re-date uncommitted locally (the guard passed on the
+consistent local pair while the pushed tree carried the old one) — landed now
+with the 003 commit; the guard's chart check reads the committed pair.
+
+**The window**: `preflight v125val summary`.
