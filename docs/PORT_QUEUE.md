@@ -85,6 +85,41 @@ readiness.
      CARRY, TWINS, CHECK). Our port adds the export through config.sh's
      env-forwarded path (the export rule; the env-args gotcha applies).
 
+   **Tranche 2 LANDED (round 139 cont. 20; all 79 rejects + 2 lost-clean
+   hunks anchored, the port tree at `/tmp/v125-rebase/tf` WIP f83bd57..
+   2n)**:
+   - **The fingerprint** is OUR layout 21 (ours was already 20; the fork's
+     14→15) — the two new words after `numerics`; the test adapted into our
+     separate `cuda_ranks_test.zig` (the fork's was inline).
+   - **The collision map confirmed**: `cuda_dsa_block.zig` anchored with our
+     005/006 `page_rows` rule carried INTO the new `latTable` helper; our
+     `tables()` plural + `pk` host-key fields preserved.
+   - **Deliberate skips** (our tree integrates these grounds differently):
+     the fork's `cuda_disk_image`/`cuda_disk_ranks`/`cuda_glm_disk` + their
+     tests (~250 lines — our kept-states flow has no disk-image counterpart;
+     `blankAs`/`seal` do not exist here), the fork's shared-segs batching in
+     `cuda_shared.zig` (`segsKind`/`shared_writes`/`writeSegLatent`/
+     `writeSegsLatent` — our `.mla` is the per-segment shape), and the
+     `pageable()` gate (our engine never unsets pages once on; the
+     `KvShardNeedsPages` refusal anchors before `ownSequence` instead).
+   - **Adaptations on our own features**: our `adopted`/`openWith` prompt-
+     cache flow preserved in `pagesFor`; our `heldPages`/`shared` snapshot
+     params preserved; our `Snap` one-line struct; our `Kind` lacks `disk`
+     (the keeps integrate differently); `copyOut` composed for our single-
+     arena Pool (the fork's had a dev/host split).
+   - **The fidelity check discipline worked**: 3,853 fork `+` lines checked
+     against the tree; every miss classified (landed / adapted / skipped);
+     it caught TWO lost-clean hunks the apply had silently dropped (the
+     `Switches.read` in cuda_ranks, the `KvParts` in engine_status) plus the
+     lane-host trio and the own-sequence sharded sizing — all fixed.
+   - **The suite is green** (test-tool-parse-host RC=0 on the pre-fix tree);
+     the REAL compile gate is `zig build compile-cuda-tests` (the fork's
+     `glm_kv_shard_check` runner compiles inside tf-cuda-test) — in flight.
+   - **NOT YET DONE**: the GPU check itself (needs both ranks + a
+     checkpoint), the `kshardqual` battery phase (the four-arm A/B: off/on/
+     off2/on2 with the witnessed-state gate), the config.sh env default
+     (OFF by default — the knob arrives with the adoption decision).
+
 ## The test-count note (do not re-litigate)
 
 The subagent counted 33 `test "` blocks in tool_parse_test.zig at f202781d3
