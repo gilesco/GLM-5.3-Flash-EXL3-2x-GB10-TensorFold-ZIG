@@ -4475,11 +4475,20 @@ turns = [
 print(json.dumps(turns))
 PYEOF
   }
-  for arm in off on; do
+  for arm in off on off2 on2; do
+    case "$arm" in off2|on2) base="${arm%2}";; *) base="$arm";; esac
     S=$(date +%s)
-    if [ "$arm" = off ]; then WTENV="TF_GLM_WARM_TURNS=0"; else WTENV=""; fi
+    if [ "$base" = off ]; then WTENV="TF_GLM_WARM_TURNS=0"; else WTENV=""; fi
     if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$WTPATCH" $WTENV; then
-      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      echo "## the $arm arm (the $base mode; load $(( $(date +%s) - S )) s)" >> "$P"
+      # the witnessed state gates the receipt: the ON arms must have turns=true,
+      # the OFF arms turns=false (the kill switch) — a serve whose store did not
+      # open (the room drift: none of TF_KV_SHARE's slots fit) is NOT the arm's
+      # mode and its rows are recorded as such
+      WITNESS=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "turns=(true|false)" | tail -1)
+      WANT=$([ "$base" = on ] && echo true || echo false)
+      MODE_OK=$([ "$WITNESS" = "turns=$WANT" ] && echo yes || echo NO)
+      echo "- the witnessed warm state: $WITNESS (want turns=$WANT: $MODE_OK)" >> "$P"
       A="$OUT/wt-$arm"; mkdir -p "$A"
       # turn 1: the loop's opening (computed)
       python3 - "$A/t1.json" "$SERVED_NAME" <<'PYEOF'
@@ -4578,7 +4587,7 @@ except Exception: print("")' 2>/dev/null) || model=""
   else
     echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
   fi
-  echo "- VERDICT: the final user message's wall drops on the ON arm (the warm pass resumed the loop's turns) while the greedy sha holds + the gates PASS + hardmode holds + the vision 4/4 = the 0104 port qualifies (adoption moves config.sh's PATCHES + the promoted repo's)" >> "$P"
+  echo "- VERDICT: the final user message's wall on the SETTLED arms (off2 vs on2 — the first pair absorbs the serve-order drift; a serve whose witnessed warm state did not match its arm's mode marks its rows NOT-MODE) drops on the ON arm while the greedy sha holds + the gates PASS + hardmode holds + the vision 4/4 = the 0104 port qualifies (adoption moves config.sh's PATCHES + the promoted repo's); the room-drift caveat: a serve whose share store did not open (none of TF_KV_SHARE's slots fit) is the fork's issue-16 class and its rows are void, not evidence" >> "$P"
   touch "$OUT/.warmturnsqual.done"
 fi
 
