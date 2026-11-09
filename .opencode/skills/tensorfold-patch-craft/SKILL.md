@@ -104,6 +104,26 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   applied-hunk guarantee is gone entirely. The line-level fidelity check
   (Workflow → Cross-tree ports) replaces it — 244/244 + 18/18 fork lines
   verified on the port that shipped.
+- **`git apply --reject` is NOT idempotent — a scoping run contaminates the
+  real run's inventory** (2026-11-09, the 0110 port): the scoping run's
+  cleanly-applied hunks STAY in the tree even after `find . -name '*.rej'
+  -delete` — only the rejects were removed, the applied hunks remained as
+  working-tree modifications. The next apply then rejects the SAME hunks
+  differently (the context lines are already applied) and the reject count
+  LIES (102 vs the true 79). Before ANY second `--reject` run against a tree:
+  `git reset --hard HEAD` AND delete the untracked new files the patch
+  creates (they appear as `??` in status — a patch's new files apply as
+  untracked and survive a reset). Verify the tree is byte-clean
+  (`git status --porcelain | wc -l` → 0) before trusting a reject inventory.
+- **A ported patch lands in the STORE (`patches/`), not just the build
+  staging dir** (2026-11-09, the 020 promotion sync): production's
+  `prepare.sh` stages the named PATCHES list from `patches/` into
+  `image/patches/` after `find image/patches -name '*.patch' -delete` — a
+  patch copied into `image/patches/` alone dies the next fingerprint
+  re-prepare (`PATCHES names 'x.patch' but patches/x.patch does not
+  exist`). The store is the source of truth; the image dir is
+  build-generated. After any promotion sync, verify every named patch
+  exists in the store before the next window re-prepares production.
 
 ## Cross-tree ports (a fork patch generated against a different base)
 
