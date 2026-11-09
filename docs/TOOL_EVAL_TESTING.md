@@ -1349,6 +1349,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       SEVENTEENTH consecutive — the vision 4/4. ADOPTED: config.sh's PATCHES default
       carries 018; the promoted repo follows on the next promotion sync.
 
+- [x] **THE 0104 PORT PARKED — THE MECHANISM ENGAGES BUT BUYS NOTHING ON OUR KV_SHARE MODE
+      (round 139 cont. 14-15, campaigns -112212/-122100/-131026)**: the port now works
+      end to end — the share-store substrate fix (warm turns open on either store; the
+      radix rules' tail already plans the pass's end), the kill switch gating the passes
+      themselves, and the hardened four-arm battery with the witnessed-state gate (a
+      serve whose store did not open — the fork's issue-16 room-drift class — voids its
+      rows). The ON arms ran the mechanism for real (3 done / 3 stepped aside / 0 failed
+      per arm, the fork's own behavior pattern) and the deepened instrument (~9-10K loop
+      tokens, the fork's measured shape) showed NO WIN: off2 6194 ms vs on2 6292 ms (the
+      ON arm 1.6% slower, inside noise). The explanation: our KV_SHARE mode's per-turn
+      radix keeps already carry what the warm pass adds — the fork's win existed on their
+      snap-store base which missed the mid-loop states. The port stays staged (019), NOT
+      in the PATCHES default; the battery hardening stays as the A/B pattern.
+
 - [x] **THE 0104 PORT STAGED AND DISPOSITIONED INERT-ON-OUR-MODE (round 139 cont. 13, the
       warmturnsqual A/B, campaigns-083530/-093727/-102456)**: the port is bit-safe and
       receipted (the greedy sha IDENTICAL on every arm, the §2 gates ALL PASS, hardmode

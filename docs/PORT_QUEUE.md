@@ -16,18 +16,15 @@ readiness.
    byte-identical; the engine's gate/shared block moved to
    `cuda_engine_gate.zig` but all `e.*` call sites keep working. Guarded by
    the §2/hardmode/vision battery as usual.
-2. **0104 warm-turns** — PORTED but DISPOSITIONED **INERT-ON-OUR-MODE**
-   (round 139 cont. 13): the port is bit-safe and receipted (the greedy sha
-   IDENTICAL, the §2 gates PASS, hardmode 95 — the NINETEENTH, the vision
-   4/4) but the mechanism never engages: the boot witness printed
-   `turns=false quiet=0ns` on both arms — the `snap_save` store the warm
-   pass attaches to is created only under `!share`, and our adopted serving
-   mode TF_KV_SHARE=16 keeps prompts as pool pages. The fork's 0104 was
-   built without the KV_SHARE store. The trade-off is the user's:
-   (a) teach the warm pass to keep its states through the KV_SHARE path
-   (new engine work), (b) a serving-mode split (019 with KV_SHARE off for
-   agent-loop workloads), or (c) park (019 stays staged, NOT in the
-   PATCHES default).
+2. **0104 warm-turns** — PORTED, MEASURED, **PARKED** (round 139 cont. 14-15):
+   the mechanism engages on our KV_SHARE mode (the share-store substrate fix;
+   3 done / 3 stepped aside per ON arm) but buys NOTHING — the deepened
+   instrument (~9-10K loop, the fork's own shape) read off2 6194 vs on2 6292 ms.
+   Explanation: our share store's per-turn radix keeps already carry what the
+   warm pass adds; the fork's win existed on their snap-store base. 019 stays
+   staged, NOT in the PATCHES default. The battery hardening (the
+   witnessed-state gate, the four-arm drift control) is the A/B pattern now.
+
 3. **0108 CACHE_FIRST / 0110 KV_SHARD** — the 512K-plan candidates; decide
    after the v1.2.5 rebase lands (0110 touches the same pool ground as
    003-fp8-pages + 005-pagerows-fix).
