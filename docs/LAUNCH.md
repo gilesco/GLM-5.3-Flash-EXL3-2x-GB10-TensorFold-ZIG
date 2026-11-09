@@ -9330,3 +9330,38 @@ via the version bump (the v1.2.5→v1.2.6 rebase was the cheapest of the
 line) + the config change + the standard battery when it lands in a
 release. The GPU check and the kshardqual battery are parked until the
 user's call. Nothing ships either way without it.
+
+## (round 139, cont. 24) THE SINGLE-ITERATION KSHARDCHECK: two instrument failures, the fix, the relaunch (2026-11-09, user: "Finish the fork port now for a single iteration")
+
+**The user's call** ended the strategic watch: finish the fork port now,
+one iteration — the GPU gate's receipt, then the battery if it passes.
+
+**The first window** (campaign-20261109-205823) died BEFORE any GPU work:
+the phase's relative `-v "$OUT:…` mount paths became docker named volumes
+("invalid characters for a local volume name") — the absolute-path fix
+(readlink -f on OUT/PORT_TREE/HF_CACHE at the phase head) landed and the
+window relaunched.
+
+**The second window** (campaign-20261109-211540) got further: the binary
+built (164M, 3 dispatch hits), rank 0 wrote the NCCL id and blocked — then
+**rank 1 raced the background id-file poller**, read the missing file, and
+`FAIL glm-kv-shard-check: FileNotFound` in ~2 s. Worse: rank 1's nonzero
+ssh hit the script's `set -euo pipefail` and killed the phase BEFORE its
+receipt's rank tails and rc lines (production restored healthy on the exit
+path — the window flow held).
+
+**The live probes on the worker confirmed the runtime path is sound**:
+the binary mounts and executes, the id file reads (e17858d1…, 256 hex), the
+checkpoint mounts from the worker's HF cache, and the full flag set
+(gpus/ipc/host-network/shm/infiniband/IPC_LOCK/memlock) carries the check
+into NCCL init — rank 1 alone sits BLOCKED (rc 124 on the 300 s timeout)
+waiting for rank 0, exactly as the check's design intends.
+
+**The fix** (one commit): the id-file handoff is SYNCHRONOUS (the phase
+rsyncs it to the worker before rank 1's ssh starts — no poller race), and
+the RC captures are set-e-proof (`|| RC=$?` so a failing rank can never
+again kill the phase before its receipt completes).
+
+**The state**: the fix landed and synced (9751843), production healthy on
+8000, no window flag. The third launch carries the complete gate: both
+ranks, the seven paths, byte-for-byte against the twin.
