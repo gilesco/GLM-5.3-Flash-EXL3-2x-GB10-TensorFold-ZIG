@@ -16,14 +16,15 @@ readiness.
    byte-identical; the engine's gate/shared block moved to
    `cuda_engine_gate.zig` but all `e.*` call sites keep working. Guarded by
    the §2/hardmode/vision battery as usual.
-2. **0104 warm-turns** — the fork's highest-value patch for our line: the
-   server background-prefills conversation+reply+next-turn-opening after a
-   reply (`warm_quiet` 150 ms), so an agent loop's next turn stops
-   re-prefilling the whole prefix (their 50–100K prefills: 10–30 s → resumed
-   from 4,096 of 9,335 tokens). 8 files (`lane_host.zig`, `cuda_lanes.zig`,
-   `cuda_native.zig`, `native/cuda.zig`, `warm.zig`, `openai.zig` + tests).
-   Needs its own port recipe — none staged yet. Merges with our
-   `cuda_lanes.zig` hunk (003-fp8-pages' `fits()` note).
+2. **0104 warm-turns** — PORTED (round 139 cont. 13, `019-warmturns.patch`,
+   STAGED): the family declares `warm_quiet` (150 ms), the chunk gate yields,
+   `quiet()` waits on `warmBlocked` (the fill-queue case), setup ends visibly,
+   the tool-message dummy turn, and the `TF_GLM_WARM_TURNS=0` kill switch (the
+   A/B arm). Fidelity 104/104 fork lines; the suite PASS; compile RC=0. The
+   battery (`warmturnsqual`) runs the OFF/ON arms over a tool-loop
+   conversation with the final user message's wall as the instrument — the
+   fork's measured shape (their 9.3K loop: 8,192 of its tokens cached vs
+   4,096 before; 1.6 s to answer vs 3.5 s). Adoption on the receipt.
 3. **0108 CACHE_FIRST / 0110 KV_SHARD** — the 512K-plan candidates; decide
    after the v1.2.5 rebase lands (0110 touches the same pool ground as
    003-fp8-pages + 005-pagerows-fix).
