@@ -128,12 +128,29 @@ readiness.
      lanes pagesFor routing (the adopted prompt-cache pages are a pool
      lease via openWith; the shard home only on the openFor path — the two
      flows never compose).
-   - **NEXT**: the GPU check on the pair (`tf-cuda-test glm-kv-shard-check`
-     on both ranks inside the builder-stage image, per VALIDATION §6 — the
-     first engine-level GPU check this line has ever run through the
-     campaign), then the `kshardqual` battery phase (the four-arm A/B with
-     the witnessed-state gate), then the adoption decision — the user's
-     (−1.6/−3.6% old-engine decode vs ~1.8× pool tokens).
+   - **COMPILE-CLEAN END TO END (cont. 22)**: `compile-cuda-tests` RC=0
+     WITH the check's dispatch landed (the fork's `shardCheck` wired into
+     main.zig's run table — the usage-text-only registration would have
+     died at runtime) and the check's body type-checked (the lazy-analysis
+     blind spot closed). Seven more rounds of check-only fixes landed:
+     keepAt/kept_id, the Options mtp adaptation, the e.link vestige, the
+     snapshots arity, the prefill call mapping (the fork's ids,null,null,
+     marks maps onto our ids,from,cancel,marks exactly), three beginOn
+     calls gaining our kept arg. The disk cases stripped (our tree has no
+     disk-image machinery) — the seven non-disk paths are the gate.
+   - **THE STRATEGIC QUESTION (the user's, pending)**: upstream #1431 is
+     the SAME mechanism by the SAME author, actively landing — PR #2415
+     (part 1, TF_GLM_KV_SPLIT: owner classes in core kv_pool) is in
+     review with all of ashhart's points addressed, parts 2-4 pre-committed
+     with the same numbers we were porting toward (2.10M → 4.20M tokens,
+     byte-identical, decode −1.3/−3.6% at TP=2 on two GB10s). The fork
+     port and the upstream PR are architecturally DIFFERENT (GLM-side
+     two-pool vs core-kv_pool owner classes; TF_GLM_KV_SHARD vs
+     TF_GLM_KV_SPLIT), so the fork port would need re-doing on upstream's
+     shape anyway. The recommendation recorded: SUSPEND the fork port
+     (the tree stays as the reference), watch #1411 → #2415 → parts 2-4,
+     adopt upstream via the version bump when it lands in a release. The
+     port tree's GPU check + battery work is parked until that call.
 
 ## The test-count note (do not re-litigate)
 
