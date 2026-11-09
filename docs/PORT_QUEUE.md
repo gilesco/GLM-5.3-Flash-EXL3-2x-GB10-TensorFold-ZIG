@@ -44,6 +44,47 @@ readiness.
    work, on a fresh sitting with the recipes pattern (the warmturnsqual
    A/B pattern applies: TF_GLM_KV_SHARD=1 vs unset).
 
+   **The digest's planning facts (cont. 19, the design-note read complete;
+   tranche 1 COMMITTED on the port tree)**:
+   - **No new CUDA kernels anywhere** — the whole port is host-side Zig +
+     NCCL send/recv call sites; the fork explicitly did NOT port the old
+     engine's `glm_shard.cu`. No sm_121 compile risk from device code.
+   - **No 0109 dependency** — the disk-image/keep machinery is modified in
+     place but every path is shard-conditional; unsharded disk format 1 is
+     byte-identical; our native #1411 learned-states take the integration
+     point's place.
+   - **Fully switch-gated, byte-identical off** — `TF_GLM_KV_SHARD=1` plus
+     CARRY/TWINS/CHECK knobs; the off path is proven unchanged by the
+     patch's own recorded-launch test suite (150 random windows + mutants,
+     all new files).
+   - **The GPU check program is the port's primary validator**:
+     `tf-cuda-test glm-kv-shard-check` serves a sharded stream against an
+     unsharded twin IN THE SAME ENGINE PAIR byte-for-byte over seven paths
+     (twins both parts, owner-computed prompts at 2,049 and 9,000 tokens,
+     resumes at home / off-home with the carry, kept-in-part-1, the disk
+     image) and FAILS if any path never engaged — the port qualifies on
+     this plus our §2 battery.
+   - **The collision map** (where our stack already touched the same ground):
+     `cuda_dsa_block.zig` is the most delicate — our 005-pagerows-fix and
+     006-selist-fix sit on the SAME `latent.Table` lines 0110 reworks
+     (`latPt/latPs/latTable`); `cuda_state.zig`/`cuda_pages.zig` (003's
+     page-byte layout), `cuda_snapshots.zig`+layout (003's fp8 parts),
+     `cuda_engine.zig` (our Forward-literal fields) follow.
+   - **The fingerprint struct will NOT merge mechanically** — theirs is
+     layout 14→15; ours is already at 20 from our own patches. Our port
+     bumps 20→21 adding `kv_shard` + `kv_shard_check` after `numerics`
+     (the anchor position is identical in both trees; verified).
+   - **The measurements**: the 1.8× is exact arithmetic (6,380 → 3,542
+     B/token, asserted in a host unit test — safe to bank); the decode cost
+     (−1.4/−3.7%) is an OLD-ENGINE measurement at single-row streams — the
+     DFlash2 verify-width cost and the sharded-vs-unsharded acceptance
+     identity on THIS engine are explicitly unmeasured GPU-only questions.
+     Our own battery must measure them.
+   - **The env plumbing**: no scripts/config.sh hunks in the fork's patch —
+     the knobs are read from the environment per rank (`TF_GLM_KV_SHARD`,
+     CARRY, TWINS, CHECK). Our port adds the export through config.sh's
+     env-forwarded path (the export rule; the env-args gotcha applies).
+
 ## The test-count note (do not re-litigate)
 
 The subagent counted 33 `test "` blocks in tool_parse_test.zig at f202781d3
