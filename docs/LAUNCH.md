@@ -9131,3 +9131,38 @@ measured default; the warm turns need the other cache mode): the options are
 engine work, fork-side too), (b) run the 019 patch with KV_SHARE off for the
 agent-loop workloads (a serving-mode split), or (c) park the patch as
 inert-on-our-mode and revisit when the KV_SHARE store grows a warm hook.
+
+## (round 139, cont. 15) THE 0104 WARM-TURNS PORT: the mechanism ENGAGES but buys NOTHING on our KV_SHARE mode — PARKED (2026-11-09)
+
+**The sixth window** (campaign-20261109-131026, rc=0, production restored
+healthy) closed the question with the hardened four-arm battery and the
+deepened instrument:
+
+- **The mechanism now engages exactly as designed**: the ON arms witnessed
+  `turns=true host_warm_quiet=150ms` and ran **3 done / 3 stepped aside /
+  0 failed** per arm — the fork's own behavior pattern (their "17 of 18
+  stepped aside"); the OFF arms witnessed false and ran zero passes. The
+  kill switch gates the passes properly now.
+- **The instrument at the fork's own shape (~9-10K loop tokens): NO WIN.**
+  The final user message's wall: off2 **6194 ms** vs on2 **6292 ms** (the
+  ON arm 1.6% slower, inside noise); the first pair 6212 vs 6185 (−0.4%).
+  The fork's win (their 9.3K loop: 8,192 of its tokens cached vs 4,096,
+  1.6 s vs 3.5 s) did not transfer.
+- **The guards held on every arm**: the greedy same-bits sha IDENTICAL
+  (80cc3802…), the §2 content gates ALL PASS, hardmode 95 (the TWENTIETH
+  consecutive), the vision 4/4.
+
+**The mechanistic explanation**: on our KV_SHARE serving mode, EVERY
+request's prompt pass already keeps states at the radix plan's marks
+(share_mod.Keeps, `tail=true` planning the end) — the loop's own turns
+kept their states turn by turn, which is exactly what the warm pass would
+add. The fork's win existed on their base because their snap-store cache
+missed the mid-loop states; our share store does not. The port is
+correct code but duplicates work the share store already does.
+
+**DISPOSITION (user: "follow your own recommendations")**: PARKED — 019
+stays staged, NOT in the PATCHES default. The port's value was the
+question it answered: our KV_SHARE mode already carries the agent-loop
+resume behavior the fork built warm turns to add. The A/B instruments and
+the battery hardening (the witnessed-state gate, the four-arm drift
+control) stay in the campaign script as the pattern for future A/B ports.
