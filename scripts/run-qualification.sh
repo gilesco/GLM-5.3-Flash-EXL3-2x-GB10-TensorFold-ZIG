@@ -4442,6 +4442,145 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: warmturnsqual (SESSION-SPECIFIC; the fork's 0104 port — 019-warmturns.
+# The A/B battery: the OFF arm runs TF_GLM_WARM_TURNS=0 (the kill switch), the
+# ON arm the ported default. The instrument is the fork's measured shape: a
+# tool-loop conversation, then the next user message — its TTFT and cached
+# prefix depth say whether the warm pass resumed past the loop. The §2 gates
+# + hardmode 95 + the vision 4/4 + the greedy same-bits sha guard it. Retires
+# with the receipt; adoption moves config.sh's PATCHES + the promoted repo's.
+# ---------------------------------------------------------------------------
+if want warmturnsqual && ! phase_done warmturnsqual; then
+  log "=== warmturnsqual (the 0104 port A/B: the warm pass resumes the next turn past the agent loop)"
+  P="$OUT/10-warmturnsqual.md"; : > "$P"
+  echo "# warmturnsqual (019-warmturns: TF_GLM_WARM_TURNS=0 vs the default ON; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  WTPATCH="${PATCHES},019-warmturns.patch"
+  log "warmturnsqual: explicit prepare (the fingerprint moved)"
+  if ! PATCHES="$WTPATCH" scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "warmturnsqual: the image rebuild (prepare) failed - see the log"; fi
+  # the loop conversation: three tool-call turns (the loop), then the next user message
+  build_turn() { # $1 = the request file, $2 = the prior assistant turn's content prefix
+    python3 - "$1" "$2" <<'PYEOF'
+import json, sys
+out, prior = sys.argv[1], sys.argv[2]
+filler = "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks "
+turns = [
+    {"role": "user", "content": "Remember this inventory: " + filler * 40},
+    {"role": "assistant", "content": None, "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "lookup", "arguments": json.dumps({"q": "inventory"})}}]},
+    {"role": "tool", "content": "the inventory is recorded (42 items)"},
+    {"role": "assistant", "content": prior + "Recorded. " + filler * 20},
+    {"role": "tool", "content": "acknowledged"},
+    {"role": "assistant", "content": prior + "Inventory noted and held. " + filler * 20},
+    {"role": "tool", "content": "acknowledged"},
+]
+print(json.dumps(turns))
+PYEOF
+  }
+  for arm in off on; do
+    S=$(date +%s)
+    if [ "$arm" = off ]; then WTENV="TF_GLM_WARM_TURNS=0"; else WTENV=""; fi
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$WTPATCH" $WTENV; then
+      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      A="$OUT/wt-$arm"; mkdir -p "$A"
+      # turn 1: the loop's opening (computed)
+      python3 - "$A/t1.json" "$SERVED_NAME" <<'PYEOF'
+import json, sys
+b = {"model": sys.argv[2], "messages": [{"role": "user", "content": "Remember this inventory: " + "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks " * 40}], "max_tokens": 64, "temperature": 0, "seed": 42, "tools": [{"type": "function", "function": {"name": "lookup", "parameters": {"type": "object", "properties": {"q": {"type": "string"}}, "required": ["q"]}}}], "chat_template_kwargs": {"enable_thinking": False}}
+json.dump(b, open(sys.argv[1], "w"))
+PYEOF
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$A/t1.json" -o "$A/t1-resp.json" || true
+      # turns 2-4: the loop (tool call + results), replayed as one growing history
+      for t in 2 3 4; do
+        python3 - "$A/t$t.json" "$SERVED_NAME" "$A" "$t" <<'PYEOF'
+import json, sys
+out, model, adir, t = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+history = []
+filler = "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks "
+history.append({"role": "user", "content": "Remember this inventory: " + filler * 40})
+for i in range(2, t):
+    if i % 2 == 0:
+        history.append({"role": "assistant", "content": None, "tool_calls": [{"id": f"c{i}", "type": "function", "function": {"name": "lookup", "arguments": json.dumps({"q": f"inventory-{i}"})}}]})
+        history.append({"role": "tool", "content": f"the inventory is recorded ({i} items)"})
+    else:
+        history.append({"role": "assistant", "content": f"Recorded item {i}. " + filler * 20})
+b = {"model": model, "messages": history + [{"role": "user", "content": f"Summarize part {t} in one word."}], "max_tokens": 64, "temperature": 0, "seed": 42, "tools": [{"type": "function", "function": {"name": "lookup", "parameters": {"type": "object", "properties": {"q": {"type": "string"}}, "required": ["q"]}}}], "chat_template_kwargs": {"enable_thinking": False}}
+json.dump(b, open(out, "w"))
+PYEOF
+        T0=$(date +%s%N)
+        curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$A/t$t.json" -o "$A/t$t-resp.json" || true
+        T1=$(date +%s%N)
+        echo "- turn $t wall: $(( (T1 - T0) / 1000000 )) ms" >> "$P"
+      done
+      # the warm-pass witness: the engine's own log lines
+      W=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "next turn: background prefill" || true)
+      Y=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "stepped aside" || true)
+      F=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -c "failed:" || true)
+      echo "- the warm-pass log lines: $W done, $Y stepped aside, $F failed" >> "$P"
+      # the final user message: its TTFT is the instrument (the warm pass resumed the prefix)
+      python3 - "$A/tf.json" "$SERVED_NAME" "$A" <<'PYEOF'
+import json, sys
+out, model, adir = sys.argv[1], sys.argv[2], sys.argv[3]
+history = []
+filler = "harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry cistern gable linden sluice cobble rafter minnow heather bracken cellars docks "
+history.append({"role": "user", "content": "Remember this inventory: " + filler * 40})
+for i in range(2, 5):
+    if i % 2 == 0:
+        history.append({"role": "assistant", "content": None, "tool_calls": [{"id": f"c{i}", "type": "function", "function": {"name": "lookup", "arguments": json.dumps({"q": f"inventory-{i}"})}}]})
+        history.append({"role": "tool", "content": f"the inventory is recorded ({i} items)"})
+    else:
+        history.append({"role": "assistant", "content": f"Recorded item {i}. " + filler * 20})
+b = {"model": model, "messages": history + [{"role": "user", "content": "What is the third item in the inventory? Answer with just the words."}], "max_tokens": 16, "temperature": 0, "seed": 42, "chat_template_kwargs": {"enable_thinking": False}}
+json.dump(b, open(out, "w"))
+PYEOF
+      T0=$(date +%s%N)
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' -d @"$A/tf.json" -o "$A/tf-resp.json" || true
+      T1=$(date +%s%N)
+      echo "- the final user message (the instrument): $(( (T1 - T0) / 1000000 )) ms wall" >> "$P"
+      python3 -c "
+import json
+try:
+    d = json.load(open('$A/tf-resp.json'))
+    print('- the final reply: ' + repr(d['choices'][0]['message'].get('content'))[:80])
+except Exception as e:
+    print('- the final reply FAILED: ' + repr(e))
+" >> "$P"
+    else
+      echo "## the $arm arm — REFUSED (the prepare/start log's tail)" >> "$P"
+      tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the greedy same-bits witness (the ON arm)" >> "$P"
+  req_file "$OUT/wt-greedy.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/wt-greedy.json" > "$OUT/wt-greedy-resp.json" || true
+  echo "- the greedy content sha: $(content_sha "$OUT/wt-greedy-resp.json")" >> "$P"
+  echo "- the same-bits witness: $([ "$(content_sha "$OUT/wt-greedy-resp.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  echo "## the §2 content gates" >> "$P"
+  run_gates wt DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PATCHES="$WTPATCH" || true
+  echo "## hardmode (the 95 must hold)" >> "$P"
+  mkdir -p "$OUT/wthm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "warmturnsqual" --output-dir "$OUT/wthm" --parallel 2 \
+    --json-file "$OUT/wthm/hm.json" > "$OUT/wthm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/wthm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/wthm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/wthm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/wtvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/wtvision/vision.json" > "$OUT/wtvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/wtvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "- VERDICT: the final user message's wall drops on the ON arm (the warm pass resumed the loop's turns) while the greedy sha holds + the gates PASS + hardmode holds + the vision 4/4 = the 0104 port qualifies (adoption moves config.sh's PATCHES + the promoted repo's)" >> "$P"
+  touch "$OUT/.warmturnsqual.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: callquotequal (SESSION-SPECIFIC; the fork's 0103 port — 018-callquote.
 # The port is staged (patches/018-callquote.patch); the byte-identity verify
 # against the suite-green tree f202781d3 passed. This battery qualifies the
