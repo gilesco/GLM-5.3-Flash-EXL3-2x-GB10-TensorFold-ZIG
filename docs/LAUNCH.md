@@ -9098,3 +9098,36 @@ engine through the window's restore path).
 fork's highest-value patch for our line (the agent-loop re-prefill; the
 512K/agent workload's own front), ported onto the v1.2.5 base now. Then
 0108 CACHE_FIRST + 0110 KV_SHARD for the 512K plan.
+
+## (round 139, cont. 13) THE 0104 WARM-TURNS PORT: the guards hold but the mechanism is INERT on our serving mode — the substrate conflict found (2026-11-09)
+
+**Three windows told the story** (campaigns -083530, -093727, -102456, all
+rc=0, production restored healthy each time):
+
+- **The guards hold everywhere**: the greedy same-bits sha IDENTICAL
+  (80cc3802… across all three), the §2 gates ALL PASS, hardmode 95 (the
+  NINETEENTH consecutive), the vision 4/4. The port is bit-safe.
+- **The instrument is NULL — and the boot witness found why**: the third
+  window's receipt carries `info: warm turns: turns=false quiet=0ns
+  host_warm_quiet=0ns` on BOTH arms — the warm state is OFF at runtime even
+  on the ON arm. Root cause: `warm_turns = h.store != null and
+  @hasDecl(F, "warm_quiet")` — and the store is created only under
+  `!share` (cuda_native.zig's `if (@hasDecl(F, "snap_save") and cache > 0
+  and !ownCache and !share)`). **Our adopted serving mode TF_KV_SHARE=16
+  keeps prompts as pool pages through the share path — the snap_save store
+  the warm pass needs does not exist in that mode.** The fork's 0104 was
+  developed against their base WITHOUT the KV_SHARE pool-pages store (their
+  CHANGELOG carries no KV_SHARE) — the mechanism's substrate differs on
+  ours.
+- The battery itself hardened along the way: the boot witness added to the
+  port (the first two windows' receipts couldn't diagnose because the
+  engine's warm-state line wasn't captured), the arm receipts now carry it.
+  The port's code stands verified (the suite PASS, compile RC=0, fidelity
+  104/104 fork lines) — it is the SUBSTRATE that differs, not the port.
+
+**The trade-off is the user's** (the KV_SHARE=16 serving mode is the adopted,
+measured default; the warm turns need the other cache mode): the options are
+(a) teach the warm pass to keep its states through the KV_SHARE path (new
+engine work, fork-side too), (b) run the 019 patch with KV_SHARE off for the
+agent-loop workloads (a serving-mode split), or (c) park the patch as
+inert-on-our-mode and revisit when the KV_SHARE store grows a warm hook.
