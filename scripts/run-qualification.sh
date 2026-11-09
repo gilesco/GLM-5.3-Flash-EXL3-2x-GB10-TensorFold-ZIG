@@ -4617,8 +4617,11 @@ if want cachefirstqual && ! phase_done cachefirstqual; then
       echo "## the $arm arm (the $base mode; load $(( $(date +%s) - S )) s)" >> "$P"
       echo "- the serve line: $(serve_line | grep -oE 'taking [0-9]+ pages of 512 rows \([0-9.]+ GiB\)|no prompt cache[^;]*|prompt cache[^;]*')" >> "$P"
       docker logs "$CONTAINER_NAME" 2>&1 | grep "prompt cache: the room funds" | tail -1 >> "$P" || echo "- no fund-report line (the room funded the ask)" >> "$P"
-      # the cache's state after one conversation round
-      req_file "$OUT/cf-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 64}'
+      # the cache's state after one conversation round — the greedy witness:
+      # max_tokens 1024 minimum (the thinking model eats a small budget; the
+      # round-139 cont. 17 instrument note: the 64 probe returned EMPTY content
+      # on all four arms of campaign-20261109-140604)
+      req_file "$OUT/cf-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
       chat "$OUT/cf-$arm-req.json" > "$OUT/cf-$arm-resp.json" || true
       echo "- the greedy content sha: $(content_sha "$OUT/cf-$arm-resp.json")" >> "$P"
     else
