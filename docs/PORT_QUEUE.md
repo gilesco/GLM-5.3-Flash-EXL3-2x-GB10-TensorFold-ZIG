@@ -8,14 +8,11 @@ readiness.
 
 ## The order (the scan's verdict)
 
-1. **The v1.2.5 bump** — the cheapest since the v1.2.2→v1.2.4 rebase. One hard
-   re-anchor: 003-fp8-pages' contract-registry append re-cuts onto v1.2.5's
-   new `registry_joins.zig` (`joins.cuda_pending`, #2422); `glm_family_host.zig`
-   likely one line. `tool_parse.zig` byte-identical v1.2.4→v1.2.5 (both server
-   patches survive); all kernel files our nine kernel patches stand on are
-   byte-identical; the engine's gate/shared block moved to
-   `cuda_engine_gate.zig` but all `e.*` call sites keep working. Guarded by
-   the §2/hardmode/vision battery as usual.
+1. **The v1.2.5 bump — DONE (round 139 cont. 11-12)**: 15 of 17 patches applied
+   verbatim, 003-fp8-pages re-anchored onto the registry_joins move; the tree
+   verified byte-identical; the v125val battery qualified it (the greedy sha
+   IDENTICAL across the engine bump, hardmode 95, the vision 4/4, the walls
+   83/83 s). The pin holds at v1.2.5; production serves it.
 2. **0104 warm-turns** — PORTED, MEASURED, **PARKED** (round 139 cont. 14-15):
    the mechanism engages on our KV_SHARE mode (the share-store substrate fix;
    3 done / 3 stepped aside per ON arm) but buys NOTHING — the deepened
@@ -25,19 +22,27 @@ readiness.
    staged, NOT in the PATCHES default. The battery hardening (the
    witnessed-state gate, the four-arm drift control) is the A/B pattern now.
 
-3. **0108 CACHE_FIRST** — PORTED (round 139 cont. 16, `020-cachefirst.patch`,
-   STAGED): the cache set aside before the windows, composed with our tree's
-   `asked` flag (v1.2.5's own cache priority) — the flag changes the ROOM the
-   windows count; the fund-report line makes the room drift (the fork's
-   issue-16, caught by our warmturnsqual battery: the room moved 11.8 → 11.0
-   GiB between starts) visible at boot. The battery (`cachefirstqual`) is the
-   four-arm OFF/ON plan A/B reading the serve lines' arithmetic. Our serving
-   default's `--prompt-cache-gib 3` already carries the priority semantics in
-   the common case — the port's value is the drift visibility plus the
-   multi-window remainder sharing. Adoption moves the env default.
-4. **0105 / 0107 / 0092** — recipes staged below, but DISPOSITIONED watch:
-   port when the shape appears in a receipt (the patch policy: the measured
-   win must be worth the rebase tax).
+3. **0108 CACHE_FIRST — DONE AND ADOPTED (round 139 cont. 16-17)**:
+   `020-cachefirst.patch` is the TWENTY-FIRST patch, the env default
+   TF_PROMPT_CACHE_FIRST=1 in config.sh. The cachefirstqual receipt: the ON
+   arms' streams ceded pages to the reserve (3110/3115 -> 3103/3083), the
+   fund-report line live, the §2 gates ALL PASS, hardmode 95 — the
+   TWENTY-FIRST consecutive — the vision 4/4.
+4. **0110 KV_SHARD** — SCOPED, NOT PORTED (round 139 cont. 17): the fork's
+   biggest single patch — 5,309 lines across ~44 files (NEW modules:
+   `cuda_kv_shard.zig`/`_attn.zig`/`_keep.zig`, `kv_parts.zig`, `kv-shard-check`
+   + their tests; the pool/pages/state/forward/disk machinery). The dry run
+   against our v1.2.5+21-patch tree: 23 files reject with 79 hunks needing
+   hands (the fork's base is `f350cd3e + 0001-0109`, much older than ours).
+   The design note (inside the patch) is exceptional — the sharded layout
+   (3,542 B/token a rank vs 6,380), the owner-computed attention over NCCL,
+   the trash-page latent table, the part-ownership rules. THE VALUE: the pool
+   holds ~1.8× the tokens — the 512K plan's own front. THE COST: a
+   multi-sitting port with the §2 battery guarding it. The decision (the
+   fork's measured −1.6/−3.6% decode vs 1.8× pool) is the user's when the
+   512K ladder resumes; the port itself is the next major sitting's main
+   work, on a fresh sitting with the recipes pattern (the warmturnsqual
+   A/B pattern applies: TF_GLM_KV_SHARD=1 vs unset).
 
 ## The test-count note (do not re-litigate)
 
