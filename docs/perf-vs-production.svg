@@ -1,51 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" width="1000" height="430" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
 
   <text x="12" y="18" font-size="14.5" font-weight="700" fill="#e6edf3">The fronts — this line vs production (the retired Python recipe's pairs</text>
-  <text x="620" y="18" font-size="10.5" fill="#8b949e" text-anchor="middle">production = 100%</text>
+  <text x="499" y="18" font-size="10.5" fill="#8b949e" text-anchor="middle">production = 100%</text>
 
   <!-- rows: label | bar | % + raw values; higher is always better (time metrics inverted) -->
   <g>
     <text x="12" y="51.5" font-size="12.5" fill="#9fb1c9">loading (warm restart wall)</text>
-    <rect x="270" y="34" width="350" height="26" rx="4" fill="#3fb950"/>
-    <text x="628" y="51.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
-    <text x="669" y="51.5" font-size="10" fill="#8b949e">80 vs 80 s</text>
+    <rect x="270" y="34" width="229" height="26" rx="4" fill="#3fb950"/>
+    <text x="507" y="51.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
+    <text x="548" y="51.5" font-size="10" fill="#8b949e">80 vs 80 s</text>
     <text x="12" y="91.5" font-size="12.5" fill="#9fb1c9">decode solo (2048-token, measured)</text>
-    <rect x="270" y="74" width="346" height="26" rx="4" fill="#d29922"/>
-    <text x="624" y="91.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
-    <text x="656" y="91.5" font-size="10" fill="#8b949e">68.2 vs 68.8 t/s</text>
+    <rect x="270" y="74" width="227" height="26" rx="4" fill="#d29922"/>
+    <text x="505" y="91.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
+    <text x="537" y="91.5" font-size="10" fill="#8b949e">68.3 vs 68.8 t/s</text>
     <text x="12" y="131.5" font-size="12.5" fill="#9fb1c9">decode c2 aggregate (measured)</text>
-    <rect x="270" y="114" width="346" height="26" rx="4" fill="#d29922"/>
-    <text x="624" y="131.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
-    <text x="656" y="131.5" font-size="10" fill="#8b949e">119.0 vs 119.7 t/s</text>
+    <rect x="270" y="114" width="227" height="26" rx="4" fill="#d29922"/>
+    <text x="505" y="131.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
+    <text x="537" y="131.5" font-size="10" fill="#8b949e">118.4 vs 119.7 t/s</text>
     <text x="12" y="171.5" font-size="12.5" fill="#9fb1c9">decode c4 aggregate (measured)</text>
-    <rect x="270" y="154" width="346" height="26" rx="4" fill="#d29922"/>
-    <text x="624" y="171.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
-    <text x="656" y="171.5" font-size="10" fill="#8b949e">168.5 vs 169.7 t/s</text>
+    <rect x="270" y="154" width="227" height="26" rx="4" fill="#d29922"/>
+    <text x="505" y="171.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
+    <text x="537" y="171.5" font-size="10" fill="#8b949e">167.4 vs 169.7 t/s</text>
     <text x="12" y="211.5" font-size="12.5" fill="#9fb1c9">request overhead (TTFT, 1-token, solo)</text>
-    <rect x="270" y="194" width="354" height="26" rx="4" fill="#3fb950"/>
-    <text x="632" y="211.5" font-size="13.5" font-weight="700" fill="#3fb950">101%</text>
-    <text x="673" y="211.5" font-size="10" fill="#8b949e">182 vs 184 ms</text>
+    <rect x="270" y="194" width="232" height="26" rx="4" fill="#3fb950"/>
+    <text x="510" y="211.5" font-size="13.5" font-weight="700" fill="#3fb950">101%</text>
+    <text x="551" y="211.5" font-size="10" fill="#8b949e">182 vs 184 ms</text>
     <text x="12" y="251.5" font-size="12.5" fill="#9fb1c9">TTFT at depth, COLD (1-token, d8192, novel fill)</text>
-    <rect x="270" y="234" width="350" height="26" rx="4" fill="#3fb950"/>
-    <text x="628" y="251.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
-    <text x="669" y="251.5" font-size="10" fill="#8b949e">3,800 vs 3,810 ms</text>
-    <text x="12" y="291.5" font-size="12.5" fill="#9fb1c9">TTFT at depth, WARM (1-token, d8192, cache hit)</text>
-    <rect x="270" y="274" width="245" height="26" rx="4" fill="#d29922"/>
-    <text x="523" y="291.5" font-size="13.5" font-weight="700" fill="#d29922">70%</text>
-    <text x="555" y="291.5" font-size="10" fill="#8b949e">302 vs ~212 ms</text>
-    <text x="12" y="331.5" font-size="12.5" fill="#9fb1c9">prefill (benchy pp2048 @ d0)</text>
-    <rect x="270" y="314" width="350" height="26" rx="4" fill="#3fb950"/>
-    <text x="628" y="331.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
-    <text x="669" y="331.5" font-size="10" fill="#8b949e">1,519 tok/s</text>
-    <text x="12" y="371.5" font-size="12.5" fill="#9fb1c9">streaming latency per token (ITL)</text>
-    <rect x="270" y="354" width="350" height="26" rx="4" fill="#3fb950"/>
-    <text x="628" y="371.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
-    <text x="669" y="371.5" font-size="10" fill="#8b949e">14.5 vs 14.5 ms/token</text>
+    <rect x="270" y="234" width="232" height="26" rx="4" fill="#3fb950"/>
+    <text x="510" y="251.5" font-size="13.5" font-weight="700" fill="#3fb950">101%</text>
+    <text x="551" y="251.5" font-size="10" fill="#8b949e">3,777 vs 3,810 ms</text>
+    <text x="12" y="291.5" font-size="12.5" fill="#9fb1c9">decode at depth, c2 aggregate d8192 (benchy tg128)</text>
+    <rect x="270" y="274" width="640" height="26" rx="4" fill="#3fb950"/>
+    <text x="900" y="291.5" font-size="13.5" font-weight="700" fill="#1a1f24" text-anchor="end">279%</text>
+    <text x="918" y="291.5" font-size="10" fill="#8b949e">48.2 t/s</text>
+    <text x="12" y="331.5" font-size="12.5" fill="#9fb1c9">TTFT at depth, WARM (1-token, d8192, cache hit)</text>
+    <rect x="270" y="314" width="161" height="26" rx="4" fill="#d29922"/>
+    <text x="439" y="331.5" font-size="13.5" font-weight="700" fill="#d29922">70%</text>
+    <text x="471" y="331.5" font-size="10" fill="#8b949e">302 vs ~212 ms</text>
+    <text x="12" y="371.5" font-size="12.5" fill="#9fb1c9">prefill (benchy pp2048 @ d0)</text>
+    <rect x="270" y="354" width="229" height="26" rx="4" fill="#3fb950"/>
+    <text x="507" y="371.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
+    <text x="548" y="371.5" font-size="10" fill="#8b949e">1,519 tok/s</text>
+    <text x="12" y="411.5" font-size="12.5" fill="#9fb1c9">streaming latency per token (ITL)</text>
+    <rect x="270" y="394" width="229" height="26" rx="4" fill="#3fb950"/>
+    <text x="507" y="411.5" font-size="13.5" font-weight="700" fill="#3fb950">100%</text>
+    <text x="548" y="411.5" font-size="10" fill="#8b949e">14.5 vs 14.5 ms/token</text>
   </g>
 
   <!-- the 100% line -->
-  <line x1="620" y1="26" x2="620" y2="388" stroke="#8b949e" stroke-opacity="0.55" stroke-dasharray="4 4"/>
+  <line x1="499" y1="26" x2="499" y2="428" stroke="#8b949e" stroke-opacity="0.55" stroke-dasharray="4 4"/>
 
-  <text x="12" y="410" font-size="10" fill="#8b949e">Yellow = open fronts; green = won. Higher is always better (time metrics inverted). Receipts (2026-11-08): the served default is the TR3-4bpw checkpoint (reshared locally 120 -> 55 shards, byte-identical,</text>
+  <text x="12" y="450" font-size="10" fill="#8b949e">Yellow = open fronts; green = won. Higher is always better (time metrics inverted). Receipts (2026-11-08 (the steps0 confirm + the duel re-pair campaign-20261108-231705; the depth row added)): the served default is the TR3-4bpw checkpoint (reshared locally 120 -> 55 shards, byte-identical,</text>
 
 </svg>
