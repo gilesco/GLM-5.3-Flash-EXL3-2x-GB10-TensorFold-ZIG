@@ -93,6 +93,14 @@ compile RC=0: receipted separately.
  zig/src/server/warm.zig               | 22 ++++++++++++++-----
  9 files changed, 111 insertions(+), 14 deletions(-)
 
+
+THE BOOT WITNESS: the engine prints `warm turns: turns=... quiet=...ns
+host_warm_quiet=...ns` once at serve (std.log.info, the docker-logs sink),
+so the battery's receipt carries the mechanism's state without a second
+probe — the first battery (campaign-20261109-083530) returned a null
+instrument (both arms identical, zero warm-pass lines) and this witness is
+the diagnosis vehicle.
+
 diff --git a/zig/src/core/lane_host.zig b/zig/src/core/lane_host.zig
 index b96e69e..545602a 100644
 --- a/zig/src/core/lane_host.zig
@@ -238,10 +246,10 @@ index 53c41e3..fa36d89 100644
              if (F == nemotron.native) try cuda_disk.attach(a, io, &g.ctx, o, root, kernels, loaded, store);
              if (comptime cuda_disk.keptDisk(F)) |K| try cuda_disk.attachKept(K, F.model_type, a, io, &g.ctx, o, root, kernels, loaded, store);
 diff --git a/zig/src/native/cuda_startup_phase.zig b/zig/src/native/cuda_startup_phase.zig
-index abb2d1e..b729d3f 100644
+index abb2d1e..2c3112d 100644
 --- a/zig/src/native/cuda_startup_phase.zig
 +++ b/zig/src/native/cuda_startup_phase.zig
-@@ -34,7 +34,11 @@ pub fn serve(h: anytype, io: std.Io, facts: lanes.Model, rows: u32, info: api.In
+@@ -34,7 +34,12 @@ pub fn serve(h: anytype, io: std.Io, facts: lanes.Model, rows: u32, info: api.In
      h.host.explain = explain;
      h.host.health = @import("cuda_readiness.zig").source(h);
      h.host.cache = h.store;
@@ -251,6 +259,7 @@ index abb2d1e..b729d3f 100644
 +    // one (the quiet value carries the off; native/cuda.zig's @hasDecl check still
 +    // passes, so the family declaration stays the fork's shape).
 +    h.host.warm_quiet = if (info.warm_turns) (if (std.c.getenv("TF_GLM_WARM_TURNS")) |v| if (std.mem.eql(u8, std.mem.span(v), "0")) 0 else h.warm_quiet else h.warm_quiet) else 0;
++    std.log.info("warm turns: turns={} quiet={}ns host_warm_quiet={}ns", .{ info.warm_turns, h.warm_quiet, h.host.warm_quiet });
      if (h.lone != null) h.host.lone = .{ .ctx = h, .run = callbacks.loneRun, .sampled = true, .logprobs = h.inner.vtable.first_row != null, .structures = h.inner.vtable.first_masked != null, .min_budget = nemotron.native.lone_min_budget, .resumes = true };
      if (h.learn != null) h.host.learner = callbacks.learner(h);
      kv_pages.install(&h.kv, &h.host); // the pool's first census, before the engine thread owns the pool
