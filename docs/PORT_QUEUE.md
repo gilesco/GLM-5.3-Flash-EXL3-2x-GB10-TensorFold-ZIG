@@ -115,10 +115,25 @@ readiness.
    - **The suite is green** (test-tool-parse-host RC=0 on the pre-fix tree);
      the REAL compile gate is `zig build compile-cuda-tests` (the fork's
      `glm_kv_shard_check` runner compiles inside tf-cuda-test) — in flight.
-   - **NOT YET DONE**: the GPU check itself (needs both ranks + a
-     checkpoint), the `kshardqual` battery phase (the four-arm A/B: off/on/
-     off2/on2 with the witnessed-state gate), the config.sh env default
-     (OFF by default — the knob arrives with the adoption decision).
+   - **COMPILE-CLEAN (cont. 21)**: `zig build compile-cuda-tests` RC=0 —
+     the fork's `glm_kv_shard_check` runner compiles inside tf-cuda-test
+     against the ported modules — AND the host suite still RC=0. Seven
+     error rounds fixed: the engine_status field ordering, the idempotent-
+     rerun duplicate export, the re-added host_tier import (dropped — no
+     such file here), the mtp_drafts adaptation (`o.mtp and !o.drafter`),
+     the fork `f.ce` lines (two sites; our Forward has no CE field), the
+     pagedBytesFor arity (our head-less stateSizes), `Plan.max_parts`
+     (ours at +2), `latent.max_segs` defined on our module (the fork
+     0075's value 16 — our per-segment .mla never needed it), and the
+     lanes pagesFor routing (the adopted prompt-cache pages are a pool
+     lease via openWith; the shard home only on the openFor path — the two
+     flows never compose).
+   - **NEXT**: the GPU check on the pair (`tf-cuda-test glm-kv-shard-check`
+     on both ranks inside the builder-stage image, per VALIDATION §6 — the
+     first engine-level GPU check this line has ever run through the
+     campaign), then the `kshardqual` battery phase (the four-arm A/B with
+     the witnessed-state gate), then the adoption decision — the user's
+     (−1.6/−3.6% old-engine decode vs ~1.8× pool tokens).
 
 ## The test-count note (do not re-litigate)
 
