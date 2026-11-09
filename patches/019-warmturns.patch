@@ -111,6 +111,19 @@ probe — the first battery (campaign-20261109-083530) returned a null
 instrument (both arms identical, zero warm-pass lines) and this witness is
 the diagnosis vehicle.
 
+THE KILL SWITCH CORRECTED AGAIN (round 139 cont. 14, after the fourth
+battery): the switch now gates the PASSES THEMSELVES (`warm_turns ... and
+!warmOff()`), not just the host's wait — the fourth window showed the OFF
+arm running 3 passes because the host's quiet alone was zeroed while
+warm_turns stayed true, admitting them un-waited. And the battery hardened
+to FOUR arms (off/on/off2/on2): the first pair absorbs the serve-order
+drift, the second pair is the settled measurement, and each arm's receipt
+carries its WITNESSED warm state as a gate (a serve whose share store did
+not open — the fourth window's ON arm read `no prompt cache: none of
+TF_KV_SHARE=16 kept states' slots fit`, the room moving 11.8 -> 11.0 GiB
+between starts with no config change, the fork's issue-16 exactly — marks
+its rows void, not evidence).
+
 diff --git a/zig/src/core/lane_host.zig b/zig/src/core/lane_host.zig
 index b96e69e..545602a 100644
 --- a/zig/src/core/lane_host.zig
@@ -236,7 +249,7 @@ index 304e771..63b0963 100644
  pub const snap_tail = "TF_GLM_PROMPT_TAIL";
  /// `explain` words this family's open refusals too (where to set the rank and the id).
 diff --git a/zig/src/native/cuda.zig b/zig/src/native/cuda.zig
-index 53c41e3..0b51349 100644
+index 53c41e3..ff4f707 100644
 --- a/zig/src/native/cuda.zig
 +++ b/zig/src/native/cuda.zig
 @@ -62,6 +62,7 @@ pub const Host = struct {
@@ -247,7 +260,19 @@ index 53c41e3..0b51349 100644
      kv: kv_pages.Watch = .{}, // what the load ledger hears of the KV pool (cuda_kv_pool.zig)
      kv_count: ?*@import("core").kv_pool.Pool = null, // the paged pool the lane host's ledger admits (#1943)
      kv_plan: ?@import("cuda_ledger.zig").Plan = null, // the KV ledger's budget and cost, read by the lane host
-@@ -400,6 +401,7 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
+@@ -174,6 +175,11 @@ pub fn open(a: Allocator, gpa: Allocator, io: std.Io, o: api.Open, problem: *[]c
+     problem.* = try std.fmt.allocPrint(a, "the native CUDA engine has no backend for {s} checkpoints yet", .{o.model_type});
+     return null;
+ }
++/// TF_GLM_WARM_TURNS=0 turns the warm pass off (the A/B kill switch; the default on).
++fn warmOff() bool {
++    return if (std.c.getenv("TF_GLM_WARM_TURNS")) |v| std.mem.eql(u8, std.mem.span(v), "0") else false;
++}
++
+ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.Open, problem: *[]const u8) !?api.Opened {
+     if (refusals.family(F, o)) |why| {
+         problem.* = why;
+@@ -400,6 +406,7 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
      }
      errdefer if (h.store) |store| kv_pages.closeStore(gpa, store);
      const share_limit = if (!share) 0 else if (counted.slots != null) paged.?.snaps else try @import("core").kv_prompts.sharing(); // what its slots hold
@@ -255,7 +280,7 @@ index 53c41e3..0b51349 100644
      if (comptime @hasDecl(F, "share_attach")) if (@import("cuda_streams.zig").opensStore(F, share, cache, share_limit)) {
          h.prompts = try prompt_pages.Adapter.open(F, gpa, loaded.target, @intCast(layout.?.page_tokens), share_limit);
      };
-@@ -451,7 +453,10 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
+@@ -451,7 +458,12 @@ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.O
          .prompt_cache = h.store != null,
          .decode_share = o.decode_share,
          .prompt_cache_capacity = cache_capacity,
@@ -263,7 +288,9 @@ index 53c41e3..0b51349 100644
 +        // warm turns on either store: the snap store (kept states as copies) or the
 +        // share store (TF_KV_SHARE's pool pages — the pass's end state is planned by
 +        // the radix rules' tail, and the lane's marksOf keeps at every mark).
-+        .warm_turns = (h.store != null or h.prompts != null) and @hasDecl(F, "warm_quiet"),
++        // TF_GLM_WARM_TURNS=0 is the A/B kill switch and gates the PASSES, not just
++        // the wait (the host's quiet alone would still admit them un-waited).
++        .warm_turns = (h.store != null or h.prompts != null) and @hasDecl(F, "warm_quiet") and !warmOff(),
          .logprobs = served.backend.vtable.first_row != null,
          .prompt_logprobs = served.backend.vtable.prompt_rows,
          .penalties = served.backend.penalties,
