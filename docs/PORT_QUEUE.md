@@ -216,6 +216,13 @@ readiness.
      NaN rows make all 9 picks garbage, matching the uniform counts, and
      point at the router's INPUT (normed x rows) going NaN for exactly
      those rows (the trash-page rows?).
+   - **THE MLOG SCAN BURNED ON ITS OWN BUFFER (cont. 32)**: window 11 —
+     the scan buffer held 19 KB ([64 * 300]u8) while the copy needs ~74 KB
+     (64 rows x 288 experts x 4 B): both ranks dumped core INSIDE the
+     instrument after the mlog print (the four printed lines still
+     confirmed the window-10 pattern on both ranks: bad ~1,840-1,867,
+     per-slot uniform, pick[0..23] valid, mlog row0/lastrow sane). The
+     buffer sized in BYTES (76,800; b02fd54); window 12 reruns.
 
 ## The test-count note (do not re-litigate)
 
