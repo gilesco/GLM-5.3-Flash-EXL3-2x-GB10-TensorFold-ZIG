@@ -409,6 +409,31 @@ readiness.
      **Window 31 was VOID** (the PHASES-env launch — the cont. 69 lesson
      re-learned; the launch argument IS the phase list).
 
+   - **THE CACHEFIXQUAL A/B WAS INVALID — THE ON ARM A PLACEBO (round
+     140, cont. 3)**: window 33 (campaign-20261110-173035): the phase
+     staged the ON arm's env as `PROMPT_PROMPT_CACHE_GIB=4` (doubled
+     name, nothing reads it) — `--prompt-cache-gib` never reached the
+     engine and the OFF-vs-ON comparison (3 vs 6 of 16 slots) measured
+     ROOM DRIFT on two identical cacheless serves (12.1 vs 13.0 GiB
+     left; the ladder across the window's restarts is monotone in room:
+     v126val 11.5/0, OFF 12.1/3, ON 13.0/6, DRAFTS=0 16.1/11 — the
+     fork's issue-16 class, a fifth data point). The verdict correctly
+     did not fire; nothing adopted. The OFF arm stands as a SECOND
+     all-pass on the v1.2.6 engine: the greedy sha 80cc3802… identical
+     both arms, the §2 gates ALL PASS (g3 PASS), hardmode 95 — the
+     TWENTY-THIRD consecutive, the vision 4/4, steady-state 73.1 tok/s.
+     The turn-wall probe measures RE-PREFILL, not resume (turn 2 is
+     slower by construction) — g3 + the funded-slots line are the
+     resume witnesses. The fixed battery re-runs as window 34 with
+     PLACED-flag witnesses (the container argv; the fully-funded
+     phrasing "16 kept states' slots" — cuda_kv_pool.zig:262; the
+     clip report ABSENT) and the drift-immune 16/16 criterion. The
+     DRAFTS=0 serve's room is recorded (model -2.84 GiB, 375 MiB/stream
+     fixed, FOUR full 512K windows, 11/16 slots) beside the parked
+     #2181 candidate. Second launch-staging name failure of the class
+     (window 31's PHASES-env the first) — captured in
+     verify-shell-config-edits.
+
    - **THE HUNT PARKED FOR THE V1.2.6 REBASE (cont. 51, the user)**:
      window 30 (campaign-20261110-134538): the direct-write A/B repeated
      the 0-byte shape exactly (three redirection shapes failed; the

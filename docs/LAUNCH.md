@@ -10265,3 +10265,72 @@ the phase list as a PHASES env var — silently ignored (the cont. 69
 lesson, re-learned); the window ran only the summary phase and
 restored production on the v1.2.5 engine in 81 s. The correction: the
 launch argument IS the phase list; window 32 ran it properly.
+
+## (round 140, cont. 3) THE CACHEFIXQUAL A/B IS INVALID — THE ON ARM WAS A PLACEBO; THE BATTERY IS FIXED AND RE-RUNS (2026-11-10)
+
+**Window 33** (campaign-20261110-173035, `preflight cachefixqual summary`,
+rc=0, production restored healthy after 81 s): the battery RAN to
+completion — every quality instrument passed — but the A/B itself
+measured nothing, and the fault is the battery's own staging.
+
+**The placebo**: the phase built the ON arm's env pair as
+`PROMPT_PROMPT_CACHE_GIB=4` (a doubled name nothing reads — start.sh maps
+`PROMPT_CACHE_GIB`; config.sh's default is empty). `--prompt-cache-gib`
+never reached the engine: the console's restart lines print the mangled
+name, no container argv carries the flag, and both arms' serve lines end
+with the constant ADVICE tail "--prompt-cache-gib 4 holds all 16" (the
+tail prints regardless — it names what WOULD hold all 16, cuda_kv_pool.zig
+:264). The OFF-to-ON slot move (3 -> 6 of 16) tracked the ROOM DRIFT
+(12.1 -> 13.0 GiB left), not the flag: the slot ladder across the window's
+restarts is monotone in room — v126val 11.5 left/0 slots, OFF 12.1/3, ON
+13.0/6, the DRAFTS=0 serve 16.1/11. Two identical cacheless serves were
+compared. The verdict correctly did not fire; NOTHING adopted.
+
+**What the window still qualified (the OFF arm as a second witness)**: the
+greedy sha 80cc3802… IDENTICAL on both arms, the §2 gates ALL PASS (g3's
+resumed=fresh content gate PASSED — the resume witness that matters),
+hardmode 95 — the TWENTY-THIRD consecutive, the vision 4/4, the bench
+cells in bands (pp d0 1,525; the depth cells 1,461-1,514), steady-state
+decode 73.1 tok/s. Effectively a second v126val-grade all-pass on the
+standing config.
+
+**The instrument lesson**: the turn-1/turn-2 wall probe measured
+RE-PREFILL, not resume — turn 2's wall (1,918/1,831 ms) exceeds turn 1's
+(768/555 ms) by construction because turn 2 re-prefills its longer
+history. g3 + the funded-slots line are the resume witnesses; the wall
+probe is reference only.
+
+**The room-drift data**: the slots funded move with the room left after
+the streams, ~1 slot per ~180-230 MiB of room, across every restart in
+the window — the fork's issue-16 class, now with a fifth data point on
+the v1.2.6 engine. The recovery ask (4 GiB) caps the cache ABOVE the
+16 x 180 MiB = 2.88 GiB the slots need, so a TRUE placed 4 GiB ask makes
+the 16/16 criterion drift-immune: the fully-funded phrasing ("16 kept
+states' slots", no "of TF_KV_SHARE=" and no advice tail — cuda_kv_pool.zig
+:262) prints only when all 16 funded.
+
+**The fix**: the phase's env name corrected everywhere
+(PROMPT_CACHE_GIB=4), the PLACED-flag witnesses added (the container argv
+carries --prompt-cache-gib 4; the fully-funded phrasing; the room-funds
+clip report must be ABSENT), the turn-wall probe relabeled reference-only,
+the verdict criterion sharpened to 16/16-funded + the placed witnesses +
+the guards (g3, hardmode 95, the vision 4/4, the decode bands, the third
+512K window kept against the cache_first reserve). The verify pass
+exercised the exact pass-through path (the env pair -> restart -> env ->
+start.sh line 75 -> --prompt-cache-gib) in both directions and the argv/
+phrasing witnesses against the live serve before commit. The skill
+capture: the second launch-staging name failure (window 31's PHASES-env
+was the first) is folded into verify-shell-config-edits' gotchas.
+
+**Side observation (recorded, not acted on)**: the DRAFTS=0 serve (the
+g2 gate's no-drafts restart) freed the drafts head: model 78.80 GiB
+(-2.84), the fixed part 375 MiB/stream (-40), FOUR full 512K windows
+funded (12.53 GiB of pages), 11 of 16 slots. The no-drafts config buys
+real room — unmeasured for decode; the #2181 KV_LIVE_HALF candidate
+sits beside it, both parked pending the recovery verdict.
+
+**The adoption path stands**: window 34 re-runs the fixed battery; the
+verdict criterion is 16/16 + the placed witnesses + the guards; on a
+qualified verdict PROMPT_CACHE_GIB=4 becomes the config.sh default and
+the session phases retire with their receipts; any miss keeps the
+cacheless standing and the arithmetic goes upstream as data.

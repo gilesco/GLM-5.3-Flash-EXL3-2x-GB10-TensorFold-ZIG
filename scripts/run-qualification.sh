@@ -1377,14 +1377,20 @@ fi
 # +51 MiB/stream) ate the slots' room. The serve line names the fix:
 # --prompt-cache-gib 4 holds all 16. The battery: the OFF arm (the standing
 # config: no prompt cache) vs the ON arm (--prompt-cache-gib 4). The
-# instruments: the serve line's own arithmetic (the slots funded, the pages
-# the streams keep, the room left), the WARM-RESUME probe (a conversation
-# turn 2 must hit the kept state — the TTFT of turn 2 vs turn 1 records the
-# cache working; the cache is pointless otherwise), the §2 content gates +
-# hardmode 95 + the vision 4/4 + the greedy same-bits sha guard the ON arm,
-# and the bench + steady-state decode (the pool pages the ON arm cedes must
-# not move the decode cells outside the bands). Adoption moves config.sh's
-# start line (PROMPT_PROMPT_CACHE_GIB=4).
+# PLACED-flag witnesses (window 33's ON arm was a PLACEBO — its env name was
+# doubled, PROMPT_PROMPT_CACHE_GIB, and nothing read it; the OFF-vs-ON
+# comparison measured room drift on two identical cacheless serves): the
+# container argv must carry --prompt-cache-gib 4, the serve line must print
+# the fully-funded phrasing "16 kept states' slots" (no "of TF_KV_SHARE=" and
+# no advice tail), and the room-funds clip report must be ABSENT. The
+# turn-1/turn-2 walls are REFERENCE only (window 33's lesson: a follow-up
+# turn re-prefills its longer history — the walls measure re-prefill, not
+# resume; g3 + the funded-slots line are the resume witnesses). The §2
+# content gates + hardmode 95 + the vision 4/4 + the greedy same-bits sha
+# guard the ON arm, and the bench + steady-state decode (the pool pages the
+# ON arm cedes must not move the decode cells outside the bands), and the ON
+# arm must keep its third 524288 window (the cache_first reserve must not eat
+# it). Adoption moves config.sh's PROMPT_CACHE_GIB default.
 # ---------------------------------------------------------------------------
 if want cachefixqual && ! phase_done cachefixqual; then
   log "=== cachefixqual (the #2699 recovery: --prompt-cache-gib 4 vs the cacheless standing)"
@@ -1392,21 +1398,44 @@ if want cachefixqual && ! phase_done cachefixqual; then
   echo "# cachefixqual (the #2699 recovery: the standing cacheless config vs --prompt-cache-gib 4; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
   for arm in off on; do
     S=$(date +%s)
-    if [ "$arm" = on ]; then CFENV="PROMPT_PROMPT_CACHE_GIB=4"; else CFENV=""; fi
+    if [ "$arm" = on ]; then CFENV="PROMPT_CACHE_GIB=4"; else CFENV=""; fi
     if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $CFENV; then
       echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
-      echo "- the serve line: $(serve_line | grep -oE "taking [0-9]+ pages of 512 rows \\([0-9.]+ GiB\\)|no prompt cache[^;]*|prompt cache[^;]*slotted[^;]*|kept states[^;]*)" | head -2)" >> "$P"
+      # the PLACED-flag witness (window 33's placebo lesson): the container argv
+      # itself must carry --prompt-cache-gib 4 — the serve line's advice tail
+      # ("--prompt-cache-gib 4 holds all 16") prints regardless and proves nothing.
+      argv_flags=$(docker inspect --format "{{json .Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | tr -d '"' | tr " " "\n" | grep -A1 "^--prompt-cache-gib$" | tail -1)
+      if [ "$arm" = on ]; then
+        if [ "$argv_flags" = "4" ]; then
+          echo "- the argv witness: --prompt-cache-gib 4 PLACED" >> "$P"
+        else
+          echo "- the argv witness: FAILED (the container runs WITHOUT --prompt-cache-gib; argv tail: ${argv_flags:-absent})" >> "$P"
+        fi
+      else
+        echo "- the argv witness: the flag absent as intended (${argv_flags:-absent})" >> "$P"
+      fi
+      echo "- the serve line: $(serve_line | grep -oE "taking [0-9]+ pages of 512 rows \\([0-9.]+ GiB\\)|no prompt cache[^;]*|[0-9]+ of TF_KV_SHARE=[0-9]+ kept states[^;]*|[0-9]+ kept states. slots[^;]*)" | head -2)" >> "$P"
       echo "- the serve line full: $(serve_line)" >> "$P"
       docker logs "$CONTAINER_NAME" 2>&1 | grep -E "prompt cache|kept states" | tail -2 >> "$P" || true
+      # the funded witness: the fully-funded phrasing has NO "of TF_KV_SHARE=" and
+      # no advice tail; the clip report ("the room funds ... of the ... asks")
+      # appears only when the room does not fund the full ask (cuda_kv_pool.zig:183).
+      if [ "$arm" = on ]; then
+        if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "the room funds"; then
+          echo "- the clip report: PRESENT (the room did not fund the full 4 GiB ask — a budget clip, not a placebo)" >> "$P"
+        else
+          echo "- the clip report: ABSENT (the room funded the ask or no cache asked)" >> "$P"
+        fi
+      fi
+      docker logs "$CONTAINER_NAME" 2>&1 | grep -c "enough for 3 at a 524288" | sed "s/^/- the third-512K-window witness (1 expected): /" >> "$P"
       # the greedy witness (the same-bits guard):
       req_file "$OUT/cx-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
       chat "$OUT/cx-$arm-req.json" > "$OUT/cx-$arm-resp.json" || true
       echo "- the greedy content sha: $(content_sha "$OUT/cx-$arm-resp.json")" >> "$P"
-      # the warm-resume instrument: turn 1 fills a conversation, turn 2 resumes it.
-      # A kept state's resume shows as a turn-2 TTFT FAR under turn 1's (the pages
-      # already in the pool). The turn shape: a distinct conversation id per turn,
-      # the reply captured with its usage (cached_tokens is unwired — the content
-      # and the wall are the witnesses).
+      # the warm-resume instrument, RELABELED reference-only (window 33's lesson:
+      # turn 2 re-prefills its longer history, so its wall is HIGHER than turn 1's
+      # by construction — the walls measure re-prefill, not resume). The resume
+      # witnesses are g3 (resumed=fresh content) and the funded-slots line.
       C1=$(python3 -c "
 import json, sys
 print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Remember this code word: AXIOM-4431. Reply with just the word.'}], 'max_tokens': 256, 'temperature': 0, 'seed': 7}))" "$SERVED_NAME")
@@ -1436,8 +1465,8 @@ print('- turn 2 prompt tokens: %s (the full history re-prefilled unless the cach
     fi
   done
   echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PROMPT_PROMPT_CACHE_GIB=4 || true
-  run_gates cx DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PROMPT_PROMPT_CACHE_GIB=4 || true
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PROMPT_CACHE_GIB=4 || true
+  run_gates cx DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PROMPT_CACHE_GIB=4 || true
   echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
   mkdir -p "$OUT/cxhm"
   model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
@@ -1482,7 +1511,7 @@ try:
 except Exception as e:
     print('- the decode probe FAILED: ' + repr(e))
 " >> "$P"
-  echo "- VERDICT: the ON arm funds the 16 slots AND the warm-resume probe shows the turn-2 resume (the content correct, the wall under turn 1's) AND hardmode holds AND the decode cells stay in the bands = the PROMPT_PROMPT_CACHE_GIB=4 start line qualifies; any FAIL keeps the standing cacheless config and the question goes upstream as data" >> "$P"
+  echo "- VERDICT: QUALIFIED = the ON arm funds ALL 16 slots (the fully-funded phrasing, no clip report, the argv witness PLACED) AND g3 PASS AND hardmode 95 AND the vision 4/4 AND the decode cells in bands AND the third 512K window kept => PROMPT_CACHE_GIB=4 becomes the config.sh default. Any miss = the standing cacheless config holds; the arithmetic goes upstream as data. (The turn-1/turn-2 walls are reference only.)" >> "$P"
   touch "$OUT/.cachefixqual.done"
 fi
 
