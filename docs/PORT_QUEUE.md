@@ -394,12 +394,12 @@ readiness.
      into the OUT dir (the main run's own shape). Window 30 is the
      direct-write A/B.
    - **THE HUNT PARKED FOR THE V1.2.6 REBASE (cont. 51, the user)**:
-     window 30: the direct-write A/B repeated the 0-byte shape exactly
-     (three redirection shapes failed; the manual run fails fast with
-     ncclGetUniqueId — the window context is the variable). The user
-     parked the defect hunt and directed the v1.2.6 rebase: the drift
-     map is applied, the val battery staged. The A/B plumbing is the
-     first order when the hunt resumes.
+     window 30 (campaign-20261110-134538): the direct-write A/B repeated
+     the 0-byte shape exactly (three redirection shapes failed; the
+     manual run fails fast with ncclGetUniqueId — the window context is
+     the variable). The user parked the defect hunt and directed the
+     v1.2.6 rebase: the drift map is applied, the val battery staged.
+     The A/B plumbing is the first order when the hunt resumes.
 
 ## The test-count note (do not re-litigate)
 
