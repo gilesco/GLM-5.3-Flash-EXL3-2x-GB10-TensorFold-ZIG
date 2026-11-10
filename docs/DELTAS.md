@@ -16,8 +16,8 @@ round-trip proven byte-identical — pristine v1.2.6 + the 18 patches = the
 rebase tree). The v126val battery QUALIFIED the bump on every instrument
 (campaign-20261110-162034): the same-bits greedy witness IDENTICAL (the
 `80cc3802…` sha holds across the bump), the §2 gates ALL PASS, **hardmode 95
-— now the TWENTY-FOURTH consecutive** (window 36's value-first battery added
-two more all-pass serves), the vision 4/4, zero strict-TF_ refusals,
+— now the TWENTY-FIFTH consecutive** (windows 36–37 added three more
+all-pass serves), the vision 4/4, zero strict-TF_ refusals,
 the walls 84/83 s, prefill 1,523, steady-state decode 73.1 tok/s. Production
 serves opencode on 8000 from this repo's config. **Vision is ON as the
 standing default and receipted** (the vision suite 4/4 in every battery since
@@ -28,7 +28,14 @@ instruments (the within-session resume delta and the multi-turn TTFT: the
 page cache over the pool's pages already delivers the resume value cacheless)
 at the price of the third 512K window + 1 GiB of stream room — **the
 cacheless standing HOLDS** (`PROMPT_CACHE_GIB` stays empty); the question
-closes as upstream data, no third reshape. The loop's discipline layer (the
+closes as upstream data, no third reshape. **The #2181 live-half candidate
+is MEASURED OUT** (window 37, campaign-20261110-225305): the value gate
+missed (5 of 16 slots funded cacheless vs the OFF arm's 3; the eviction
+warning stays; the slot count tracks the run's room) while the mechanism
+itself reproduced on our shape — the keep cost −31%, enough-for-3 held, the
+greedy sha identical, every guard green — **no adoption**; the unplanned
+composition datum (DRAFTS=0 + LIVE_HALF: enough for FOUR at 512K, 10 of 16
+slots) is recorded as upstream data. The loop's discipline layer (the
 stage brief, the value gate, the phase-lint, the phase-name gate, DRY_RUN,
 the hit-rate watch) governs launches per the round-140 cont. 5 (user)
 direction.

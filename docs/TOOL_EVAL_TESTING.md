@@ -1439,6 +1439,27 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
+- [x] **The #2181 live-half candidate — MEASURED OUT (window 37's value-first
+  verdict: MISSED on the value gate; the mechanism reproduces; no adoption)**
+  (campaign-20261110-225305): the A/B ran both arms end to end on the testing
+  port. The value gate missed its primary criterion: the ON arm funds **5 of
+  16** TF_KV_SHARE slots cacheless vs the OFF arm's 3 (this run; w36-OFF
+  funded 6 — the slot count tracks the run's room, the fork's issue-16 class),
+  and the engine's eviction warning (`live streams evict each other's before
+  a resume`) prints on BOTH arms — the brief's kill criterion retired the
+  knob; `TF_GLM_KV_LIVE_HALF` stays OUT of config.sh. The mechanism itself
+  reproduced on our shape — the FIRST measured confirmation of upstream's
+  scope-caveated receipt on a TP=2 concurrent/paged/fp8/share serve: the
+  per-slot keep cost **−31%** (OFF ~237 MiB/state → ON ~164 MiB/state;
+  upstream measured −30–35% on their single-stream/host-cache shape),
+  enough-for-3 HELD (no window lost), the greedy same-bits sha `80cc3802…`
+  IDENTICAL across both arms, §2 ALL PASS, hardmode 95 — the TWENTY-FIFTH
+  consecutive — the vision 4/4, steady-state 73.1 tok/s, pp d0 1,530/1,534/
+  1,535 flat. The unplanned composition datum: the g2 gates' serve
+  (DRAFTS=0 + LIVE_HALF) read **enough for FOUR at 512K and 10 of 16 slots**
+  — model −2.84 GiB plus the smaller keeps cross the fourth-window line at
+  the drafter's price (the DRAFTS=0 trade stays declined on its decode cost);
+  recorded as upstream data.
 - [x] **The #2699 prompt-cache recovery — CLOSED (window 36's value-first
   verdict: MISSED; the cacheless standing holds)** (window 33's A/B INVALID —
   campaign-20261110-173035; window 34 VOID on the unguarded grep —

@@ -1,25 +1,27 @@
 # Performance plan: closing the measured fronts
 
 > **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 141, 2026-11-10)**: **the #2699 prompt-cache question is
-> CLOSED** — window 36's value-first battery ran end to end
-> (campaign-20261110-215136): the flag placed (16 kept states funded, 3.6 GiB)
-> but the value gate MISSED on both instruments — the within-session resume
-> delta (ON −11 ms vs OFF +6 ms, needing >150 ms better) and the multi-turn
-> TTFT (ON saves 18,420 ms vs OFF's 18,574 ms) — while costing the third
-> 512K window and 1 GiB of stream room. **The cacheless standing HOLDS; no
-> third reshape.** The next window's stage brief (the next sitting's opening
-> work) picks among the parked candidates in order: **#2181
-> `TF_GLM_KV_LIVE_HALF`** (opt-in, unmeasured — the kept state holds the live
-> KDA half alone; its room trade against the 32-row decode windows of #2257
-> is the question) and **the DRAFTS=0 room observation** (model −2.84 GiB,
-> enough-for-3 at 512K with 15.3 GiB left — unmeasured for decode; window
-> 36's serve line re-recorded it). The 0110 KV-SHARD defect hunt stays parked
-> (the user). The upstream-gated fronts (the batched-launch pattern, the
-> cross-restart resume's imprint path) wait on releases — the watch is each
-> sitting's ECOSYSTEM read. The loop runs under the discipline layer (the
-> stage brief, the value gate, phase-lint, the phase-name gate, DRY_RUN, the
-> hit-rate watch — AGENTS.md).
+> the trail, round 141, 2026-11-10)**: **two value-gate misses closed the two
+> cheapest parked candidates** — the #2699 prompt-cache recovery (window 36:
+> the funded cache adds no resume value the page cache lacks, at a window +
+> 1 GiB of room) and the #2181 live-half knob (window 37: the mechanism
+> reproduces on our shape — the keep cost −31%, enough-for held, every guard
+> green — but does not close the eviction warning at PARALLEL=4; 5 of 16
+> slots funded vs the OFF arm's 3, and the slot count tracks the run's room).
+> **The cacheless standing holds; both knobs stay OUT of config.sh.** The
+> unplanned composition datum: DRAFTS=0 + LIVE_HALF reads **enough for FOUR
+> at 512K and 10 of 16 slots** — the four-window shape exists at the
+> drafter's price (the DRAFTS=0 trade stays declined on its decode cost).
+> The balanced-gains picture: the quality front is at its receipted ceiling
+> (hardmode 95 ×25; every alternative pack measured lower; requants out of
+> scope per the round-132 (user) scope), the perf fronts are crossed vs the
+> retired recipe and flat native-vs-native. The remaining levers are the
+> 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool at a decode
+> cost), the DRAFTS=0+LIVE_HALF composition (the decode trade), and the
+> upstream watch. The next window needs a stage brief that names a
+> user-visible number it could move — no launch without one. The loop runs
+> under the discipline layer (the stage brief, the value gate, phase-lint,
+> the phase-name gate, DRY_RUN, the hit-rate watch — AGENTS.md).
 
 > **The bar (user, 2026-10-23):** surpass production 0.6.6 on model loading time,
 > generation tok/s, and prefill rate. This document is the continuing-look home for

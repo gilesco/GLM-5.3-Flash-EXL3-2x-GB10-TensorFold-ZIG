@@ -10635,6 +10635,67 @@ trying). The next window's brief, written before any launch:
   phase-name gate now refuses any swept-away phase; DRY_RUN previews the
   launch from the head itself.
 
+## (round 141, cont. 4) WINDOW 37 RAN THE #2181 LIVE-HALF A/B — THE VERDICT: MISSED (THE VALUE GATE), THE MECHANISM REPRODUCES; THE STANDING CONFIG STAYS (2026-11-10)
+
+**The window** (campaign-20261110-225305, `preflight livehalf summary`,
+rc=0, ~41 min): the A/B ran end to end — both arms served, the §2 gates on
+the ON arm's serve, hardmode, the vision suite, the bench. Production
+restored healthy (200).
+
+**The value gate MISSED on its primary criterion**:
+- **All 16 slots funded cacheless? NO.** The ON arm funds **5 of 16** (0.8
+  GiB) vs the OFF arm's **3 of 16** (0.7 GiB this run — the room-drift
+  ladder: w36-OFF funded 6 at 13.0 GiB left, w37-OFF funds 3 at 12.2 left;
+  the funding follows the run's room). Two more states funded on ~0.1 GiB
+  less pool share — the direction is right but the warning STAYS.
+- **The eviction warning ABSENT? NO** — `live streams evict each other's`
+  prints on BOTH arms. The brief's kill criterion fires: the knob goes
+  nowhere, the standing config stays cacheless, the question closes as
+  upstream data.
+- **The mechanism itself REPRODUCES on our shape** — the first measured
+  confirmation of upstream's scope-caveated receipt on a TP=2 concurrent /
+  paged / fp8 / share serve: the per-slot keep cost dropped **~31%** (OFF
+  ~237 MiB/state → ON ~164 MiB/state; upstream measured −30–35%), the
+  enough-for count HELD at 3 (no window lost), the greedy same-bits sha
+  `80cc3802…` IDENTICAL across both arms (the deterministic probes did not
+  move), §2 ALL PASS, **hardmode 95 — the TWENTY-FIFTH consecutive** — the
+  vision 4/4, steady-state decode 73.1 tok/s (the band), pp d0
+  1,530/1,534/1,535 (flat). The knob is bit-safe, room-neutral-to-positive,
+  and does not close the eviction warning at PARALLEL=4: the 16 slots' cost
+  is the ROOM (the 12.2 GiB reserve + 415 MiB/stream fixed + the pages),
+  not the slot size.
+- **The unplanned datum the window paid for**: the g2 gates' serve
+  (DRAFTS=0 + LIVE_HALF) read **enough for FOUR at a 524288-token window
+  and 10 of 16 slots funded** — model −2.84 GiB plus the smaller keeps
+  together cross the fourth-window line. The DRAFTS=0 room observation and
+  the live-half mechanism COMPOSE: the four-window shape exists on this
+  engine, at the drafter's price. Recorded as upstream data and a parked
+  option (the DRAFTS=0 trade stays declined on its decode cost).
+
+**No adoption**: `TF_GLM_KV_LIVE_HALF` stays OUT of config.sh. The
+livehalf phase retires with its receipt. The #2181 candidate is measured
+out: bit-safe and cheap, but its value on this shape (2 extra funded slots,
+no warning closed) does not clear the value gate the stage brief set.
+
+**The room-drift ladder gains two rungs**: w37-OFF 12.2 left/3 slots,
+w37-ON 12.3/5 (live-half). The ladder's lesson sharpens: the funded-slot
+count tracks the run's room (the fork's issue-16 class), never the flag
+alone — w36-OFF 13.0/6 vs w37-OFF 12.2/3 on identical configs.
+
+**Round 141's hit-rate watch final reading: 2 run / 1 void → 67% run rate
+** — two windows ran their batteries end to end (36, 37), one void (35,
+recovered same-sitting). The pause threshold (50% void) did not fire again
+after the process review.
+
+**Next**: the parked-candidate order after two value-gate misses — the
+balanced-gains review next sitting: the quality front is at its receipted
+ceiling (hardmode 95 ×25, the sweep's ranking stable), the perf fronts are
+crossed vs the retired recipe and flat native-vs-native; the remaining
+levers are the 0110 KV-SHARD port (user-parked, multi-sitting), the
+DRAFTS=0+LIVE_HALF four-window composition (the decode trade), and the
+upstream watch. No launch without a stage brief that names a user-visible
+number it could move.
+
 **The staging-verification incident, self-inflicted and self-caught (the
 same sitting)**: the first replay invocation ran
 `scripts/autonomous-launch.sh "preflight cachefixqual summary"` DIRECTLY on
