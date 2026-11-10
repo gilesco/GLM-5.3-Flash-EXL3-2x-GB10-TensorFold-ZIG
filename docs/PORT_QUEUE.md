@@ -181,6 +181,21 @@ readiness.
      and the nearest allocation, settling whose buffer the walk-off
      touched. Window 7's report was LOST (the host-path log-file inside
      the container) — fixed to the /ids mount; window 8 reruns.
+   - **THE SANITIZER REPORT (cont. 29)**: `Invalid __global__ write of
+     size 4 at tf_experts::plan_scatter+0x1c0 — 2,530,871,136 bytes BEFORE
+     the nearest allocation` (a 512-MiB buffer). The scatter's bucket
+     positions come from plan_rank's rank[] — built from the PICKS.
+     Out-of-range picks (garbage router scores) never land in hist[]; the
+     scatter reads uninitialized rank[] and computes a wild base (~2.5 GB
+     off). The corruption is UPSTREAM of the scatter: garbage expert ids
+     from garbage router scores, or a clobbered picks buffer. Suspects, in
+     order: NaN latents from a misrouted latent page (the trash page read)
+     feeding the router matmul; a clobbered picks buffer; a clobbered plan
+     scratch. The ltable slot chain and the pool's keys/lat sizes verified
+     consistent against the fork. TF_SHARD_DEBUG landed (tranche 2zk,
+     6e2bf75): the picks + an x sample read BEFORE the experts consume
+     them, per call — out-of-range picks prove upstream garbage; clean
+     picks prove a clobbered scratch.
 
 ## The test-count note (do not re-litigate)
 
