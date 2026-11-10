@@ -10,6 +10,12 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 STATE=/tmp/autonomous-testing.flag
 [ -f "$STATE" ] && { echo "a window is already running ($STATE) — refusing"; exit 1; }
+# the phase-lint gate (round 140: windows 33/34 burned by staged phase code —
+# the doubled env name and the unguarded grep under set -euo pipefail): the
+# launch REFUSES on lint findings. Fix the phase, then relaunch.
+if ! scripts/phase-lint.sh scripts/run-qualification.sh; then
+  echo "phase-lint FAILED — fix the findings above, then relaunch"; exit 1
+fi
 git fetch origin -q || true
 git merge --ff-only origin/main -q || echo "sync to origin/main failed — launching the checkout as-is"
 setsid nohup scripts/autonomous-window.sh "${1:-preflight summary}" "${2:-/tmp/autonomous.console}" </dev/null >/tmp/autonomous-launch.log 2>&1 &

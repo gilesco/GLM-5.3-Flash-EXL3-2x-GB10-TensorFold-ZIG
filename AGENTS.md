@@ -74,6 +74,32 @@ Hard boundaries, never crossed:
 
 ## Rules of the road
 
+- **The discipline layer (the user, round 140 cont. 5) governs every launch.
+  The aim it serves: the fastest, highest-quality GLM 5.3 Flash available.**
+  - **The stage brief — no brief, no launch.** A window's round entry states,
+    before the launch: the question, the value-if-yes (a user-visible number
+    it could move), the cost, the alternatives rejected, and the kill
+    criterion. The receipt answers against the brief.
+  - **The value gate.** A battery's criterion names the user-visible number
+    it could move, not compliance with an engine's advice line. A criterion
+    that measures compliance gets rewritten as the value question underneath.
+  - **Adversarial staging verification.** A phase that just failed is
+    re-verified against its OWN failure mode before re-launch (the failure
+    replayed, not the happy path re-checked). `scripts/phase-lint.sh` runs
+    mechanically inside `autonomous-launch.sh` and refuses the launch on
+    unguarded-grep/unknown-env findings — both window-33/34 burn classes.
+  - **The hit-rate watch.** The round summary counts windows voided vs run;
+    above half void in a round, the loop pauses launches until the process
+    itself is reviewed.
+  - **Fewer, bigger windows.** Instruments that share a serve batch into one
+    window; a sitting with no stage brief launches nothing.
+  - **State docs keep pace with the loop.** The append-only docs (LAUNCH,
+    PORT_QUEUE) update same-sitting; the STATE docs (README's status block,
+    DELTAS's header/rows, the ledger's open items, the anchors) update in the
+    same sitting the qualified fact lands — the round summary includes the
+    state-doc sweep, and a post-window checklist item verifies the engine
+    pin, the streak count, and the dated headers.
+
 - **Every number in the docs quotes a receipt** — a file in `results/` or a LAUNCH.md
   entry. No number without a run behind it. Correcting a wrong number gets a round
   entry explaining the withdrawal; never edit it silently.

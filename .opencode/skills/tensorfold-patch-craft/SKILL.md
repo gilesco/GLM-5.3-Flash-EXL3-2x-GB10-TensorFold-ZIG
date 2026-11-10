@@ -1,6 +1,6 @@
 ---
 name: TensorFold Patch Craft
-description: Craft, verify, and measure a local TensorFold engine patch on this testing line — writing the zig diff, the apply/symbol checks that git apply cannot do for you, the alphabetical staging order, shipping it through a resumecost window via RC_PATCHES, and reading the receipt (the boot wall, the content gate). Trigger words: engine patch, RC_PATCHES, patches/, git apply failed, duplicate struct member, the build refused the patch, boot marks, decompose the loader.
+description: "Craft, verify, and measure a local TensorFold engine patch on this testing line — writing the zig diff, the apply/symbol checks that git apply cannot do for you, the alphabetical staging order, shipping it through a resumecost window via RC_PATCHES, and reading the receipt (the boot wall, the content gate). Trigger words: engine patch, RC_PATCHES, patches/, git apply failed, duplicate struct member, the build refused the patch, boot marks, decompose the loader."
 ---
 
 # TensorFold Patch Craft
