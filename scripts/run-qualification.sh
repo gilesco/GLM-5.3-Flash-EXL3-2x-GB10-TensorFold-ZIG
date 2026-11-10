@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1316,6 +1316,120 @@ except Exception as e:
 " >> "$P"
   echo "- VERDICT (VALUE-FIRST, window 35 on): QUALIFIED = the flag PLACED (the argv witness) AND the funded phrasing present AND (v1) the ON arm's warm-resume wall delta BEATS the OFF arm's by >150 ms (value, not compliance) AND g3 PASS AND hardmode 95 AND the vision 4/4 AND the decode bands hold AND the third 512K window kept => PROMPT_CACHE_GIB=4 becomes the config.sh default. Flag placed but no value delta => the cacheless standing HOLDS and the question CLOSES as upstream data (no third reshape). Any guard FAIL = the battery itself failed; the cacheless standing holds and the battery gets fixed before any re-run." >> "$P"
   touch "$OUT/.cachefixqual.done"
+fi
+# ---------------------------------------------------------------------------
+# phase: livehalf (SESSION-SPECIFIC; retires with the receipt). The #2181
+# live-half A/B: TF_GLM_KV_LIVE_HALF=1 makes a kept state hold the live KDA
+# half alone — the keep ~30-35% smaller (upstream's own receipt at
+# docs/receipts/glm-kv-live-half-555f052d in the v1.2.6 tree: the nine-turn
+# greedy conversation content-identical across on/off/fresh/main, the drafts
+# identical, TTFT flat, keeps 126 vs 194 MiB at state 1). Upstream's scope
+# caveat: NOT qualified at TP=2 concurrent streams, paged sequences, the
+# page-sharing store, or fp8 KV — our shape; this battery decides. The
+# value-first question (the stage brief, round 141 cont. 3): does the knob
+# fund ALL 16 TF_KV_SHARE kept-state slots CACHELESS — closing the standing
+# config's eviction warning ("TF_KV_SHARE=16 keeps 6 states ... live streams
+# evict each other's before a resume") — WITHOUT losing the third 512K
+# window, the decode bands, or the §2 gates? The witnesses: the serve lines
+# (the slots funded + the enough-for count + the warning's absence/presence),
+# the greedy same-bits sha (the ON arm must not move the deterministic
+# probes), the §2 content gates, hardmode 95, the vision 4/4, the bench +
+# steady-state decode inside the bands. QUALIFIED = all 16 funded cacheless
+# AND enough-for >= the OFF arm's AND every guard holds => TF_GLM_KV_LIVE_HALF=1
+# becomes the config.sh default. Any guard fail or a smaller room => RETIRE,
+# the standing config stays, the question closes as upstream data.
+# ---------------------------------------------------------------------------
+if want livehalf && ! phase_done livehalf; then
+  log "=== livehalf (the #2181 live-half A/B: the standing config vs TF_GLM_KV_LIVE_HALF=1)"
+  P="$OUT/12-livehalf.md"; : > "$P"
+  echo "# livehalf (the #2181 live-half A/B: the standing cacheless config vs TF_GLM_KV_LIVE_HALF=1; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  for arm in off on; do
+    if [ "$arm" = on ]; then LHENV="TF_GLM_KV_LIVE_HALF=1"; else LHENV=""; fi
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $LHENV; then
+      echo "## the $arm arm" >> "$P"
+      # the PLACED-flag witness (window 33's placebo lesson; window 36's argv
+      # extraction lesson): the container argv must carry the flag as a
+      # K=V env pair — inspect the Env array, not Cmd (the env var is how
+      # the knob reaches the engine; the argv carries --prompt-cache-gib
+      # class flags, TF_GLM_* rides the environment).
+      argv_env=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" "$CONTAINER_NAME" 2>/dev/null | { grep -c "^TF_GLM_KV_LIVE_HALF=1$" || true; })
+      if [ "$arm" = on ]; then
+        if [ "$argv_env" -ge 1 ] 2>/dev/null; then
+          echo "- the env witness: TF_GLM_KV_LIVE_HALF=1 PLACED in the container env" >> "$P"
+        else
+          echo "- the env witness: FAILED (the container env lacks TF_GLM_KV_LIVE_HALF=1 — a placebo arm; nothing downstream counts)" >> "$P"
+        fi
+      else
+        echo "- the env witness: the knob absent as intended" >> "$P"
+      fi
+      echo "- the serve line: $(serve_line)" >> "$P"
+      # the slots + enough-for witnesses straight from the serve line
+      echo "- the slots witness: $(serve_line | grep -oE "[0-9]+( of TF_KV_SHARE=16)? kept states. slots \([0-9.]+ GiB\)|no prompt cache")" >> "$P"
+      echo "- the enough-for witness: $(serve_line | grep -oE "enough for [0-9]+ at a 524288")" >> "$P"
+      # the eviction warning: the OFF arm's line carries it (6 of 16 funded);
+      # the ON arm must NOT (all 16 funded) for the value gate to fire.
+      if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "live streams evict each other"; then
+        echo "- the eviction warning: PRESENT (the standing shape — live streams evict before a resume)" >> "$P"
+      else
+        echo "- the eviction warning: ABSENT" >> "$P"
+      fi
+      # the greedy witness (the same-bits guard):
+      req_file "$OUT/lh-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+      chat "$OUT/lh-$arm-req.json" > "$OUT/lh-$arm-resp.json" || true
+      echo "- the greedy content sha: $(content_sha "$OUT/lh-$arm-resp.json")" >> "$P"
+    else
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_KV_LIVE_HALF=1 || true
+  run_gates lh DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_GLM_KV_LIVE_HALF=1 || true
+  echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
+  mkdir -p "$OUT/lhhm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "livehalf" --output-dir "$OUT/lhhm" --parallel 2 \
+    --json-file "$OUT/lhhm/hm.json" > "$OUT/lhhm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/lhhm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/lhhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/lhhm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/lhvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/lhvision/vision.json" > "$OUT/lhvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/lhvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  bench_perf lh "$OUT/lh-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/lh.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/lh-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/lh-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill; the band: 70-76)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "- VERDICT (VALUE-FIRST, window 37 on): QUALIFIED = the env PLACED (the container-env witness) AND all 16 slots funded CACHELESS (the ON arm's serve line) AND the enough-for count >= the OFF arm's AND the eviction warning ABSENT on the ON arm AND the greedy sha == the standing 80cc3802… AND the §2 gates ALL PASS AND hardmode 95 AND the vision 4/4 AND the bench/decode bands hold => TF_GLM_KV_LIVE_HALF=1 becomes the config.sh default. Any witness/guard miss => RETIRE: the knob goes nowhere, the standing config stays, the question closes as upstream data (upstream's scope caveat stands: not qualified on our shape)." >> "$P"
+  touch "$OUT/.livehalf.done"
 fi
 
 

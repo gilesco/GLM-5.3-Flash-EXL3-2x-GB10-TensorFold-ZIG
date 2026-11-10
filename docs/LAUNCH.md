@@ -10588,6 +10588,53 @@ hunt stays parked (the user); the upstream-gated fronts wait on releases
 via each sitting's ECOSYSTEM read. A stage brief for the next window is
 the next sitting's opening work — no launch without one.
 
+## (round 141, cont. 3) THE STAGE BRIEF — WINDOW 37: THE #2181 LIVE-HALF A/B (2026-11-10)
+
+The same sitting continues under the user's standing directive (keep
+trying). The next window's brief, written before any launch:
+
+- **Question**: does `TF_GLM_KV_LIVE_HALF=1` (v1.2.6's opt-in: a kept state
+  holds the live KDA half alone) fund all 16 `TF_KV_SHARE` kept-state slots
+  CACHELESS — closing the OFF arm's eviction warning ("live streams evict
+  each other's before a resume"; 6 of 16 funded at the standing config) —
+  WITHOUT losing the third 512K window, the decode bands, or the §2 gates?
+- **Value-if-yes**: a user-visible room win — all 16 slots funded (no
+  eviction warning) while `enough for 3 at a 524288-token window` holds and
+  every perf instrument stays inside its band — the keeps get their durable
+  layer back (the page cache over the pool's pages plus a 16-slot store)
+  for free. The eviction warning's own text names the price of the current
+  standing; closing it without paying room is the value.
+- **The upstream evidence carried in**: upstream's own receipt
+  (`docs/receipts/glm-kv-live-half-555f052d` in the v1.2.6 tree): the
+  nine-turn greedy conversation content-identical across four arms
+  (`on`/`off`/`fresh`/`main`), the drafts identical, TTFT flat
+  (5.91/5.88...), and the keeps ~30–35% smaller (held 126 vs 194 MiB at
+  state 1; 480 vs 684 at state 3). Their scope caveat: NOT qualified at
+  TP=2 concurrent streams, paged sequences, the page-sharing store, or fp8
+  KV — exactly our shape; our A/B decides.
+- **Cost**: one window (~40 min): two restarts (the OFF arm = the standing
+  config, the ON arm = + `TF_GLM_KV_LIVE_HALF=1`), the serve-line witnesses,
+  the §2 gates on the ON arm, hardmode, the vision suite, the bench +
+  steady-state decode.
+- **Alternatives rejected**: the DRAFTS=0 room observation (model −2.84 GiB,
+  enough-for-3 at 15.3 GiB left) — DRAFTS=0 sacrifices the drafter's decode
+  entirely; the room it frees is not convertible to a user-visible number
+  without giving up a bigger one. The 0110 KV-SHARD port — multi-sitting,
+  user-parked. The quality front — hardmode 95 is the checkpoint's ceiling
+  on this bench (receipted 24×; the sweep measured every alternative pack
+  lower; requants out of scope per the round-132 (user) scope).
+- **Kill criterion**: the ON arm's serve line funds fewer than 16 slots
+  cacheless, OR `enough for N` drops below the OFF arm's 3, OR any §2 gate
+  / hardmode-95 / vision-4/4 guard fails, OR any perf instrument moves
+  outside its band ⇒ RETIRE — the knob goes nowhere, the standing config
+  stays cacheless-6-slot, and the question closes as upstream data (the
+  scope caveat stands: not qualified on our shape).
+- **The verification before launch**: the phase stages both arms as
+  `restart` env pairs (`TF_GLM_KV_LIVE_HALF=1` is an exported env-forwarded
+  pair — phase-lint's contract check passes TF_ names by design); the
+  phase-name gate now refuses any swept-away phase; DRY_RUN previews the
+  launch from the head itself.
+
 **The staging-verification incident, self-inflicted and self-caught (the
 same sitting)**: the first replay invocation ran
 `scripts/autonomous-launch.sh "preflight cachefixqual summary"` DIRECTLY on
