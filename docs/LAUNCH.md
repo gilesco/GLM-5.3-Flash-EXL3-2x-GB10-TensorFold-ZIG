@@ -9646,3 +9646,38 @@ x convicts the sharded latents' pages.
 
 **The state**: window 13 (the bad-row dump) launched; production restored
 healthy after window 12 (13/13 windows, rc=0).
+
+## (round 139, cont. 34) X AND MLOG CLEAN AT THE BAD ROWS — THE GARBAGE SHIFTED ONE SLOT (2026-11-10)
+
+**Window 13** (campaign-20261110-042048, the bad-row dump): the corruption
+is NOT in the router's inputs or outputs —
+
+    TF_SHARD_DEBUG: call #0: mlog NaN rows 0/2048; first bad pick row 51 picks 0,0,0,193090974,-859742099,-1016807779,-1891798265,1,0
+    TF_SHARD_DEBUG: call #0: x rows 44..52: E4-high-byte words 0/512 sample; mlog rows 44..52: max score 2.8069
+
+- **x rows 44..52: CLEAN** (0 E4-words in the sample) — the normed input
+  the router saw is fine at the bad rows.
+- **mlog rows 44..52: CLEAN** (max score 2.81) — the scores are finite
+  and sane exactly where the bad picks come from.
+- **The first bad pick row MOVED between runs: 48 → 51**, and the four
+  garbage words SHIFTED ONE SLOT right in the row (window 12's
+  `0,0,g,g,g,g,1,0,0` vs window 13's `0,0,0,g,g,g,g,1,0`). The GARBAGE
+  CONTENT is identical (the same four words) but its POSITION inside the
+  pick rows drifts — the signature of an UNINITIALIZED region whose
+  boundary slides with run-to-run variation (a concurrent writer's
+  timing, or an offset computed from something that varies per run).
+
+**The reading**: the select's outputs (mlog → scores clean, pick →
+garbage at rows ~48+) disagree — either the select's pick-write path is
+wrong for those rows, or pick's memory is being overwritten by a
+concurrent writer whose extent varies. The wts comparison discriminates:
+the select's OTHER output for the same rows.
+
+**The next instrument** (tranche 2zo, 7095ff4, in flight on window 14):
+pick rows 44..52 read BEFORE the select (garbage already there = a
+stale/concurrent writer; clean = the select writes it) and wts rows
+44..52 after (garbage there too = the row loop broken; valid sigmoid
+values = only pick's pointer path wrong).
+
+**The state**: window 14 (the pre/post discriminator) launched;
+production restored healthy after window 13 (14/14 windows, rc=0).
