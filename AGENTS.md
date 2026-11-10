@@ -204,6 +204,12 @@ head's checkout under `results/` and are not committed — quote them from there
 - **A phase's refusal path prints the prepare/start log's tail** — the error must
   land in the receipt, not hide in the campaign log (the resweep's first run didn't
   self-diagnose and the window was wasted).
+- **A launcher is not a test harness** — replay a launcher's refusal paths with
+  inputs that CANNOT pass the gates (a bogus phase name), never with the real
+  launch arguments: the valid-arguments "replay" IS a real launch (window 35's
+  recovery sitting ran its replay on the agent host and started a stray window;
+  the site guards contained it, but the shape was one guard away from a real
+  stop). Run launch replays against the head via ssh, or ask for a DRY_RUN mode.
 - **Thinking eats small `max_tokens`** — gate probes use ≥1024.
 - **`VAR=x func` persists in bash** — any function that overrides a config variable
   (e.g. `SERVED_NAME`) restores it after the override; keep that pattern for any new

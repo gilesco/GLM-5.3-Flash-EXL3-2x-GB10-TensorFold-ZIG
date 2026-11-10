@@ -1439,13 +1439,21 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7.
 - [ ] **The #2699 prompt-cache recovery — window 33's A/B INVALID, window 34 VOID,
-  the fixed value-first battery is window 35's** (campaign-20261110-173035,
-  campaign-20261110-192708): window 33's ON arm was a PLACEBO (the phase staged the
+  window 35 VOID-NO-OP, the recovered battery re-runs as window 36** (campaign-20261110-173035,
+  campaign-20261110-192708, campaign-20261110-212651): window 33's ON arm was a PLACEBO (the phase staged the
   doubled env name `PROMPT_PROMPT_CACHE_GIB`; nothing read it — the OFF-vs-ON slot
   move was room drift on two identical cacheless serves); window 34 died on its
   staging (the battery's new argv-witness line ended in a bare grep under
-  `set -euo pipefail`). The battery is fixed: the env name corrected, PLACED-flag
-  witnesses added (the container argv; the fully-funded phrasing
+  `set -euo pipefail`). **Window 35 (campaign-20261110-212651) never ran the
+  battery: the retirement sweep (`7cdf199`) deleted the freshly-staged
+  `cachefixqual` block along with the 52 retired session blocks — the campaign
+  ran preflight + summary in 10 s and exited rc=0; the launcher accepted the
+  phase name because nothing validates it against the `want` dispatch.** The
+  battery is recovered from the git trail (`d9202ff`'s tree) onto the swept
+  script, and the launcher now REFUSES a launch whose phase list names a phase
+  the script does not dispatch (`want`-table validation before production is
+  stopped). The battery stands fixed as staged: the env name corrected,
+  PLACED-flag witnesses added (the container argv; the fully-funded phrasing
   `16 kept states' slots` — cuda_kv_pool.zig:262; the clip report absent), the
   turn-wall probe relabeled reference-only (it measures re-prefill, not resume —
   g3 is the resume witness), the verdict VALUE-FIRST: the ON arm qualifies on the

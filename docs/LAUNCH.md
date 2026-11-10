@@ -10454,3 +10454,85 @@ application)**:
 
 **Window 35**: `preflight cachefixqual summary` (the fixed value-first
 battery), launched as this sitting's last action.
+
+## (round 141) WINDOW 35 VOID-NO-OP — THE SWEEP ATE THE LIVE BATTERY; THE LAUNCHER VALIDATES PHASE NAMES NOW (2026-11-10)
+
+**The window** (campaign-20261110-212651, `preflight cachefixqual summary`,
+rc=0, production restored healthy after an 80 s health wait): the campaign
+ran **preflight + summary only, in 10 seconds** — the `cachefixqual` battery
+never executed. The campaign.log reads 5 lines (preflight 21:26:51, summary
+21:27:00, done 21:27:01) and the receipt carries no battery content.
+
+**Root cause (the git trail, all on one sitting's commits)**:
+- `d9202ff` (20:37) staged the value-first battery: 7 mentions of
+  `cachefixqual` in run-qualification.sh (+71 lines, the block at lines
+  1373–1583).
+- `7cdf199` — the retirement sweep — ran a v5 tool dry-run-verified on its
+  spans, but the sweep's region INCLUDED the freshly-staged battery block:
+  after the sweep the file has **0** mentions of `cachefixqual` (and
+  `v126val` went too — legitimately: it had already run and qualified,
+  campaign-20261110-162034).
+- `81fe6c3` launched `preflight cachefixqual summary`. The launcher's
+  phase-lint passed (the block was gone — nothing left to lint), the window
+  stopped production, `run-qualification.sh` evaluated `want cachefixqual`
+  against a dispatch table that no longer carries the name, matched nothing,
+  and ran on to `summary`. **`want` matches are silent; rc=0 lied.**
+- The wake fired correctly (the campaign legitimately ends `" done."`), the
+  poke's live-check logic worked as designed — the gap is one layer up: the
+  launcher never validates the REQUESTED phase names against the script's
+  dispatch table.
+
+**Third staging-burn class** (after the env-name placebo and the unguarded
+grep): **a sweep/retirement pass run after staging live code eats the staged
+code.** The discipline layer's adversarial-verification rule now extends to
+structural operations: a sweep, rename, or deletion run in the same sitting
+as new phase code must be followed by re-verifying the NEW code's
+presence — not only the old code's absence.
+
+**The mechanical fix (landed this sitting)**: `autonomous-launch.sh`
+validates every requested phase name against the dispatch table
+(`grep -oP "want \K[a-z0-9_]+" | sort -u`) BEFORE stopping production; any
+unknown name refuses the launch with the unknown list printed. A
+swept-away, typo'd, or renamed phase can no longer reach a window — the
+no-op void class is structurally closed.
+
+**The battery recovered**: the value-first `cachefixqual` block is restored
+from `git show d9202ff:scripts/run-qualification.sh` onto the swept script
+(its dependencies verified: every helper — restart, restart_fb, run_gates,
+serve_line, bench_perf, content_sha, REF_PROMPT — exists on HEAD;
+`start.sh:75` carries the `PROMPT_CACHE_GIB` contract), plus
+`cachefixqual` added to the NEEDS_GPU list (the d92 block omitted it; the
+window flow masked it, a standalone run would not).
+
+**The hit-rate watch**: round 141 reads 0 run / 1 void (100%) — past the
+half threshold. The pause rule fires; this sitting IS the process review and
+the relaunch below resumes the loop with the mechanical gate in place.
+Round 142's watch restarts from zero.
+
+**The relaunch**: window 36 re-runs window 35's stage brief UNCHANGED (the
+question, the value-if-yes, the kill criterion were sound — only the staging
+died): `preflight cachefixqual summary`, the value-first #2699 battery,
+launched as this sitting's last action.
+
+**The staging-verification incident, self-inflicted and self-caught (the
+same sitting)**: the first replay invocation ran
+`scripts/autonomous-launch.sh "preflight cachefixqual summary"` DIRECTLY on
+the agent host instead of through ssh to the head — the launcher is a REAL
+launcher with no dry-run mode, every gate passed legitimately (the battery
+was by then recovered, so the name validated), and it started a stray
+`autonomous-window.sh` ON DEEP. The stray's boundaries held everywhere:
+`"$PROD/scripts/stop.sh"` does not exist on deep (the production repo is
+not checked out here) so no stop was attempted on any GPU host;
+`run-qualification.sh` died at config.sh's site-identity guard (WORKER
+empty on this clone) BEFORE `mkdir results/` — no campaign dir, no
+containers touched; the EXIT trap's restore attempt failed the same
+no-such-file way and harmed nothing. Production on the head was verified
+healthy (200) within minutes; the stray was killed and deep's
+`/tmp/autonomous-testing.flag` cleared. The guard replay was then run the
+safe way: a bogus phase name REFUSES with the dispatch table printed (the
+swept-away-name class the fix exists for), and the refusal paths never
+reach the launch line. The lesson joins verify-shell-config-edits: **a
+launcher with a refusal path is not a test harness — replay a launcher's
+refusals with inputs that cannot pass the gates, never with the real
+launch arguments**, and the launcher could gain a DRY_RUN=1 that prints the
+gates' verdicts without starting the window (next sitting's candidate).

@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1102,6 +1102,220 @@ print("- baseline (dense4fp8 receipts): d0 49.9; d4096 c2 24.0; d8192 c2 17.3; d
 print("- the lead reproduces if d8192 c2 lands near 33 again; near 17 retires it")
 PYEOF
   touch "$OUT/.confirm.done"
+fi
+# ---------------------------------------------------------------------------
+
+# phase: cachefixqual (SESSION-SPECIFIC; retires with the receipt). The #2699
+# recovery A/B: the v1.2.6 pool plan funds ZERO of the 16 TF_KV_SHARE kept
+# states. slots at the standing config (v1.2.5 funded 2) — the bigger fixed
+# parts (#2257: window_rows 8 -> 32 moved the KDA projection into each stream,
+# +51 MiB/stream) ate the slots' room. The serve line names the fix:
+# --prompt-cache-gib 4 holds all 16. The battery: the OFF arm (the standing
+# config: no prompt cache) vs the ON arm (--prompt-cache-gib 4). The
+# PLACED-flag witnesses (window 33's ON arm was a PLACEBO — its env name was
+# doubled, PROMPT_PROMPT_CACHE_GIB, and nothing read it; the OFF-vs-ON
+# comparison measured room drift on two identical cacheless serves): the
+# container argv must carry --prompt-cache-gib 4, the serve line must print
+# the fully-funded phrasing "16 kept states' slots" (no "of TF_KV_SHARE=" and
+# no advice tail), and the room-funds clip report must be ABSENT. The
+# turn-1/turn-2 walls are REFERENCE only (window 33's lesson: a follow-up
+# turn re-prefills its longer history — the walls measure re-prefill, not
+# resume; g3 + the funded-slots line are the resume witnesses). The §2
+# content gates + hardmode 95 + the vision 4/4 + the greedy same-bits sha
+# guard the ON arm, and the bench + steady-state decode (the pool pages the
+# ON arm cedes must not move the decode cells outside the bands), and the ON
+# arm must keep its third 524288 window (the cache_first reserve must not eat
+# it). Adoption moves config.sh's PROMPT_CACHE_GIB default.
+# ---------------------------------------------------------------------------
+if want cachefixqual && ! phase_done cachefixqual; then
+  log "=== cachefixqual (the #2699 recovery: --prompt-cache-gib 4 vs the cacheless standing)"
+  P="$OUT/11-cachefixqual.md"; : > "$P"
+  echo "# cachefixqual (the #2699 recovery: the standing cacheless config vs --prompt-cache-gib 4; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  for arm in off on; do
+    S=$(date +%s)
+    if [ "$arm" = on ]; then CFENV="PROMPT_CACHE_GIB=4"; else CFENV=""; fi
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $CFENV; then
+      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      # the PLACED-flag witness (window 33's placebo lesson): the container argv
+      # itself must carry --prompt-cache-gib 4 — the serve line's advice tail
+      # ("--prompt-cache-gib 4 holds all 16") prints regardless and proves nothing.
+      # Guards (window 34's lesson): every grep in an assignment is guarded — a
+      # bare grep at a pipeline's end exits 1 on no-match and set -e kills the phase.
+      argv_flags=$(docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | tr " " "\n" | { grep -A1 "^--prompt-cache-gib$" || true; } | tail -1)
+      if [ "$arm" = on ]; then
+        if [ "$argv_flags" = "4" ]; then
+          echo "- the argv witness: --prompt-cache-gib 4 PLACED" >> "$P"
+        else
+          echo "- the argv witness: FAILED (the container runs WITHOUT --prompt-cache-gib; argv tail: ${argv_flags:-absent})" >> "$P"
+        fi
+      else
+        echo "- the argv witness: the flag absent as intended (${argv_flags:-absent})" >> "$P"
+      fi
+      echo "- the serve line: $(serve_line | grep -oE "taking [0-9]+ pages of 512 rows \\([0-9.]+ GiB\\)|no prompt cache[^;]*|[0-9]+ of TF_KV_SHARE=[0-9]+ kept states[^;]*|[0-9]+ kept states. slots[^;]*)" | head -2)" >> "$P"
+      echo "- the serve line full: $(serve_line)" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | grep -E "prompt cache|kept states" | tail -2 >> "$P" || true
+      # the funded witness: the fully-funded phrasing has NO "of TF_KV_SHARE=" and
+      # no advice tail; the clip report ("the room funds ... of the ... asks")
+      # appears only when the room does not fund the full ask (cuda_kv_pool.zig:183).
+      if [ "$arm" = on ]; then
+        if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "the room funds"; then
+          echo "- the clip report: PRESENT (the room did not fund the full 4 GiB ask — a budget clip, not a placebo)" >> "$P"
+        else
+          echo "- the clip report: ABSENT (the room funded the ask or no cache asked)" >> "$P"
+        fi
+      fi
+      docker logs "$CONTAINER_NAME" 2>&1 | { grep -c "enough for 3 at a 524288" || true; } | sed "s/^/- the third-512K-window witness (1 expected): /" >> "$P"
+      # the greedy witness (the same-bits guard):
+      req_file "$OUT/cx-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+      chat "$OUT/cx-$arm-req.json" > "$OUT/cx-$arm-resp.json" || true
+      echo "- the greedy content sha: $(content_sha "$OUT/cx-$arm-resp.json")" >> "$P"
+      # the warm-resume instrument, RELABELED reference-only (window 33's lesson:
+      # turn 2 re-prefills its longer history, so its wall is HIGHER than turn 1's
+      # by construction — the walls measure re-prefill, not resume). The resume
+      # witnesses are g3 (resumed=fresh content) and the funded-slots line.
+      C1=$(python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Remember this code word: AXIOM-4431. Reply with just the word.'}], 'max_tokens': 256, 'temperature': 0, 'seed': 7}))" "$SERVED_NAME")
+      echo "$C1" > "$OUT/cx-$arm-turn1-req.json"
+      T1S=$(date +%s%3N)
+      chat "$OUT/cx-$arm-turn1-req.json" > "$OUT/cx-$arm-turn1.json" || true
+      T1E=$(date +%s%3N)
+      C2=$(python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Remember this code word: AXIOM-4431. Reply with just the word.'}, {'role': 'assistant', 'content': 'AXIOM-4431'}, {'role': 'user', 'content': 'What code word did I give you? Reply with just the word.'}], 'max_tokens': 256, 'temperature': 0, 'seed': 7}))" "$SERVED_NAME")
+      echo "$C2" > "$OUT/cx-$arm-turn2-req.json"
+      T2S=$(date +%s%3N)
+      chat "$OUT/cx-$arm-turn2-req.json" > "$OUT/cx-$arm-turn2.json" || true
+      T2E=$(date +%s%3N)
+      # THE VALUE INSTRUMENTS (the discipline layer, window 35 on): the question
+      # is not "did the slots fund" (compliance) but "did the kept states move a
+      # user-visible number" (value). Two instruments, run on THIS arm's serve
+      # while it stands:
+      # (v1) the within-session resume delta: the g3-shaped conversation computed
+      #      twice (cold then immediate) — its wall delta IS the page-cache value
+      #      already present cacheless; the ON arm must BEAT the OFF arm's delta.
+      # (v2) the multi-turn TTFT: a ~4k-token fill, turn 2 (a follow-up on the
+      #      kept history) vs turn 1 — the opencode interaction shape.
+      # The anchors: cross-restart resume is COLD cacheless (7.25 s) and the
+      # imprint disk path is OFF in the standing config (checked round 140
+      # cont. 5) — out of scope here; a --learn question if the within-session
+      # value fails.
+      V1CONV="$OUT/cx-$arm-v1-conv.json"
+      SERVED_MODEL="$SERVED_NAME" python3 - "$V1CONV" <<'PYV'
+import json, os, sys
+conv = {"model": os.environ["SERVED_MODEL"], "temperature": 0, "max_tokens": 1024,
+        "messages": [{"role": "user", "content": "Remember these three codes: alpha-7391, bravo-2250, charlie-8118. Reply with exactly: codes noted."}]}
+json.dump(conv, open(sys.argv[1], "w"))
+PYV
+      rm -f "$OUT/cx-$arm-v1-walls.txt"
+      for r in cold warm; do
+        S=$(date +%s%3N); curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$V1CONV" -o "$OUT/cx-$arm-v1-$r.json" || true; E=$(date +%s%3N)
+        echo "$r $((E-S))" >> "$OUT/cx-$arm-v1-walls.txt"
+      done
+      python3 - "$OUT" "$arm" >> "$P" <<'PYV'
+import json, sys
+out, arm = sys.argv[1], sys.argv[2]
+w = {}
+for line in open(f"{out}/cx-{arm}-v1-walls.txt"):
+    k, v = line.split(); w[k] = int(v)
+try:
+    a = json.load(open(f"{out}/cx-{arm}-v1-cold.json"))["choices"][0]["message"]["content"]
+    b = json.load(open(f"{out}/cx-{arm}-v1-warm.json"))["choices"][0]["message"]["content"]
+    same = "yes" if a == b else "NO"
+except Exception as e:
+    same = f"unreadable ({e})"
+d = w.get("cold", 0) - w.get("warm", 0)
+print("- (v1) %s arm within-session resume: cold %d ms, warm %d ms, delta %d ms; content same: %s" % (arm, w.get("cold", 0), w.get("warm", 0), d, same))
+PYV
+      SERVED_MODEL="$SERVED_NAME" python3 - "$OUT" "$arm" <<'PYV'
+import json, os, sys
+out, arm = sys.argv[1], sys.argv[2]
+fill = " ".join(f"harbor-{i%89}" for i in range(900))
+common = {"model": os.environ["SERVED_MODEL"], "temperature": 0, "max_tokens": 1024}
+t1 = dict(common, messages=[{"role": "user", "content": fill + "\n\nSummarize the passage in two sentences."}])
+t2 = dict(common, messages=[{"role": "user", "content": fill + "\n\nSummarize the passage in two sentences."},
+                            {"role": "assistant", "content": "The passage catalogues harbor terms."},
+                            {"role": "user", "content": "Name the first three terms you saw, comma separated."}])
+json.dump(t1, open(f"{out}/cx-{arm}-v2-t1.json", "w"))
+json.dump(t2, open(f"{out}/cx-{arm}-v2-t2.json", "w"))
+PYV
+      rm -f "$OUT/cx-$arm-v2-walls.txt"
+      for r in t1 t2; do
+        S=$(date +%s%3N); curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/cx-$arm-v2-$r.json" -o "$OUT/cx-$arm-v2-$r-resp.json" || true; E=$(date +%s%3N)
+        echo "$r $((E-S))" >> "$OUT/cx-$arm-v2-walls.txt"
+      done
+      python3 - "$OUT" "$arm" >> "$P" <<'PYV'
+import json, sys
+out, arm = sys.argv[1], sys.argv[2]
+w = {}
+for line in open(f"{out}/cx-{arm}-v2-walls.txt"):
+    k, v = line.split(); w[k] = int(v)
+d = w.get("t1", 0) - w.get("t2", 0)
+print("- (v2) %s arm multi-turn TTFT: turn1 %d ms, turn2 %d ms, turn-2 saves %d ms" % (arm, w.get("t1", 0), w.get("t2", 0), d))
+PYV
+      python3 -c "
+import json
+t1 = json.load(open('$OUT/cx-$arm-turn1.json'))
+t2 = json.load(open('$OUT/cx-$arm-turn2.json'))
+c1 = t1['choices'][0]['message']['content']
+c2 = t2['choices'][0]['message']['content']
+print('- turn 1 wall: %d ms; turn 2 wall: %d ms; turn-2 content: %r (AXIOM-4431 expected); the turn-2 content correctness is the cache-resume witness' % ($T1E - $T1S, $T2E - $T2S, c2.strip()[:40]))
+print('- turn 1 prompt tokens: %s, completion: %s' % (t1["usage"]["prompt_tokens"], t1["usage"]["completion_tokens"]))
+print('- turn 2 prompt tokens: %s (the full history re-prefilled unless the cache resumed), completion: %s' % (t2["usage"]["prompt_tokens"], t2["usage"]["completion_tokens"]))
+" >> "$P" || true
+    else
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PROMPT_CACHE_GIB=4 || true
+  run_gates cx DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PROMPT_CACHE_GIB=4 || true
+  echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
+  mkdir -p "$OUT/cxhm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "cachefixqual" --output-dir "$OUT/cxhm" --parallel 2 \
+    --json-file "$OUT/cxhm/hm.json" > "$OUT/cxhm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/cxhm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/cxvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/cxvision/vision.json" > "$OUT/cxvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/cxvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  bench_perf cx "$OUT/cx-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/cxd.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/cx-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/cx-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "- VERDICT (VALUE-FIRST, window 35 on): QUALIFIED = the flag PLACED (the argv witness) AND the funded phrasing present AND (v1) the ON arm's warm-resume wall delta BEATS the OFF arm's by >150 ms (value, not compliance) AND g3 PASS AND hardmode 95 AND the vision 4/4 AND the decode bands hold AND the third 512K window kept => PROMPT_CACHE_GIB=4 becomes the config.sh default. Flag placed but no value delta => the cacheless standing HOLDS and the question CLOSES as upstream data (no third reshape). Any guard FAIL = the battery itself failed; the cacheless standing holds and the battery gets fixed before any re-run." >> "$P"
+  touch "$OUT/.cachefixqual.done"
 fi
 
 
