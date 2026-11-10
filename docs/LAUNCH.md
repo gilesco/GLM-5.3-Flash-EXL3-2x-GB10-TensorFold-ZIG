@@ -9612,3 +9612,37 @@ pick[0..23] valid, mlog row0/lastrow sane).
 
 **The state**: production restored healthy after window 11 (12/12
 windows, rc=0).
+
+## (round 139, cont. 33) ZERO NaN IN THE SCORES — THE GARBAGE STARTS AT ROW 48 (2026-11-10)
+
+**Window 12** (campaign-20261110-034453, the fixed mlog scan): the
+decisive split —
+
+    TF_SHARD_DEBUG: call #0: mlog NaN rows 0/2048 (first 0, last 0);
+    first bad pick row 48 picks 0,0,193090974,-859742099,-1016807779,-1891798265,1,0,0
+
+- **The router scores are CLEAN everywhere** — 0 NaN rows in 2,048, on
+  every call. The NaN hypothesis is dead: the router's input never went
+  NaN.
+- **The first bad pick ROW is 48** — rows 0..47 valid — and the bad slots
+  are 2–5 (slots 0–1 and 6–8 valid), the SAME values every call
+  (193090974, -859742099, -1016807779, -1891798265 — float bit-patterns,
+  not ids).
+- **My earlier x sample covered rows 0–15 only** — it never saw row 48+
+  where the garbage starts. And E4M3 bytes read as bf16 (0xE4xx) are
+  huge-but-finite floats: invisible to the NaN scans.
+
+**The reading**: the normed x rows feeding the router could still be
+E4M3-pattern garbage at rows 48+ (huge-but-finite → extreme but finite
+scores → top-k writes garbage ids? no — the scores are SANE). The sharper
+hypothesis: `s.pick`'s memory at rows 48+ holds ANOTHER buffer's bytes
+(the x3.picks compact-route rows live beside them in the fork's layout).
+The values' constancy across calls fits a written-once neighbor.
+
+**The next instrument** (tranche 2zn, 52ad9cd, in flight on window 13):
+x rows 44..52 and mlog rows 44..52 dumped raw, with an E4-high-byte
+count — clean x there convicts the select/picks buffer itself; E4-pattern
+x convicts the sharded latents' pages.
+
+**The state**: window 13 (the bad-row dump) launched; production restored
+healthy after window 12 (13/13 windows, rc=0).
