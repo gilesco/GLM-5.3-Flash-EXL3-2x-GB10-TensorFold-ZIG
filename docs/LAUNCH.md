@@ -9991,3 +9991,27 @@ KDA/DSA state path** (the mixer's output itself).
 
 **The state**: window 24 (the hidden dump) launched; production restored
 healthy after window 23 (24/24 windows, rc=0).
+
+## (round 139, cont. 45) HIDDEN CLEAN, X NAN — THE CORRUPTION IS INSIDE THE LAYER LOOP (2026-11-10)
+
+**Window 24** (campaign-20261110-100124, the hidden dump): the
+discriminator's answer —
+
+    HIDDEN NaN words 0/2048 sample        (every ffn call, incl. #42)
+    INDEX CHECK: pairs 7616 ... max idx 1028079817 (at p=3071), oob 2048  (call #42)
+
+- **b.hidden is CLEAN at call #42** (0/2048 in the sample) — the gate/
+  commit path before the layer loop is INNOCENT.
+- **x (normed) is NaN 952/952** — the corruption enters INSIDE layer 0's
+  chain: the ffn's x comes from the SECOND hcPre, whose input `b.x` was
+  written by the FIRST hcPost (`xout[s] = post[s]·branch + Σ comb·x[t]`)
+  — the combine of the mixer's output (`gathered`) with hcPre's Sinkhorn
+  state (`post`/`comb`).
+
+**The split this enables** (tranche 2zz, in flight): NORMED-PRE
+NaN-censused right after hcPre (NaN there convicts hcPre itself, with
+clean input); POST/COMB/GATHERED censused before hcPost (NaN there
+convicts the gather/mixer's output hcPost combines).
+
+**The state**: window 25 (the NaN-site dumps) pending; production
+restored healthy after window 24 (25/25 windows, rc=0).
