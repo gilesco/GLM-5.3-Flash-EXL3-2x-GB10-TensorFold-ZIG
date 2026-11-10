@@ -215,7 +215,7 @@ index 51b0c73d1..caa994300 100644
  // Two problems of one shape and one K slice in one launch (z picks the problem): the same blocks and sums as two
  // launches of glm_mm*_16 (GLM's KDA f_b and g_b projections of a decode window).
 diff --git a/zig/src/families/glm/cuda_mm.zig b/zig/src/families/glm/cuda_mm.zig
-index 406141adc..1bd722e25 100644
+index 0b6765dac..e7772a224 100644
 --- a/zig/src/families/glm/cuda_mm.zig
 +++ b/zig/src/families/glm/cuda_mm.zig
 @@ -37,6 +37,11 @@ pub const Packed = struct {
@@ -240,9 +240,6 @@ index 406141adc..1bd722e25 100644
              try k.packed_prompt[wi].allowDynamicShared(sharedBytesStages(b, 128, 2));
          }
          inline for (widths, 0..) |b, wi| {
--- 
-2.43.0
-
 
 REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
 release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)

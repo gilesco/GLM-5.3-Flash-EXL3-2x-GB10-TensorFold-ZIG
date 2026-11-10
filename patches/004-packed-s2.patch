@@ -65,7 +65,7 @@ index 942431e43..d82cd3f5c 100644
  // -- tiling at load: ops.cu's packed rows and fp16 scales [N][K / 64] -> the tiled chunks and scales ---------------
  template <int BITS>
 diff --git a/zig/src/families/glm/cuda_mm.zig b/zig/src/families/glm/cuda_mm.zig
-index f6398a910..273c57a32 100644
+index 5bcd0348b..f7bb53854 100644
 --- a/zig/src/families/glm/cuda_mm.zig
 +++ b/zig/src/families/glm/cuda_mm.zig
 @@ -40,6 +40,7 @@ pub const Packed = struct {
@@ -93,7 +93,7 @@ index f6398a910..273c57a32 100644
 +            try k.packed_prompt[wi].allowDynamicShared(sharedBytesStages(b, 128, 2));
          }
          try k.prompt.allowDynamicShared(smem(128));
-         if (std.c.getenv("TF_GLM_PDL")) |v| k.pdl = !std.mem.eql(u8, std.mem.span(v), "0");
+         k.pdl = try @import("sys").environment.value(bool, "TF_GLM_PDL", @import("profile").lookup("TF_GLM_PDL"), true);
 @@ -78,8 +81,12 @@ fn smem(bm: usize) u32 {
  
  /// A block's shared memory: three stages of `bm` rows of x and a 64-column tile of weights (`bits / 2` words a lane).

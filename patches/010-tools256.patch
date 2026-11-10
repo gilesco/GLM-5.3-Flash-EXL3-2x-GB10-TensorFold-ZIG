@@ -133,6 +133,3 @@ index 40e8da2c9..7558000f9 100644
      const good = "<tool_call>{\"name\":\"execute\",\"arguments\":{}}</tool_call>";
      const result = try parse(a, bad ++ good ++ good, tools, 1);
      try std.testing.expectEqualStrings(bad, result.content);
--- 
-2.43.0
-

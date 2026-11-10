@@ -223,10 +223,10 @@ index 000000000..557fb16d4
 +}
 +
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 2b8ad93f7..8a2bc4241 100644
+index 8c344899e..b281e23f2 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -187,6 +187,7 @@ pub const Engine = struct {
+@@ -188,6 +188,7 @@ pub const Engine = struct {
          }
          e.bp = try fw.Buffers.init(d, &e.w, prompt_solo.bufferRows(o.settings.solo), true, o.capacity);
          errdefer e.bp.deinit();
@@ -234,7 +234,7 @@ index 2b8ad93f7..8a2bc4241 100644
          if (o.settings.solo and rank == 0) std.log.info("glm: prompt passes of {d} rows, {d} while another stream decodes", .{ fw.solo_rows, fw.prefill_rows });
          if (world > 1 and rank == 0) std.log.info("glm: a prompt chunk's exchanges in {d} row pieces", .{o.settings.pieces});
          if (pair) e.pair = try prompt_pair.Pair.init(d, &e.w, &e.bp, &e.pieces, o.capacity);
-@@ -255,6 +256,13 @@ pub const Engine = struct {
+@@ -257,6 +258,13 @@ pub const Engine = struct {
  
      const freeProfs = @import("cuda_engine_prof.zig").freeProfs;
  
@@ -248,7 +248,7 @@ index 2b8ad93f7..8a2bc4241 100644
      pub fn exchange(e: *const Engine) fw.Exchange {
          return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .group = e.group } };
      }
-@@ -262,7 +270,7 @@ pub const Engine = struct {
+@@ -264,7 +272,7 @@ pub const Engine = struct {
      pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
          out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
          const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
@@ -257,7 +257,7 @@ index 2b8ad93f7..8a2bc4241 100644
      }
  
      /// Binds slot `slot`'s sequence for the steps that follow, making it (a zeroed state) on first use.
-@@ -510,7 +518,7 @@ pub const Engine = struct {
+@@ -459,7 +467,7 @@ pub const Engine = struct {
              rows += p.ids.len;
          }
          var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
@@ -267,7 +267,7 @@ index 2b8ad93f7..8a2bc4241 100644
          if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
          for (parts, segs[0..parts.len]) |p, g| {
 diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
-index 5cdd76ba9..a2f1374c1 100644
+index ded6ee05c..d2956520b 100644
 --- a/zig/src/families/glm/cuda_forward.zig
 +++ b/zig/src/families/glm/cuda_forward.zig
 @@ -207,6 +207,7 @@ pub const Forward = struct {
@@ -288,7 +288,7 @@ index 5cdd76ba9..a2f1374c1 100644
  
      /// reduce.sums' gather: every rank's partial of `rows` rows into every rank's gathered buffer, rank order.
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 4250f64f1..2f416cf04 100644
+index 57acb6bc6..40fd01361 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
 @@ -6,7 +6,8 @@ const mm_mod = @import("cuda_mm.zig");
@@ -382,7 +382,7 @@ index b66392f44..93031677e 100644
      if (e.drafter) |dr| for (parts, segs[0..parts.len]) |p, g|
          try dr.promptSegment(e, p.slot, 0, g.rows, p.ids.len, g.row0);
 diff --git a/zig/src/families/glm/cuda_ranks.zig b/zig/src/families/glm/cuda_ranks.zig
-index 3282877a6..4f5aa8935 100644
+index ad0fb76fb..a07b391d1 100644
 --- a/zig/src/families/glm/cuda_ranks.zig
 +++ b/zig/src/families/glm/cuda_ranks.zig
 @@ -24,6 +24,7 @@ pub const Settings = struct {
@@ -393,7 +393,7 @@ index 3282877a6..4f5aa8935 100644
      roce_multi: bool = false, // TF_GLM_ROCE_MULTI: 1 (three ranks or more: small all-gathers on fabric/tp's multirank RoCE beside NCCL) or 0
      kv_host: u8 = 0, // TF_GLM_KV_HOST=1: KV pages in host memory (1); with TF_GLM_KV_HOST_SHARED=1, one copy a host (2)
      kv_host_gib: f64 = 0, // TF_GLM_KV_HOST_GIB: the host pages' GiB (0: one full window)
-@@ -127,6 +128,12 @@ pub const Settings = struct {
+@@ -138,6 +139,12 @@ pub const Settings = struct {
                  },
              };
          };
@@ -406,7 +406,7 @@ index 3282877a6..4f5aa8935 100644
          s.heat = heat.bandsFrom(get("TF_HEAT_HIGH"), get("TF_HEAT_LOW")) catch {
              problem.* = "TF_HEAT_HIGH and TF_HEAT_LOW: both or neither, in degrees, with low at or under high";
              return error.BadSetting;
-@@ -167,6 +174,16 @@ pub const Settings = struct {
+@@ -184,6 +191,16 @@ pub const Settings = struct {
      }
  };
  
@@ -423,16 +423,16 @@ index 3282877a6..4f5aa8935 100644
  /// The most ranks a world holds: rank 0's greedy pick gathers every rank's top-1 into one host array of this size.
  pub const max_world = 16;
  
-@@ -183,7 +200,7 @@ fn wireOpens(get: *const fn ([:0]const u8) ?[]const u8) bool {
+@@ -200,7 +217,7 @@ fn wireOpens(get: *const fn ([:0]const u8) ?[]const u8) bool {
  
  /// What every rank must agree on, as bytes the communicator carries.
  pub const Fingerprint = extern struct {
--    layout: u32 = 19, // this struct's version (18 plus the prompt pair)
-+    layout: u32 = 20, // this struct's version (19 plus numerics)
+-    layout: u32 = 20, // this struct's version (19, main's prompt pair, plus kv_live_half)
++    layout: u32 = 21, // this struct's version (20 plus numerics)
      world: u32,
      rank: u32,
      kv8: u32 = 0,
-@@ -207,6 +224,7 @@ pub const Fingerprint = extern struct {
+@@ -225,6 +242,7 @@ pub const Fingerprint = extern struct {
      solo: u32 = 0, // TF_GLM_CHUNK_SOLO: rank 0's solo passes need the wider prompt buffers on every rank
      l2pf: [4]u32 = @splat(0), // TF_GLM_L2PF's words: every rank prefetches alike, so none waits on a slower one's windows
      bits: u32 = 16 << 8 | 16, // TF_GLM_DENSE_BITS << 8 | TF_GLM_HEAD_BITS: every rank's matmuls read the same codes
@@ -440,7 +440,7 @@ index 3282877a6..4f5aa8935 100644
      capacity: u64, // tokens a sequence holds
      heat_high: f64, // the heat bands in degrees (0 and 0: off): every rank must wait alike
      heat_low: f64,
-@@ -240,6 +258,7 @@ pub const Fingerprint = extern struct {
+@@ -259,6 +277,7 @@ pub const Fingerprint = extern struct {
          solo,
          l2pf,
          bits,
@@ -448,7 +448,7 @@ index 3282877a6..4f5aa8935 100644
          capacity,
          heat_high,
          heat_low,
-@@ -279,6 +298,7 @@ pub const Fingerprint = extern struct {
+@@ -299,6 +318,7 @@ pub const Fingerprint = extern struct {
              .solo = @intFromBool(s.solo),
              .l2pf = s.l2pf.words(),
              .bits = @as(u32, s.dense_bits) << 8 | s.head_bits,
@@ -456,7 +456,7 @@ index 3282877a6..4f5aa8935 100644
              .capacity = capacity,
              .heat_high = if (s.heat) |b| b.high_c else 0,
              .heat_low = if (s.heat) |b| b.low_c else 0,
-@@ -320,6 +340,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
+@@ -341,6 +361,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
              "solo",
              "l2pf",
              "bits",
@@ -464,7 +464,7 @@ index 3282877a6..4f5aa8935 100644
              "capacity",
              "heat_high",
              "heat_low",
-@@ -443,6 +464,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
+@@ -465,6 +486,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
          .solo => "TF_GLM_CHUNK_SOLO",
          .l2pf => "TF_GLM_L2PF, _MB, _CTAS or _PACE_GBPS",
          .bits => "TF_GLM_DENSE_BITS or TF_GLM_HEAD_BITS",
@@ -473,48 +473,18 @@ index 3282877a6..4f5aa8935 100644
          .heat_high => "TF_HEAT_HIGH",
          .heat_low => "TF_HEAT_LOW",
 diff --git a/zig/src/families/glm/cuda_ranks_test.zig b/zig/src/families/glm/cuda_ranks_test.zig
-index dc5bbbd0a..88ca4a47b 100644
+index b07769490..186d3d2bd 100644
 --- a/zig/src/families/glm/cuda_ranks_test.zig
 +++ b/zig/src/families/glm/cuda_ranks_test.zig
 @@ -190,7 +190,7 @@ test "every media limit is part of the ranks' agreement" {
  test "every scheduling and identity field that differs stops the ranks" {
      const zero = Fingerprint.of(2, 0, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
      const one = Fingerprint.of(2, 1, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
--    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
-+    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "numerics", "roce_multi", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
+-    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
++    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "numerics", "roce_multi", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
          var all = [_]Fingerprint{ zero, one };
          @field(all[1], name) += 1;
          try std.testing.expectEqual(@field(Fingerprint.Field, name), mismatch(&all).?.field);
-@@ -524,3 +524,29 @@ test "TF_GLM_L2PF: read with the settings, carried in the fingerprint, and ranks
-     all[1].l2pf[3] = 0; // rank 1 unpaced
-     try std.testing.expectEqual(Mismatch{ .field = .l2pf, .rank = 1 }, mismatch(&all).?);
- }
-+
-+fn numeric(name: [:0]const u8) ?[]const u8 {
-+    if (std.mem.eql(u8, name, "TF_GLM_ABSORB_MMA")) return "1";
-+    return null;
-+}
-+
-+fn numericTypo(name: [:0]const u8) ?[]const u8 {
-+    if (std.mem.eql(u8, name, "TF_GLM_ABSORB_MMA")) return "on";
-+    return null;
-+}
-+
-+test "the opt-in prompt numerics: off by default, read by name, in the fingerprint, a bad value refused" {
-+    var problem: []const u8 = "";
-+    const none = try Settings.read(&typo_free, &problem);
-+    try std.testing.expectEqual(@as(u32, 0), none.numerics.bits());
-+    const s = try Settings.read(&numeric, &problem);
-+    try std.testing.expect(s.numerics.absorb_mma);
-+    const f = Fingerprint.of(2, 0, s, 8192, true, @splat(0), @splat(0), hashBytes("/c"));
-+    try std.testing.expectEqual(s.numerics.bits(), f.numerics);
-+    try std.testing.expectError(error.BadSetting, Settings.read(&numericTypo, &problem));
-+    try std.testing.expectEqualStrings("TF_GLM_ABSORB_MMA: 0 or 1", problem);
-+}
-+
-+fn typo_free(_: [:0]const u8) ?[]const u8 {
-+    return null;
-+}
 
 REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
 release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)

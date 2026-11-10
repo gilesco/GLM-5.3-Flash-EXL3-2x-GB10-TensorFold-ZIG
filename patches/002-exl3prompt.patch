@@ -51,10 +51,10 @@ REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' a
 were re-cut by the rebase; the content is unchanged.
 
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
-index d6c8a6751..eae880b5e 100644
+index 3dce3afde..fa4cf145e 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
 +++ b/zig/kernels/cuda/exl3_experts.cu
-@@ -295,7 +295,7 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const hal
+@@ -296,7 +296,7 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const hal
  // Block (256 model-width columns, item): y[row][slot][:] = the down epilogue of the item's pairs (this rank's share).
  extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
          const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
@@ -63,7 +63,7 @@ index d6c8a6751..eae880b5e 100644
  
      __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];
      __shared__ int rows_sh[TPM];
-@@ -321,7 +321,9 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
+@@ -322,7 +322,9 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
  #pragma unroll
                  for (int j = 0; j < 4; ++j) v[j] = Ed[(size_t)i * DN_ES + blk * 128 + 4 * lane + j];
                  fwht128(v, lane);
@@ -146,10 +146,10 @@ index 635540ecc..e4dab7bb9 100644
      }
  };
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 8a2bc4241..abaafd879 100644
+index b281e23f2..33955ff71 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -410,7 +410,9 @@ pub const Engine = struct {
+@@ -412,7 +412,9 @@ pub const Engine = struct {
          if (f.prof) |p| p.mark(e.stream, .draw);
          if (last) try e.holdPrompt(e.bp.fnormed + (rows - 1) * e.c.hidden * 2);
          stamp = prof_mod.span(f.prof, e.stream, .mtp);

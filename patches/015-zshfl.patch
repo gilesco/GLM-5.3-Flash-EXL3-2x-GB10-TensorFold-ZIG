@@ -45,7 +45,7 @@ Content-Transfer-Encoding: 8bit
  3 files changed, 123 insertions(+), 3 deletions(-)
 
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
-index 06014f24c..3ac189c74 100644
+index 5f39208db..fddf7a029 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
 +++ b/zig/kernels/cuda/exl3_experts.cu
 @@ -41,6 +41,20 @@ extern "C" __global__ void tf_exl3_grouped_1_k8r8(tf_exl3::GroupedArgs a) {
@@ -195,7 +195,7 @@ index a414808d2..c22734bdc 100644
      switch (k2) {
  #define TF_EXL3X_CASE(K2_)                                                                                   \
 diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
-index acbaac738..82dbf4188 100644
+index d59ba636b..d26e9e237 100644
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
 @@ -112,6 +112,8 @@ pub const Experts = struct {
@@ -207,7 +207,7 @@ index acbaac738..82dbf4188 100644
      gateup: Function,
      down_combine: Function,
      prompt: prompt.Kernels = undefined,
-@@ -144,6 +146,8 @@ pub const Experts = struct {
+@@ -146,6 +148,8 @@ pub const Experts = struct {
          };
          e.grouped_nt4 = try e.mod.function("tf_exl3_grouped_1_nt4");
          e.grouped_r8 = .{ try e.mod.function("tf_exl3_grouped_1_k6r8"), try e.mod.function("tf_exl3_grouped_1_k8r8") };
@@ -216,7 +216,7 @@ index acbaac738..82dbf4188 100644
          e.gateup = try e.mod.function("tf_exl3_gateup_epilogue");
          e.down_combine = try e.mod.function("tf_exl3_down_combine");
          return e;
-@@ -271,10 +275,13 @@ pub const Experts = struct {
+@@ -273,10 +277,13 @@ pub const Experts = struct {
      /// gives the same bits. Chosen where each measured faster on sm_120 (decode2_bench/results_exl3_*.txt, cold weights):
      /// windows of up to 8 rows on a projection whose every expert is 3- or 4-bit take the one-width, 8-row form; wider
      /// windows to 32 rows 4 tiles where it led (down at 1 or 8+ rows, gate/up from 3); else, and other codebooks, 8 tiles.
@@ -230,7 +230,7 @@ index acbaac738..82dbf4188 100644
          if (rows <= 8 and (k2 == 6 or k2 == 8)) return .{ .f = e.grouped_r8[@intFromBool(k2 == 8)], .nt = 4 };
          const four = switch (which) {
              .gate_up => rows >= 3,
-@@ -331,6 +338,11 @@ fn i32d(v: usize) i32 {
+@@ -333,6 +340,11 @@ fn i32d(v: usize) i32 {
      return @intCast(v);
  }
  
@@ -242,9 +242,6 @@ index acbaac738..82dbf4188 100644
  test "the plan matches experts.py's for known shapes" {
      try std.testing.expectEqual(@as(u32, 4), try plan(4096, 2048, true)); // GLM_GATEUP
      try std.testing.expectEqual(@as(u32, 1), try plan(2048, 4096, false)); // GLM_DOWN
--- 
-2.43.0
-
 
 REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
 release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)

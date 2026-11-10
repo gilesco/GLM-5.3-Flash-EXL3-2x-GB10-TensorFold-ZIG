@@ -151,6 +151,3 @@ index 3d1964a51..80d908938 100644
 +    const doc = (try json.parseText(a, r.calls.?[0].get("function").?.get("arguments").?.string)).ok;
 +    try std.testing.expectEqualStrings("a literal <tool_call|> inside", doc.object.get("content").?.string);
 +}
--- 
-2.43.0
-

@@ -313,9 +313,6 @@ index 80d908938..8ae4e4c09 100644
  test "a JSON envelope's strings may quote tool-call markup" {
      var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
      defer arena.deinit();
--- 
-2.43.0
-
 
 REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
 release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)

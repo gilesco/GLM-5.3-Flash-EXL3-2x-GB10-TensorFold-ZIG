@@ -38,10 +38,10 @@ Content-Transfer-Encoding: 8bit
  4 files changed, 419 insertions(+), 12 deletions(-)
 
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
-index abc804eec..06014f24c 100644
+index df39420a0..5f39208db 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
 +++ b/zig/kernels/cuda/exl3_experts.cu
-@@ -259,6 +259,7 @@ extern "C" __global__ void tf_exl3_prompt_rotate(const __nv_bfloat16* __restrict
+@@ -260,6 +260,7 @@ extern "C" __global__ void tf_exl3_prompt_rotate(const __nv_bfloat16* __restrict
      for (int j = 0; j < 4; ++j) o[j] = __float2half_rn(v[j] * HAD_SCALE);
  }
  
@@ -49,7 +49,7 @@ index abc804eec..06014f24c 100644
  extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const half* __restrict__ Xg, const half* __restrict__ Xu,
          const uint64_t* __restrict__ Tg, const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts,
          const int* __restrict__ members, const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d,
-@@ -266,8 +267,50 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const hal
+@@ -267,8 +268,50 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const hal
  
      __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];   // one buffer for either instantiation
      __shared__ int rows_sh[TPM];
@@ -102,7 +102,7 @@ index abc804eec..06014f24c 100644
  }
  
  // Block (256 model-width columns, item): y[row][slot][:] = the down epilogue of the item's pairs (this rank's share).
-@@ -275,6 +318,34 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
+@@ -276,6 +319,34 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
          const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
          float* __restrict__ y, int K, int D, int ys, int yrow) {
  
@@ -137,7 +137,7 @@ index abc804eec..06014f24c 100644
      __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];
      __shared__ int rows_sh[TPM];
      const int cb = blockIdx.x, item = blockIdx.y;
-@@ -284,11 +355,11 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
+@@ -285,11 +356,11 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
      __syncthreads();
      const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
      float acc[TMT][TNB][4];
@@ -574,6 +574,3 @@ index e4dab7bb9..aa81bf33b 100644
          _ = try bytes(l, rows, sc.slots);
          const pairs = rows * sc.slots;
          try router.route(s, picks, pairs, l.experts, tile, p);
--- 
-2.43.0
-

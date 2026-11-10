@@ -21,7 +21,7 @@ Subject: glm-cuda: a decode window's MoE glue fused, EXL3 decode tiles at one wi
  create mode 100644 zig/kernels/cuda/exl3_group.cuh
 
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
-index eae880b5e..abc804eec 100644
+index fa4cf145e..df39420a0 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
 +++ b/zig/kernels/cuda/exl3_experts.cu
 @@ -7,6 +7,7 @@
@@ -332,11 +332,11 @@ index 930700d96..a414808d2 100644
 +
  }  // namespace tf_exl3
 diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.cuh
-index 7f2a27d6b..f333f6a99 100644
+index 682d5cf03..722d1188b 100644
 --- a/zig/kernels/cuda/glm_glue_moe.cuh
 +++ b/zig/kernels/cuda/glm_glue_moe.cuh
 @@ -1,6 +1,8 @@
- // GLM's MLP and MoE glue by hand: glue._swiglu, glue._topk and qmm._group_sums (the router's dot is glm_glue_router).
+ // GLM's MLP and MoE glue by hand: glue._topk and qmm._group_sums (SwiGLU: glm_swiglu.cuh; router dot: glm_glue_router).
  #pragma once
  
 +#include "exl3_group.cuh"
@@ -344,7 +344,7 @@ index 7f2a27d6b..f333f6a99 100644
  #include "glm_triton.cuh"
  
  using namespace glm_triton;
-@@ -66,13 +68,12 @@ extern "C" __global__ void __launch_bounds__(128)
+@@ -19,13 +21,12 @@ extern "C" __global__ void __launch_bounds__(128)
    if ((threadIdx.x & 7) == 0 && g < kg) xs[m * kg + g] = s;
  }
  
@@ -363,7 +363,7 @@ index 7f2a27d6b..f333f6a99 100644
    float score[MAXE], choice[MAXE];
    for (int i = 0; i < MAXE; ++i) {
      const int e = i * 32 + lane;
-@@ -106,8 +107,32 @@ extern "C" __global__ void __launch_bounds__(32)
+@@ -59,8 +60,32 @@ extern "C" __global__ void __launch_bounds__(32)
      const float v = norm ? div_full(mine, total + 1e-20f) : mine;
      pick[r * (top_k + 1) + lane] = mine_id;
      wts[r * (top_k + 1) + lane] = __fmul_rn(v, scale);
@@ -445,7 +445,7 @@ index d82cd3f5c..51b0c73d1 100644
  template <int BITS>
  __device__ __forceinline__ void tile_packed(const uint32_t* __restrict__ src, const __half* __restrict__ ss,
 diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
-index 733eae576..acbaac738 100644
+index 005e007fd..d59ba636b 100644
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
 @@ -107,9 +107,11 @@ pub fn scratch(base: u64, l: Layer, rows: usize, slots: usize) !Scratch {
@@ -461,7 +461,7 @@ index 733eae576..acbaac738 100644
      gateup: Function,
      down_combine: Function,
      prompt: prompt.Kernels = undefined,
-@@ -120,9 +122,11 @@ pub const Experts = struct {
+@@ -121,9 +123,11 @@ pub const Experts = struct {
          if (!kernels.available) return error.BuiltWithoutKernels;
          var e: Experts = .{
              .mod = try Module.load(d, kernels.exl3_experts),
@@ -474,10 +474,10 @@ index 733eae576..acbaac738 100644
              .gateup = undefined,
              .down_combine = undefined,
          };
-@@ -130,14 +134,16 @@ pub const Experts = struct {
-         e.prompt = try prompt.Kernels.resolve(e.mod);
+@@ -132,14 +136,16 @@ pub const Experts = struct {
          e.plan_rotate = try e.mod.function("tf_exl3_plan_rotate");
          e.plan_finish = try e.mod.function("tf_exl3_plan_finish");
+         e.plan_finish_after = try e.mod.function("tf_exl3_plan_finish_after");
 -        e.group = try e.mod.function("tf_exl3_group");
 -        try e.group.allowDynamicShared(64 * 1024);
 +        e.group_fn = try e.mod.function("tf_exl3_group");
@@ -493,7 +493,7 @@ index 733eae576..acbaac738 100644
          e.gateup = try e.mod.function("tf_exl3_gateup_epilogue");
          e.down_combine = try e.mod.function("tf_exl3_down_combine");
          return e;
-@@ -154,34 +160,31 @@ pub const Experts = struct {
+@@ -156,34 +162,31 @@ pub const Experts = struct {
  
      /// The routed experts of `rows` rows: group, rotate in, grouped gate/up, SwiGLU, grouped down, wts-weighted sum.
      pub fn run(e: *const Experts, s: Stream, l: Layer, x: u64, x_stride: usize, x_dtype: DType, pick: u64, wts: u64, rows: usize, out: u64, sc: Scratch) !void {
@@ -544,7 +544,7 @@ index 733eae576..acbaac738 100644
  
          var r: launch_.Args = .{};
          r.add(x);
-@@ -192,34 +195,35 @@ pub const Experts = struct {
+@@ -194,34 +197,35 @@ pub const Experts = struct {
          r.add(l.suh_u);
          r.add(sc.xg);
          r.add(sc.xu);
@@ -606,7 +606,7 @@ index 733eae576..acbaac738 100644
  
          var ep: launch_.Args = .{};
          ep.add(sc.z);
-@@ -228,13 +232,13 @@ pub const Experts = struct {
+@@ -230,13 +234,13 @@ pub const Experts = struct {
          ep.add(l.svh_u);
          ep.add(l.suh_d);
          ep.add(sc.xd);
@@ -624,7 +624,7 @@ index 733eae576..acbaac738 100644
  
          var dn: launch_.Args = .{};
          dn.add(sc.xd);
-@@ -247,19 +251,44 @@ pub const Experts = struct {
+@@ -249,19 +253,44 @@ pub const Experts = struct {
          dn.add(sc.count);
          dn.add(sc.members);
          dn.add(sc.z);
@@ -676,7 +676,7 @@ index 733eae576..acbaac738 100644
          var cb: launch_.Args = .{};
          cb.add(sc.z);
          cb.add(pick);
-@@ -267,15 +296,41 @@ pub const Experts = struct {
+@@ -269,15 +298,41 @@ pub const Experts = struct {
          cb.add(sc.y);
          cb.add(wts);
          cb.add(out);
@@ -724,10 +724,10 @@ index 733eae576..acbaac738 100644
      try std.testing.expectEqual(@as(u32, 4), try plan(4096, 2048, true)); // GLM_GATEUP
      try std.testing.expectEqual(@as(u32, 1), try plan(2048, 4096, false)); // GLM_DOWN
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 11e65faba..39988a62c 100644
+index 5ca01fb2e..ef0d28dad 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -69,6 +69,7 @@ pub const Engine = struct {
+@@ -70,6 +70,7 @@ pub const Engine = struct {
      m: fw.Modules,
      stream: cuda.Stream,
      pieces: fw.Pieces,
@@ -735,7 +735,7 @@ index 11e65faba..39988a62c 100644
      side: ?@import("cuda_moe.zig").Side = null, // decode windows' shared expert stream and events (TF_GLM_SHARED_SIDE=0: none)
      w: weights.Weights,
      bp: fw.Buffers, // prompt chunks
-@@ -155,7 +156,7 @@ pub const Engine = struct {
+@@ -156,7 +157,7 @@ pub const Engine = struct {
          if (o.settings.layers > c.layers) return error.BadLayers;
          const layers = try a.alloc(u32, if (o.settings.layers > 0) o.settings.layers else c.layers);
          for (layers, 0..) |*l, i| l.* = @intCast(i);
@@ -744,7 +744,7 @@ index 11e65faba..39988a62c 100644
          const has_packs = o.settings.dense_bits != 16 or o.settings.head_bits != 16;
          if (has_packs and !o.settings.tiled) return error.PackedNeedsGlmMm;
          const Tile = struct {
-@@ -276,7 +277,13 @@ pub const Engine = struct {
+@@ -278,7 +279,13 @@ pub const Engine = struct {
      pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
          out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
          const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
@@ -759,7 +759,7 @@ index 11e65faba..39988a62c 100644
      }
  
      /// The decode windows' side stream for the MoE shared expert, unless TF_GLM_SHARED_SIDE=0.
-@@ -543,7 +550,7 @@ pub const Engine = struct {
+@@ -492,7 +499,7 @@ pub const Engine = struct {
              rows += p.ids.len;
          }
          var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
@@ -805,7 +805,7 @@ index c9aae5173..56818b097 100644
      const gpa = std.testing.allocator;
      const mia =
 diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
-index f17f12734..a1e3537a9 100644
+index 77e152cec..d319e7dbe 100644
 --- a/zig/src/families/glm/cuda_forward.zig
 +++ b/zig/src/families/glm/cuda_forward.zig
 @@ -208,6 +208,7 @@ pub const Forward = struct {
@@ -826,7 +826,7 @@ index f17f12734..a1e3537a9 100644
  
      pub const Site = enum { mixer, ffn };
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index f932a6f19..bbe4dbf81 100644
+index 40fd01361..4babd26ac 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
 @@ -33,6 +33,7 @@ pub const Kernels = struct {
@@ -837,7 +837,7 @@ index f932a6f19..bbe4dbf81 100644
      router_part: cuda.Function,
      router_tile: cuda.Function,
      hc_partial: cuda.Function,
-@@ -192,6 +193,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,
+@@ -187,6 +188,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,
      try cuda.launch.launch(set.glue.topk, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 32 } }, stream, &a);
  }
  
@@ -858,7 +858,7 @@ index f932a6f19..bbe4dbf81 100644
  pub fn combine(set: Set, stream: cuda.Stream, y: u64, y_f32: bool, wts: u64, out: u64, rows: usize, d: usize, slots: usize) !void {
      var a: cuda.Args = .{};
 diff --git a/zig/src/families/glm/cuda_kda_block.zig b/zig/src/families/glm/cuda_kda_block.zig
-index db28fd2a0..f33f11736 100644
+index 92e3bcdd8..297ad7864 100644
 --- a/zig/src/families/glm/cuda_kda_block.zig
 +++ b/zig/src/families/glm/cuda_kda_block.zig
 @@ -110,6 +110,12 @@ pub fn project(set: glue.Set, stream: cuda.Stream, l: Layer, s: Scratch, x: u64,
@@ -875,7 +875,7 @@ index db28fd2a0..f33f11736 100644
      try b16.matmul(selected, stream, s.p + (fa + kda.dk) * 2, w, l.gb, s.kg, s.mm_part, rows, n, kda.dk, false);
  }
 diff --git a/zig/src/families/glm/cuda_mm.zig b/zig/src/families/glm/cuda_mm.zig
-index 273c57a32..406141adc 100644
+index f7bb53854..0b6765dac 100644
 --- a/zig/src/families/glm/cuda_mm.zig
 +++ b/zig/src/families/glm/cuda_mm.zig
 @@ -40,6 +40,7 @@ pub const Packed = struct {
@@ -904,7 +904,7 @@ index 273c57a32..406141adc 100644
 +            try k.pair[wi].allowDynamicShared(sharedBytes(b, 16));
 +        }
          try k.prompt.allowDynamicShared(smem(128));
-         if (std.c.getenv("TF_GLM_PDL")) |v| k.pdl = !std.mem.eql(u8, std.mem.span(v), "0");
+         k.pdl = try @import("sys").environment.value(bool, "TF_GLM_PDL", @import("profile").lookup("TF_GLM_PDL"), true);
          return k;
 @@ -152,6 +157,32 @@ pub fn matmul(k: *const Kernels, s: cuda.Stream, x: u64, ldx: usize, w: Tiled, o
      }
@@ -940,7 +940,7 @@ index 273c57a32..406141adc 100644
  pub fn tilePacked(k: *const Kernels, s: cuda.Stream, bits: u8, src: u64, ss: u64, dst: u64, ds: u64, n: usize, kk: usize) !void {
      const wi = try widthIndex(bits);
 diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
-index 074805dce..4aae56aba 100644
+index 308ddd7e7..c90d771ef 100644
 --- a/zig/src/families/glm/cuda_moe.zig
 +++ b/zig/src/families/glm/cuda_moe.zig
 @@ -47,7 +47,15 @@ pub const Side = struct { s: cuda.Stream, fork: cuda.Event, join: cuda.Event };
@@ -986,7 +986,7 @@ index 074805dce..4aae56aba 100644
 +        if (g) return exl3.runGrouped(k.exl3, stream, w, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
 +        return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
 +    }
-     const plan: experts.Plan = .{ .route = s.plan, .slots = slots, .experts = l.count + 1, .prompt = prompt };
+     const plan: experts.Plan = .{ .route = s.plan, .slots = slots, .experts = l.count + 1, .prompt = prompt, .fact = !prompt and k.experts.fact and l.routed.format == .nvfp4 };
      try experts.route(k.experts, stream, s.pick, rows * slots, plan);
      try experts.run(k.experts, stream, .gate_up, l.routed, plan, x, x_stride, rows, s.eact, shared_id);
 @@ -99,12 +114,18 @@ pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
@@ -1019,9 +1019,6 @@ index 074805dce..4aae56aba 100644
      var a: cuda.Args = .{};
      a.add(s.sy + lo * d * 4);
      a.add(s.ey + lo * slots * d * eb);
--- 
-2.43.0
-
 
 REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
 release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
