@@ -223,6 +223,16 @@ readiness.
      confirmed the window-10 pattern on both ranks: bad ~1,840-1,867,
      per-slot uniform, pick[0..23] valid, mlog row0/lastrow sane). The
      buffer sized in BYTES (76,800; b02fd54); window 12 reruns.
+   - **ZERO NaN IN THE SCORES — ROW 48 IS THE FIRST BAD ROW (cont. 33)**:
+     window 12: mlog NaN rows 0/2048 on every call — the router scores are
+     clean everywhere; the first bad pick ROW is 48 (rows 0..47 valid),
+     bad slots 2-5 (float bit-patterns, the same values every call).
+     The earlier x sample only covered rows 0-15 — rows 48+ were never
+     sampled, and E4M3-pattern bytes are huge-but-finite as bf16
+     (invisible to NaN scans). The bad-row dump landed (tranche 2zn,
+     52ad9cd): x rows 44..52 + mlog rows 44..52 raw, with an
+     E4-high-byte count — clean x there convicts the select/picks buffer;
+     E4-pattern x convicts the sharded latents' pages.
 
 ## The test-count note (do not re-litigate)
 
