@@ -10334,3 +10334,38 @@ verdict criterion is 16/16 + the placed witnesses + the guards; on a
 qualified verdict PROMPT_CACHE_GIB=4 becomes the config.sh default and
 the session phases retire with their receipts; any miss keeps the
 cacheless standing and the arithmetic goes upstream as data.
+
+## (round 140, cont. 4) WINDOW 34 VOID — THE UNGUARDED GREP UNDER set -euo pipefail; THE DISCIPLINE REVIEW BEGINS (2026-11-10)
+
+**Window 34** (campaign-20261110-192708, `preflight cachefixqual summary`,
+rc=1, production restored healthy after 80 s): the battery died at the
+OFF arm's argv-witness line, before the greedy probe. Root cause pinned:
+the script runs `set -euo pipefail` (run-qualification.sh line 50), and
+the new argv-witness assignment ends in a bare `grep` — on the OFF arm
+the flag is legitimately absent from the container argv, grep exits 1,
+pipefail propagates it, `set -e` killed the phase. The existing phase
+code guards every such pipeline with `|| true`; the new line did not.
+**Two consecutive windows burned by the same newly-staged block** (33:
+the env name; 34: the unguarded grep) — the failure pattern is the
+staging discipline, not the loop mechanics (production restored on
+schedule, 34/34).
+
+**The data the dead window still gave**: the OFF arm's serve line
+recorded **7 of 16 slots at 13.0 GiB left** — the sixth rung on the
+room-drift ladder (v126val 11.5/0, w33-OFF 12.1/3, w33-ON 13.0/6,
+DRAFTS=0 16.1/11, w34-OFF 13.0/7). The room drifts between restarts
+and the slots follow it; no new fact beyond the ladder's growth.
+
+**The standing correction (the user's direction, this sitting)**: the
+loop's decisions gain a discipline layer — every launched window carries
+a stage brief (question, value-if-yes in a user-visible number, cost,
+alternatives rejected, kill criterion), a value gate replaces compliance
+criteria, staging is verified against its own failure mode before
+launch, a mechanical phase-lint joins the launcher, and the hit-rate
+watch pauses launches when a round's void rate crosses half. The aim the
+weighing serves: **the fastest, highest quality GLM 5.3 Flash
+available.**
+
+**Window 35** re-runs the battery VALUE-FIRST: the ON arm qualifies on
+measured resume value (the g3-shaped resume-vs-compute wall delta), not
+on the 16/16 slot count — and the question closes in either direction.

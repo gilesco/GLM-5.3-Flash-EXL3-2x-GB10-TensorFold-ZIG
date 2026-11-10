@@ -434,6 +434,18 @@ readiness.
      (window 31's PHASES-env the first) — captured in
      verify-shell-config-edits.
 
+   - **WINDOW 34 VOID — THE UNGUARDED GREP (round 140, cont. 4)**: the
+     battery's new argv-witness line ends in a bare `grep` (no `|| true`)
+     under the script's `set -euo pipefail`; on the OFF arm the flag is
+     legitimately absent, grep exits 1, set -e killed the phase before
+     the greedy probe. Two consecutive windows burned by the same
+     staged block (33: the env name; 34: the grep). The drift ladder
+     grew a rung: w34-OFF 13.0 GiB left / 7 of 16 slots. The discipline
+     review (the user's direction) lands the stage-brief + value-gate +
+     phase-lint + hit-rate-watch layer; window 35 re-runs the battery
+     VALUE-FIRST (the resume-vs-compute wall delta decides, not the
+     slot count).
+
    - **THE HUNT PARKED FOR THE V1.2.6 REBASE (cont. 51, the user)**:
      window 30 (campaign-20261110-134538): the direct-write A/B repeated
      the 0-byte shape exactly (three redirection shapes failed; the
