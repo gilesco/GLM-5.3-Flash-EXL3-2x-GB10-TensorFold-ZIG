@@ -358,6 +358,17 @@ readiness.
      right after hcPre (NaN there convicts hcPre itself) and the
      POST/COMB/GATHERED trio before hcPost (NaN there convicts the
      gather/mixer's output).
+   - **THE BIRTH BRACKETED TO ONE HCPOST (cont. 47)**: window 26:
+     NORMED-PIECED-PRE flips CLEAN (285 straight lines, every pre of
+     chunk 1) -> ALL-NaN between call #41 (chunk 1's last ffn, x clean)
+     and call #42 (chunk 2's first ffn, x all-NaN) — the flip is inside
+     ONE hcPre call whose input (hidden/b.x) is clean, convicting
+     hcPre's OTHER inputs: the hc weights (fn_w/base/scale) or the
+     Sinkhorn state (post/comb/xs/hcpart). The trio moved into postRows
+     (the pieced hcPost — the flip window's combine) for window 27:
+     NaN GATHERED convicts the mixer/DSA/owner path; clean GATHERED
+     with NaN X-after convicts hcPost's arithmetic or the Sinkhorn
+     state.
 
 ## The test-count note (do not re-litigate)
 
