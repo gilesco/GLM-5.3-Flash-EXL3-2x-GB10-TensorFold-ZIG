@@ -9681,3 +9681,34 @@ values = only pick's pointer path wrong).
 
 **The state**: window 14 (the pre/post discriminator) launched;
 production restored healthy after window 13 (14/14 windows, rc=0).
+
+## (round 139, cont. 35) WTS IS PERFECT, PICK DRIFTS — THE BOUNDARY DUMP IS IN FLIGHT (2026-11-10)
+
+**Window 14** (campaign-20261110-044819, the pre/post discriminator):
+the sharpest split yet —
+
+    TF_SHARD_DEBUG: call #0: PRE-select pick row44 = 0,0,0,0,0,0,0,0,0 | row51 = 0,0,0,0,0,0,0,0,0
+    TF_SHARD_DEBUG: call #0: wts row44 = 0.60,0.40,0.34,0.29,0.24,0.24,0.21,0.19,1.00 | row51 = 0.87,0.45,0.26,0.24,0.18,0.17,0.16,0.16,1.00
+    TF_SHARD_DEBUG: call #1: PRE-select pick row44 = 134,278,183,188,14,76,266,211,288 | row51 = 21,211,276,2,106,236,172,161,288
+
+- **wts rows 44/51: PERFECT sigmoid values on every call** — the select's
+  other output is correct for exactly the rows whose picks go garbage.
+- **PRE-select pick rows are all-zero on call #0** (the buffer starts
+  zeroed) and hold the PREVIOUS layer's VALID ids on call #1 — the buffer
+  is reused across layers, and the select CAN write valid rows there.
+- **The first bad row DRIFTED again: 48 → 51 → 59** across three runs,
+  with the SAME four garbage words at the same relative slots (3–6). The
+  content is constant; the boundary moves.
+
+**The reading**: the select's outputs DISAGREE — wts correct, pick
+garbage from a drifting row boundary. The strongest hypothesis now: pick's
+SLICE in the arena is short (a sizing mismatch in the port's `sizes`
+chain), and the writer after it in memory order bleeds BACKWARD into
+pick's tail — the four constant words are that neighbor's data. The
+boundary dump (pick rows 0..70 raw with a zero/valid/garbage census, the
+first bad row's neighbors, and x3.picks' first words — the buffer that
+would sit after pick) settles it: if the four words appear at
+x3.picks[0..], pick's size is short by exactly the bleed.
+
+**The state**: window 15 (the boundary dump) launched; production
+restored healthy after window 14 (15/15 windows, rc=0).
