@@ -181,6 +181,20 @@ the pin's tag after any head reboot — /tmp is ephemeral), and a window slot.
   a `timeout N` wrapper) — that silence IS the correct state, proving the
   binary, mounts, env and NCCL env are all sound without rank 0 running.
   Probe each rank's full runtime path solo before blaming the handshake.
+- **Diagnostic DtoH on the NULL stream RACES the engine's stream — sync
+  before every read** (2026-11-10, the kshardcheck gate): cuMemcpyDtoH on
+  the null stream does not serialize with the engine's own stream; the
+  reads raced the kernels mid-flight and the "drifting garbage boundary"
+  was the kernel's WRITE PROGRESS at read time. Five windows chased an
+  instrument artifact: the final state was clean. Every diagnostic read
+  must synchronize the stream first (or run inside the same stream). The
+  compounding lesson: the fault MOVES under compute-sanitizer (serialized
+  execution changes timing) — position-independent evidence (the faulting
+  ADDRESS, the values in the buffers) beats position evidence (which
+  kernel faulted) when a race is in play. And a sanitizer `--log-file`
+  path must be INSIDE a container mount: a host path inside the container
+  is a fake path the root container creates locally and `--rm` discards
+  (the rc=99 error-exitcode fired; the report was gone).
 - **A scripted-edit helper's idempotency guard silently skips REMOVALS**
   (2026-11-09, the 0110 port): the natural pattern —
   `if new_text in file: print("already applied"); return` — is vacuously

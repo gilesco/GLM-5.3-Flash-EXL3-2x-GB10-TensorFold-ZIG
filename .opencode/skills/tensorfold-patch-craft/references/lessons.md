@@ -69,3 +69,23 @@
 - Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (Gotchas)
 - Note: rank 1 probed SOLO (blocked in ncclCommInitRank, rc 124) proved the
   whole runtime path sound without rank 0 — the cheap two-rank debug order.
+
+## 2026-11-10 — the kshardcheck CUDA fault: five instrument generations, then the NaN chain
+- Skill: tensorfold-patch-craft (extended)
+- The chain that worked: launch ring (names the submission order) → TF_LAUNCH_SYNC
+  (sync after every launch names the kernel faulting IN EXECUTION — launches succeed
+  asynchronously; the ring alone only orders submissions) → compute-sanitizer with
+  the report INSIDE a container mount (a host-path log-file inside a container is a
+  fake path the root container creates and --rm discards — mount the campaign dir rw
+  and write there) → full host-side index validation (samples are not proof: read
+  the WHOLE buffer and compute the exact arithmetic the kernel does) → the x/hidden
+  NaN site dumps (the value chain, one buffer at a time upstream).
+- THE CENSUS PARADOX: diagnostic cuMemcpyDtoH on the NULL stream does NOT serialize
+  with the engine's own stream — the reads RACED the kernels mid-flight, and the
+  "drifting garbage boundary" was the kernel's WRITE PROGRESS at read time. Every
+  diagnostic read must synchronize the stream first. The final state was clean; five
+  windows of "garbage picks" were chasing an instrument artifact.
+- The compounding lesson: the fault moved UNDER the sanitizer (serialized execution
+  changes timing) — position-independent evidence (the ADDRESS, the values) beats
+  position evidence (which kernel) when a race is in play.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md
