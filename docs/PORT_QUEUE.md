@@ -233,6 +233,22 @@ readiness.
      52ad9cd): x rows 44..52 + mlog rows 44..52 raw, with an
      E4-high-byte count — clean x there convicts the select/picks buffer;
      E4-pattern x convicts the sharded latents' pages.
+   - **X AND MLOG CLEAN AT THE BAD ROWS (cont. 34)**: window 13: x rows
+     44..52 CLEAN (0 E4-words), mlog rows 44..52 CLEAN (max score 2.81)
+     — the router's input AND output are fine exactly where the bad picks
+     come from. The first bad row MOVED between runs (48 -> 51) and the
+     four garbage words SHIFTED ONE SLOT — an uninitialized region whose
+     boundary slides.
+   - **WTS IS PERFECT — THE SELECT'S PICK WRITE IS THE FAULT SITE
+     (cont. 35)**: window 14's pre/post discriminator: wts rows 44/51
+     carry perfect sigmoid values every call (the select's other output
+     is correct); PRE-select pick rows are all-zero on call #0 and hold
+     the PREVIOUS layer's VALID ids on call #1 (the buffer is reused
+     across layers and the select CAN write valid rows); the first bad
+     row DRIFTED again (48 -> 51 -> 59) with the same four garbage words.
+     The boundary dump (pick rows 0..70 raw + a zero/valid/garbage census
+     + the first bad row's neighbors + x3.picks' head — the next buffer,
+     a size overlap bleeding backward) landed (tranche 2zp, 354ce54).
 
 ## The test-count note (do not re-litigate)
 
