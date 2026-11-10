@@ -1370,6 +1370,100 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: v126val (SESSION-SPECIFIC; retires with the receipt). The v1.2.6
+# bump validation: the engine is now v1.2.6 (6e9af9302) + the 18-patch stack
+# re-anchored (the shared MLA image moved the chunks_wide ground into
+# common/mla.cuh; #2699 reworked the kv_pool budget into budgetOf). The
+# receipt: the explicit prepare (the fingerprint moved: TF_COMMIT + the patch
+# bodies), the same-bits greedy witness (the 80cc3802... sha — the bump must
+# not move the deterministic probes), the section-2 content gates at the
+# standing config, the boot witnesses under the strict TF_ validation
+# (v1.2.6 refuses malformed GLM 0/1 switches by name now — config.sh's
+# exports are audited here), one bench pass + the steady-state decode probe,
+# ONE hardmode run at the bench harness's --parallel 2 (the 95 must hold),
+# the vision suite (4/4), and TWO timed load walls. The release carries
+# #2257 (GLM TP=2 decode windows to 32 rows) and #2699 natively — the bench
+# row records what they move on our shape.
+# ---------------------------------------------------------------------------
+if want v126val && ! phase_done v126val; then
+  log "=== v126val (the v1.2.6 bump: gates + battery + vision + the wall)"
+  P="$OUT/29-v126val.md"; : > "$P"
+  echo "# v126val (v1.2.6 6e9af9302 + the 18-patch stack, the shared-MLA/budgetOf re-anchors)" >> "$P"
+  log "v126val: explicit prepare (the fingerprint moved)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v126val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.2.6 engine + the adopted defaults)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
+    req_file "$OUT/v126-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v126-req.json" > "$OUT/v126-greedy.json" || true
+    echo "- the greedy content sha: $(content_sha "$OUT/v126-greedy.json")" >> "$P"
+    echo "- the same-bits witness: $([ "$(content_sha "$OUT/v126-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v126 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  echo "## the regression watch (the release carries #2257's decode-32 windows natively)" >> "$P"
+  bench_perf v126 "$OUT/v126-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/v126d.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v126-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v126-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" >> "$P"
+  mkdir -p "$OUT/v126hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "v126val" --output-dir "$OUT/v126hm" --parallel 2 \
+    --json-file "$OUT/v126hm/hm.json" > "$OUT/v126hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/v126hm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/v126hm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/v126hm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v126vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v126vision/vision.json" > "$OUT/v126vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/v126vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on the v1.2.6 engine)" >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls = the v1.2.6 bump qualifies (the digest re-pairs the anchors and moves the head's pin); any FAIL holds the pin at v1.2.5 until understood" >> "$P"
+  touch "$OUT/.v126val.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: v124val (SESSION-SPECIFIC; retires with the receipt). The v1.2.4
 # rebase + 008-loaddirect validation: the engine is now v1.2.4 (267c5af6a)
 # + the rebased 8-patch stack + the direct-reads wiring. The receipt carries:

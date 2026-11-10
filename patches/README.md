@@ -70,6 +70,39 @@ records — the header note supersedes them.
   resharded 55-shard pack. 008-loaddirect's STATUS: **QUALIFIED** (the
   round-135 receipts, campaign-20261107-150250).
 
+## THE v1.2.6 REBASE (2026-11-10) — the 18-patch stack re-anchored
+
+The adopted 18-patch stack was re-anchored onto **TensorFold v1.2.6**
+(6e9af9302, released 2026-11-10) from the v1.2.5 base. The drift map: 6 patches
+applied verbatim (002-exl3prompt, 008-loaddirect, 010-tools256, 011-zclose,
+013-zprompt, 018-callquote); 12 re-anchored (001-absorb-mma, 003-fp8-pages,
+004-packed-s2, 005-pagerows-fix + 006-selist-fix + 007-attnfetch8 as the
+003-cascade, 009-moeside, 012-zmoe-fuse, 014-zs2, 015-zshfl, 016-zstep,
+020-cachefirst). The named upstream drifts:
+
+- **The shared MLA image** (#850 step 3, 42735f94f): the chunks_wide template
+  moved token-for-token from glm_glue_attn.cuh into common/mla.cuh (SASS-
+  identical), gaining RW/SPLIT template params. 003.s PAGED8 marriage and
+  007.s fetch8 port now live in common/mla.cuh with their anchors re-cut.
+- **#2257** (6d4191a95): the GLM TP=2 release commit — decode windows to 32
+  rows, MTP chains to 15, the greedy one-gather, the load-priced rounds; 24
+  engine files. The release claims prompts 23%/13% faster at 2K/8K and
+  one-stream code decode +32%, every reply equal — the v126val bench row
+  records what it does on our shape.
+- **#2699**: the prompt-cache rework (the reclaim chain, the admission
+  guards, the budget scaled to the room; the budget construction moved into
+  budgetOf()). 020-cachefirst re-anchored onto it.
+- **The SwiGLU split** (88267c063): the SwiGLU rows moved to
+  glm_swiglu.cuh; the EXL3 clamp (edc16dfe9) is additive (AFTER=false).
+- **#2449.s direct reads** landed spark25/dory ONLY — 008-loaddirect keeps
+  its value (GLM still needs our wiring).
+- **NOT mainlined** (checked against the tag objects): every one of our
+  fork mechanisms — the whole living stack survives.
+
+**Upstream watch**: main is 36 commits past the tag and has absorbed the
+fork.s 0078 exl3p prompt loop (bc166dbfd) plus the cp.async/ldmatrix/mma
+common-module extractions — the next release may mainline more of the stack.
+
 ## The rules
 
 1. **Upstream first.** A patch exists here only while upstream lacks the feature (check
