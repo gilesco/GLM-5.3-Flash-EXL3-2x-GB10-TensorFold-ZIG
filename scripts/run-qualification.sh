@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1430,6 +1430,68 @@ except Exception as e:
 " >> "$P"
   echo "- VERDICT (VALUE-FIRST, window 37 on): QUALIFIED = the env PLACED (the container-env witness) AND all 16 slots funded CACHELESS (the ON arm's serve line) AND the enough-for count >= the OFF arm's AND the eviction warning ABSENT on the ON arm AND the greedy sha == the standing 80cc3802… AND the §2 gates ALL PASS AND hardmode 95 AND the vision 4/4 AND the bench/decode bands hold => TF_GLM_KV_LIVE_HALF=1 becomes the config.sh default. Any witness/guard miss => RETIRE: the knob goes nowhere, the standing config stays, the question closes as upstream data (upstream's scope caveat stands: not qualified on our shape)." >> "$P"
   touch "$OUT/.livehalf.done"
+fi
+# ---------------------------------------------------------------------------
+# phase: regresswatch (SESSION-SPECIFIC; retires with the receipt). The
+# concurrent-resume regression watch on v1.2.6: the round-133 adoption
+# receipted the concurrent 4-prefix resume at 4/4 cache hits, ttft ~1.84 s
+# each, the aggregate ~7.4 s (kvshare2, campaign-20261106-092703) — on the
+# v1.2.3 engine's pool plan. v1.2.6's #2257 changed the plan under that
+# receipt (window_rows 8 -> 32, +51 MiB/stream fixed, 2 of the 16 TF_KV_SHARE
+# slots eaten): window 37's serve lines fund 3-5 of 16 where v1.2.5 funded
+# more. Does the four-prefix resume still hit 4/4 on the standing config?
+# ONE arm — the standing config, no knob, no A/B: the comparison is against
+# the round-133 receipt. The instrument is the kvshare2 probe's exact shape
+# (four d4096 fill prefixes, cold sequential; the solo warm re-send of cc1;
+# the four concurrent warms). The engine's per-request lines carry cached=
+# — the verdict reads them. VALUE: a regression caught protects the opencode
+# multi-turn interaction's resume cost; a pass re-anchors the adopted
+# instrument's receipt on the current engine. No adoption branch: the
+# standing config does not change on either outcome.
+# ---------------------------------------------------------------------------
+if want regresswatch && ! phase_done regresswatch; then
+  log "=== regresswatch (the concurrent 4-prefix resume on the v1.2.6 pool plan: the kvshare2 shape, one arm)"
+  P="$OUT/13-regresswatch.md"; : > "$P"
+  echo "# regresswatch (the concurrent 4-prefix resume on v1.2.6's #2257 pool plan — the standing config vs the round-133 kvshare2 receipt: 4/4 cached, ttft ~1.84 s, aggregate ~7.4 s)" >> "$P"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- the serve line: $(serve_line)" >> "$P"
+    echo "- the slots funded: $(serve_line | grep -oE "[0-9]+ of TF_KV_SHARE=16 kept states[^;]*|[0-9]+ kept states. slots \([0-9.]+ GiB\)")" >> "$P"
+    mark() { echo "- --- $1 ---" >> "$P"; docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "prompt cache|store|keep|evict|resumed" | tail -4 | sed 's/^/  /' >> "$P"; }
+    # 4 distinct d4096 prefixes, cold sequential (the kvshare2 contract verbatim)
+    for i in 1 2 3 4; do
+      bf="$OUT/rw-cc$i.json"
+      FILL_WORDS="$FILL_WORDS" python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split(); off = int(sys.argv[1])
+fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + off) % 89}' for i, w in ((i, words[i % len(words)]) for i in range(4096 // 4)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
+" "$((i * 7))" "$bf"
+      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/rw-cc$i-r.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      echo "- cc$i cold ttft_wall ${T}s" >> "$P"
+    done
+    mark "after the 4 colds (did all four keep?)"
+    # the solo warm: cc1 again — does it hit?
+    T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/rw-cc1.json" -o "$OUT/rw-solo.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+    echo "- cc1 WARM SOLO ttft_wall ${T}s (the round-133 receipt: 1.841 s — a hit; the page cache over the pool's pages should hit in BOTH cases now)" >> "$P"
+    mark "after the solo warm (hit or evicted?)"
+    # the 4 concurrent warms
+    S=$(date +%s.%N)
+    for i in 1 2 3 4; do
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/rw-cc$i.json" -o "$OUT/rw-cc$i-w.json" || true
+    done &
+    wait
+    E=$(date +%s.%N)
+    echo "- the 4 concurrent resumes: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate (the round-133 receipt: 7.41 s)" >> "$P"
+    mark "after the concurrent warms"
+    echo "- the concurrent warms' engine lines (cached= is the verdict):" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -6 | sed 's/^/  /' >> "$P" || true
+    echo "- VERDICT (the watch, no adoption branch): 4/4 cached>0 + the aggregate near 7.4 s => the #2257 pool plan did NOT regress the concurrent resume — the round-133 receipt re-anchors on v1.2.6. cached=0 on any prefix or the aggregate far off => a REGRESSION: the receipt lands, the ledger's watch item opens, and the shape gets its own stage brief." >> "$P"
+  else
+    echo "- the serve REFUSED (the refusal is the receipt):" >> "$P"
+    tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  touch "$OUT/.regresswatch.done"
 fi
 
 

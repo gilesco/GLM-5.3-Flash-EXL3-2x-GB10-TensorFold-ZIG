@@ -10696,6 +10696,46 @@ DRAFTS=0+LIVE_HALF four-window composition (the decode trade), and the
 upstream watch. No launch without a stage brief that names a user-visible
 number it could move.
 
+## (round 141, cont. 5) THE STAGE BRIEF — WINDOW 38: THE CONCURRENT-RESUME REGRESSION WATCH ON V1.2.6 (2026-11-10)
+
+The loop continues under the user's standing directive. The next window's
+brief:
+
+- **Question**: does the concurrent 4-prefix resume still hold 4/4 cache
+  hits on the v1.2.6 engine's #2257 pool plan — or did the plan change
+  (window_rows 8→32, +51 MiB/stream fixed, 2 of the 16 slots eaten) regress
+  the resume path the round-133 adoption receipted (kvshare2,
+  campaign-20261106-092703: 4/4 hits, 1.84 s each, 7.41 s aggregate)?
+- **Value-if-yes**: a REGRESSION caught protects a user-visible number (the
+  opencode multi-turn interaction's resume cost); a pass re-anchors the
+  standing config's concurrent resume on the current engine — closing the
+  one receipt whose ground the #2257 pool plan silently changed. Either way
+  the watch closes a risk the discipline layer exists for: an adopted
+  instrument's receipt outlived its engine.
+- **The instrument**: the kvshare2 probe verbatim, ONE arm (the standing
+  config — no knob, no A/B): four distinct d4096 prefixes computed cold
+  sequentially, the solo warm re-send of cc1, then the four concurrent warm
+  re-sends; the verdict reads the engine's `cached=` lines and the walls
+  against the round-133 receipt (4/4 cached=2048, ttft ~1.84 s each, the
+  aggregate ~7.4 s).
+- **Cost**: one window (~25 min: one restart + the four colds + five warms +
+  the serve-line/log witnesses).
+- **Alternatives rejected**: another single-knob A/B (the two cheapest
+  parked candidates just missed their value gates; the remaining knobs are
+  the DRAFTS=0 trade — declined on decode — and the upstream-gated fronts);
+  the 0110 KV-SHARD port (user-parked, multi-sitting); a hardmode anatomy
+  dig (the failures are structural at the checkpoint level, ×25 stable —
+  no engine-side lever receipted).
+- **Kill criterion**: the watch has no adoption branch — the standing
+  config does not change on either outcome. A regression ⇒ the receipt
+  lands, the ledger's watch item opens, and the shape (SHARE/room) gets a
+  stage brief of its own. A pass ⇒ the receipt closes the watch.
+- **Verification before launch**: the phase reuses the kvshare2 block's
+  exact probe shape (recovered from `01a51ad`'s tree, the d4096 fill
+  contract kept — the port-the-argv-contract lesson); FILL_WORDS and
+  DUEL_PROMPT exist on HEAD; the phase-name gate + DRY_RUN preview from the
+  head itself.
+
 **The staging-verification incident, self-inflicted and self-caught (the
 same sitting)**: the first replay invocation ran
 `scripts/autonomous-launch.sh "preflight cachefixqual summary"` DIRECTLY on
