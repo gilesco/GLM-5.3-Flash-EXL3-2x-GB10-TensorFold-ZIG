@@ -10108,3 +10108,18 @@ owner's own latent pages are miswritten** (the pool's keys/lat writes).
 
 **The state**: window 28 (the main run + the A/B) launched; production
 restored healthy after window 27 (28/28 windows, rc=0).
+
+## (round 139, cont. 49) THE A/B BURNED ON A TWO-RANK PROGRAM RUN WITH ONE RANK — FIXED TO BOTH RANKS (2026-11-10)
+
+**Window 28** (campaign-20261110-114542): the twins-off A/B produced 0
+bytes — the check is a TWO-RANK program and my A/B ran rank 0 alone:
+rank 0 sat in `ncclCommInitRank` waiting for rank 1 for the whole
+2,400 s timeout. The main run beside it confirmed the standing state
+(the fault at #2893, the GATHERED NaNs from the first glue).
+
+**The fix** (landed): the A/B runs BOTH RANKS — the id file is already
+on both hosts, rank 1 starts first on the join, exactly as the main run
+does; the verdict line carries rc/FAIL/GATHERED-NaN counts for both.
+
+**The state**: window 29 (the both-rank twins-off A/B) launched;
+production restored healthy after window 28 (29/29 windows, rc=0).
