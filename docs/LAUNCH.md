@@ -9869,3 +9869,34 @@ in the port's `wide()` call (the grid/args).
 
 **The state**: window 20 (the pre-scatter bracket) launched; production
 restored healthy after window 19 (20/20 windows, rc=0).
+
+## (round 139, cont. 41) EVERY INPUT CLEAN — THE MEMBERS BASE POINTER IS THE SUSPECT (2026-11-10)
+
+**Window 20** (campaign-20261110-081416, the pre-scatter bracket): all
+three suspects cleared in one run —
+
+    TF_SHARD_DEBUG: COMPACT picks[0..19] = 43,193,10,77,... (bad 0/80, valid 0..288)
+    TF_SHARD_DEBUG: PRE-SCATTER rank[0..15] = 0,0,0,...,1,0 | hist[0..15] = 0,34,40,529,542,641,...
+    error: TF_LAUNCH_SYNC: launch #2893 faulted IN EXECUTION: CUDA_ERROR_ILLEGAL_ADDRESS (700); kernel ?, grid 30x1x1
+
+- **The compact picks are VALID** (0 bad/80 on every call) — the compact
+  copy is innocent.
+- **rank and hist are COHERENT** — hist is a valid cumulative prefix-sum
+  (0, 34, 40, 529, …), rank holds small local ranks — plan_rank and
+  plan_offsets are innocent.
+- **The fault STILL fired at #2893** — with every input verified clean
+  immediately before the scatter ran.
+- **The sanitizer's failing thread was (64,0,0) in block (0,0,0)** —
+  p = 64, whose index `hist[picks[64]] + rank[64]` is provably SMALL
+  and valid from the dumps.
+
+**The conclusion**: a valid index producing a wild address (2.5 GB below
+the nearest allocation) convicts **the `members` base pointer itself**.
+The instrument (tranche 2zv, 5d2f036): the PLAN PTR dump — the pointers
+and their diffs against the sizes chain (`items − members = P·4`,
+`counts − items = maxItems·12`, `rank − counts = 8`, `hist − rank = P·4`).
+Any mismatch convicts the arena slot mapping (the `sizes` array vs the
+`p[N]` order in cuda_state.zig — the port's one hand-edited link).
+
+**The state**: window 21 (the pointer dump) launched; production restored
+healthy after window 20 (21/21 windows, rc=0).
