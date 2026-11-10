@@ -10145,3 +10145,31 @@ mktemp+mv hop.
 
 **The state**: window 30 (the direct-write A/B) launched; production
 restored healthy after window 29 (30/30 windows, rc=0).
+
+## (round 139, cont. 51) WINDOW 30: THE A/B STILL LOST RANK 0'S OUTPUT — THE VERDICT BLOCKED ON ITS PLUMBING; THE DEFECT HUNT PARKED FOR THE V1.2.6 REBASE (2026-11-10)
+
+**Window 30** (campaign-20261110-134538): the direct-write A/B
+repeated window 29's shape exactly —
+
+    twins0-r0.log: 0 bytes, rc=124 (the full 2,400 s timeout)
+    twins0-r1.log: NcclFailed: remote exited (rank 1 joined, saw rank 0 gone)
+    the main run: the standing state (the fault at #2893, the
+    GATHERED NaNs from the first glue) — no new facts
+
+Three redirection shapes (mktemp+mv, direct-write, both-ranks) all
+lost rank 0's output inside the window's context while the same
+command run manually fails FAST with `ncclGetUniqueId: invalid
+usage (5)`. The A/B's rank-0 docker line is not root-caused; the
+same command fails differently inside the window flow than out of
+it.
+
+**The user parked the hunt**: "Pause after you have checked the
+receipts. We will look at v1.2.6" — then directed the rebase. The
+next steps on resume: (a) the v1.2.6 rebase (IN FLIGHT this sitting
+— the drift map applied, the val battery staged), (b) the A/B
+plumbing root-cause when the defect hunt resumes: diff the A/B's
+rank-0 docker line against the main run's (the COMMON_ENV vs TWENV
+shape), or run the A/B manually with production DOWN.
+
+**The state**: production healthy (rc=0 restore, 30/30 windows);
+the defect hunt parked with the receipts checked.
