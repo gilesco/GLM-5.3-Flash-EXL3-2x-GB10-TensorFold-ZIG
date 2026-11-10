@@ -207,6 +207,15 @@ readiness.
      changed the scratch layout and one side of the change is missing in
      the port. The deepened dump (per-slot stride, raw picks, mlog
      scores) landed (tranche 2zl, d478292) for window 10.
+   - **THE STRIDE DUMP (cont. 31)**: window 10: pick[0..23] ALL VALID, the
+     mlog scores SANE at both sample points (row 0, last row), the bad
+     picks spread UNIFORMLY across the 9 slots (~202-238 each) — the
+     signature of whole ROWS going bad (~46%), growing slowly call over
+     call. The garbage sits in the MIDDLE rows. The mlog full NaN scan
+     landed (tranche 2zm, 2eba8c0): the count/range of NaN score rows —
+     NaN rows make all 9 picks garbage, matching the uniform counts, and
+     point at the router's INPUT (normed x rows) going NaN for exactly
+     those rows (the trash-page rows?).
 
 ## The test-count note (do not re-litigate)
 
