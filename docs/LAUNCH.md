@@ -9900,3 +9900,30 @@ Any mismatch convicts the arena slot mapping (the `sizes` array vs the
 
 **The state**: window 21 (the pointer dump) launched; production restored
 healthy after window 20 (21/21 windows, rc=0).
+
+## (round 139, cont. 42) EVERY POINTER CONSISTENT TOO — THE FULL INDEX VALIDATION IS IN FLIGHT (2026-11-10)
+
+**Window 21** (campaign-20261110-083722, the pointer dump): the fourth
+layer of the bracket cleared —
+
+    TF_SHARD_DEBUG: PLAN PTRS: members 0xe929d8790300 items ...7a2300 counts ...7a6700 rank ...7a6800 hist ...7b8800
+        items-members 73728 (P*4=65536) counts-items 17408 rank-counts 256 hist-rank 73728 (P*4=65536)
+
+- **Every pointer diff is CONSISTENT** — items−members = 73,728 ≥ P·4
+  (65,536), rank−counts = 256, hist−rank = P·4 exactly. The arena slot
+  mapping in cuda_state.zig is CORRECT; the members base is sane.
+- The fault STILL fired at #2893 — the fifth window in a row with every
+  measurable input clean.
+
+**The conclusion**: samples are not proof. The failing thread p=64 reads
+`picks[64]`, `rank[64]`, `hist[picks[64]]` — but my dumps sampled only
+[0..19] of the compact and [0..15] of rank/hist. The instrument
+(tranche 2zw, fff5d82): the FULL host-side index validation — read
+picks/rank/hist COMPLETELY (P pairs, nblk×E hist), compute
+`hist[picks[p]] + rank[p]` for EVERY pair p on the host, report the MAX
+index vs members' words. If max ≥ words, the scatter writes out of
+bounds WITH clean-looking data — convicting the hist/rank alignment or
+the offsets kernel's sums. Plus the failing thread's exact triple.
+
+**The state**: window 22 (the full index validation) launched;
+production restored healthy after window 21 (22/22 windows, rc=0).
