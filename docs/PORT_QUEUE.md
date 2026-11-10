@@ -369,6 +369,17 @@ readiness.
      NaN GATHERED convicts the mixer/DSA/owner path; clean GATHERED
      with NaN X-after convicts hcPost's arithmetic or the Sinkhorn
      state.
+   - **THE GATHERED NANS ARE THE OLDEST SIGNAL (cont. 48)**: window 27:
+     `gathered` carries sparse NaNs (1-10 of the 2,048-word sample) from
+     the VERY FIRST piece glue — 291 readings through all of chunk 1,
+     then 2048/2048 at the boundary; X stayed clean through chunk 1 (the
+     sparse NaN rows sat outside the first-32-rows sample). The
+     mixer/DSA path produces NaN rows from layer 0, piece 0 — the
+     primary suspect is the DSA attention on sharded latents (the
+     trash-page reads, or the twin/latent mapping). The TWINS-OFF A/B
+     landed (KSHARD_TWINS0=1 in the gate phase): TF_GLM_KV_SHARD_TWINS=0
+     on rank 0 alone — NaNs vanish twins-off convicts the twin/latent
+     mapping; NaNs persist convicts the owner's own latent pages.
 
 ## The test-count note (do not re-litigate)
 
