@@ -10045,3 +10045,32 @@ chunk 2's layer-0 ffn regardless of which path ran.
 
 **The state**: window 26 pending; production restored healthy after
 window 25 (26/26 windows, rc=0).
+
+## (round 139, cont. 47) THE BIRTH BRACKETED TO ONE HCPOST: NORMED-PIECED-PRE FLIPS CLEAN → ALL-NAN BETWEEN CALL #41 AND #42 (2026-11-10)
+
+**Window 26** (campaign-20261110-110304, the relocated dumps): the
+decisive transition —
+
+    NORMED-PIECED-PRE NaN words 0/2048 sample    ×285 (every pre of chunk 1)
+    NORMED-PIECED-PRE NaN words 2048/2048 sample  ← ALL NaN (from here on)
+
+- **The normed buffer flips CLEAN → ALL-NaN inside ONE hcPre call** —
+  with `hidden` clean at the same moment. hcPre's output NaN from clean
+  input convicts hcPre's OTHER inputs: `hc.fn_w`/`base`/`scale` (the
+  weights) or its scratch `hcpart`/`post`/`comb`/`xs`.
+- **The flip sits between call #41 (chunk 1's last ffn, x clean) and
+  call #42 (chunk 2's first ffn, x all-NaN)** — the glue window where
+  the last hcPost of chunk 1 and the chunk-boundary pool writes run.
+- **The trio was still missing from the pieced path**: `postRows` (the
+  pieced hcPost) had no dumps — the GATHERED/POST/COMB state that
+  hcPost combines was never read at the flip.
+
+**The corrected instrument** (tranche 2zab, 17571f2): the trio moves
+into `postRows` — GATHERED/POST/COMB plus X before and after hcPost at
+every piece glue. Window 27 reads the state hcPost combines at the
+flip: NaN GATHERED convicts the mixer/DSA/owner path (the mixer's
+output); clean GATHERED with NaN X-after convicts hcPost's arithmetic
+on the Sinkhorn state (`post`/`comb`) or its weights.
+
+**The state**: window 27 (the postRows trio) launched; production
+restored healthy after window 26 (27/27 windows, rc=0).
