@@ -4789,15 +4789,33 @@ BUILDEOF
   # mapping is the defect; if they persist, the owner's OWN latent pages are miswritten.
   # Rank 0 only, sequential (rank 1 has exited): its verdict to kshardcheck-twins0.md.
   if [[ "${KSHARD_TWINS0:-}" == 1 ]]; then
-    log "kshardcheck: the twins-off A/B (TF_GLM_KV_SHARD_TWINS=0) on rank 0 only"
-    TP=$(mktemp /tmp/kshardcheck-twins0.XXXX)
-    docker run --rm "${COMMON_RUN[@]}" "${COMMON_ENV[@]}" -e TF_GLM_KV_SHARD_TWINS=0 \
+    # BOTH RANKS: the check is a two-rank program — rank 0 alone just blocks in
+    # ncclCommInitRank (the first twins-off attempt ran rank 0 only and sat silent
+    # for the whole 2,400 s timeout). The id file is already on both hosts; rank 1
+    # starts first on the join, as in the main run above.
+    log "kshardcheck: the twins-off A/B (TF_GLM_KV_SHARD_TWINS=0) on both ranks"
+    TP0=$(mktemp /tmp/kshardcheck-twins0-r0.XXXX)
+    TP1=$(mktemp /tmp/kshardcheck-twins0-r1.XXXX)
+    TWENV=(-e TF_GLM_KV_SHARD=1 -e TF_GLM_KV_SHARD_TWINS=0 -e HF_HUB_OFFLINE=1 -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME")
+    [[ -z "$NCCL_IB_HCA" ]] || TWENV+=(-e NCCL_IB_HCA="$NCCL_IB_HCA")
+    docker run --rm "${COMMON_RUN[@]}" "${TWENV[@]}" \
       -v "$OUT/tf-cuda-test:/tf-cuda-test:ro" -v "$HF_CACHE/$ckpt_rel:/ckpt:ro" -v "$OUT:/ids" \
       --entrypoint "" "$R0IMG" timeout 2400 /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
-      > "$TP" 2>&1 || true
-    mv "$TP" "$OUT/kshardcheck-twins0.log"
-    T0=$(grep -c "FAIL" "$OUT/kshardcheck-twins0.log" 2>/dev/null || echo "?")
-    echo "## twins-off A/B: rank 0 alone — kshardcheck-twins0.log, FAIL lines: $T0" >> "$P"
+      > "$TP0" 2>&1 &
+    T0PID=$!
+    ssh -o BatchMode=yes "$WORKER" "docker run --rm ${COMMON_RUN[*]} ${TWENV[*]} \
+      -v /tmp/kshardcheck-w/tf-cuda-test:/tf-cuda-test:ro -v \$HOME/.cache/huggingface/$ckpt_rel:/ckpt:ro -v /tmp/kshardcheck-w:/ids \
+      --entrypoint '' $R1IMG timeout 2400 /tf-cuda-test ${CHECK_ARGS[*]} 1 2 /ids/kv-shard-id.txt" \
+      > "$TP1" 2>&1 || T1RC=$?
+    T1RC=${T1RC:-0}
+    wait $T0PID || T0RC=$?
+    T0RC=${T0RC:-0}
+    mv "$TP0" "$OUT/kshardcheck-twins0-r0.log"
+    mv "$TP1" "$OUT/kshardcheck-twins0-r1.log"
+    T0=$(grep -c "FAIL" "$OUT/kshardcheck-twins0-r0.log" 2>/dev/null || echo "?")
+    T1=$(grep -c "FAIL" "$OUT/kshardcheck-twins0-r1.log" 2>/dev/null || echo "?")
+    G0=$(grep -c "GATHERED-PIECED NaN words [1-9]" "$OUT/kshardcheck-twins0-r0.log" 2>/dev/null || echo "?")
+    echo "## twins-off A/B: both ranks — twins0-r0.log rc=$T0RC FAIL=$T0 GATHERED-NaN-lines=$G0 / twins0-r1.log rc=$T1RC FAIL=$T1" >> "$P"
   fi
 
   echo "## rank 0 (the leader: the seven paths, byte-for-byte against the twin)" >> "$P"
