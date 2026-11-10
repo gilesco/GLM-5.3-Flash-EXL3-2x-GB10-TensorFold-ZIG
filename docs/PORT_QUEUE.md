@@ -258,6 +258,20 @@ readiness.
      stride-2 row-pair bug shows as even != odd), the first bad row's
      neighborhood raw. x3.picks holding the previous call's picks is
      EXPECTED (the compact copy runs during the experts' pass).
+   - **THE CENSUS PARADOX RESOLVED — THE READS RACED THE STREAM
+     (cont. 37)**: window 16: the FULL census over ALL 18,432 entries
+     says ZERO bad rows, while the earlier small read of the same memory
+     said ~1,800 bad with the first bad row drifting (48 -> 51 -> 59 ->
+     60 -> >71 across five runs). Root cause: MY OWN INSTRUMENT — every
+     diagnostic DtoH ran on the NULL stream (non-blocking vs the
+     engine's stream): the reads raced the select's in-flight writes,
+     and the drifting boundary was the select's WRITE PROGRESS at read
+     time. The FINAL state is clean — the select writes valid picks
+     everywhere — so garbage picks CANNOT feed plan_scatter. The suspect
+     moves to the fused path's plan scratch (plan.rank/hist/items) or
+     the compact copy. All 12 diagnostic reads now synchronize the
+     stream first (tranche 2zr, 56d3109); the plan scratch (rank/counts)
+     is dumped after the sync.
 
 ## The test-count note (do not re-litigate)
 
