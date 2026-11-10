@@ -380,6 +380,13 @@ readiness.
      landed (KSHARD_TWINS0=1 in the gate phase): TF_GLM_KV_SHARD_TWINS=0
      on rank 0 alone — NaNs vanish twins-off convicts the twin/latent
      mapping; NaNs persist convicts the owner's own latent pages.
+   - **THE A/B BURNED ON A ONE-RANK RUN (cont. 49)**: window 28: the
+     twins-off A/B produced 0 bytes — the check is a TWO-RANK program
+     and the attempt ran rank 0 alone: rank 0 sat in ncclCommInitRank
+     for the whole 2,400 s timeout. Fixed to BOTH RANKS (the id file
+     already staged on both hosts, rank 1 first on the join); the
+     verdict line carries rc/FAIL/GATHERED-NaN counts for both. Window
+     29 is the corrected A/B.
 
 ## The test-count note (do not re-litigate)
 
