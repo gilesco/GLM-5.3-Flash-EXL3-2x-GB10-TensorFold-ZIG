@@ -9594,3 +9594,21 @@ The `.commit-want` pinned to 2eba8c0.
 
 **The state**: window 11 (the mlog scan) launched; production restored
 healthy after window 10 (11/11 windows, rc=0).
+
+## (round 139, cont. 32) THE MLOG SCAN'S OWN BUG: THE BUFFER WAS 19 KB FOR A 74 KB COPY — FIXED, RERUNNING (2026-11-10)
+
+**Window 11** (campaign-20261110-032135): the instrument's own arithmetic
+bug — `mlog_buf: [64 * 300]u8` sized 19 KB while the scan copies
+`64 rows × 288 experts × 4 B ≈ 74 KB` into it. Both ranks printed the
+mlog row line and then DUMPED CORE inside the scan (the host overrun
+trampled the stack). The core dump is my instrument's, not the engine's;
+the four lines each rank printed before dying still confirmed the window
+10 pattern on both ranks (bad ~1,840-1,867/4,096, per-slot uniform,
+pick[0..23] valid, mlog row0/lastrow sane).
+
+**The fix** (tranche 2zm fixup 2, b02fd54): the buffer sized in BYTES —
+`[64 * 300 * 4]u8` (76,800 B) with the comment carrying the burn. The
+`.commit-want` pinned to b02fd54; window 12 is running the fixed scan.
+
+**The state**: production restored healthy after window 11 (12/12
+windows, rc=0).
