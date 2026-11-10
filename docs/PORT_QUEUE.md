@@ -272,6 +272,19 @@ readiness.
      the compact copy. All 12 diagnostic reads now synchronize the
      stream first (tranche 2zr, 56d3109); the plan scratch (rank/counts)
      is dumped after the sync.
+   - **THE RACE PROVEN; THE PLAN SCRATCH INCONSISTENT (cont. 38)**:
+     window 17 (the synced reads): the census reads ZERO bad rows on every
+     call with the sync in — the select is INNOCENT. But plan.rank is
+     almost all ZEROS with three tiny entries (1, 2, 1) where cumulative
+     sums belong, while plan.counts[0..1] = 401, 286 carry real values —
+     the plan's own state doesn't cohere. The fault landed AFTER calls
+     #0/#1 logged clean — the failing ffn call is a LATER one. The
+     unverified link: the fused path's COMPACT picks (sc.x3.picks, a
+     per-chunk copy the compact makes) — the plan kernels read the
+     compact, not s.pick. The every-call census landed (tranche 2zs,
+     b8004df): the final picks classified on EVERY ffn call, each line
+     annotated with the launch ring's seq; the detail dump fires on the
+     FIRST bad call.
 
 ## The test-count note (do not re-litigate)
 
