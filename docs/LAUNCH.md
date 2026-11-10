@@ -9806,3 +9806,35 @@ b8004df.
 
 **The state**: window 18 (the every-call census) launched; production
 restored healthy after window 17 (18/18 windows, rc=0).
+
+## (round 139, cont. 39) ALL 42 FIRST-CHUNK CALLS CLEAN — THE FAULT IS IN CALL #42'S PLAN CHAIN; THE PLAN SCAN IS IN FLIGHT (2026-11-10)
+
+**Window 18** (campaign-20261110-070512, the every-call census): the
+sharp bracket —
+
+    TF_SHARD_DEBUG: call #42 (launch #2890): CENSUS bad rows 0/952; first bad 0
+    error: TF_LAUNCH_SYNC: launch #2893 faulted IN EXECUTION: CUDA_ERROR_ILLEGAL_ADDRESS (700); kernel ?, grid 30x1x1, block 256x1x1
+
+- **Every one of the 42 ffn calls of the FIRST chunk read CLEAN final
+  picks** (bad 0/2048 on all of them). The select is fully innocent.
+- **Call #42 is the SECOND chunk's first MoE layer** (rows=952 — the
+  short tail chunk of the 3,000-token prompt at the pieces' split), and
+  the fault fired THREE launches after its census line: #2891-2892 (the
+  plan chain's rank/offsets kernels) synced CLEAN, **#2893 =
+  plan_scatter faulted IN EXECUTION** — inside the SAME call.
+- My census sits after the select but BEFORE the plan chain in the fused
+  path — it validates the compact SOURCE, not the plan's behavior.
+
+**The reading**: the plan buffers were TRASHED between calls — the prime
+suspect is the port's pool write path (`tf_glm_pool_keys`, in the ring
+before the fault): the second chunk touches PAGES the first chunk never
+did — an overrun at the page boundary lands in the plan scratch, and
+chunk 2's plan_scatter reads the trashed state. The first chunk ran 42
+clean ffn calls; the second chunk's first MoE faults.
+
+**The instrument** (tranche 2zt, 7342b40): the hist/rank FULL scan on
+EVERY call — the first garbage there brackets the trashing kernel
+exactly. The `.commit-want` pinned to 7342b40.
+
+**The state**: window 19 (the plan scan) launched; production restored
+healthy after window 18 (19/19 windows, rc=0).
