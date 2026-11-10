@@ -10230,3 +10230,38 @@ v1.2.5.
 
 **The next order**: the compile gate's RC on the fixed tree, then the
 `preflight v126val summary` window decides the pin.
+
+## (round 140, cont. 2) THE V1.2.6 BUMP QUALIFIED — THE PIN HOLDS; THE PROMOTED LINE NOW SERVES THE V1.2.6 ENGINE (2026-11-10)
+
+**Window 32** (campaign-20261110-162034, `preflight v126val summary`, rc=0,
+production restored healthy after 80 s — on the v1.2.6 engine
+6e9af9302): the v126val battery passed on every instrument.
+
+- **The same-bits greedy witness: IDENTICAL** — the engine bump did not
+  move the deterministic probes (the 80cc3802… sha holds across
+  v1.2.5 → v1.2.6 with the full 18-patch stack re-anchored).
+- **The §2 content gates ALL PASS** (g1-g4 + the g5 note), zero
+  strict-TF_ refusals at boot under the stricter v1.2.6 validation.
+- **Hardmode 95 — the TWENTY-SECOND consecutive** (TC-51 and TC-92
+  both pass).
+- **The vision 4/4**; steady-state decode 73.1 tok/s; prefill 1,523 at
+  d0 (the band); the walls **84/83 s** (the first load after the
+  prepare 93 s — the loading row re-dated).
+- The serve line reads the v1.2.6 pool plan: the engine's own + 3
+  streams at 3,098 pages of 512 rows, 415 MiB fixed each, no prompt
+  cache at the standing TF_KV_SHARE=16 (#2699's reworked budget — the
+  none-of-the-slots-fit note names the --prompt-cache-gib 4 that holds
+  all 16).
+
+**The adoption**: the pin HOLDS at 6e9af9302 — the anchors' loading
+row re-dated, the chart regenerated, the ledger closed. The v126val
+phase retires with its receipt (the session-specific pattern). The
+promoted production repo mirrors the bump on its next promotion sync;
+its LIVE serve was restarted on the v1.2.6 engine through the
+window's restore path.
+
+**Window 31 was VOID** (campaign-20261110-160948): my launch carried
+the phase list as a PHASES env var — silently ignored (the cont. 69
+lesson, re-learned); the window ran only the summary phase and
+restored production on the v1.2.5 engine in 81 s. The correction: the
+launch argument IS the phase list; window 32 ran it properly.
