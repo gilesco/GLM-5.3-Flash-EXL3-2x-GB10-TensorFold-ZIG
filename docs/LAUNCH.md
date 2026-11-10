@@ -9767,3 +9767,42 @@ now reads CLEAN too, the race theory is proven on the spot.
 
 **The state**: window 17 (the synced reads + the plan scratch) launched;
 production restored healthy after window 16 (17/17 windows, rc=0).
+
+## (round 139, cont. 38) THE RACE PROVEN — THE PLAN SCRATCH IS INCONSISTENT; THE EVERY-CALL CENSUS IS IN FLIGHT (2026-11-10)
+
+**Window 17** (campaign-20261110-061022, the synced reads): the race
+theory PROVEN, and the target moved again —
+
+    TF_SHARD_DEBUG: call #0: CENSUS rows 2048: bad rows 0 (even 0, odd 0)
+    TF_SHARD_DEBUG: call #0: plan.rank[0..15] = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    TF_SHARD_DEBUG: call #1: plan.rank[16..31] = 0,0,0,0,0,0,0,0,0,0,2,0,0,0,1,0
+    TF_SHARD_DEBUG: call #1: plan.counts[0..7] = 401,286,0,0,0,0,0,0
+
+- **The census reads ZERO bad rows on every call with the sync in** —
+  the final picks are valid everywhere. The select is INNOCENT.
+- **The plan scratch is inconsistent**: plan.rank (the per-pair bucket
+  ranks) is almost all ZEROS with three tiny entries (1, 2, 1) where
+  cumulative sums should be, while plan.counts[0..1] = 401, 286 carry
+  real values. The plan's own state doesn't cohere.
+- **The fault's position**: launch #2893 landed AFTER calls #0/#1
+  logged clean — the failing ffn call is a LATER one, but my census was
+  gated to the first two calls.
+
+**The reading**: with picks and the select clean, the last suspects are
+the plan chain inside `router.route` (plan_rank → plan_offsets →
+plan_scatter) reading the COMPACT picks (`sc.x3.picks` — a different
+buffer than `s.pick`!) vs the fork's layout, or a later ffn call whose
+inputs differ. Note: the fused path's `exl3.run` compacts picks into
+`sc.picks` (a per-chunk copy of the top_k entries) — the compact's
+SIZING/stride is the unverified link between the clean select and the
+plan kernels.
+
+**The instrument** (tranche 2zs, b8004df): the EVERY-CALL census — the
+final picks classified on EVERY ffn call, each line annotated with the
+launch ring's seq (the receipt maps call N ↔ launch #M; the fault's
+#2893 lands between two census lines), and the full detail dump fires on
+the FIRST call whose final picks go bad. The `.commit-want` pinned to
+b8004df.
+
+**The state**: window 18 (the every-call census) launched; production
+restored healthy after window 17 (18/18 windows, rc=0).
