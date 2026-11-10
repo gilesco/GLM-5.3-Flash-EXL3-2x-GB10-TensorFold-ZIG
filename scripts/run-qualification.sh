@@ -4783,6 +4783,23 @@ BUILDEOF
   R0RC=0
   wait $R0PID || R0RC=$?
 
+  # the TWINS-OFF A/B: TF_GLM_KV_SHARD_TWINS=0 runs the prompt owner-computed (no
+  # twin page reads, no trash-page reads for held rows). The NaN GATHERED signal
+  # appears from the FIRST piece glue; if the NaNs vanish twins-off, the twin/latent
+  # mapping is the defect; if they persist, the owner's OWN latent pages are miswritten.
+  # Rank 0 only, sequential (rank 1 has exited): its verdict to kshardcheck-twins0.md.
+  if [[ "${KSHARD_TWINS0:-}" == 1 ]]; then
+    log "kshardcheck: the twins-off A/B (TF_GLM_KV_SHARD_TWINS=0) on rank 0 only"
+    TP=$(mktemp /tmp/kshardcheck-twins0.XXXX)
+    docker run --rm "${COMMON_RUN[@]}" "${COMMON_ENV[@]}" -e TF_GLM_KV_SHARD_TWINS=0 \
+      -v "$OUT/tf-cuda-test:/tf-cuda-test:ro" -v "$HF_CACHE/$ckpt_rel:/ckpt:ro" -v "$OUT:/ids" \
+      --entrypoint "" "$R0IMG" timeout 2400 /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
+      > "$TP" 2>&1 || true
+    mv "$TP" "$OUT/kshardcheck-twins0.log"
+    T0=$(grep -c "FAIL" "$OUT/kshardcheck-twins0.log" 2>/dev/null || echo "?")
+    echo "## twins-off A/B: rank 0 alone — kshardcheck-twins0.log, FAIL lines: $T0" >> "$P"
+  fi
+
   echo "## rank 0 (the leader: the seven paths, byte-for-byte against the twin)" >> "$P"
   tail -24 "$OUT/kshardcheck-r0.log" >> "$P" 2>/dev/null || echo "- no rank 0 log" >> "$P"
   echo "## rank 1 (the follower: the mapped pages, the owner-computed attention, the carries)" >> "$P"
