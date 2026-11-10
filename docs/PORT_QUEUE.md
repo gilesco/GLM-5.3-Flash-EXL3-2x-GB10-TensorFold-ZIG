@@ -158,6 +158,29 @@ readiness.
      (tranche 2zi, 89faa5d): every launch records its name+shape BEFORE
      launching, and a fault dumps the ring — the next window names the
      victim and the predecessors the culprit hides among.
+   - **THE EXACT CULPRIT PINNED (cont. 27)**: window 6 ran TF_LAUNCH_SYNC
+     (sync after every launch): `TF_LAUNCH_SYNC: launch #2893 faulted IN
+     EXECUTION` — the kernel at 30x256 is `plan_scatter` (the MoE plan
+     scatter, cuda/grouped.zig), and every one of the ~2,892 launches
+     before it synced clean. The 0110 patch never touches the MoE files —
+     the scatter reads memory the shard path corrupted (or garbage picks
+     from a clobbered router scratch), so the corruption happened EARLIER
+     (the last DSA layer writes at layer 43 of 45; the fault at the MoE
+     plan of the same layer's block). KSHARD_SAN=1 landed: rank 0 under
+     compute-sanitizer memcheck — the report names the faulting ADDRESS
+     and the nearest allocation, settling whose buffer the walk-off
+     touched.
+   - **THE EXACT CULPRIT PINNED (cont. 27)**: window 6 ran TF_LAUNCH_SYNC:
+     `launch #2893 faulted IN EXECUTION` — the kernel at 30x256 is
+     `plan_scatter` (the MoE plan scatter, cuda/grouped.zig), every one of
+     the ~2,892 launches before it synced clean. The 0110 patch never
+     touches the MoE files — the scatter reads memory the shard path
+     corrupted (or garbage picks from a clobbered router scratch), so the
+     corruption happened EARLIER. KSHARD_SAN landed: rank 0 under
+     compute-sanitizer memcheck — the report names the faulting ADDRESS
+     and the nearest allocation, settling whose buffer the walk-off
+     touched. Window 7's report was LOST (the host-path log-file inside
+     the container) — fixed to the /ids mount; window 8 reruns.
 
 ## The test-count note (do not re-litigate)
 
