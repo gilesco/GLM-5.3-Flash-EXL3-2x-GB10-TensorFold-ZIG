@@ -9402,3 +9402,30 @@ victim and everything that led to it.
 **The state**: the ring compiled clean (CC-RC=0), the binary rebuilt,
 `.commit-want` pinned to 89faa5d. Production healthy on 8000. The next
 window carries the ring into the same first prefill.
+
+## (round 139, cont. 26) THE RING NAMED THE POISON POINT — TF_LAUNCH_SYNC LANDS FOR THE EXACT CULPRIT (2026-11-09)
+
+**Window 5** (campaign-20261109-233539, the ring in): the instrument
+worked exactly as designed — the dump names every launch up to the poison
+point (~3,899 launches deep, both ranks faulted at the same relative
+position — deterministic, not a race):
+
+- **Rank 0's tail**: `hc_post(92x4) → hc_partial(23x16) → ?(92x256) →
+  ?(1x128)` — the victim's shape matches `hc_finish` exactly (the healthy
+  groups ran 192x256), and the `?(1x128)` shape matches `tf_glm_put_words`
+  (the piece-exchange put). The context was ALREADY bad at the victim's
+  name query — `cuFuncGetName` answered `?` twice.
+- **The third hc group runs at half the healthy grid** (92/23 vs 192/48
+  rows) — the third row-piece of the chunk (TF_GLM_OVERLAP_PIECES=3).
+- **The trap**: `cuLaunchKernel` returned SUCCESS for [3896]/[3897] —
+  kernels run asynchronously, so the ring orders SUBMISSIONS while the
+  culprit can hide up to the queue depth earlier in execution.
+
+**The instrument** (tranche 2zj, e46f7ad): `TF_LAUNCH_SYNC` — sync the
+stream after EVERY launch; the first failing sync names the kernel that
+faulted IN EXECUTION (kernels on one stream run in order). Cost ~seconds
+a prefill; diagnostic-only env in the gate phase, unset once the defect is
+fixed. The gate's `.commit-want` pinned to e46f7ad.
+
+**The state**: window 6 (the exact-culprit run) launched; production
+restored healthy after window 5 (6/6, rc=0).
