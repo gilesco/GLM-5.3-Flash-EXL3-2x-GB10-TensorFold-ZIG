@@ -4738,6 +4738,12 @@ BUILDEOF
   # orders submissions; the culprit can hide a queue depth earlier). Slow (~s a
   # prefill); the diagnostic gate only, unset once the defect is fixed.
   [[ "${KSHARD_SAN:-}" == 1 ]] || COMMON_ENV+=(-e TF_LAUNCH_SYNC=1)
+  # the TF_SHARD_DEBUG instrument: the picks and an x sample read to the host BEFORE
+  # the routed experts consume them (the sanitizer pinned plan_scatter's wild writes
+  # to garbage bucket offsets from the picks — out-of-range picks from garbage router
+  # scores mean the corruption is UPSTREAM of the router; clean picks mean the plan
+  # scratch itself was clobbered). Diagnostic-only, unset once the defect is fixed.
+  COMMON_ENV+=(-e TF_SHARD_DEBUG=1)
   [[ -z "$NCCL_IB_HCA" ]] || COMMON_ENV+=(-e NCCL_IB_HCA="$NCCL_IB_HCA")
   COMMON_RUN=(--gpus all --ipc=host --network host --shm-size 16g --device /dev/infiniband
               --cap-add IPC_LOCK --ulimit memlock=-1 --ulimit stack=67108864)
