@@ -9463,3 +9463,28 @@ subsumes it).
 
 **The state**: window 7 (the sanitizer run) is launching; production
 restored healthy after window 6 (7/7 windows, rc=0 restores).
+
+## (round 139, cont. 28) THE SANITIZER RAN BUT ITS REPORT WAS LOST — THE LOG PATH FIX (2026-11-10)
+
+**Window 7** (campaign-20261110-010136, KSHARD_SAN=1): the sanitizer CAUGHT
+the error (rank 0's rc=99 = the error-exitcode) — but the report is gone:
+`--log-file "$OUT/kshardcheck-san-r0.log"` passed the HOST path into the
+container, where that directory does not exist; the root container created
+its own fake path and `--rm` discarded it with the container.
+
+**The fix** (one commit): the report writes to `/ids/kshardcheck-san-r0.log`
+— the rank-0 container already mounts the campaign OUT dir rw at `/ids`,
+so the report lands on the host. Window 8 is running the same mode with
+the fixed path; the report should name the faulting ADDRESS and the
+nearest allocation this time.
+
+**Diagnostic note**: the fault MOVED under the sanitizer's app-level view —
+the ring's victim now reads `hc_finish(192x256)` after `swiglu_512(768x2)`
+and `put_slot(12288)` — earlier in the layer stack than the unsanitized
+fault at plan_scatter. The sanitizer serializes execution and changes
+memory timing, so the FAULT POSITION moves, but the corruption itself is
+the same defect; the sanitizer's report (the ADDRESS) is position-
+independent evidence. rc=99 proves the sanitizer trapped an error.
+
+**The state**: production restored healthy after window 7 (8/8, rc=0).
+Window 8 (the sanitizer rerun, the report path fixed) is running.
