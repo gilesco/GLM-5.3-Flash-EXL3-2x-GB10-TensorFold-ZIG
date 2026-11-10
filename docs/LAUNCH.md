@@ -10369,3 +10369,88 @@ available.**
 **Window 35** re-runs the battery VALUE-FIRST: the ON arm qualifies on
 measured resume value (the g3-shaped resume-vs-compute wall delta), not
 on the 16/16 slot count — and the question closes in either direction.
+
+## (round 140, cont. 6) THE DISCIPLINE REVIEW LANDED; WINDOW 35 LAUNCHES ON THE FIRST STAGE BRIEF (2026-11-10)
+
+**The review (the user's direction: more discipline in decisions, weigh
+the value)**: the whole-repository audit ran this sitting — two read-only
+subagent scans (the scripts census, the docs-vs-charters audit) plus the
+protocol review. The findings, and what landed:
+
+- **The scripts census**: 69 phase markers, 53 session blocks — ALL
+  retired-with-receipt — and the landmine census caught the standing
+  knobs phase's unguarded `loaded=$(… | grep … | tail -1)` (L734: lethal
+  in EVERY default campaign, not just the retired phases). The sweep
+  deleted all 52 removable blocks (run-qualification.sh 5,335 -> 1,162
+  lines), fixed the L734 guard, dropped hmcheck/v124val from the PHASES
+  default (a no-arg campaign no longer re-runs retired batteries), and
+  trimmed the NEEDS_GPU list. The sweep tool itself burned through four
+  iterations (v3's regex depth-counter ran away on resweep's span and ate
+  the standing duel/confirm blocks; v4's heredoc pre-scan desynced from
+  the walk and left kshardcheck's tail behind; v5's single-pass
+  heredoc+continuation-aware counter, dry-run-verified on every span
+  before deletion, is the one that shipped). The swept file: `bash -n`
+  clean, docs-guard green, phase-lint 0 findings.
+- **The docs audit**: the append-only docs are current; the STATE docs
+  lagged one-to-three sittings (DELTAS named the retired Python recipe
+  production; the README streak frozen at 16 vs the receipts' 23; eight
+  dead opens in the ledger; ECOSYSTEM one release behind; 16 stacked
+  "THE NEXT STEP" paragraphs in PERF_PLAN). All landed this sitting:
+  DELTAS's promoted-native header with the Python era retired
+  below-the-line, README's pin + streak 23, the ledger's round-140 block
+  and the eight dead opens closed with receipts, ECOSYSTEM's v1.2.6
+  entry, PORT_QUEUE's contradictions and its duplicate block removed,
+  PERF_PLAN's ONE current-next-step pointer, VALIDATION's §2 standing-
+  state note. The generated LAUNCH_INDEX.md (338 round entries, campaign
+  IDs + outcome tags) is the loop's navigation.
+- **The mechanical layer**: `scripts/phase-lint.sh` (the two burn classes:
+  unguarded assignment-substitution greps under `set -euo pipefail`; env
+  pairs outside start.sh's contract) wired into `autonomous-launch.sh` as
+  a launch REFUSAL. The discipline section is in AGENTS.md: the stage
+  brief, the value gate, adversarial staging verification, the hit-rate
+  watch, fewer-bigger windows, the state-docs pace.
+- **The skill layer**: 12/12 SKILL.md frontmatters now pass strict YAML
+  (4 were unparseable — the "Trigger words:" colon class); skill-smith's
+  workflow gained the strict-YAML verification step; the second
+  launch-staging naming failure captured in verify-shell-config-edits.
+
+**The hit-rate watch's first reading**: round 140 ran 4 windows, 1
+qualified, 3 void/invalid (75% — past the half threshold). The pause
+rule fires: this sitting IS the process review, and the launch below
+resumes the loop with the mechanical gates in place. Round 141's rate
+watch restarts from zero.
+
+**THE STAGE BRIEF — window 35 (the discipline layer's first live
+application)**:
+- **Question**: does funding the 16 kept states (`--prompt-cache-gib 4`,
+  the #2699 recovery) move a user-visible number on this deployment?
+- **Value-if-yes**: the within-session resume delta (the v1 instrument:
+  the g3-shaped conversation computed cold then warm; the ON arm must
+  beat the OFF arm's delta by >150 ms) and the multi-turn TTFT (the v2
+  instrument: a ~4k-token fill, turn 2 vs turn 1 — the opencode shape).
+  The anchors' context: the same-session warm TTFT is already 302 ms
+  cacheless (the page cache over the pool's pages exists in BOTH arms'
+  serve lines); the cross-restart resume is COLD and the imprint disk
+  path is OFF in the standing config — out of scope here.
+- **Cost**: one window (~45 min: two restarts + the gates + hardmode +
+  the vision + the value instruments + the bench).
+- **Alternatives rejected**: the compliance criterion (16/16 slots —
+  window 33's shape; measures the engine's advice, not the user); the
+  bigger-gib sweep (spend before value); the cross-restart/imprint path
+  (a separate --learn question, and the anchors say the store does not
+  survive a restart in the standing config).
+- **Kill criterion**: flag placed (the argv witness) but no material
+  value delta => the cacheless standing HOLDS, the question CLOSES as
+  upstream data, no third reshape. Any guard FAIL => the battery itself
+  failed; the cacheless standing holds and the battery gets fixed before
+  any re-run.
+- **The verification already run**: window 34's failure mode replayed
+  against the fixed code (the OFF-arm absent-flag shape under
+  `set -euo pipefail` survives; the ON-arm argv witness extracts 4 from
+  a synthetic placed argv — the replay also caught the json-form docker
+  format bug, fixed to the plain .Config.Cmd form); the value
+  instruments' heredocs run against synthetic walls files; the phase-lint
+  green on both clones.
+
+**Window 35**: `preflight cachefixqual summary` (the fixed value-first
+battery), launched as this sitting's last action.
