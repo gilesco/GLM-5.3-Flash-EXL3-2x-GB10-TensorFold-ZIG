@@ -4722,6 +4722,11 @@ BUILDEOF
 
   CHECK_ARGS=(glm-kv-shard-check /ckpt)
   COMMON_ENV=(-e TF_GLM_KV_SHARD=1 -e HF_HUB_OFFLINE=1 -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME")
+  # the exact-culprit instrument: sync the stream after EVERY launch so the first
+  # failing sync names the kernel faulting IN EXECUTION (the launch ring alone only
+  # orders submissions; the culprit can hide a queue depth earlier). Slow (~s a
+  # prefill); the diagnostic gate only, unset once the defect is fixed.
+  COMMON_ENV+=(-e TF_LAUNCH_SYNC=1)
   [[ -z "$NCCL_IB_HCA" ]] || COMMON_ENV+=(-e NCCL_IB_HCA="$NCCL_IB_HCA")
   COMMON_RUN=(--gpus all --ipc=host --network host --shm-size 16g --device /dev/infiniband
               --cap-add IPC_LOCK --ulimit memlock=-1 --ulimit stack=67108864)
