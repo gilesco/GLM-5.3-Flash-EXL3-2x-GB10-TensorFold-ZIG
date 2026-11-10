@@ -9565,3 +9565,32 @@ picks buffer). The gate env carries it; `.commit-want` pinned to d478292.
 
 **The state**: window 10 (the stride dump) launched; production restored
 healthy after window 9 (10/10 windows, rc=0).
+
+## (round 139, cont. 31) THE STRIDE DUMP: PICKS[0..23] VALID, MLOG SANE AT BOTH ENDS — THE MIDDLE ROWS ARE THE QUESTION (2026-11-10)
+
+**Window 10** (campaign-20261110-024914, the deepened dump): on 172
+logged calls, a sharper picture:
+
+    TF_SHARD_DEBUG: call #0: bad 1880/4096, per-slot 214,207,204,211,203,202,213,224,202, x NaN 0
+    TF_SHARD_DEBUG: call #0: pick[0..11] = 0,0,0,0,0,0,0,0,0,0,0,0
+    TF_SHARD_DEBUG: call #0: mlog row0[0..7] = -4.51, -4.05, -5.03, -5.02, -4.92, -3.69, -5.47, -1.70 | lastrow[0..3] = -2.51, -2.46, -2.28, -2.47
+
+- **The first 24 picks are ALL VALID** (zero or small ids) and BOTH
+  mlog sample points (row 0, the last row) carry SANE scores — the
+  garbage sits in the MIDDLE rows, invisible to the two-point sample.
+- **The bad picks spread UNIFORMLY across the 9 slots** (~202-238 per
+  slot) — the signature of whole ROWS going bad: one bad row makes all 9
+  of its picks garbage. ~46% of rows bad.
+- Bad counts GROW slowly call over call (1880 → 2054 over 3 calls) —
+  consistent with a per-layer accumulation, not a fixed layout error.
+
+**The discriminator now in flight** (tranche 2zm, 2eba8c0): the mlog FULL
+NaN scan — first/last/COUNT of NaN score rows. NaN rows → all 9 picks
+garbage (matching the uniform per-slot counts) → the router's INPUT
+(normed x rows) went NaN for exactly those rows → the corruption is in
+the sharded stream's values for a SUBSET of rows (the trash-page rows?),
+not in the picks buffer. Plus the first bad pick row's full 9 values.
+The `.commit-want` pinned to 2eba8c0.
+
+**The state**: window 11 (the mlog scan) launched; production restored
+healthy after window 10 (11/11 windows, rc=0).
