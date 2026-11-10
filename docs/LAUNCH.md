@@ -10074,3 +10074,37 @@ on the Sinkhorn state (`post`/`comb`) or its weights.
 
 **The state**: window 27 (the postRows trio) launched; production
 restored healthy after window 26 (27/27 windows, rc=0).
+
+## (round 139, cont. 48) THE GATHERED NANS ARE THE OLDEST SIGNAL — FROM THE FIRST PIECE GLUE; THE TWINS-OFF A/B IS IN FLIGHT (2026-11-10)
+
+**Window 27** (campaign-20261110-112805, the postRows trio): the
+primary signal surfaces —
+
+    GATHERED-PIECED NaN words: 7, 1, 4, 2, 10, 4, 3, 2, 2, 10, ... (sparse, FROM THE FIRST GLUE)
+    X-PRE-POST-PIECED / X-POST-POST-PIECED: 0/2048 (clean through chunk 1)
+    ... then GATHERED: ... 2048 2048 (the flip, at the chunk boundary)
+
+- **`gathered` carries sparse NaNs (1-10 of the 2,048-word sample) from
+  the VERY FIRST piece glue** — 291 readings of 1-8/2048 through all of
+  chunk 1, then 2048/2048 at the boundary. The mixer/DSA path produces
+  NaN rows from layer 0, piece 0 — the OLDEST signal in the whole
+  investigation (everything earlier was downstream of it).
+- hcPost folds them into x (bf16); they accumulate per layer; at the
+  boundary some buffer boundary tips the ffn's sample over.
+- The ffn consumes NaN x → NaN mlog → degenerate plan → plan_scatter
+  faults. The whole downstream chain was effects.
+
+**The primary suspect**: the DSA attention on sharded latents — the
+owner-computed path reading the trash page (NaN-poisoned by design) for
+rows it shouldn't hold, or the twin/latent mapping misrouting. The
+original hypothesis (window 12's E4M3 reasoning) returns with proof.
+
+**The instrument** (KSHARD_TWINS0=1, landed in the gate phase): the
+TWINS-OFF A/B — TF_GLM_KV_SHARD_TWINS=0 on rank 0 alone, sequential
+after the main run. Twins-off reads the owner's OWN latents for all rows
+(no twin pages, no trash-page reads for held rows). **NaNs vanish
+twins-off → the twin/latent mapping is the defect; NaNs persist → the
+owner's own latent pages are miswritten** (the pool's keys/lat writes).
+
+**The state**: window 28 (the main run + the A/B) launched; production
+restored healthy after window 27 (28/28 windows, rc=0).
