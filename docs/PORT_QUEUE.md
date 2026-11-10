@@ -196,6 +196,17 @@ readiness.
      6e2bf75): the picks + an x sample read BEFORE the experts consume
      them, per call — out-of-range picks prove upstream garbage; clean
      picks prove a clobbered scratch.
+   - **THE PICKS ARE GARBAGE FROM CALL #0 (cont. 30)**: window 9's
+     instrument: bad picks ~1,850-1,930 of 4,096 from the VERY FIRST call,
+     x CLEAN (0 NaN/1,024) — the block input is fine, and the garbage
+     values repeat EXACTLY across calls (720442064, -2147354444, 58417 =
+     0xE431, two E4M3 code bytes): constant CONTENT in the picks' memory —
+     a buffer-aliasing/layout defect (another buffer's data sitting in
+     pick's memory), NOT a runtime race and NOT NaN propagation from the
+     latents. The suspect: the fork's shared-buffer split (twin buffers)
+     changed the scratch layout and one side of the change is missing in
+     the port. The deepened dump (per-slot stride, raw picks, mlog
+     scores) landed (tranche 2zl, d478292) for window 10.
 
 ## The test-count note (do not re-litigate)
 
