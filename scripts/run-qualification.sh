@@ -1370,6 +1370,123 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: cachefixqual (SESSION-SPECIFIC; retires with the receipt). The #2699
+# recovery A/B: the v1.2.6 pool plan funds ZERO of the 16 TF_KV_SHARE kept
+# states. slots at the standing config (v1.2.5 funded 2) — the bigger fixed
+# parts (#2257: window_rows 8 -> 32 moved the KDA projection into each stream,
+# +51 MiB/stream) ate the slots' room. The serve line names the fix:
+# --prompt-cache-gib 4 holds all 16. The battery: the OFF arm (the standing
+# config: no prompt cache) vs the ON arm (--prompt-cache-gib 4). The
+# instruments: the serve line's own arithmetic (the slots funded, the pages
+# the streams keep, the room left), the WARM-RESUME probe (a conversation
+# turn 2 must hit the kept state — the TTFT of turn 2 vs turn 1 records the
+# cache working; the cache is pointless otherwise), the §2 content gates +
+# hardmode 95 + the vision 4/4 + the greedy same-bits sha guard the ON arm,
+# and the bench + steady-state decode (the pool pages the ON arm cedes must
+# not move the decode cells outside the bands). Adoption moves config.sh's
+# start line (PROMPT_PROMPT_CACHE_GIB=4).
+# ---------------------------------------------------------------------------
+if want cachefixqual && ! phase_done cachefixqual; then
+  log "=== cachefixqual (the #2699 recovery: --prompt-cache-gib 4 vs the cacheless standing)"
+  P="$OUT/11-cachefixqual.md"; : > "$P"
+  echo "# cachefixqual (the #2699 recovery: the standing cacheless config vs --prompt-cache-gib 4; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  for arm in off on; do
+    S=$(date +%s)
+    if [ "$arm" = on ]; then CFENV="PROMPT_PROMPT_CACHE_GIB=4"; else CFENV=""; fi
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $CFENV; then
+      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      echo "- the serve line: $(serve_line | grep -oE "taking [0-9]+ pages of 512 rows \\([0-9.]+ GiB\\)|no prompt cache[^;]*|prompt cache[^;]*slotted[^;]*|kept states[^;]*)" | head -2)" >> "$P"
+      echo "- the serve line full: $(serve_line)" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | grep -E "prompt cache|kept states" | tail -2 >> "$P" || true
+      # the greedy witness (the same-bits guard):
+      req_file "$OUT/cx-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+      chat "$OUT/cx-$arm-req.json" > "$OUT/cx-$arm-resp.json" || true
+      echo "- the greedy content sha: $(content_sha "$OUT/cx-$arm-resp.json")" >> "$P"
+      # the warm-resume instrument: turn 1 fills a conversation, turn 2 resumes it.
+      # A kept state's resume shows as a turn-2 TTFT FAR under turn 1's (the pages
+      # already in the pool). The turn shape: a distinct conversation id per turn,
+      # the reply captured with its usage (cached_tokens is unwired — the content
+      # and the wall are the witnesses).
+      C1=$(python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Remember this code word: AXIOM-4431. Reply with just the word.'}], 'max_tokens': 256, 'temperature': 0, 'seed': 7}))" "$SERVED_NAME")
+      echo "$C1" > "$OUT/cx-$arm-turn1-req.json"
+      T1S=$(date +%s%3N)
+      chat "$OUT/cx-$arm-turn1-req.json" > "$OUT/cx-$arm-turn1.json" || true
+      T1E=$(date +%s%3N)
+      C2=$(python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Remember this code word: AXIOM-4431. Reply with just the word.'}, {'role': 'assistant', 'content': 'AXIOM-4431'}, {'role': 'user', 'content': 'What code word did I give you? Reply with just the word.'}], 'max_tokens': 256, 'temperature': 0, 'seed': 7}))" "$SERVED_NAME")
+      echo "$C2" > "$OUT/cx-$arm-turn2-req.json"
+      T2S=$(date +%s%3N)
+      chat "$OUT/cx-$arm-turn2-req.json" > "$OUT/cx-$arm-turn2.json" || true
+      T2E=$(date +%s%3N)
+      python3 -c "
+import json
+t1 = json.load(open('$OUT/cx-$arm-turn1.json'))
+t2 = json.load(open('$OUT/cx-$arm-turn2.json'))
+c1 = t1['choices'][0]['message']['content']
+c2 = t2['choices'][0]['message']['content']
+print('- turn 1 wall: %d ms; turn 2 wall: %d ms; turn-2 content: %r (AXIOM-4431 expected); the turn-2 content correctness is the cache-resume witness' % ($T1E - $T1S, $T2E - $T2S, c2.strip()[:40]))
+print('- turn 1 prompt tokens: %s, completion: %s' % (t1["usage"]["prompt_tokens"], t1["usage"]["completion_tokens"]))
+print('- turn 2 prompt tokens: %s (the full history re-prefilled unless the cache resumed), completion: %s' % (t2["usage"]["prompt_tokens"], t2["usage"]["completion_tokens"]))
+" >> "$P" || true
+    else
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PROMPT_PROMPT_CACHE_GIB=4 || true
+  run_gates cx DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PROMPT_PROMPT_CACHE_GIB=4 || true
+  echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
+  mkdir -p "$OUT/cxhm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "cachefixqual" --output-dir "$OUT/cxhm" --parallel 2 \
+    --json-file "$OUT/cxhm/hm.json" > "$OUT/cxhm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/cxhm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/cxvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/cxvision/vision.json" > "$OUT/cxvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/cxvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  bench_perf cx "$OUT/cx-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/cxd.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/cx-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/cx-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "- VERDICT: the ON arm funds the 16 slots AND the warm-resume probe shows the turn-2 resume (the content correct, the wall under turn 1's) AND hardmode holds AND the decode cells stay in the bands = the PROMPT_PROMPT_CACHE_GIB=4 start line qualifies; any FAIL keeps the standing cacheless config and the question goes upstream as data" >> "$P"
+  touch "$OUT/.cachefixqual.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: v126val (SESSION-SPECIFIC; retires with the receipt). The v1.2.6
 # bump validation: the engine is now v1.2.6 (6e9af9302) + the 18-patch stack
 # re-anchored (the shared MLA image moved the chunks_wide ground into
