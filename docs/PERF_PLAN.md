@@ -1,27 +1,28 @@
 # Performance plan: closing the measured fronts
 
 > **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 141, 2026-11-10)**: **two value-gate misses closed the two
-> cheapest parked candidates** — the #2699 prompt-cache recovery (window 36:
-> the funded cache adds no resume value the page cache lacks, at a window +
-> 1 GiB of room) and the #2181 live-half knob (window 37: the mechanism
-> reproduces on our shape — the keep cost −31%, enough-for held, every guard
-> green — but does not close the eviction warning at PARALLEL=4; 5 of 16
-> slots funded vs the OFF arm's 3, and the slot count tracks the run's room).
-> **The cacheless standing holds; both knobs stay OUT of config.sh.** The
-> unplanned composition datum: DRAFTS=0 + LIVE_HALF reads **enough for FOUR
-> at 512K and 10 of 16 slots** — the four-window shape exists at the
-> drafter's price (the DRAFTS=0 trade stays declined on its decode cost).
-> The balanced-gains picture: the quality front is at its receipted ceiling
-> (hardmode 95 ×25; every alternative pack measured lower; requants out of
-> scope per the round-132 (user) scope), the perf fronts are crossed vs the
-> retired recipe and flat native-vs-native. The remaining levers are the
-> 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool at a decode
-> cost), the DRAFTS=0+LIVE_HALF composition (the decode trade), and the
-> upstream watch. The next window needs a stage brief that names a
-> user-visible number it could move — no launch without one. The loop runs
-> under the discipline layer (the stage brief, the value gate, phase-lint,
-> the phase-name gate, DRY_RUN, the hit-rate watch — AGENTS.md).
+> the trail, round 141, 2026-11-10)**: **round 141 closed three questions in
+> three windows** — the #2699 prompt-cache recovery (window 36: the funded
+> cache adds no resume value the page cache lacks, at a window + 1 GiB of
+> room — the cacheless standing holds), the #2181 live-half knob (window 37:
+> the mechanism reproduces on our shape — the keep cost −31%, enough-for
+> held, every guard green — but does not close the eviction warning at
+> PARALLEL=4; no adoption), and the #2257 regression watch (window 38: PASS —
+> the concurrent 4-prefix resume hit 4/4 at an aggregate of 5.41 s vs the
+> round-133 receipt's 7.41 s, −27%, zero eviction; the round-133 receipt
+> re-anchors on v1.2.6, the warm ttft 1.841 → 1.34 s). **The cacheless
+> standing holds; no knob adopted; the board is at its receipted ceilings**
+> (quality 95 ×25; perf crossed vs the retired recipe and flat
+> native-vs-native; resume re-anchored PASSING and faster). The remaining
+> levers: the 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool
+> at a decode cost), the DRAFTS=0+LIVE_HALF four-window composition (the
+> decode trade — enough for FOUR at 512K, 10 of 16 slots), and the upstream
+> watch (main is 36 commits past the v1.2.6 tag, the fork's 0078 exl3p
+> absorbed — the next release may mainline more). The next sitting opens
+> with the ECOSYSTEM read and a stage brief naming a user-visible number —
+> no launch without one. The loop runs under the discipline layer (the
+> stage brief, the value gate, phase-lint, the phase-name gate, DRY_RUN, the
+> hit-rate watch — AGENTS.md).
 
 > **The bar (user, 2026-10-23):** surpass production 0.6.6 on model loading time,
 > generation tok/s, and prefill rate. This document is the continuing-look home for

@@ -1439,6 +1439,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
+- [x] **The #2257 pool plan's concurrent-resume regression watch — PASS (window
+  38, campaign-20261110-234815)**: the kvshare2 instrument's shape re-run on
+  the standing v1.2.6 config: the solo warm hit `cached=2048` at ttft 1.339 s;
+  all four concurrent warms hit `cached=2048` (ttft 1.343–1.350 s); the
+  aggregate **5.41 s vs the round-133 receipt's 7.41 s — BETTER by 27%**; zero
+  eviction (the pool's idle lines walked free 3134 → 3122, store 4 → 16, no
+  state lost). The #2257 pool plan (window_rows 32, +51 MiB/stream, 2 of the
+  16 slots) did NOT regress the concurrent resume — the round-133 receipt
+  re-anchors on v1.2.6, and the resume got FASTER per request (the warm ttft
+  1.841 → 1.34 s). No adoption branch existed; the standing config unchanged.
+  The serve line funded 6 of 16 slots at 13.0 GiB left (matching w36-OFF —
+  the slot count tracks the run's room, confirmed again).
 - [x] **The #2181 live-half candidate — MEASURED OUT (window 37's value-first
   verdict: MISSED on the value gate; the mechanism reproduces; no adoption)**
   (campaign-20261110-225305): the A/B ran both arms end to end on the testing

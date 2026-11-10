@@ -10736,6 +10736,53 @@ brief:
   DUEL_PROMPT exist on HEAD; the phase-name gate + DRY_RUN preview from the
   head itself.
 
+## (round 141, cont. 6) WINDOW 38 RAN THE CONCURRENT-RESUME WATCH — THE VERDICT: PASS; THE #2257 POOL PLAN DID NOT REGRESS THE RESUME (2026-11-10)
+
+**The window** (campaign-20261110-234815, `preflight regresswatch summary`,
+rc=0, ~2 min — the watch is one serve + the probe): production restored
+healthy (200).
+
+**The watch PASSED on every criterion**:
+- **4/4 concurrent cache hits**: the solo warm (cc1) hit `cached=2048` at
+  ttft 1.339 s; all four concurrent warms hit `cached=2048` at ttft
+  1.343/1.344/1.350/1.343 s — the round-133 receipt's shape held.
+- **The aggregate 5.41 s vs the receipt's 7.41 s — BETTER by 27%**, not a
+  regression: the v1.2.6 engine (+#2257's 32-row windows) resumes faster
+  per request than v1.2.3's did (the warm ttft 1.841 → 1.34 s, −27%).
+- **Zero eviction**: the pool's idle lines walked free 3134 → 3130 → 3126 →
+  3122 with store 4 → 8 → 12 → 16 — each prefix kept as 4 pool pages, no
+  state lost through the whole watch.
+- The serve line funded 6 of 16 slots at 13.0 GiB left (the room ladder's
+  best rung yet for the standing config — matching w36-OFF exactly; the
+  slot count tracks the run's room, confirmed again).
+
+**The round-133 receipt re-anchors on v1.2.6**: the adopted instrument's
+ground is current again. No adoption branch existed; the standing config is
+unchanged (as the brief required).
+
+**Round 141's final tally: 3 windows run (36, 37, 38), 1 void (35,
+recovered same-sitting) — 75% run rate.** The three windows closed three
+questions: the #2699 cache question (missed, the cacheless standing holds),
+the #2181 live-half knob (measured out, no adoption), and the #2257
+regression watch (passed, the receipt re-anchored).
+
+**The board after round 141** (the balanced-gains review):
+- **Quality**: hardmode 95 ×25 — the receipted ceiling on this bench; the
+  failures are structural at the checkpoint level; every alternative pack
+  measured lower.
+- **Perf**: crossed vs the retired recipe on all three (user) fronts; flat
+  native-vs-native; the two cheapest config knobs measured out this round.
+- **Resume**: the concurrent resume re-anchored PASSING and FASTER on
+  v1.2.6; the warm solo ttft 1.34 s.
+- **Remaining levers**: the 0110 KV-SHARD port (user-parked, multi-sitting,
+  the 1.8× pool at a decode cost), the DRAFTS=0+LIVE_HALF four-window
+  composition (the decode trade), the upstream watch (main is 36 commits
+  past the tag and has absorbed the fork's 0078 — the next release may
+  mainline more of the stack).
+
+No launch without a stage brief naming a user-visible number it could move;
+the next sitting opens with that brief or with the ECOSYSTEM read.
+
 **The staging-verification incident, self-inflicted and self-caught (the
 same sitting)**: the first replay invocation ran
 `scripts/autonomous-launch.sh "preflight cachefixqual summary"` DIRECTLY on
