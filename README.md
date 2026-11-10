@@ -47,7 +47,7 @@ nothing but docker, ssh and the NVIDIA driver.
 
 | question | answer |
 | --- | --- |
-| Quality | **Hardmode 95/104** on the shipping config — receipted twenty-three consecutive times, every one with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
+| Quality | **Hardmode 95/104** on the shipping config — receipted twenty-four consecutive times, every one with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
 | Speed | All three (user) fronts **CROSSED** against the retired Python recipe — loading 112.9%, solo decode 116.8% (the standing high), prefill 100.1%; the first **native-vs-native calibration pair** (both arms the promoted config) reads flat inside the ±2% band on every instrument: solo 99.1%, c2 99.4%, c4 99.3%, overhead 98.9%, cold depth 100.3%, ITL 100% (campaign-20261108-162810). Future candidate duels measure against that floor — the pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv), the scoreboard: [docs/DELTAS.md](docs/DELTAS.md) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
@@ -149,7 +149,7 @@ site's). The ones that matter:
 | `TF_GLM_ABSORB_MMA` | `1` | a prompt pass's absorb_q/expand_v as tensor-core GEMMs (fp32 sums; decode windows keep the SIMT kernels); `0` off |
 | `TF_GLM_PROMPT_STEPS` | `0` | the draft prompt-steps builder off — the depth-decode serving default (d8192 c2 48.2/37.0 vs the 17.3 floor with the builder on; the confirm receipt campaign-20261108-214221) |
 | `PDL` | `0` | `1` → programmatic dependent launch on the mm kernels (hurt dense4 — retired from the default) |
-| `RECALL` / `PROMPT_CACHE_GIB` | `0` / engine default | the drafts-copy-from-text cache; the kept-states store's size cap |
+| `RECALL` / `PROMPT_CACHE_GIB` | `0` / empty — CLOSED | the drafts-copy-from-text cache; the kept-states store's size cap. The #2699 value-first battery (window 36) measured the funded cache at no resume value the page cache does not already deliver, at the cost of a 512K window + 1 GiB of stream room — the cacheless standing holds |
 | `TF_PROMPT_CACHE_FIRST` | `1` | the prompt cache is set aside before the streams' windows are counted (020-cachefirst); `0` restores windows-first |
 | `SERVED_NAME` / `PORT` / `HOST` | `GLM-5.3-Flash-EXL3` / `8001` / `0.0.0.0` | the API surface |
 | `API_KEY` | empty | recommended; sent as `Authorization: Bearer` |

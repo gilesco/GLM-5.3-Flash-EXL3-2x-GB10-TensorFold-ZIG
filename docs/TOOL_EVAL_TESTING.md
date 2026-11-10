@@ -1437,28 +1437,38 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   cost +51 MiB/stream fixed (364→415) and 2 of the 16 TF_KV_SHARE slots (0.4 GiB);
   the release buys 32-row decode windows with the memory. The room-drift ladder
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
-  12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7.
-- [ ] **The #2699 prompt-cache recovery — window 33's A/B INVALID, window 34 VOID,
-  window 35 VOID-NO-OP, the recovered battery re-runs as window 36** (campaign-20261110-173035,
-  campaign-20261110-192708, campaign-20261110-212651): window 33's ON arm was a PLACEBO (the phase staged the
+  12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
+  (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
+- [x] **The #2699 prompt-cache recovery — CLOSED (window 36's value-first
+  verdict: MISSED; the cacheless standing holds)** (window 33's A/B INVALID —
+  campaign-20261110-173035; window 34 VOID on the unguarded grep —
+  campaign-20261110-192708; window 35 VOID-NO-OP: the retirement sweep
+  `7cdf199` ate the freshly-staged battery, the campaign ran preflight+summary
+  in 10 s, rc=0 — campaign-20261110-212651; **window 36 RAN the recovered
+  value-first battery end to end — campaign-20261110-215136**): window 33's ON arm was a PLACEBO (the phase staged the
   doubled env name `PROMPT_PROMPT_CACHE_GIB`; nothing read it — the OFF-vs-ON slot
   move was room drift on two identical cacheless serves); window 34 died on its
   staging (the battery's new argv-witness line ended in a bare grep under
-  `set -euo pipefail`). **Window 35 (campaign-20261110-212651) never ran the
-  battery: the retirement sweep (`7cdf199`) deleted the freshly-staged
-  `cachefixqual` block along with the 52 retired session blocks — the campaign
-  ran preflight + summary in 10 s and exited rc=0; the launcher accepted the
-  phase name because nothing validates it against the `want` dispatch.** The
-  battery is recovered from the git trail (`d9202ff`'s tree) onto the swept
-  script, and the launcher now REFUSES a launch whose phase list names a phase
-  the script does not dispatch (`want`-table validation before production is
-  stopped). The battery stands fixed as staged: the env name corrected,
-  PLACED-flag witnesses added (the container argv; the fully-funded phrasing
-  `16 kept states' slots` — cuda_kv_pool.zig:262; the clip report absent), the
-  turn-wall probe relabeled reference-only (it measures re-prefill, not resume —
-  g3 is the resume witness), the verdict VALUE-FIRST: the ON arm qualifies on the
-  measured within-session resume delta (the v1/v2 instruments), not the 16/16
-  slot count. The OFF arm's two all-passes stand as v1.2.6 confirmation.
+  `set -euo pipefail`); window 35's launcher accepted a swept-away phase name
+  (nothing validated it against the `want` dispatch — the launcher now does,
+  plus DRY_RUN). **The battery's verdict (window 36)**: the flag PLACED (the ON
+  arm funds 16 kept states' slots, 3.6 GiB vs the OFF arm's 6 of 16 — the serve
+  lines prove placement; the argv-witness line FAILED on extraction, an
+  instrument defect, not the verdict) but the VALUE gate MISSED on both
+  instruments: (v1) the within-session resume delta — ON cold 2,521/warm 2,532
+  ms (−11) vs OFF +6 ms, needing >150 ms better; (v2) the multi-turn TTFT — ON
+  saves 18,420 ms vs OFF's 18,574 ms (154 ms LESS). Both arms' turn-2 walls sit
+  at ~1.8 s: the page cache over the pool's pages already delivers the resume
+  value cacheless. The price of funding all 16: the third 512K window (enough-
+  for-2 vs 3) and 1.0 GiB of stream room (13.0 → 12.2 GiB left). **The kill
+  criterion fired as written: the cacheless standing HOLDS, `PROMPT_CACHE_GIB`
+  stays empty, the question CLOSES as upstream data** — the TF_KV_SHARE slots'
+  value on this shape is negative against the room they cost; the measurement
+  note lives in docs/ECOSYSTEM.md (nothing posted upstream). The guards held on
+  the ON arm: the greedy same-bits sha `80cc3802…` identical across both arms,
+  §2 ALL PASS, hardmode 95 — the TWENTY-FOURTH consecutive — the vision 4/4,
+  steady-state 73.1 tok/s, pp d0 1,529/1,532/1,530. The room-drift ladder's new
+  rungs: w36-OFF 13.0/6 (reproduces w34-OFF), w36-ON 12.2/16 funded.
 - [x] **The discipline layer landed (the user, round 140 cont. 5)**: the stage
   brief, the value gate, phase-lint (both burn classes mechanical — wired into
   autonomous-launch.sh as a launch refusal), the hit-rate watch, the

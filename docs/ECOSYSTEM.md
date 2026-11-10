@@ -1000,6 +1000,22 @@ decode windows to 32 rows — the release's own +32% one-stream code decode
 claim), #2699 (the prompt-cache rework; `budgetOf()` moved the budget
 construction), #2181 (`TF_GLM_KV_LIVE_HALF`, opt-in, unmeasured candidate).
 #1431/#2415 KV-SHARD did NOT land — the fork port stays a separate decision.
+
+**The #2699 measurement note (ours, round 141 — for the upstream thread;
+NOTHING posted — the repo rule)**: on the 2×GB10 TR3-4bpw serve
+(524,288-token window, PARALLEL=4, fp8 paged KV, TF_KV_SHARE=16,
+TF_PROMPT_CACHE_FIRST=1), the v1.2.6 pool plan funds **6 of 16** kept states'
+slots at the standing config (the fixed parts' #2257 growth ate the rest),
+and funding all 16 via `--prompt-cache-gib 4` costs the third 512K window
+(enough-for-2 vs 3) plus 1.0 GiB of stream room. The value-first A/B
+(campaign-20261110-215136) measured the funded arm at **−11 ms** on the
+within-session resume delta vs the cacheless arm's **+6 ms** (the criterion:
+>150 ms better) and 154 ms LESS on the multi-turn TTFT — the page cache over
+the pool's pages already delivers the resume value cacheless on this shape.
+Verdict: the TF_KV_SHARE kept-states slots' resume value is negative against
+the room they cost at this window/stream/depth shape; the cacheless standing
+holds. Shape-dependence caveat: single-rank or shallower-window deployments
+differ; this is one deployment's measurement, not a general claim.
 Our line rebased the same day: the drift map applied (6 of 18 verbatim, 12
 re-anchored), the round-trip PROVEN byte-identical, the v126val battery
 qualified every instrument — the pin HOLDS at 6e9af9302 (the round-140 cont.

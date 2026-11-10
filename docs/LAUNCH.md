@@ -10514,6 +10514,80 @@ question, the value-if-yes, the kill criterion were sound — only the staging
 died): `preflight cachefixqual summary`, the value-first #2699 battery,
 launched as this sitting's last action.
 
+## (round 141, cont. 2) WINDOW 36 RAN THE VALUE-FIRST BATTERY — THE VERDICT: MISSED; THE CACHELESS STANDING HOLDS; THE #2699 QUESTION CLOSES AS UPSTREAM DATA (2026-11-10)
+
+**The window** (campaign-20261110-215136, `preflight cachefixqual summary`,
+rc=0, ~42 min): the recovered battery ran end to end — both arms served, the
+§2 gates on the ON arm's serve, hardmode, the vision suite, the bench. The
+launcher's new phase-name gate passed legitimately this time: the recovered
+`cachefixqual` block was on the head at launch (8 mentions), the DRY_RUN
+preview green, the dispatch table carried the name. Production restored
+healthy (200) after the window.
+
+**The stage brief answered — VALUE, not compliance**:
+- **The flag PLACED**: the ON arm's serve line funds **16 kept states'
+  slots (3.6 GiB)** vs the OFF arm's **6 of TF_KV_SHARE=16 (1.4 GiB)** —
+  the substance landed (the OFF arm's serve line even carries the engine's
+  own warning: live streams evict each other's states before a resume).
+  The argv-witness line FAILED on extraction (the `.Config.Cmd` array's
+  last token is `4]` after the space-split, not `4`) — an instrument
+  defect, NOT the verdict: the serve lines prove placement both ways.
+- **The value gate MISSED on both instruments**: (v1) the within-session
+  resume delta — OFF cold 2,497/warm 2,491 ms (+6), ON cold 2,521/warm
+  2,532 ms (−11): the ON arm did not beat the OFF arm's delta by >150 ms;
+  it is 17 ms WORSE. (v2) the multi-turn TTFT — OFF turn-2 saves 18,574 ms,
+  ON saves 18,420 ms: 154 ms LESS value on the ON arm. Both arms' turn-2
+  walls sit at ~1.8 s — the page cache over the pool's pages exists in
+  BOTH arms (the anchors predicted it: the same-session warm TTFT is
+  already 302 ms cacheless), so the kept states add no resume value the
+  page cache does not already deliver.
+- **The price is real**: the ON arm cedes the third 512K window (enough
+  for 2 vs the OFF arm's enough-for-3) and 1.0 GiB of stream room (13.0 →
+  12.2 GiB left) for a measured −17 ms / −154 ms on the value instruments.
+- **The quality/regression guards all held**: the greedy same-bits sha
+  `80cc3802…` IDENTICAL across both arms (the 24th and 25th all-pass
+  serves of the battery era), §2 gates ALL PASS, **hardmode 95 — the
+  TWENTY-FOURTH consecutive** (TC-51 and TC-92 pass), the vision 4/4,
+  steady-state decode 73.1 tok/s, pp d0 1,529/1,532/1,530 — the ON arm's
+  serve is as fast as the standing config on every perf instrument.
+
+**The verdict: the kill criterion fires exactly as written — flag placed
+but no value delta ⇒ the cacheless standing HOLDS and the question CLOSES
+as upstream data, no third reshape.** `PROMPT_CACHE_GIB` stays empty in
+config.sh. The #2699 recovery arc (windows 33/34/35/36) ends: the engine's
+v1.2.6 pool plan funds 6 of 16 kept states at the standing config, funding
+all 16 costs a 512K window + 1 GiB of stream room, and the kept states
+deliver no within-session resume value the page cache does not already
+deliver. Upstream data: the TF_KV_SHARE slots' value on this shape is
+negative against the room they cost — worth carrying to
+ashhart/TensorFold's #2699 thread as a measurement note (nothing posted —
+the repo rule; the note lives in docs/ECOSYSTEM.md).
+
+**The room-drift ladder gains two rungs** (w36-OFF 13.0 left/6 slots —
+reproducing w34-OFF exactly; w36-ON 12.2/16 funded). The DRAFTS=0 serve's
+room stands recorded in the same campaign: model −2.84 GiB, enough-for-3
+at 512K with 15.3 GiB left — the parked candidate's facts, unchanged.
+
+**The instrument defect, for the record**: the argv witness's
+`tr " " "\n"` split assumes space-separated argv; `.Config.Cmd`'s array
+form makes the last token `4]`. The witness needs the closing bracket
+stripped (or `--format "{{json .Config.Cmd}}"` + jq). It did not decide
+this verdict (value-first) and no re-run is warranted — the battery
+retires with its receipt.
+
+**Round 141's hit-rate watch final reading: 1 run / 1 void → 50%** — the
+launch resumed mid-round after the process review, so the round's rate is
+read as one run (window 36) against one void (window 35): AT the half
+threshold, not past it. Round 142's watch restarts from zero.
+
+**Next (the perf plan's order, post-closure)**: the parked candidates in
+PERF_PLAN's order — #2181 `TF_GLM_KV_LIVE_HALF` (opt-in, unmeasured) and
+the DRAFTS=0 room observation (model −2.84 GiB, four full 512K windows —
+unmeasured for decode) are the live questions; the 0110 KV-SHARD defect
+hunt stays parked (the user); the upstream-gated fronts wait on releases
+via each sitting's ECOSYSTEM read. A stage brief for the next window is
+the next sitting's opening work — no launch without one.
+
 **The staging-verification incident, self-inflicted and self-caught (the
 same sitting)**: the first replay invocation ran
 `scripts/autonomous-launch.sh "preflight cachefixqual summary"` DIRECTLY on

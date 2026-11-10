@@ -1,21 +1,25 @@
 # Performance plan: closing the measured fronts
 
 > **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 140, 2026-11-10)**: **window 35 — the #2699 prompt-cache
-> recovery, VALUE-FIRST** (the fixed battery: the ON arm `--prompt-cache-gib 4`
-> qualifies on the measured within-session resume delta vs the OFF arm, not
-> the 16/16 slot count; the flag-placed witnesses are the container argv and
-> the fully-funded phrasing). On a qualified verdict, `PROMPT_CACHE_GIB=4`
-> becomes the config.sh default and the session phases retire; on a miss, the
-> cacheless standing holds and the question closes as upstream data — no
-> third reshape. After it: the parked candidates in order are #2181
-> `TF_GLM_KV_LIVE_HALF` (opt-in, unmeasured) and the DRAFTS=0 room
-> observation (model −2.84 GiB, FOUR full 512K windows — unmeasured for
-> decode); the 0110 KV-SHARD defect hunt stays parked (the user). The
-> upstream-gated fronts (the batched-launch pattern, the cross-restart
-> resume's imprint path) wait on releases — the watch is each sitting's
-> ECOSYSTEM read. The loop runs under the discipline layer (the stage brief,
-> the value gate, phase-lint, the hit-rate watch — AGENTS.md).
+> the trail, round 141, 2026-11-10)**: **the #2699 prompt-cache question is
+> CLOSED** — window 36's value-first battery ran end to end
+> (campaign-20261110-215136): the flag placed (16 kept states funded, 3.6 GiB)
+> but the value gate MISSED on both instruments — the within-session resume
+> delta (ON −11 ms vs OFF +6 ms, needing >150 ms better) and the multi-turn
+> TTFT (ON saves 18,420 ms vs OFF's 18,574 ms) — while costing the third
+> 512K window and 1 GiB of stream room. **The cacheless standing HOLDS; no
+> third reshape.** The next window's stage brief (the next sitting's opening
+> work) picks among the parked candidates in order: **#2181
+> `TF_GLM_KV_LIVE_HALF`** (opt-in, unmeasured — the kept state holds the live
+> KDA half alone; its room trade against the 32-row decode windows of #2257
+> is the question) and **the DRAFTS=0 room observation** (model −2.84 GiB,
+> enough-for-3 at 512K with 15.3 GiB left — unmeasured for decode; window
+> 36's serve line re-recorded it). The 0110 KV-SHARD defect hunt stays parked
+> (the user). The upstream-gated fronts (the batched-launch pattern, the
+> cross-restart resume's imprint path) wait on releases — the watch is each
+> sitting's ECOSYSTEM read. The loop runs under the discipline layer (the
+> stage brief, the value gate, phase-lint, the phase-name gate, DRY_RUN, the
+> hit-rate watch — AGENTS.md).
 
 > **The bar (user, 2026-10-23):** surpass production 0.6.6 on model loading time,
 > generation tok/s, and prefill rate. This document is the continuing-look home for

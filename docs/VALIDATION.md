@@ -19,7 +19,7 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 
 ## 2. Exactness (the same gates upstream's EXL3 receipts used, through the API)
 
-> **STANDING STATE (round 140): §2 has PASSED twenty-three consecutive times**
+> **STANDING STATE (round 141): §2 has PASSED twenty-four consecutive times**
 > (every battery since the round-127 era; the newest: campaign-20261110-173035
 > window 33's OFF arm — g1-g4 + the g5 note, on the v1.2.6 engine + the
 > 18-patch stack). The checkboxes below are the gate DEFINITIONS — they stay

@@ -10,21 +10,28 @@
 > never cross-compare). The section below the separator is the pre-re-target
 > record, kept for its receipts.
 
-**The current state (round 140, 2026-11-10)**: the engine is TensorFold
+**The current state (round 141, 2026-11-10)**: the engine is TensorFold
 **v1.2.6** (`6e9af9302`) + the **adopted 18-patch stack re-anchored** (the
 round-trip proven byte-identical — pristine v1.2.6 + the 18 patches = the
 rebase tree). The v126val battery QUALIFIED the bump on every instrument
 (campaign-20261110-162034): the same-bits greedy witness IDENTICAL (the
 `80cc3802…` sha holds across the bump), the §2 gates ALL PASS, **hardmode 95
-— the TWENTY-THIRD consecutive**, the vision 4/4, zero strict-TF_ refusals,
+— now the TWENTY-FOURTH consecutive** (window 36's value-first battery added
+two more all-pass serves), the vision 4/4, zero strict-TF_ refusals,
 the walls 84/83 s, prefill 1,523, steady-state decode 73.1 tok/s. Production
 serves opencode on 8000 from this repo's config. **Vision is ON as the
 standing default and receipted** (the vision suite 4/4 in every battery since
-round 132). The open question is the #2699 prompt-cache recovery (window 33's
-A/B was invalid — the ON arm a placebo; window 34 voided on its staging; the
-fixed value-first battery is window 35's), and the discipline layer (the
-stage brief, the value gate, the phase-lint, the hit-rate watch) governs the
-loop per the round-140 cont. 5 (user) direction.
+round 132). **The #2699 prompt-cache question is CLOSED** (window 36,
+campaign-20261110-215136): the value-first battery ran end to end — the flag
+placed (16 kept states funded, 3.6 GiB) but the value gate MISSED on both
+instruments (the within-session resume delta and the multi-turn TTFT: the
+page cache over the pool's pages already delivers the resume value cacheless)
+at the price of the third 512K window + 1 GiB of stream room — **the
+cacheless standing HOLDS** (`PROMPT_CACHE_GIB` stays empty); the question
+closes as upstream data, no third reshape. The loop's discipline layer (the
+stage brief, the value gate, the phase-lint, the phase-name gate, DRY_RUN,
+the hit-rate watch) governs launches per the round-140 cont. 5 (user)
+direction.
 
 ---
 
