@@ -297,6 +297,17 @@ readiness.
      page boundary — pages the first chunk never touched. The hist/rank
      FULL scan every call landed (tranche 2zt, 7342b40) to bracket the
      trashing kernel exactly.
+   - **THE BRACKET NARROWS TO THREE OPS (cont. 40)**: window 19: the plan
+     buffers CLEAN at every census point including call #42 (hist bad 0,
+     rank bad 0/7616), the fault STILL at #2893 inside call #42's plan
+     chain. The trash happens between #2890 and #2893: only plan_rank,
+     plan_offsets, and the COMPACT COPY run there — and the rank/offsets
+     OUTPUT state was never read back before scatter consumed it (a
+     clean launch says nothing about what they wrote), while the compact
+     picks (the ids route reads) were never validated at all. The
+     PRE-SCATTER bracket landed (tranche 2zu, 26176fb): the compact
+     picks dumped + range-checked before route; rank/hist read AFTER
+     offsets BEFORE scatter.
 
 ## The test-count note (do not re-litigate)
 
