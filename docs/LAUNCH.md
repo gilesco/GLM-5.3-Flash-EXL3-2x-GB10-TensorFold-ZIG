@@ -10123,3 +10123,25 @@ does; the verdict line carries rc/FAIL/GATHERED-NaN counts for both.
 
 **The state**: window 29 (the both-rank twins-off A/B) launched;
 production restored healthy after window 28 (29/29 windows, rc=0).
+
+## (round 139, cont. 50) THE A/B LOST RANK 0'S OUTPUT AGAIN — DIRECT WRITES INTO THE OUT DIR (2026-11-10)
+
+**Window 29** (campaign-20261110-124515): the both-rank A/B still lost
+rank 0's output —
+
+    twins-off A/B: both ranks — twins0-r0.log rc=124 FAIL=0 (0 BYTES)
+    twins0-r1.log rc=1 FAIL=1 (NcclFailed: remote process exited)
+
+Rank 1 joined and saw rank 0 die; rank 0's log is EMPTY (rc=124 = the
+timeout). The mktemp+mv redirection lost the output again — the
+diagnostic manual run confirms rank 0 alone fails FAST (NcclFailed,
+ncclGetUniqueId) when the id file is stale — so the window's rank 0
+should have produced output immediately, and 0 bytes means the
+redirection itself failed in the window's context.
+
+**The fix** (landed): both ranks' logs write DIRECTLY into the OUT dir
+(`> "$OUT/kshardcheck-twins0-r0.log"`) — the main run's own shape, no
+mktemp+mv hop.
+
+**The state**: window 30 (the direct-write A/B) launched; production
+restored healthy after window 29 (30/30 windows, rc=0).
