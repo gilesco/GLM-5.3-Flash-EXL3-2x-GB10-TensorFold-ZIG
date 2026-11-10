@@ -10015,3 +10015,33 @@ convicts the gather/mixer's output hcPost combines).
 
 **The state**: window 25 (the NaN-site dumps) pending; production
 restored healthy after window 24 (25/25 windows, rc=0).
+
+## (round 139, cont. 46) THE NAN-SITE DUMPS MISPLACED — MOVED INTO THE ROW-RANGE GLUE (2026-11-10)
+
+**Window 25** (campaign-20261110-103551): the dumps fired but landed in
+the wrong path —
+
+    NORMED-PRE NaN words 0/2048 sample    (once, call #0)
+    HIDDEN  NaN words 0/2048 sample       (per ffn call, incl. #42)
+    call #42: x NaN rows 952/952          (the ffn's normed input)
+
+- **The POST/COMB/GATHERED trio never printed**: chunk 1 runs PIECED
+  (the overlap path's glue is `postRows`/`preRows` with row ranges, not
+  the whole path's `post()`/`pre()` where the dumps sat).
+- **The HIDDEN dump reads `b.hidden` — the stream-mean buffer written at
+  the END of the forward**: its cleanliness at call #42 is meaningless
+  (stale/never-written data, not the ffn's chain). The REAL ffn input is
+  `b.normed` — the x NaN census reads it and it IS NaN.
+
+**The corrected chain map**: ffn's x = `b.normed` ← written by the ffn's
+hcPre ← whose input `b.x` was written by the mixer's hcPost ← combining
+`b.x` + `gathered` (the mixer's output) + `post`/`comb` (the Sinkhorn
+state). The births: NaN `gathered` (the mixer/DSA/owner path) or NaN
+from hcPre's own state.
+
+**The fix** (tranche 2zaa, in flight): the dumps move into
+`postRows`/`preRows` — the glue BOTH paths share — so they fire on
+chunk 2's layer-0 ffn regardless of which path ran.
+
+**The state**: window 26 pending; production restored healthy after
+window 25 (26/26 windows, rc=0).
