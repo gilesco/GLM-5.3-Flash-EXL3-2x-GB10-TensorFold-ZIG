@@ -9734,3 +9734,36 @@ wherever it lands.
 
 **The state**: window 16 (the full census) launched; production restored
 healthy after window 15 (16/16 windows, rc=0).
+
+## (round 139, cont. 37) THE CENSUS PARADOX RESOLVED: THE DIAGNOSTIC READS RACED THE STREAM (2026-11-10)
+
+**Window 16** (campaign-20261110-054406, the full census): a paradox that
+turns the whole investigation —
+
+    TF_SHARD_DEBUG: call #0: mlog NaN rows 0/2048; first bad pick row 60 picks -1016807779,...
+    TF_SHARD_DEBUG: call #0: CENSUS rows 2048: bad rows 0 (even 0, odd 0); first bad-any row 0
+
+The FULL census over ALL 18,432 entries says ZERO bad rows — while the
+earlier small read of the SAME memory said ~1,800 bad, with the first bad
+row drifting (48 → 51 → 59 → 60 → >71 across five runs). Two reads of the
+same memory cannot both be true unless the memory CHANGED between them.
+
+**The root cause of the drift — my own instrument**: every diagnostic
+DtoH ran `cuMemcpyDtoH_v2` on the NULL stream, which does NOT serialize
+with the engine's own stream. The reads RACED the select's in-flight
+writes: the "drifting first-bad-row" was the select's WRITE PROGRESS at
+read time (the copies launched while the select kernel was mid-flight).
+The FINAL state is clean — the select writes valid picks everywhere.
+
+**The consequence**: garbage picks CANNOT be feeding plan_scatter — the
+select's output is valid at rest. The suspect moves to the fused path's
+plan scratch itself (plan.rank/hist/items) or the compact copy — the
+kernels the plan_scatter's own arithmetic reads.
+
+**The instrument** (tranche 2zr, 56d3109): every diagnostic DtoH now
+SYNCHRONIZES the stream first (all 12 reads), and the plan scratch
+(plan.rank[0..31], counts) is dumped after the sync. If the first scan
+now reads CLEAN too, the race theory is proven on the spot.
+
+**The state**: window 17 (the synced reads + the plan scratch) launched;
+production restored healthy after window 16 (17/17 windows, rc=0).
