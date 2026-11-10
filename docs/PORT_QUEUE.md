@@ -393,6 +393,22 @@ readiness.
      output in the window's context; both ranks' logs now write DIRECTLY
      into the OUT dir (the main run's own shape). Window 30 is the
      direct-write A/B.
+   - **THE V1.2.6 BUMP QUALIFIED (round 140, cont. 2)**: window 32
+     (campaign-20261110-162034): the same-bits greedy witness IDENTICAL
+     (the 80cc3802… sha holds across the engine bump), the §2 gates ALL
+     PASS, hardmode 95 — the TWENTY-SECOND consecutive — the vision 4/4,
+     zero strict-TF_ refusals, the walls 84/83 s, prefill 1,523,
+     steady-state decode 73.1 tok/s. **The pin HOLDS at 6e9af9302**; the
+     anchors' loading row re-dated; the chart regenerated. **The pool
+     plan moved** (the #2257 trade): window_rows 8 -> 32 and the KDA
+     projection into each stream cost +51 MiB/stream fixed (364 -> 415)
+     and 2 of the 16 TF_KV_SHARE slots (0.4 GiB) — the release buys
+     32-row decode windows (the release's own +32% one-stream code
+     decode claim) with the memory. The fork port (0110) stays parked;
+     the A/B plumbing is the resume order when the hunt resumes.
+     **Window 31 was VOID** (the PHASES-env launch — the cont. 69 lesson
+     re-learned; the launch argument IS the phase list).
+
    - **THE HUNT PARKED FOR THE V1.2.6 REBASE (cont. 51, the user)**:
      window 30 (campaign-20261110-134538): the direct-write A/B repeated
      the 0-byte shape exactly (three redirection shapes failed; the
