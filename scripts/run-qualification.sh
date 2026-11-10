@@ -4699,7 +4699,7 @@ if want kshardcheck && ! phase_done kshardcheck; then
   R0RUN=()
   if [[ "${KSHARD_SAN:-}" == 1 ]]; then
     R0IMG="nvcr.io/nvidia/pytorch:26.07-py3"
-    R0RUN=(compute-sanitizer --log-file "$OUT/kshardcheck-san-r0.log" --error-exitcode 99)
+    R0RUN=(compute-sanitizer --log-file /ids/kshardcheck-san-r0.log --error-exitcode 99)  # /ids = the OUT dir mount: the report lands on the host (the first sanitizer window wrote it inside the container's fake host path and --rm discarded it)
     echo "- rank 0 under compute-sanitizer memcheck (KSHARD_SAN=1; the report: kshardcheck-san-r0.log)" >> "$P"
   fi
 
