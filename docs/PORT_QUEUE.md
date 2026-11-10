@@ -387,6 +387,12 @@ readiness.
      already staged on both hosts, rank 1 first on the join); the
      verdict line carries rc/FAIL/GATHERED-NaN counts for both. Window
      29 is the corrected A/B.
+   - **THE A/B LOST RANK 0'S OUTPUT AGAIN (cont. 50)**: window 29: the
+     both-rank A/B still lost rank 0's output (0 bytes, rc=124; rank 1
+     saw NcclFailed: remote exited). The mktemp+mv redirection lost the
+     output in the window's context; both ranks' logs now write DIRECTLY
+     into the OUT dir (the main run's own shape). Window 30 is the
+     direct-write A/B.
 
 ## The test-count note (do not re-litigate)
 
