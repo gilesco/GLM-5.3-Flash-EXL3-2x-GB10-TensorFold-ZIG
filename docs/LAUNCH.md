@@ -9966,3 +9966,28 @@ inter-call window. The `.commit-want` pinned to b2a3c83.
 
 **The state**: window 23 (the x census) launched; production restored
 healthy after window 22 (23/23 windows, rc=0).
+
+## (round 139, cont. 44) THE BRACKET IS ONE WINDOW WIDE: X CLEAN AT #41, NaN AT #42 — THE HIDDEN DUMP IS IN FLIGHT (2026-11-10)
+
+**Window 23** (campaign-20261110-093211, the x census): the bracket is
+now ONE inter-call window —
+
+    call #41 (launch #2718): x NaN rows 0/2048
+    call #42 (launch #2890): x NaN rows 952/952 (first 0)
+
+The trash entered between the last ffn of chunk 1 and the first ffn of
+chunk 2 — a ~172-launch window whose kernels include the hc chain's
+commit, the DSA/KDA writes, `pool_keys` (the indexer's pooled keys), and
+— with TF_GLM_KV_SHARD — the pool's `index_write`/`pool_keys` writes
+into the pool's `keys` pages.
+
+**The structural fact**: the ffn's x (normed) derives from the hc chain
+whose input is `b.hidden` — the shared buffer the layer-0 mixer reads.
+The discriminator (tranche 2zy, a55a7a0): the HIDDEN dump at every ffn
+call (the first 32 rows × 64 columns NaN-censused) — **NaN hidden
+convicts the gate/commit path before layer 0** (the trash entered before
+the layer loop); **clean hidden with NaN x convicts the layer-0
+KDA/DSA state path** (the mixer's output itself).
+
+**The state**: window 24 (the hidden dump) launched; production restored
+healthy after window 23 (24/24 windows, rc=0).
