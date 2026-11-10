@@ -4691,6 +4691,17 @@ if want kshardcheck && ! phase_done kshardcheck; then
   R1IMG="$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -E '^glm53-native-tf:' | head -1)"
   [[ -n "$R0IMG" && -n "$R1IMG" ]] || die "kshardcheck: the runtime image is missing (head '$R0IMG' / worker '$R1IMG')"
   echo "- the runtime images: head $R0IMG, worker $R1IMG" >> "$P"
+  # KSHARD_SAN=1: rank 0 under compute-sanitizer memcheck (the build image ships the
+  # tool; the runtime images do not) — it names the faulting ADDRESS and the nearest
+  # allocation, which settles WHOSE buffer the walk-off touched. Rank 0 only: both
+  # ranks faulted identically, and one instrumented rank keeps the NCCL handshake
+  # unsynchronized. Subsumes TF_LAUNCH_SYNC (unset below). Diagnostic-only.
+  R0RUN=()
+  if [[ "${KSHARD_SAN:-}" == 1 ]]; then
+    R0IMG="nvcr.io/nvidia/pytorch:26.07-py3"
+    R0RUN=(compute-sanitizer --log-file "$OUT/kshardcheck-san-r0.log" --error-exitcode 99)
+    echo "- rank 0 under compute-sanitizer memcheck (KSHARD_SAN=1; the report: kshardcheck-san-r0.log)" >> "$P"
+  fi
 
   log "kshardcheck: building tf-cuda-test from the port tree (the compile-cuda-tests cache is warm)"
   cat > "$OUT/build-tf-cuda-test.sh" <<'BUILDEOF'
@@ -4726,7 +4737,7 @@ BUILDEOF
   # failing sync names the kernel faulting IN EXECUTION (the launch ring alone only
   # orders submissions; the culprit can hide a queue depth earlier). Slow (~s a
   # prefill); the diagnostic gate only, unset once the defect is fixed.
-  COMMON_ENV+=(-e TF_LAUNCH_SYNC=1)
+  [[ "${KSHARD_SAN:-}" == 1 ]] || COMMON_ENV+=(-e TF_LAUNCH_SYNC=1)
   [[ -z "$NCCL_IB_HCA" ]] || COMMON_ENV+=(-e NCCL_IB_HCA="$NCCL_IB_HCA")
   COMMON_RUN=(--gpus all --ipc=host --network host --shm-size 16g --device /dev/infiniband
               --cap-add IPC_LOCK --ulimit memlock=-1 --ulimit stack=67108864)
@@ -4736,7 +4747,7 @@ BUILDEOF
   # THEN ncclCommInitRank waits)
   docker run --rm "${COMMON_RUN[@]}" "${COMMON_ENV[@]}" \
     -v "$OUT/tf-cuda-test:/tf-cuda-test:ro" -v "$HF_CACHE/$ckpt_rel:/ckpt:ro" -v "$OUT:/ids" \
-    --entrypoint "" "$R0IMG" timeout 2400 /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
+    --entrypoint "" "$R0IMG" timeout 2400 "${R0RUN[@]}" /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
     > "$OUT/kshardcheck-r0.log" 2>&1 &
   R0PID=$!
 
