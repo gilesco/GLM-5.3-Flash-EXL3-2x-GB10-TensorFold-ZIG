@@ -9927,3 +9927,42 @@ the offsets kernel's sums. Plus the failing thread's exact triple.
 
 **The state**: window 22 (the full index validation) launched;
 production restored healthy after window 21 (22/22 windows, rc=0).
+
+## (round 139, cont. 43) CALL #42'S FULL PICTURE: X IS NAN FOR THE WHOLE CHUNK-2 PASS (2026-11-10)
+
+**Window 22** (campaign-20261110-090155, the full index validation):
+five windows of clean measurables — then the full scan caught what the
+samples missed. Call #42's complete lines:
+
+    INDEX CHECK: pairs 7616 members-words 7616: max idx 1028079817 (at p=1023), oob 2048, bad-pick 0
+    call #42: mlog row0[0..7] = nan, nan, ... | lastrow = nan (ALL 952 rows NaN)
+    call #42: wts row44 = 0.0000 x 8, 1.0000 (the select of NaN scores)
+    COMPACT picks[0..19] = 288,288,288,288,... (the shared slot everywhere)
+    p64 = picks 288, rank 1028078858, hist[288] 0, idx 1028078858
+    PRE-SCATTER rank[0..15] = 1028078794,1028078795,... (a monotone run — float bits!)
+
+- **mlog is NaN for ALL 952 rows** — the router's INPUT x for chunk 2 is
+  NaN from the start. The router matmul of NaN x → NaN scores → the
+  select of NaN writes zeros/wts 0 → the plan of a degenerate input →
+  rank holding float-bit garbage (~1.028e9 = 0x3D4F_xxxx as f32 bits) →
+  the scatter's wild writes.
+- **The first chunk's 42 calls were CLEAN** (every index check oob 0 on
+  pairs 16384). The corruption entered between chunk 1's end and chunk
+  2's first ffn.
+- **The index check on chunks 1's calls PASSED COMPLETELY** —
+  `max idx 16383 (at p=16314), oob 0, bad-pick 0` — the whole range
+  proven in-range.
+
+**The reading**: the defect is NOT in the plan chain at all — the plan
+chain faithfully consumed a NaN x. The corruption enters through the
+mixer's x for the second chunk: the suspects are the shard path's own
+writes at the chunk boundary — the twin give-back (`giveTwin` before the
+first decode round) and the pool's page writes (`pool_keys` in the ring
+between the calls).
+
+**The instrument** (tranche 2zx, b2a3c83): the EVERY-CALL x NaN census —
+the first call with NaN x brackets the trashing kernel to ONE
+inter-call window. The `.commit-want` pinned to b2a3c83.
+
+**The state**: window 23 (the x census) launched; production restored
+healthy after window 22 (23/23 windows, rc=0).
