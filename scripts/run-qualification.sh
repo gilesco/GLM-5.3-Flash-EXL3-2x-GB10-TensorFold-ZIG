@@ -4794,24 +4794,24 @@ BUILDEOF
     # for the whole 2,400 s timeout). The id file is already on both hosts; rank 1
     # starts first on the join, as in the main run above.
     log "kshardcheck: the twins-off A/B (TF_GLM_KV_SHARD_TWINS=0) on both ranks"
-    TP0=$(mktemp /tmp/kshardcheck-twins0-r0.XXXX)
-    TP1=$(mktemp /tmp/kshardcheck-twins0-r1.XXXX)
     TWENV=(-e TF_GLM_KV_SHARD=1 -e TF_GLM_KV_SHARD_TWINS=0 -e HF_HUB_OFFLINE=1 -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME")
     [[ -z "$NCCL_IB_HCA" ]] || TWENV+=(-e NCCL_IB_HCA="$NCCL_IB_HCA")
+    # rank 0 in background writing DIRECTLY into the OUT dir (the mktemp+mv shape lost
+    # its output once — the 0-byte log — the direct write is the main run's own shape)
     docker run --rm "${COMMON_RUN[@]}" "${TWENV[@]}" \
       -v "$OUT/tf-cuda-test:/tf-cuda-test:ro" -v "$HF_CACHE/$ckpt_rel:/ckpt:ro" -v "$OUT:/ids" \
       --entrypoint "" "$R0IMG" timeout 2400 /tf-cuda-test "${CHECK_ARGS[@]}" 0 2 /ids/kv-shard-id.txt \
-      > "$TP0" 2>&1 &
+      > "$OUT/kshardcheck-twins0-r0.log" 2>&1 &
     T0PID=$!
+    # rank 1 joins (the id file from the main run is stale-but-readable: rank 0 rewrites
+    # it the moment its openComm runs — the same pattern as the main run's poller)
     ssh -o BatchMode=yes "$WORKER" "docker run --rm ${COMMON_RUN[*]} ${TWENV[*]} \
       -v /tmp/kshardcheck-w/tf-cuda-test:/tf-cuda-test:ro -v \$HOME/.cache/huggingface/$ckpt_rel:/ckpt:ro -v /tmp/kshardcheck-w:/ids \
       --entrypoint '' $R1IMG timeout 2400 /tf-cuda-test ${CHECK_ARGS[*]} 1 2 /ids/kv-shard-id.txt" \
-      > "$TP1" 2>&1 || T1RC=$?
+      > "$OUT/kshardcheck-twins0-r1.log" 2>&1 || T1RC=$?
     T1RC=${T1RC:-0}
     wait $T0PID || T0RC=$?
     T0RC=${T0RC:-0}
-    mv "$TP0" "$OUT/kshardcheck-twins0-r0.log"
-    mv "$TP1" "$OUT/kshardcheck-twins0-r1.log"
     T0=$(grep -c "FAIL" "$OUT/kshardcheck-twins0-r0.log" 2>/dev/null || echo "?")
     T1=$(grep -c "FAIL" "$OUT/kshardcheck-twins0-r1.log" 2>/dev/null || echo "?")
     G0=$(grep -c "GATHERED-PIECED NaN words [1-9]" "$OUT/kshardcheck-twins0-r0.log" 2>/dev/null || echo "?")
