@@ -9488,3 +9488,45 @@ independent evidence. rc=99 proves the sanitizer trapped an error.
 
 **The state**: production restored healthy after window 7 (8/8, rc=0).
 Window 8 (the sanitizer rerun, the report path fixed) is running.
+
+## (round 139, cont. 29) THE SANITIZER'S REPORT: plan_scatter WRITES ~2.5 GB PAST ITS BASE — GARBAGE PICKS (2026-11-10)
+
+**Window 8** (campaign-20261110-011913, KSHARD_SAN=1, the report path
+fixed): the report LANDED (158 KB) and nails the defect:
+
+    Invalid __global__ write of size 4 bytes
+        at tf_experts::plan_scatter(...)+0x1c0
+        Access to 0xe33fc925f8a0 is out of bounds
+        and is 2530871136 bytes BEFORE the nearest allocation at 0xe34060000000 of size 536870912 bytes
+
+    Host Frame: grouped.Router.wide in grouped.zig:100
+    Host Frame: cuda_exl3.run in cuda_exl3.zig:175  (the FUSED PROMPT path)
+    Host Frame: cuda_forward.Forward.ffn → pieced → run
+    Host Frame: cuda_engine.Engine.prefillChunk:476
+    Host Frame: cuda_follow.Leader.prefill
+    Host Frame: glm_kv_shard_check.shardCheck:103
+
+**The reading**: plan_scatter writes bucket positions computed from the
+plan scratch (rank[]) — which plan_rank built from the PICKS. Out-of-range
+picks (garbage router scores) never land in hist[]; the scatter then reads
+UNINITIALIZED rank[] entries and computes a wild base offset (~2.5 GB off
+— the ids multiplied by the full expert stride). The corruption is NOT in
+the scatter — it is UPSTREAM: garbage expert ids from garbage router
+scores, or a clobbered picks buffer.
+
+**The suspects (in order)**: (1) NaN latents from a misrouted latent page
+(trash page read) feeding the router matmul; (2) the picks buffer
+clobbered by a shard-path write; (3) the plan scratch clobbered. The port
+adapted cuda_state.zig's `ltable` slot chain (verified consistent: the
+slot exists iff shard, `make` reads it iff shard) and the pool's
+keys/lat sizes (verified against the fork's formula).
+
+**The next instrument** (TF_SHARD_DEBUG=1, landed, tranche 2zk 6e2bf75):
+in the MoE body, BEFORE the routed experts consume them — the picks
+(6 KB) and an x sample (16 rows) read to the host and logged per call:
+out-of-range picks prove the corruption upstream of the router; clean
+picks prove a clobbered plan scratch. The gate env carries it; the
+`.commit-want` pinned to 6e2bf75.
+
+**The state**: window 9 (the picks-vs-x run) launched; production restored
+healthy after window 8 (9/9 windows, rc=0).
