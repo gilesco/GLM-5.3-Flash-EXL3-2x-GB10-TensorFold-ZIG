@@ -318,6 +318,46 @@ readiness.
      against the sizes chain (items-members = P*4, rank-counts = 8,
      hist-rank = P*4) — any mismatch convicts the arena slot mapping in
      cuda_state.zig (the port's one hand-edited link).
+   - **EVERY POINTER CONSISTENT TOO (cont. 42)**: window 21: the PLAN PTR
+     dump — items-members 73,728 (>= P*4=65,536), rank-counts 256,
+     hist-rank P*4 exactly: the arena slot mapping in cuda_state.zig is
+     CORRECT. The fault STILL at #2893 — five windows of clean
+     measurable inputs. The FULL host-side index validation landed
+     (tranche 2zw, fff5d82): read picks/rank/hist COMPLETELY, compute
+     hist[picks[p]] + rank[p] for EVERY pair on the host, report the MAX
+     vs members' words — proving (or breaking) the whole index range at
+     once, plus the failing thread p=64's exact triple.
+   - **X IS NAN FOR THE WHOLE CHUNK-2 PASS (cont. 43)**: window 22: call
+     #42's full picture — mlog ALL 952 rows NaN, wts all zeros, picks all
+     zero/288, rank holding float-bit garbage (~1.028e9), the index
+     check oob 2048 with max idx 1,028,079,817 — while CHUNKS 1's 42
+     calls PASSED COMPLETELY (max idx 16383, oob 0). The plan chain is
+     INNOCENT — it faithfully consumed a NaN x. The corruption enters
+     through the mixer's x for the second chunk; the suspects are the
+     shard path's own writes at the chunk boundary: the twin give-back
+     (giveTwin before the first decode round) and the pool's page writes
+     (pool_keys, in the ring between the calls). The every-call x NaN
+     census landed (tranche 2zx, b2a3c83) to bracket the trashing kernel
+     to one inter-call window.
+   - **THE BRACKET IS ONE INTER-CALL WINDOW WIDE (cont. 44)**: window 23:
+     x NaN rows 0/2048 at call #41 (launch #2718), x NaN rows 952/952
+     (first 0) at call #42 (launch #2890) — the trash entered between the
+     last ffn of chunk 1 and the first ffn of chunk 2, a ~172-launch
+     window containing the hc chain's commit, the DSA/KDA writes,
+     pool_keys, and — sharded — the pool's index_write/pool_keys writes
+     into the pool's keys pages. The ffn's x derives from the hc chain
+     whose input is b.hidden: the HIDDEN dump landed (tranche 2zy,
+     a55a7a0) — NaN hidden convicts the gate/commit path before layer 0;
+     clean hidden with NaN x convicts the layer-0 KDA/DSA state path.
+   - **HIDDEN CLEAN, X NAN — INSIDE THE LAYER LOOP (cont. 45)**: window
+     24: b.hidden is CLEAN at call #42 (0/2048) while x (normed) is NaN
+     952/952 — the gate/commit path is INNOCENT; the corruption enters
+     INSIDE layer 0's chain. The ffn's x comes from the SECOND hcPre
+     whose input b.x the FIRST hcPost wrote (post[s]*branch + sum
+     comb*x[t]). The NaN-site dumps landed (tranche 2zz): NORMED-PRE
+     right after hcPre (NaN there convicts hcPre itself) and the
+     POST/COMB/GATHERED trio before hcPost (NaN there convicts the
+     gather/mixer's output).
 
 ## The test-count note (do not re-litigate)
 
