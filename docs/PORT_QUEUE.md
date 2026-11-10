@@ -249,6 +249,15 @@ readiness.
      The boundary dump (pick rows 0..70 raw + a zero/valid/garbage census
      + the first bad row's neighbors + x3.picks' head — the next buffer,
      a size overlap bleeding backward) landed (tranche 2zp, 354ce54).
+   - **THE BOUNDARY ESCAPED THE WINDOW — THE FULL CENSUS (cont. 36)**:
+     window 15: pick rows 0..71 ALL VALID (zeros 1, valid 638, garbage 0)
+     — the first-bad-row drifted past 71 (48 -> 51 -> 59 -> >71 across
+     four runs; run-to-run timing, constant garbage content). The full
+     census landed (tranche 2zq, 5bf9bc4): all 2,048 pick rows classified
+     in one 73 KB read — bad-row count, the even/odd parity split (a
+     stride-2 row-pair bug shows as even != odd), the first bad row's
+     neighborhood raw. x3.picks holding the previous call's picks is
+     EXPECTED (the compact copy runs during the experts' pass).
 
 ## The test-count note (do not re-litigate)
 
