@@ -308,6 +308,16 @@ readiness.
      PRE-SCATTER bracket landed (tranche 2zu, 26176fb): the compact
      picks dumped + range-checked before route; rank/hist read AFTER
      offsets BEFORE scatter.
+   - **EVERY INPUT CLEAN — THE MEMBERS BASE IS THE SUSPECT (cont. 41)**:
+     window 20: the compact picks VALID (0 bad/80), rank and hist
+     COHERENT (hist a valid prefix-sum), the fault STILL at #2893 — and
+     the sanitizer's failing thread was p=64, whose index is provably
+     small. A valid index producing an address 2.5 GB below the nearest
+     allocation convicts the MEMBERS BASE POINTER itself. The PLAN PTR
+     dump landed (tranche 2zv, 5d2f036): the pointers and their diffs
+     against the sizes chain (items-members = P*4, rank-counts = 8,
+     hist-rank = P*4) — any mismatch convicts the arena slot mapping in
+     cuda_state.zig (the port's one hand-edited link).
 
 ## The test-count note (do not re-litigate)
 
