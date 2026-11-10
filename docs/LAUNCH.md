@@ -9429,3 +9429,37 @@ fixed. The gate's `.commit-want` pinned to e46f7ad.
 
 **The state**: window 6 (the exact-culprit run) launched; production
 restored healthy after window 5 (6/6, rc=0).
+
+## (round 139, cont. 27) THE EXACT CULPRIT: plan_scatter FAULTS IN EXECUTION — THE SANITIZER RUN IS NEXT (2026-11-10)
+
+**Window 6** (campaign-20261110-002031, TF_LAUNCH_SYNC in): the
+sync-each instrument pinned the fault exactly —
+
+    TF_LAUNCH_SYNC: launch #2893 faulted IN EXECUTION: CUDA_ERROR_ILLEGAL_ADDRESS (700); kernel ?, grid 30x1x1, block 256x1x1
+
+The kernel at 30x256 is **`plan_scatter`** (the MoE plan scatter,
+cuda/grouped.zig) — and every one of the ~2,892 launches before it synced
+clean. The context poisoned at the name query again (`?`), but the shape
+is unique. Rank 1's run reached the same plan (its last named launch:
+`plan_scatter`, 30x256) — both ranks, same position, deterministic.
+
+**The significance**: `plan_scatter` is UPSTREAM MoE code — the 0110
+patch never touches the MoE files. The scatter is reading memory the
+shard path corrupted (or garbage picks from a clobbered router scratch):
+the writes happened earlier and the fault surfaced late — the last DSA
+layer is 43 of 45, its MoE block's plan scatter right after. The seq
+arithmetic (~2,886 launches ≈ a full 45-layer pass) says the FIRST prefill
+ran to its END before the first fault — the corruption is in the
+last-layer region, not the first kernel.
+
+**The next instrument** (KSHARD_SAN=1, landed in the gate phase): rank 0
+runs under `compute-sanitizer memcheck` (the build image ships the tool;
+the runtime images do not) — the report names the faulting ADDRESS and
+the nearest allocation, which settles whose buffer the walk-off touched
+(the pool's keys/lat, the exchange room, or the plan scratch itself).
+Rank 1 stays unsanitized (one instrumented rank keeps the NCCL handshake
+unsynchronized); TF_LAUNCH_SYNC is unset in this mode (the sanitizer
+subsumes it).
+
+**The state**: window 7 (the sanitizer run) is launching; production
+restored healthy after window 6 (7/7 windows, rc=0 restores).
