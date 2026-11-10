@@ -9838,3 +9838,34 @@ exactly. The `.commit-want` pinned to 7342b40.
 
 **The state**: window 19 (the plan scan) launched; production restored
 healthy after window 18 (19/19 windows, rc=0).
+
+## (round 139, cont. 40) THE PLAN SCAN CLEAN TOO — THE BRACKET NARROWS TO THREE OPS; THE PRE-SCATTER READ IS IN FLIGHT (2026-11-10)
+
+**Window 19** (campaign-20261110-073553, the hist/rank full scan): the
+bracket tightened again — the plan buffers are CLEAN at every census
+point including call #42 (`CENSUS bad rows 0/952; hist bad 0; rank bad
+0/7616`), and the fault STILL fired at #2893 inside call #42's plan
+chain. The trash happens between #2890 (census) and #2893 (scatter):
+only THREE operations run there — plan_rank (#2891, synced clean as a
+launch), plan_offsets (#2892, synced clean as a launch), and the COMPACT
+COPY (an async DtoD — invisible to the ring, never synced, never
+validated).
+
+**The gap in the instrument**: the rank/offsets kernels' OUTPUT state was
+never read back before scatter consumed it (their launches synced clean —
+but a clean launch says nothing about what they WROTE), and the compact
+picks (the buffer route's kernels read as expert ids) were never
+validated at all.
+
+**The instrument** (tranche 2zu, 26176fb): the PRE-SCATTER bracket —
+- the COMPACT picks dumped + range-checked right before `route` (in the
+  exl3 prompt path, synced);
+- `rank[0..15]` and `hist[0..15]` read AFTER plan_offsets, BEFORE
+  plan_scatter (in grouped's wide path, synced).
+If the compact holds out-of-range ids, the compact copy is the culprit;
+if rank/hist are garbage pre-scatter, rank/offsets wrote it this call;
+if BOTH are clean, the scatter's own arithmetic diverges from the fork's
+in the port's `wide()` call (the grid/args).
+
+**The state**: window 20 (the pre-scatter bracket) launched; production
+restored healthy after window 19 (20/20 windows, rc=0).
