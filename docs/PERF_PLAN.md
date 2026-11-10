@@ -1,10 +1,32 @@
 # Performance plan: closing the measured fronts
 
+> **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
+> the trail, round 140, 2026-11-10)**: **window 35 — the #2699 prompt-cache
+> recovery, VALUE-FIRST** (the fixed battery: the ON arm `--prompt-cache-gib 4`
+> qualifies on the measured within-session resume delta vs the OFF arm, not
+> the 16/16 slot count; the flag-placed witnesses are the container argv and
+> the fully-funded phrasing). On a qualified verdict, `PROMPT_CACHE_GIB=4`
+> becomes the config.sh default and the session phases retire; on a miss, the
+> cacheless standing holds and the question closes as upstream data — no
+> third reshape. After it: the parked candidates in order are #2181
+> `TF_GLM_KV_LIVE_HALF` (opt-in, unmeasured) and the DRAFTS=0 room
+> observation (model −2.84 GiB, FOUR full 512K windows — unmeasured for
+> decode); the 0110 KV-SHARD defect hunt stays parked (the user). The
+> upstream-gated fronts (the batched-launch pattern, the cross-restart
+> resume's imprint path) wait on releases — the watch is each sitting's
+> ECOSYSTEM read. The loop runs under the discipline layer (the stage brief,
+> the value gate, phase-lint, the hit-rate watch — AGENTS.md).
+
 > **The bar (user, 2026-10-23):** surpass production 0.6.6 on model loading time,
 > generation tok/s, and prefill rate. This document is the continuing-look home for
 > that hunt: the measured scoreboard, the fronts in attack order, every lever with its
 > mechanism and verification plan, and the research log. The mandate (user): look hard,
 > keep looking, go outside the scope if necessary — everything documented.
+
+> **The bar re-targeted (the round-139 (user) directive): comparisons are
+> NATIVE-vs-NATIVE** — production IS this repo's promoted native line now; the
+> retired Python recipe's numbers are history and never cross-compare. The
+> operative floor is the native-native pair (the anchors' duel rows).
 
 ## The status (round 123, 2026-10-30 — the consolidation)
 

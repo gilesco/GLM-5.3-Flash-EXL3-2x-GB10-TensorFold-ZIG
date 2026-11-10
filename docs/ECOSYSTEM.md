@@ -272,7 +272,7 @@ qualification receipts.
   callbacks) is the path to production-class resume times on the native line. Nothing
   posted upstream.
 
-## Upstream v1.2.4 review (the (user) ask, 2026-11-07) — our pin is v1.2.3 (6ec5fa4cb)
+## Upstream v1.2.4 review (the (user) ask, 2026-11-07) — HISTORICAL: our pin then was v1.2.3 (6ec5fa4cb); it is v1.2.6 now (see the round-140 entry at the file's end)
 
 v1.2.4 shipped (267c5af6a, 675 commits after v1.2.3). The GLM-CUDA/GB10
 read of the changelog:
@@ -960,7 +960,7 @@ claim (+36% at 50k prompts).
 the v1.2.2→v1.2.4 rebase. `tool_parse.zig` byte-identical v1.2.4→v1.2.5 — both
 server-layer patches (010-tools256, 011-zclose) survive untouched, and upstream
 STILL lacks the #415 own-name rule (rule 1 keeps them alive). Of the ~60 files
-our 16 patches touch, only THREE drift: the KV-pool rewrite (#2358 — one hard
+our (then) 16 patches touch, only THREE drift: the KV-pool rewrite (#2358 — one hard
 re-anchor: 003-fp8-pages' contract-registry append must re-cut onto v1.2.5's
 new `registry_joins.zig`; `glm_family_host.zig` likely one line), the engine's
 gate/shared block moving to `cuda_engine_gate.zig` (mechanical; all `e.*` call
@@ -992,3 +992,18 @@ ours — two Sparks, TP=2 direct split; its TP=4 recipe was removed):
 1,419 (the same symptom class our zclose/tools256 address from the parse side;
 worth a look when the quality instruments next run). Their raw-markup incident
 never reproduced on the pair; the top-k 20 mitigation stays.
+
+## 2026-11-10 — v1.2.6 released; the rebase absorbed it same-day (round 140)
+
+**Upstream v1.2.6** (6e9af9302, released 2026-11-10): carried #2257 (GLM TP=2
+decode windows to 32 rows — the release's own +32% one-stream code decode
+claim), #2699 (the prompt-cache rework; `budgetOf()` moved the budget
+construction), #2181 (`TF_GLM_KV_LIVE_HALF`, opt-in, unmeasured candidate).
+#1431/#2415 KV-SHARD did NOT land — the fork port stays a separate decision.
+Our line rebased the same day: the drift map applied (6 of 18 verbatim, 12
+re-anchored), the round-trip PROVEN byte-identical, the v126val battery
+qualified every instrument — the pin HOLDS at 6e9af9302 (the round-140 cont.
+2 receipt, campaign-20261110-162034). **Upstream main is 36 commits past the
+tag** and has absorbed the fork's exl3p prompt loop (`bc166dbfd`) plus
+cp.async/ldmatrix/mma common-module extractions — the next release may
+mainline more of the fork's stack (the watch continues; findings stay data).

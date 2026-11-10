@@ -12,7 +12,7 @@ readiness.
    verbatim, 003-fp8-pages re-anchored onto the registry_joins move; the tree
    verified byte-identical; the v125val battery qualified it (the greedy sha
    IDENTICAL across the engine bump, hardmode 95, the vision 4/4, the walls
-   83/83 s). The pin holds at v1.2.5; production serves it.
+   83/83 s). The pin held at v1.2.5 then; it HOLDS at v1.2.6 (6e9af9302) now — the round-140 cont. 2 receipt.
 2. **0104 warm-turns** — PORTED, MEASURED, **PARKED** (round 139 cont. 14-15):
    the mechanism engages on our KV_SHARE mode (the share-store substrate fix;
    3 done / 3 stepped aside per ON arm) but buys NOTHING — the deepened
@@ -170,17 +170,6 @@ readiness.
      compute-sanitizer memcheck — the report names the faulting ADDRESS
      and the nearest allocation, settling whose buffer the walk-off
      touched.
-   - **THE EXACT CULPRIT PINNED (cont. 27)**: window 6 ran TF_LAUNCH_SYNC:
-     `launch #2893 faulted IN EXECUTION` — the kernel at 30x256 is
-     `plan_scatter` (the MoE plan scatter, cuda/grouped.zig), every one of
-     the ~2,892 launches before it synced clean. The 0110 patch never
-     touches the MoE files — the scatter reads memory the shard path
-     corrupted (or garbage picks from a clobbered router scratch), so the
-     corruption happened EARLIER. KSHARD_SAN landed: rank 0 under
-     compute-sanitizer memcheck — the report names the faulting ADDRESS
-     and the nearest allocation, settling whose buffer the walk-off
-     touched. Window 7's report was LOST (the host-path log-file inside
-     the container) — fixed to the /ids mount; window 8 reruns.
    - **THE SANITIZER REPORT (cont. 29)**: `Invalid __global__ write of
      size 4 at tf_experts::plan_scatter+0x1c0 — 2,530,871,136 bytes BEFORE
      the nearest allocation` (a 512-MiB buffer). The scatter's bucket

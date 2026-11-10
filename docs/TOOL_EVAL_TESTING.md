@@ -202,12 +202,12 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       serve (the callquotequal arm) — the knob does not move the deterministic probes.
       `config.sh` adopts `TF_GLM_PROMPT_STEPS=0`.
 
-- [ ] **Loading time — behind 2.8× and unexplained** (part of the knobs phase):
+- [x] **Loading time — behind 2.8× and unexplained** (part of the knobs phase): — CLOSED (rounds 126-135: the boot decomposed; the loading front CROSSED at 112.9%, re-dated 83/83 s on v1.2.6 — the anchors' row; campaign-20261109-000818, campaign-20261110-162034).
       production 0.6.6 logs **"loaded in 93.7 s"**; our restart walls run ~265 s. The
       knobs phase records each cell's engine "loaded in" line vs the wall — isolating
       the drafter's share (load-nodraft cell), the packing share (the engine's own
       lines), and the orchestration overhead (wall − engine).
-- [ ] Small hygiene: worker clock probe reads 0 via ssh (acpi_cppc path?); g3's
+- [x] Small hygiene: worker clock probe reads 0 via ssh (acpi_cppc path?); g3's — FIXED/closed (the probe repaired and receipted round 139; the g3 half closed at cont. 29; the ledger's own L220-224/232-236).
       `/metrics` cache-counter check (goshi's exporter maps `tensorfold_cached_tokens_total`).
 - [x] ~~Phase 2/3 quality on **dense4fp8**~~ CLOSED (round 132): the hardmode
       battery ran on the cell twice (campaign-20261102-095700: 93; the sweep's
@@ -313,7 +313,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (the same instrument definition as the anchors' WARM row; the v1.2.0-era
       1.42 s was 4.7× slower — the row corrected to 302 ms / 70% with both
       receipts cited).
-- [ ] **campaign-20261105-113129 — the marriage's second pagedchecks**: the
+- [x] **campaign-20261105-113129 — the marriage's second pagedchecks**: the — SUPERSEDED by the third pagedchecks (THE SERVING PATH WORKS — the ledger's next item).
       logical fix did NOT resolve the death (identical TokenUnits, rank-1
       first, all three sites fixed); the debug patch (glm-zz-debug-
       tokenunits) launched to log the exact mismatch inputs.
@@ -324,7 +324,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       → 0.82 ms/tok and 92,240 → 0.80 ms/tok (the windowed rate unchanged at
       depth), the pool pressure mechanics live. The probe FAILEDs are the
       instrument's parse.
-- [ ] **The max_tokens=1 sha references WITHDRAWN (cont. 33)**: seed jitter,
+- [x] **The max_tokens=1 sha references WITHDRAWN (cont. 33)**: seed jitter, — DONE (the withdrawal itself was the completion).
       not depth signatures (9e04a49e5786 dominates across depths and seeds;
       the unique shas are sampling flakes). The bitwise instrument
       redesigned — greedy + thinking-off + 64-token chains (deterministic
@@ -942,7 +942,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       store lifecycle (rank 1 has no pool, never reclaims) as the prime
       suspect — only concurrent traffic exercises it.
 - [x] **THE #256 PORT LANDED AND ADOPTED (round 138-139, the forum thread post 973's finding)**: the unoffered-tool-call leak — with parallel_tool_calls false, a call to a tool the request did not offer was dropped and the one-call filter removed what was left, so the reply came back empty and a fixed-seed agent looped; the fix (upstream be8bccbec, PR #415) is in v1.0.0..v1.2.1 and was REVERTED before v1.2.2, so every 1.2.x including our promoted engine lacked it. The port (010-tools256, the round-139 FIFTEENTH patch) turned out small: the rest of the #415 rework (Policy.parsedContent/kept/wholeEnvelope/prose_sent/the attach rework) was already in our v1.2.4 tree — only callName's own-name rule was reverted with it; a well-formed unoffered call now goes out under its own name (the client answers "unknown tool", the model self-corrects), names that are no function name and non-finite arguments stay text, bare JSON outside an envelope still needs an offered name. The primary witness: the tool-parse host suite 46/46 PASS (two older tests that pinned the reverted rule flipped to the #415 behavior); the tools256qual battery (campaign-20261108-140329): the same-bits greedy witness IDENTICAL (the same 80cc3802… sha as every window), the §2 gates ALL PASS, hardmode 95 — the SIXTEENTH consecutive — the vision 4/4. ADOPTED in this repo's config and mirrored to the promoted production repo (production commit 270adb9). Server-layer only: no kernel work, no knob (the behavior IS the fix). ALSO this round: the promotion repo was created without image/ — every prepare-time build failed reading the dockerfile behind docker's layer cache until the window's fingerprint move forced one; the 7 files restored verbatim (production 8ca3773) and production re-landed healthy on 8000 through its own start.sh; deep's poke local.sh was missing the promotion's PROD_REPO (the poke's :? guard exited every tick) — fixed and the poke smoke-verified silent from cron's own host.
-- [ ] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round
+- [x] **The fp8+pages marriage (the Mia fold-in #3) — IN PROGRESS** (round — LANDED (003-fp8-pages is a standing patch; fp8 paged KV is the serving mode — the v126val battery serves it).
       133, cont. 23; (user): "Proceed"): the port is scoped and started.
       **Scope correction**: the marriage is patches **0017-0025** (~1,460
       lines — the E4M3 latent-cache kernels, the page layout, the pool
@@ -1213,9 +1213,9 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       identically — same-turn batching of the dependent notification, a
       benchmark-policy trap both stacks fall into, not a gap between us and
       production.
-- [ ] **The pages×fp8 marriage watch** (#1163 mergeable-clean; #1211 stacks): when
+- [x] **The pages×fp8 marriage watch** (#1163 mergeable-clean; #1211 stacks): when — LANDED (the marriage receipted end to end: §2 both KV cells, the depth ladder, hardmode, the duel).
       paging×fp8 lands, 512K admits 8 streams on fp8 — re-qualify the ladder then.
-- [ ] **The v1.1.5 candidate test**: #1218 (the slot-leak) is merged and slated upstream —
+- [x] **The v1.1.5 candidate test**: #1218 (the slot-leak) is merged and slated upstream — — OBSOLETE (the pin passed v1.1.5 → v1.2.6; the slot-leak landed upstream long since).
       the first correctness reason to test a bump (rebase 017-topk4b, gates + probes decide).
 - [x] ~~Publish the AZ quant to huggingface.co~~ CLOSED by the (user) (round 58): "there is nothing to be published, what we run is already out there" — the served checkpoint is AxonZeta's public release. The disk choreography landed with it (the mirrors/TR3/stubs deleted; the requant working dir kept as the repack source). gated on the AZ
       battery passing — repo under gilesco, the ~154-GiB EXL3 upload, and a model card
@@ -1238,7 +1238,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       95 / run 92 / subset 60=86%). The old anchors (95/91, 94/90, 92/100) are formally
       cross-version — kept only as history. The comparison is complete; the open item the
       receipts surface is the hardmode trade (below).
-- [ ] **Production's patch series changed** (user): Mia's patches 0109-0122 + 0128-0129 and the
+- [x] **Production's patch series changed** (user): Mia's patches 0109-0122 + 0128-0129 and the — OBSOLETE (production IS the native promoted line since round 139's (user) re-target; the Python recipe retired).
       0088 NoRoom fix folded onto the python-0.6 tip (`879d7cfc`). DELTAS's production column
       carries it; the re-baseline refreshes the cross-engine anchors.
 - [x] **The top4cfg re-qual on v1.1.6** — DONE across rounds 36–37: the perf side (round 36,
@@ -1419,3 +1419,41 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       (Instrument note: the battery's own greedy probe returned EMPTY content at
       max_tokens 64 — the thinking model ate the budget; the gates' probes carried the
       real content witness. The battery's probe needs a larger budget next revision.)
+
+## Round 140 (2026-11-10) — the v1.2.6 rebase and the cachefixqual arc
+
+- [x] **The v1.2.6 rebase QUALIFIED — the pin HOLDS at `6e9af9302`** (window 32,
+  campaign-20261110-162034): the drift map applied (6 verbatim, 12 re-anchored), the
+  round-trip PROVEN byte-identical (pristine v1.2.6 + the 18 regenerated patches =
+  the rebase tree, zero diffs), the compile gate RC=0, the host suite PASS, and the
+  v126val battery passed on every instrument: the same-bits greedy witness IDENTICAL
+  (the `80cc3802…` sha holds across the bump), the §2 gates ALL PASS, hardmode 95 —
+  the TWENTY-SECOND consecutive at the time — the vision 4/4, zero strict-TF_
+  refusals under the stricter v1.2.6 settings validation, the walls 84/83 s,
+  prefill 1,523, steady-state decode 73.1 tok/s. The anchors' loading row re-dated;
+  the chart regenerated.
+- [x] **The pool plan moved with the bump — the #2257 trade recorded** (window 32's
+  serve line vs v125val's): window_rows 8→32 and the KDA projection into each stream
+  cost +51 MiB/stream fixed (364→415) and 2 of the 16 TF_KV_SHARE slots (0.4 GiB);
+  the release buys 32-row decode windows with the memory. The room-drift ladder
+  (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
+  12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7.
+- [ ] **The #2699 prompt-cache recovery — window 33's A/B INVALID, window 34 VOID,
+  the fixed value-first battery is window 35's** (campaign-20261110-173035,
+  campaign-20261110-192708): window 33's ON arm was a PLACEBO (the phase staged the
+  doubled env name `PROMPT_PROMPT_CACHE_GIB`; nothing read it — the OFF-vs-ON slot
+  move was room drift on two identical cacheless serves); window 34 died on its
+  staging (the battery's new argv-witness line ended in a bare grep under
+  `set -euo pipefail`). The battery is fixed: the env name corrected, PLACED-flag
+  witnesses added (the container argv; the fully-funded phrasing
+  `16 kept states' slots` — cuda_kv_pool.zig:262; the clip report absent), the
+  turn-wall probe relabeled reference-only (it measures re-prefill, not resume —
+  g3 is the resume witness), the verdict VALUE-FIRST: the ON arm qualifies on the
+  measured within-session resume delta (the v1/v2 instruments), not the 16/16
+  slot count. The OFF arm's two all-passes stand as v1.2.6 confirmation.
+- [x] **The discipline layer landed (the user, round 140 cont. 5)**: the stage
+  brief, the value gate, phase-lint (both burn classes mechanical — wired into
+  autonomous-launch.sh as a launch refusal), the hit-rate watch, the
+  state-docs-pace rule. The second launch-staging name failure of the class
+  captured in verify-shell-config-edits. The generated LAUNCH_INDEX.md (338
+  round entries) carries the loop's navigation.
