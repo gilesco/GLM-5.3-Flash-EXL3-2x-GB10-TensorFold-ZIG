@@ -19,6 +19,14 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 
 ## 2. Exactness (the same gates upstream's EXL3 receipts used, through the API)
 
+> **STANDING STATE (round 140): §2 has PASSED twenty-three consecutive times**
+> (every battery since the round-127 era; the newest: campaign-20261110-173035
+> window 33's OFF arm — g1-g4 + the g5 note, on the v1.2.6 engine + the
+> 18-patch stack). The checkboxes below are the gate DEFINITIONS — they stay
+> unchecked here because the receipt lives in each battery, not in a manual
+> run of this file; VALIDATION.md is the definitions home, the batteries are
+> the executions.
+
 - [ ] **Drafted = plain**: one prompt at temperature 0 with drafts on (DFlash2 via
       `--drafter`) and with `DRAFTS=0` (or `--no-drafts`) — same tokens. Also check a drafted
       run with the MTP fallback (remove the DFlash2 snapshot from the path or `DRAFTS=1`
