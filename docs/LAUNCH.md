@@ -9530,3 +9530,38 @@ picks prove a clobbered plan scratch. The gate env carries it; the
 
 **The state**: window 9 (the picks-vs-x run) launched; production restored
 healthy after window 8 (9/9 windows, rc=0).
+
+## (round 139, cont. 30) THE PICKS ARE GARBAGE FROM CALL #0 — X IS CLEAN; THE STRIDE DUMP IS NEXT (2026-11-10)
+
+**Window 9** (campaign-20261110-021302, TF_SHARD_DEBUG=1): the instrument's
+verdict, on 43 logged calls:
+
+    TF_SHARD_DEBUG: call #0: rows 2048 slots 9: bad picks 1922/4096
+    (first 720442064, last 58417, valid 0..288), x NaN/Inf 0/1024 sample
+
+- **The picks are garbage from the VERY FIRST call** (~1,850-1,930 of
+  4,096 bad) — not a corruption that builds up: the buffer is wrong from
+  the start.
+- **x is CLEAN** (0 NaN/1,024 in the 16-row sample) — the block input is
+  fine; the router matmul's input is not the problem.
+- **The garbage values repeat EXACTLY across calls** (720442064,
+  -2147354444, 58417 = 0xE431 — two E4M3 code bytes, 0xE4 the E4M3 NaN
+  pattern): constant CONTENT — data bytes sitting in the picks' memory,
+  written once or never initialized. This is a buffer-aliasing/layout
+  defect, NOT a runtime race and NOT NaN-propagation from the latents.
+
+**The reading**: the picks buffer at `s.pick` is reading (or was filled
+from) another buffer's memory — the port's scratch layout diverges from
+the fork's at exactly one slot. The `pick` slot in cuda_state.zig's p[49]
+chain is the suspect: the fork's patch changes the shared-buffer split
+(twin buffers), and one side of the change is missing in our port.
+
+**The next instrument** (tranche 2zl, d478292): the deepened dump — the
+bad pattern's STRUCTURE (per-slot counts reveal the garbage's stride:
+every 9th element = row-level aliasing; scattered = slot-level), the raw
+first 24 pick values, and the router scores mlog's first rows (whether
+the ROUTER itself saw garbage, or wrote good scores into a clobbered
+picks buffer). The gate env carries it; `.commit-want` pinned to d478292.
+
+**The state**: window 10 (the stride dump) launched; production restored
+healthy after window 9 (10/10 windows, rc=0).
