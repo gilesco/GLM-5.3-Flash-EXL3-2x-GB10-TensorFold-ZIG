@@ -285,6 +285,18 @@ readiness.
      b8004df): the final picks classified on EVERY ffn call, each line
      annotated with the launch ring's seq; the detail dump fires on the
      FIRST bad call.
+   - **ALL 42 FIRST-CHUNK CALLS CLEAN (cont. 39)**: window 18 (the
+     every-call census): every ffn call of the first chunk read clean
+     final picks; call #42 — the SECOND chunk's first MoE layer
+     (rows=952, the short tail piece) — logged its census at launch
+     #2890 with bad 0/952, and the fault fired at #2893 INSIDE that
+     call's plan chain (rank #2891 and offsets #2892 synced clean;
+     plan_scatter #2893 faulted). The select is fully innocent; the
+     plan buffers were trashed between calls. The prime suspect: the
+     port's pool write path (tf_glm_pool_keys) at the second chunk's
+     page boundary — pages the first chunk never touched. The hist/rank
+     FULL scan every call landed (tranche 2zt, 7342b40) to bracket the
+     trashing kernel exactly.
 
 ## The test-count note (do not re-litigate)
 
