@@ -10173,3 +10173,60 @@ shape), or run the A/B manually with production DOWN.
 
 **The state**: production healthy (rc=0 restore, 30/30 windows);
 the defect hunt parked with the receipts checked.
+
+## (round 140) THE V1.2.6 REBASE: THE DRIFT MAP APPLIED, THE ROUND-TRIP PROVEN BYTE-IDENTICAL (2026-11-10)
+
+**The user's directive**: rebase the repo to upstream v1.2.6, then evaluate the
+patches that are still relevant.
+
+**The release read** (v1.2.6 6e9af9302, released 2026-11-10 12:51): 762 files,
+~49.9K insertions. For our line: **#2257** (the GLM TP=2 windows-32 release commit
+— decode windows reach 32 rows, MTP chains 15; prompts 23%/13% faster at 2K/8K,
+one-stream code decode +32%, every reply equal), **#2699** (the prompt-cache
+rework: the reclaim chain, the admission guards, the budget scaled to the room),
+**#2181** (TF_GLM_KV_LIVE_HALF, opt-in — a kept state holds the live KDA half
+alone), and the stricter settings (GLM's 0/1 switches refused by name, blanks
+read as unset). **The #1431/#2415 KV-SHARD line did NOT land** — the fork port
+stays a separate decision.
+
+**The mainline verdicts** (git-grep against the tag objects — rule #1): NO fork
+mechanism landed on the v1.2.6 tag; the whole living stack survives.
+008-loaddirect keeps its value (upstream's #2449 took direct reads to
+spark25/dory ONLY). **Upstream watch**: main is 36 commits past the tag and has
+absorbed the fork's 0078 exl3p prompt loop (bc166dbfd) plus the cp.async/
+ldmatrix/mma common-module extractions — the next release may mainline more of
+the stack.
+
+**The drift map** (the stack-order apply probe, no reset between patches): 6 of
+18 apply clean on bare v1.2.6 (002, 008, 010, 011, 013, 018); 12 re-anchored
+(001, 003, 004, 005+006+007 as the 003-cascade, 009, 012, 014, 015, 016, 020).
+The named collision sources: the shared MLA image (#850 step 3, 42735f94f —
+the chunks_wide template moved into common/mla.cuh gaining RW/SPLIT params),
+#2257 (24 engine files), #2699 (the kv_pool budget into budgetOf()), the SwiGLU
+split (88267c063), the EXL3 clamp (edc16dfe9 — additive, AFTER=false).
+
+**The re-anchor**: 003's PAGED8 marriage and 007's fetch8 port live in
+common/mla.cuh now (the template edits re-cut onto the RW/SPLIT shape); 020
+re-anchored onto budgetOf() (cache_first rides the Budget struct through it);
+012/015/016 hand-anchored onto the fork-consolidated exl3 ground; 001's
+Numerics moved into v1.2.6's readSet structure with the fingerprint at layout
+21 (20 + numerics).
+
+**The verification**: the tool-parse host suite PASS (RC=0, honest capture);
+the compile gate caught THREE duplicate-symbol defects from the sitting's
+hand-anchor replay (the duplicate grouped_body_v2 body, and duplicate
+cacheFirst/Geometry/i32d copies from the replay scripts running twice against
+the tree) — all fixed and re-run. **The round-trip PROVEN**: pristine v1.2.6 +
+the 18 regenerated patches = the rebase tree, ZERO diffs (the byte-identical
+double reconstruction of the v1.2.5 procedure). The regenerated patch files
+carry the re-anchored hunks; the headers and the REBASE provenance paragraphs
+preserved.
+
+**The pin**: TF_COMMIT = 6e9af9302 in the head's local.sh; the v126val battery
+phase is staged in the gate (the same-bits greedy witness, the §2 gates, the
+boot witnesses under the strict TF_ validation, the bench + steady-state
+decode, hardmode 95, the vision 4/4, the walls). Any FAIL holds the pin at
+v1.2.5.
+
+**The next order**: the compile gate's RC on the fixed tree, then the
+`preflight v126val summary` window decides the pin.
