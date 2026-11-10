@@ -9712,3 +9712,25 @@ x3.picks[0..], pick's size is short by exactly the bleed.
 
 **The state**: window 15 (the boundary dump) launched; production
 restored healthy after window 14 (15/15 windows, rc=0).
+
+## (round 139, cont. 36) THE BOUNDARY ESCAPED THE WINDOW AGAIN — THE FULL CENSUS IS IN FLIGHT (2026-11-10)
+
+**Window 15** (campaign-20261110-051814, the boundary dump): the fixed
+71-row window MISSED the boundary a third time —
+
+    TF_SHARD_DEBUG: call #0: pick rows 0..71: zeros 1 valid 638 garbage 0
+
+Rows 0..71 are ALL VALID now — the first-bad-row drifted past 71 (48 →
+51 → 59 → >71 across four runs). The drift is run-to-run (timing), the
+garbage content constant. Also noted: x3.picks held call #0's picks at
+call #1 — expected, the compact copy runs during the experts' pass (not
+the corruption).
+
+**The instrument** (tranche 2zq, 5bf9bc4): the FULL census — every one of
+the 2,048 pick rows classified in one 73 KB read: bad-row count, the
+even/odd parity split (a stride-2 row-pair bug shows as even≠odd), the
+first bad row's neighborhood raw. The census follows the boundary
+wherever it lands.
+
+**The state**: window 16 (the full census) launched; production restored
+healthy after window 15 (16/16 windows, rc=0).
