@@ -19,8 +19,10 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold v1.2.5 + **the adopted 18-patch stack** (`PATCHES` below;
-  each patch's full record: [patches/README.md](patches/README.md)).
+- **Engine**: TensorFold v1.2.6 + **the adopted 18-patch stack re-anchored**
+  (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
+  the v1.2.6 rebase's round-trip is proven byte-identical — pristine v1.2.6 + the
+  18 patches = the rebase tree; the v126val battery decides the pin).
 - **Testing runs from this same repo**: a start FOR OPENCODE serves 8000; a start FOR
   TESTING serves 8001 (intent-keyed ports). Opencode never touches 8001; the quality
   gates never touch 8000. The lifecycle is autonomous — see *The autonomous loop*.
