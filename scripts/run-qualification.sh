@@ -1622,28 +1622,35 @@ out, arm = sys.argv[1], sys.argv[2]
 def durl(p):
     mime = "image/png" if p.endswith(".png") else "image/jpeg"
     return "data:%s;base64," % mime + base64.b64encode(open(p, "rb").read()).decode()
-fill = " ".join(f"harbor-{i%89}" for i in range(4096))
-fill2 = " ".join(f"meadow-{i%89}" for i in range(4096))
+# the cp bodies share NO prefix with the t1/t2 probes (the page cache
+# matches prefixes: t1 is bridge+harbor-d2048, so the race bodies use
+# zebra/sign + meadow fills — a race serve with cached>0 means the cache
+# hijacked the race, not the owner handoff)
+fill = " ".join(f"meadow-{i%89}" for i in range(4096))
+fill2 = " ".join(f"meadow-{(i+31)%89}" for i in range(4096))
 pa = {"model": "X", "temperature": 0, "max_tokens": 128,
       "messages": [{"role": "user", "content": [
-          {"type": "image_url", "image_url": {"url": durl("assets/vision/bridge.jpg")}},
-          {"type": "text", "text": fill + "\n\nName the structure in one word."}]}]}
+          {"type": "image_url", "image_url": {"url": durl("assets/vision/zebra.jpg")}},
+          {"type": "text", "text": fill + "\n\nName the animal in one word."}]}]}
 pb = {"model": "X", "temperature": 0, "max_tokens": 128,
       "messages": [{"role": "user", "content": [
-          {"type": "image_url", "image_url": {"url": durl("assets/vision/zebra.jpg")}},
-          {"type": "text", "text": fill2 + "\n\nName the animal in one word."}]}]}
+          {"type": "image_url", "image_url": {"url": durl("assets/vision/sign.jpg")}},
+          {"type": "text", "text": fill2 + "\n\nWhat does the sign say in one word?"}]}]}
 json.dump(pa, open(f"{out}/v2744-{arm}-cp-a.json", "w"))
 json.dump(pb, open(f"{out}/v2744-{arm}-cp-b.json", "w"))
-print("- the concurrent-pair bodies staged (two streams, image + d4096 fill each)")
+print("- the concurrent-pair bodies staged (zebra+meadow / sign+meadow-offset; no shared prefix with the t1/t2 probes)")
 PYV2
       for s in a b; do
         python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-$arm-cp-$s.json" "$SERVED_NAME"
       done
-      # the warm-up pair (each stream's first serve primes its rows; the
-      # measured pair then races the two streams' chunk switches)
-      for s in a b; do
-        curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-cp-$s.json" -o "$OUT/v2744-$arm-cp-$s-warm.json" || true
-      done
+      # NO warm-up pair (window 41's lesson: the warm-up primed the page
+      # cache — the race measured cache hits, cached=12288/16384, and the
+      # re-encode path never ran). The race runs COLD: two multi-chunk
+      # multi-image prompts from boot, their chunk switches interleaving on
+      # the shared tower — the owner handoff the fix removes. The engine
+      # lines' cached= values are the mechanism witness (cached=0 expected
+      # on both race streams; a cached>0 line means the page cache hijacked
+      # the race and the number does not count).
       S=$(date +%s.%N)
       for s in a b; do
         curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-cp-$s.json" -o "$OUT/v2744-$arm-cp-$s-race.json" || true
@@ -1751,13 +1758,34 @@ json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-on-t2.json" "$A1"
   T2R=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-t2.json" -o "$OUT/v2744-on-rm-t2-resp2.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
   echo "- room-matched t2 (the real-answer history) ttft_wall ${T2R}s — THE VALUE NUMBER (room-matched)" >> "$P"
   # the room-matched concurrent-pair race (the value gate reads THIS number):
+  # FRESH bodies — the arm-loop race already served the cp bodies, so the
+  # page cache holds their prefixes; re-serving them would race cache hits,
+  # not chunk switches (the window-41 lesson). A third fill offset keeps
+  # the prefixes distinct from every earlier serve.
   for s in a b; do
-    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-on-cp-$s.json" "$SERVED_NAME"
-    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp-$s.json" -o "$OUT/v2744-on-rm-cp-$s-warm.json" || true
+    python3 - "$OUT" "$s" <<'PYCP2'
+import base64, json, os, sys
+out, sfx = sys.argv[1], sys.argv[2]
+def durl(p):
+    mime = "image/png" if p.endswith(".png") else "image/jpeg"
+    return "data:%s;base64," % mime + base64.b64encode(open(p, "rb").read()).decode()
+# the images SWAPPED vs the arm-loop race (a had zebra, b had sign) so the
+# image-token prefix diverges too — the page cache cannot hit the cp2
+# bodies' first ~577 tokens either
+img = {"a": "assets/vision/sign.jpg", "b": "assets/vision/zebra.jpg"}[sfx]
+q = {"a": "Name the animal in one word.", "b": "What does the sign say in one word?"}[sfx]
+fill = " ".join(f"cistern-{i%89}" for i in range(4096))
+body = {"model": "X", "temperature": 0, "max_tokens": 128,
+        "messages": [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": durl(img)}},
+            {"type": "text", "text": fill + "\n\n" + q}]}]}
+json.dump(body, open(f"{out}/v2744-on-cp2-{sfx}.json", "w"))
+PYCP2
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-on-cp2-$s.json" "$SERVED_NAME"
   done
   S=$(date +%s.%N)
   for s in a b; do
-    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp-$s.json" -o "$OUT/v2744-on-rm-cp-$s-race.json" || true
+    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp2-$s.json" -o "$OUT/v2744-on-rm-cp-$s-race.json" || true
   done &
   wait
   E=$(date +%s.%N)

@@ -1439,9 +1439,8 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
-- [ ] **The #2744 vision re-encode port — window 39's A/B CONFOUNDED, window 40's
-  room-gated reading CLEAN but on the WRONG instrument; the corrected
-  concurrent-pair instrument is window 41's** (campaign-20261111-000839,
+- [ ] **The #2744 vision re-encode port — windows 39/40/41 narrowed the instrument
+  three times; the cold-race instrument (window 42) is the decisive one** (campaign-20261111-000839,
   campaign-20261111-010825): window 40's room gate PASSED (the arms' room
   lines 13.2 vs 13.0 GiB — the confound gone) and all guards held (the
   greedy TEXT sha `80cc3802…` identical, §2 ALL PASS, **hardmode 95 — the
@@ -1454,8 +1453,21 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   single-stream probe never loses ownership). The corrected instrument
   (window 41): TWO CONCURRENT multi-image multi-chunk prompts (each an
   image + a d4096 fill), the race aggregate the value number, the
-  room-match restart kept. The kill criterion stands: no value on the
-  corrected instrument retires the patch. (campaign-20261111-000839): upstream's
+  room-match restart kept. Window 41 ran the concurrent-pair
+  race and its OWN flaw surfaced in the receipt's mechanism witness: the
+  warm-up pair primed the page cache — the race measured cache hits
+  (cached=12288/16384 on both arms' race serves), not chunk-switch
+  re-encodes; the aggregate read parity (the OFF arm 4.27 s vs the
+  room-matched ON arm 4.25 s). The room gate PASSED again (13.1 vs 12.2 —
+  0.9 GiB) and every guard held (the sha identical, **hardmode 95 — the
+  TWENTY-EIGHTH consecutive** — the vision 4/4). The corrected instrument
+  (window 42): the race runs COLD (no warm-up pair), the race bodies share
+  NO prefix with the t1/t2 probes or each other (zebra/sign + meadow fills
+  for the arm-loop race; sign/zebra + cistern fills for the room-matched
+  race — the page cache cannot prime the race's prefixes), and the engine
+  lines' cached= values stay the mechanism witness (cached≈0 expected on
+  the race streams; the chunk-switch handoff carries the value). The kill
+  criterion stands: no value on the corrected instrument retires the patch. (campaign-20261111-000839): upstream's
   fix (5151f19f3, main-only) ported as `021-vision2744.patch` (the body
   byte-identical to upstream's diff; applies clean on the full 18-patch
   stack, verified on a scratch clone of the tag; host-side only). Window 39's

@@ -10920,3 +10920,36 @@ release carries it free either way.
 
 **Round 141's watch: 5 windows run (36/37/38/39/40), 1 void — the loop is
 healthy; the value questions close when their instruments are clean.**
+
+## (round 141, cont. 11) WINDOW 41 RAN THE CONCURRENT-PAIR RACE — THE WARM-UP PRIMED THE CACHE; THE COLD RACE IS WINDOW 42'S (2026-11-11)
+
+**The window** (campaign-20261111-020104, `preflight vision2744 summary`,
+rc=0, ~43 min): the concurrent-pair instrument ran end to end. Production
+restored healthy (200).
+
+**The room gate PASSED again** (the arms' room lines 13.1 vs the
+room-matched ON arm's 12.2 — 0.9 GiB, inside the < 1.0 GiB gate), every
+guard held (the greedy TEXT sha `80cc3802…` identical across all serves,
+§2 ALL PASS, **hardmode 95 — the TWENTY-EIGHTH consecutive** — the vision
+suite 4/4, steady-state 73.1 tok/s).
+
+**The value gate MISSED — and the receipt's own mechanism witness shows
+why**: the warm-up pair primed the page cache; the race's serves hit it
+completely (the engine lines read `cached=12288` and `cached=16384` on
+BOTH arms' race streams — full-prefill cache hits, ttft 0.57/0.63 s). The
+re-encode path the fix removes never ran: the aggregate read parity (the
+OFF arm 4.27 s vs the room-matched ON arm 4.25 s — −0.5%).
+
+**The corrected instrument (window 42)**: the race runs COLD — no warm-up
+pair — and the race bodies share NO prefix with the t1/t2 probes or each
+other (the arm-loop race: zebra+meadow / sign+meadow-offset; the
+room-matched race: sign+zebra swapped with cistern fills — the page cache
+cannot prime any race prefix). The engine lines' `cached=` values stay the
+mechanism witness (cached≈0 expected on the race streams; the
+chunk-switch handoff carries the value). The kill criterion stands: no
+value on the corrected instrument retires the patch — the v1.2.7 release
+carries it free either way.
+
+**Round 141's watch: 6 windows run (36/37/38/39/40/41), 1 void — the loop
+is healthy; the instrument generations narrowed each round and the
+mechanism witness now reads directly from the receipt.**
