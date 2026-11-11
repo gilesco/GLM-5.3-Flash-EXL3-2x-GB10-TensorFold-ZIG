@@ -1550,7 +1550,12 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (solo +1.0%, c2 flat, c4 +6.1%) confirms the blocked-lane ratchet's signature — the
   concurrent shape is where the ratchet lived. ADOPTED as the sixteenth patch
   (config.sh's PATCHES default); the promoted repo mirrors it on its promotion sync;
-  the phase retired with its question closed.
+  the phase retired with its question closed. **CONFIRMED TWICE on independent
+  instruments**: the duel re-pair (window 46, campaign-20261111-110018 — both arms far
+  above the pre-adoption row) and the order-drift settle (window 47,
+  campaign-20261111-150137 — the order-matched cross-window value +7.1% to +8.9%, the
+  second-arm edge repeating across w45/46/47 while the pre-adoption pairs read flat;
+  the window-drift watch is OPEN, LAUNCH cont. 20).
 - [x] **The #2257 pool plan's concurrent-resume regression watch — PASS (window
   38, campaign-20261110-234815)**: the kvshare2 instrument's shape re-run on
   the standing v1.2.6 config: the solo warm hit `cached=2048` at ttft 1.339 s;
