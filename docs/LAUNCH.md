@@ -11595,3 +11595,42 @@ rule made precise. The locally-actionable queue is empty; the remaining
 items are upstream-gated (the #2852/#2856 device receipts, the v1.2.7
 rebase) or user-parked (the 0110 KV-SHARD port).**
 
+
+## (round 141, cont. 25) THE STAGE BRIEF — WINDOW 50: THE STATE-OF-THE-LINE RE-ANCHOR (DEPTH + WARMTTFT) (2026-11-11)
+
+**The stage brief — window 50** (`preflight depth warmttft summary`):
+- *The question*: do the standing receipts survive the adopted engine —
+  the depth fact ladder (12/12 at 8k/64k/192k/384k, last receipted on
+  the v1.2.5-era stack) and the warm-TTFT row (the v1.2.1-era receipt,
+  three engine bumps ago)? The drift map taught that cross-window
+  instruments need current receipts; the anchors carry both rows on
+  stale receipts.
+- *The value-if-yes*: the anchors' rows re-dated on the adopted engine
+  — the honest current answer to "how far behind production's resume
+  is the line NOW" (the warm row) and the depth fact ladder holding
+  12/12 on the 19-patch engine (the context front's standing claim).
+  A stale-receipt catch (a row moved) is equally valuable — it would
+  name the next lever.
+- *The cost*: one window (~25 min: the depth probes + two cold-warm
+  pairs; no rebuild — the fingerprint does not move).
+- *The alternatives rejected*: idling until upstream moves (the AGENTS
+  rule is "a sitting with nothing to test launches nothing" — but the
+  stale rows ARE something to test: the discipline layer's own
+  receipts need the drift-map service too); folding the re-anchor into
+  a future candidate window (the rows would stay stale until one came,
+  and the window-38 precedent says a receipt outlived its engine once
+  already); the 0110 KV-SHARD port (user-parked).
+- *The kill criterion*: none — a re-anchor window, no adoption branch.
+  The outcomes: (a) the depth ladder holds 12/12 and the warm numbers
+  land near the old row → the rows re-date, the standing claims hold;
+  (b) anything moved → the receipt lands, the ledger's item opens, the
+  shape gets its own stage brief.
+
+**The staging's catches**: the phase first wrote `06-warmttft.md` —
+colliding with the knobs/prefill receipts' numbering (each `: >` would
+truncate the others in a full run); renamed to `14-` (the free slot).
+The hit witness moved from the envelope (the `tensorfold` object
+carries no cached key — verified against window 49's real envelopes)
+to the engine's own done line (cached= is the verdict — the pattern
+every battery uses).
+

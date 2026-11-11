@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744 driftmap; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744 driftmap warmttft; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1488,6 +1488,52 @@ DRAFTLIVE_RETIRED=1
 DRIFTMAP_RETIRED=1
 
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# phase: warmttft — the warm-TTFT re-anchor on the adopted engine
+# (SESSION-SPECIFIC; retires with the receipt; NO adoption branch — a row
+# re-anchor). The anchors' "TTFT at depth, WARM" row cites the v1.2.1-era
+# receipt (campaign-20261102-233025: warm 302 ms at d8192 vs production's
+# full-hit skip ~212 ms — the row reads 70%). Three engine bumps and two
+# adoptions later (v1.2.5, v1.2.6, the #2793 shared-budgets), the row has
+# no current receipt, and the drift map (window 49) just taught that
+# cross-window instruments need current receipts. The instrument is the
+# campaign-20261102-233025 shape: a d8192 fill at max_tokens=1 (cold),
+# then the SAME request immediately again (warm — the page cache hit),
+# and the d4096 pair for the skip comparison. The value-if-yes: the
+# anchors' warm-TTFT row re-dated on the adopted engine — the honest
+# answer to "how far behind production's resume is the line NOW".
+# ---------------------------------------------------------------------------
+if want warmttft && ! phase_done warmttft; then
+  log "=== warmttft (the warm-TTFT re-anchor: the d8192/d4096 cold-warm pairs on the adopted engine)"
+  P="$OUT/14-warmttft.md"; : > "$P"
+  echo "# warmttft (the warm-TTFT re-anchor: the campaign-20261102-233025 instrument shape on the adopted engine; production's full-hit skip: ~212 ms at d8192, ~86 ms at d4096)" >> "$P"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- the serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
+    for depth in 4096 8192; do
+      bf="$OUT/wt-d$depth.json"
+      FILL_WORDS="$FILL_WORDS" python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split()
+fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, words[i % len(words)]) for i in range($depth // 4)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[1], 'w'))
+" "$bf"
+      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      COLD=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wt-d$depth-cold.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      WARM=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wt-d$depth-warm.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      echo "- d$depth: cold ${COLD}s, warm ${WARM}s (the v1.2.1-era receipt: warm 302 ms at d8192; production's skip: ~212/~86 ms)" >> "$P"
+      # the hit witness: the engine's own done line (cached= is the verdict —
+      # the envelope carries no cached key; the engine log does)
+      HIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -1)
+      echo "- d$depth warm hit witness: $HIT" >> "$P"
+    done
+    echo "- VERDICT (no adoption branch — the row re-anchor): the warm numbers re-date the anchors' TTFT-at-depth-WARM row; the cold pairs corroborate the TTFT-at-depth-COLD row's slope on the adopted engine." >> "$P"
+  else
+    echo "- the serve REFUSED (the refusal is the receipt):" >> "$P"
+    tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  touch "$OUT/.warmttft.done"
+fi
 # phase: regresswatch (SESSION-SPECIFIC; retires with the receipt). The
 # concurrent-resume regression watch on v1.2.6: the round-133 adoption
 # receipted the concurrent 4-prefix resume at 4/4 cache hits, ttft ~1.84 s
