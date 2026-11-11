@@ -11244,3 +11244,67 @@ PATCHES default (7393d5b); production's repo carries the mirrored patch
 the README status (7819ddf + 086c1ae) — production keeps serving the
 18-patch image until this window's exit-path restore re-prepares it.
 
+
+## (round 141, cont. 18) WINDOW 46 RAN THE DUEL RE-PAIR ON THE ADOPTED 19-PATCH STACK — THE C4 GAIN CONFIRMED; THE ORDER-DRIFT WATCH OPENS; THE PROMOTION'S DEPLOYMENT FORENSICS (2026-11-11)
+
+**The window** (campaign-20261111-110018, `preflight duel summary`, rc=0,
+~9 min of instruments after the prepares): the duel's five direct
+instruments on the round-139 A/A design — the baseline arm (the promoted
+config on the testing port) and the ours arm, BOTH the adopted 19-patch
+v1.2.6 engine. Production restored healthy (200) and the flag cleared.
+
+**The re-pair's rows (the third native-vs-native pair)**:
+- **c4: ours 188.1 vs baseline 182.0 t/s** — BOTH arms far above the
+  pre-adoption row (167.4/169.7, the second pair) and above the
+  budgetsqual room-matched reading (180.4). Even the lower arm is +7.2%
+  over the old floor reading: **the #2793 adoption's c4 gain is
+  CONFIRMED on an independent same-window instrument.**
+- solo 69.8/69.9 vs 70.3/70.7 (99.1% — flat, ~+2% over the old row's
+  level), c2 117.3 vs 121.7 (the baseline arm's 121.7 is the highest c2
+  recorded on the line), ITL 58.0 vs 59.4 ms/chunk, overhead 186 vs
+  185 ms, the cold d8192 slope 0.440 vs 0.442 — all flat.
+
+**The order-drift watch opens**: the SECOND arm won c4 in both the
+budgetsqual A/B (+6.1%) and this A/A pair (+3.4%) — the first
+calibration pair read c4 flat inside ±2%. The arms are identical, so
+the pattern is order/thermal drift, not config — but it bears directly
+on the value gate's integrity: **window 45's +6.1% value reading
+compared a second-serve ON arm against a first-serve OFF arm, the same
+order.** If ~3 points of that are order bias, the adoption's honest
+value is ~+3% — still above the >3% gate, but half the reading. The
+settle: window 47 re-runs the duel pair (the third A/A pair) — if the
+second arm wins c4 again, the order effect is real and the anchors'
+c4 row carries the order-corrected value; if it flips or converges,
+the rows stand as read.
+
+**The promotion's deployment forensics — production IS the promoted
+engine now, and one hazard is closed**:
+- The 10:36 exit-path restore of window 45 re-prepared **production's
+  repo against its then-stale config** (18 patches, the v1.2.4-era pin
+  — the promotion sync landed 10:53, after that restore began):
+  production served the round-139 promoted state for ~22 minutes.
+- The 11:00 re-prepare (the duel's baseline arm start; the testing
+  repo's config had moved to 19 patches) rebuilt the shared image with
+  the correct tree and rewrote the shared marker.
+- The 11:09 exit-path restore matched the marker → production returned
+  on the promoted v1.2.6 + 19-patch engine, where it stands.
+- **The structural enabler is fixed**: production's `local.sh` pin was
+  still the v1.2.5-era `8be9c408c` (the round-140 bump never mirrored
+  it). The pin is INERT for serving (the fingerprint excludes it; the
+  marker resolves the served commit) but a re-prepare from production's
+  repo would rebuild the STALE tree — exactly what the 10:36 restore
+  did. The pin now reads `6e9af930` (v1.2.6), matching the served
+  engine; the next re-prepare from either repo builds the same tree.
+- **Residual exposure noted**: a promotion sync landing after a
+  window's exit-path restore leaves production briefly on the older
+  image until the next restore. Bounded (~one window's length) and
+  self-healing; the pin fix removes the stale-REBUILD half of the
+  hazard. The crash-net restarting production during such a lag would
+  briefly serve the older image — acceptable, recorded.
+
+**Round 141's watch: 11 windows run (36–46), 1 void (35). The loop is
+healthy; the round banks one adoption (the #2793 shared-budgets, the
+sixteenth patch), one retirement (the #2744 port), four closed
+questions, one forged verdict caught — and the promotion protocol's
+first end-to-end ride through the window flow.**
+

@@ -10,7 +10,7 @@
 > never cross-compare). The section below the separator is the pre-re-target
 > record, kept for its receipts.
 
-**The current state (round 141, 2026-11-11)**: the engine is TensorFold
+**The current state (round 141, 2026-11-11, the re-pair)**: the engine is TensorFold
 **v1.2.6** (`6e9af9302`) + the **adopted 19-patch stack re-anchored** (the
 round-trip proven byte-identical — pristine v1.2.6 + the 18 rebase patches,
 plus the round-141 #2793 shared-budgets port 022). The v126val battery QUALIFIED the bump on every instrument
