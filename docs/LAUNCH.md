@@ -11442,3 +11442,65 @@ standing config measured again — its c4/solo readings are the drift
 watch's third checkpoint (w45 170.0, w46 182.0, w47 185.1 first-arm
 levels).
 
+
+## (round 141, cont. 22) WINDOW 48 RAN THE DRAFTLIVE COMPOSITION A/B — THE VALUE GATE MISSED DECISIVELY ON THE DECODE TRADE; THE COMPOSITION RETIRES; THE FUND QUESTION ANSWERED YES ANYWAY; THE DRAFTS WITNESS BUG; THE DRIFT WATCH FIRES (2026-11-11)
+
+**The window** (campaign-20261111-153202, `preflight draftlive summary`,
+rc=0): both arms ran end to end, the §2 gates + hardmode + vision + the
+bench on the ON arm. Production restored healthy (200), the flag cleared.
+
+**The value gate MISSED — the decode trade is catastrophic**:
+- The ON arm's c4 aggregate: **35.1 t/s vs the gate's ≤5%-of-185.1 ask**
+  — an ~81% decode loss. The solo decode halved too (35.2/34.7 vs the
+  OFF arm's 70.2/70.3): **DFlash2 drafts are worth ~2× on decode on our
+  shape.** The ITL probe's chunk count tells the mechanism plainly:
+  2,017 single-token chunks vs the drafted engine's 501 multi-token
+  chunks for the same 2,048 tokens — without the drafter, every chunk
+  carries one token and the chain runs twice as long.
+- The resume value the composition bought: 5.22 s vs the OFF arm's
+  5.42 s (−3.7%) — real but two orders of magnitude too small to pay
+  for halving decode.
+- **The verdict: RETIRE.** The standing DRAFTS=1 config stays; the
+  composition question closes with its receipt. Neither knob moves.
+
+**The fund question answered YES anyway — recorded as structure**: the
+ON arm's serve line funds **15 of 16** kept-state slots (2.4 GiB) vs
+the OFF arm's 6 of 16, and lifts enough-for from 3 to 4 at the 524,288
+window — the live-half keep plus the drafter's freed 2.84 GiB (model
+78.80 vs 81.64) bought the store room the resume path wanted. But the
+eviction warning stayed PRESENT (15 < 16, one slot short) and the
+price — half the decode — is disqualifying on its own. The funding
+path is now MEASURED: the only lever that funds the store costs the
+drafter, and the drafter pays for itself ~2× on decode. The cacheless
+standing with the funded-6 store is the honest optimum on this line.
+
+**The DRAFTS witness bug — a lesson, not a placebo**: the env witness
+checked the container env for `DRAFTS=0` and printed FAILED — but the
+serve line's arithmetic proves the composition PLACED (model 78.80
+GiB: the drafter's weights never loaded; the campaign log's restart
+line carries both knobs). `DRAFTS` is a config-side K=V consumed by
+config.sh's arg builder on the HOST — it never reaches the container
+env. The placebo-witness instrument was designed for TF_GLM_*
+env-forwarded knobs; applying it to a config-side pair prints a false
+placebo. The rule the wake carries: **the witness instrument must match
+the knob's forwarding path** — container-env witnesses for TF_GLM_*
+names, serve-line/campaign-log witnesses for config-side pairs.
+
+**The window-drift watch FIRES**: the OFF arm (the standing config, a
+first arm) read c4 **195.8** — the fourth consecutive first-arm climb
+(170.0 → 182.0 → 185.1 → 195.8 across w45/46/47/48), +5.8%
+window-over-window, +15% cumulative over four windows, with solo/c2/
+ITL/overhead flat (70.2/121.8/58.1/184). The watch's criterion
+(>2%/window sustained) is met: the c4 instrument's absolute level is
+NOT stable across windows. Practical force: every value gate already
+binds order-matched same-window comparisons (the discipline holds);
+the anchors' c4 row carries the newest reading with the drift noted;
+NO cross-window c4 comparison is valid as a delta, and a future value
+gate whose margin is inside the drift band (±5%/window) cannot read
+c4 absolute levels as evidence.
+
+**Round 141's watch: 13 windows run (36–48), 1 void (35) — the round
+closes its last locally-actionable question; the queue is now
+upstream-gated (the #2852/#2856 device receipts, the v1.2.7 rebase) or
+user-parked (the 0110 KV-SHARD port).**
+

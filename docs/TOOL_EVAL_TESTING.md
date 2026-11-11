@@ -1534,6 +1534,25 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   room gate (the arms' room lines must differ by < 1.0 GiB). The patch stays
   staged but NOT in config.sh's PATCHES (no adoption on a confounded
   reading).
+- [x] **The DRAFTS=0 + LIVE_HALF composition — RETIRED (window 48's value-first
+  verdict: the value gate MISSED decisively on the decode trade)** (campaign-20261111-
+  153202): the ON arm's c4 aggregate 35.1 t/s vs the gate's ≤5%-of-185.1 ask — an ~81%
+  decode loss; the solo decode halved (35.2/34.7 vs 70.2/70.3): DFlash2 drafts are worth
+  ~2× on decode on our shape (the ITL probe's chunk count is the mechanism: 2,017
+  single-token chunks vs 501 multi-token chunks for the same 2,048 tokens). The resume
+  value the composition bought (5.22 vs 5.42 s, −3.7%) is two orders too small to pay
+  for halving decode. The fund question answered YES anyway: the ON arm funded 15 of 16
+  kept-state slots (vs the OFF arm's 6 of 16) and lifted enough-for 3 → 4 — the live-half
+  keep plus the drafter's freed 2.84 GiB bought the store room — but the eviction warning
+  stayed PRESENT (15 < 16) and the price disqualifies. **The funding path is now
+  MEASURED**: the only lever that funds the store costs the drafter, and the drafter
+  pays for itself ~2× on decode; the cacheless standing with the funded-6 store is the
+  honest optimum. The DRAFTS env witness printed a FALSE placebo (the knob is
+  config-side, never in the container env — the serve line's 78.80 GiB model + the
+  campaign log's restart line prove placement); the witness instrument must match the
+  knob's forwarding path. The window-drift watch FIRED: the OFF arm's c4 195.8 is the
+  fourth consecutive first-arm climb (170.0 → 182.0 → 185.1 → 195.8, +15% cumulative);
+  no cross-window c4 comparison is valid as a delta.
 - [x] **The #2793 shared-budgets port — QUALIFIED and ADOPTED (window 45's value-first
   verdict: the value gate CROSSED at +6.1%)** (campaign-20261111-094017): upstream #2793
   (commit cc2fa8d23690, fixes #2720) — DFlash2's shared draft rounds priced every stream's
