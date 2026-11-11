@@ -1608,6 +1608,52 @@ b['messages'][1]['content'] = sys.argv[2]
 json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-$arm-t2.json" "$A1"
       T2R=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-t2.json" -o "$OUT/v2744-$arm-t2-resp2.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
       echo "- t2 (the real-answer history) ttft_wall ${T2R}s — THE VALUE NUMBER" >> "$P"
+      # THE CONCURRENT-PAIR INSTRUMENT (window 40's lesson): the fix's value is
+      # the OWNER HANDOFF — two streams serving multi-image prompts
+      # CONCURRENTLY re-encode each other's images on every chunk switch
+      # pre-fix (b.image_owner != s after the other stream took the shared
+      # rows); a single-stream sequential probe never loses ownership, so
+      # its parity is the EXPECTED baseline, not the value. Two concurrent
+      # multi-image multi-chunk prompts (each: an image + a d4096 fill =
+      # three chunks), the aggregate wall is the value number.
+      python3 - "$OUT" "$arm" <<'PYV2'
+import base64, json, sys
+out, arm = sys.argv[1], sys.argv[2]
+def durl(p):
+    mime = "image/png" if p.endswith(".png") else "image/jpeg"
+    return "data:%s;base64," % mime + base64.b64encode(open(p, "rb").read()).decode()
+fill = " ".join(f"harbor-{i%89}" for i in range(4096))
+fill2 = " ".join(f"meadow-{i%89}" for i in range(4096))
+pa = {"model": "X", "temperature": 0, "max_tokens": 128,
+      "messages": [{"role": "user", "content": [
+          {"type": "image_url", "image_url": {"url": durl("assets/vision/bridge.jpg")}},
+          {"type": "text", "text": fill + "\n\nName the structure in one word."}]}]}
+pb = {"model": "X", "temperature": 0, "max_tokens": 128,
+      "messages": [{"role": "user", "content": [
+          {"type": "image_url", "image_url": {"url": durl("assets/vision/zebra.jpg")}},
+          {"type": "text", "text": fill2 + "\n\nName the animal in one word."}]}]}
+json.dump(pa, open(f"{out}/v2744-{arm}-cp-a.json", "w"))
+json.dump(pb, open(f"{out}/v2744-{arm}-cp-b.json", "w"))
+print("- the concurrent-pair bodies staged (two streams, image + d4096 fill each)")
+PYV2
+      for s in a b; do
+        python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-$arm-cp-$s.json" "$SERVED_NAME"
+      done
+      # the warm-up pair (each stream's first serve primes its rows; the
+      # measured pair then races the two streams' chunk switches)
+      for s in a b; do
+        curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-cp-$s.json" -o "$OUT/v2744-$arm-cp-$s-warm.json" || true
+      done
+      S=$(date +%s.%N)
+      for s in a b; do
+        curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-cp-$s.json" -o "$OUT/v2744-$arm-cp-$s-race.json" || true
+      done &
+      wait
+      E=$(date +%s.%N)
+      echo "- the concurrent-pair race: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate — THE VALUE NUMBER (concurrent)" >> "$P"
+      # the per-stream walls from the engine's own lines (the ttft of the two race requests)
+      echo "- the race's engine lines:" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -2 >> "$P" || true
       # THE ROOM GUARD (window 39's confound lesson): the ON arm booted right
       # after the 560 s rebuild — the unified-memory pool carried the build's
       # residue (11.5 GiB left vs the OFF arm's 13.0), the serve funded ZERO
@@ -1704,11 +1750,25 @@ b['messages'][1]['content'] = sys.argv[2]
 json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-on-t2.json" "$A1"
   T2R=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-t2.json" -o "$OUT/v2744-on-rm-t2-resp2.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
   echo "- room-matched t2 (the real-answer history) ttft_wall ${T2R}s — THE VALUE NUMBER (room-matched)" >> "$P"
+  # the room-matched concurrent-pair race (the value gate reads THIS number):
+  for s in a b; do
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-on-cp-$s.json" "$SERVED_NAME"
+    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp-$s.json" -o "$OUT/v2744-on-rm-cp-$s-warm.json" || true
+  done
+  S=$(date +%s.%N)
+  for s in a b; do
+    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp-$s.json" -o "$OUT/v2744-on-rm-cp-$s-race.json" || true
+  done &
+  wait
+  E=$(date +%s.%N)
+  echo "- the room-matched concurrent-pair race: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate — THE VALUE NUMBER (room-matched, concurrent)" >> "$P"
+  echo "- the room-matched race's engine lines:" >> "$P"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -2 >> "$P" || true
   echo "- room-matched t2's answer: $(python3 -c "
 import json
 try: print(json.load(open('$OUT/v2744-on-rm-t2-resp2.json'))['choices'][0]['message']['content'][:120])
 except Exception as e: print('unreadable:', e)")" >> "$P"
-  echo "- VERDICT (VALUE-FIRST, window 39 on): QUALIFIED = the patch PLACED (the boot-log witness) AND the greedy TEXT sha == the standing 80cc3802… AND (the value gate) the ON arm's room-matched t2-with-history ttft BEATS the OFF arm's by >5% AND (the room gate) the arms' room lines differ by < 1.0 GiB AND the §2 gates ALL PASS AND hardmode 95 AND the vision suite 4/4 (the single-image answers unchanged) AND the bench/decode bands hold => 021-vision2744.patch joins config.sh's PATCHES default. Any guard fail or no value => RETIRE: the patch leaves the stack, the question closes as upstream data (the v1.2.7 release carries it; the rebase picks it up free)." >> "$P"
+  echo "- VERDICT (VALUE-FIRST, window 39 on): QUALIFIED = the patch PLACED (the boot-log witness) AND the greedy TEXT sha == the standing 80cc3802… AND (the value gate) the ON arm's room-matched CONCURRENT-pair race aggregate BEATS the OFF arm's by >5% (the owner-handoff shape; the single-stream probe's parity is the harness baseline) AND (the room gate) the arms' room lines differ by < 1.0 GiB AND the §2 gates ALL PASS AND hardmode 95 AND the vision suite 4/4 (the single-image answers unchanged) AND the bench/decode bands hold => 021-vision2744.patch joins config.sh's PATCHES default. Any guard fail or no value => RETIRE: the patch leaves the stack, the question closes as upstream data (the v1.2.7 release carries it; the rebase picks it up free)." >> "$P"
   touch "$OUT/.vision2744.done"
 fi
 
