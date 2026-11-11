@@ -11308,3 +11308,34 @@ sixteenth patch), one retirement (the #2744 port), four closed
 questions, one forged verdict caught — and the promotion protocol's
 first end-to-end ride through the window flow.**
 
+
+## (round 141, cont. 19) THE STAGE BRIEF — WINDOW 47: THE ORDER-DRIFT SETTLE (THE THIRD A/A PAIR) (2026-11-11)
+
+**The stage brief — window 47** (`preflight duel summary`):
+- *The question*: is the second-arm c4 win (+6.1% in window 45's A/B,
+  +3.4% in window 46's A/A) an ORDER effect (thermal/clock drift between
+  the first and second serve of a window) or real arm difference? The
+  arms are identical configs — the third pair's order pattern decides.
+- *The value-if-yes*: the anchors' c4 row carries an order-corrected
+  value — the adoption's honest number, which feeds every future
+  candidate duel's baseline and the PERF_PLAN's frontier arithmetic. A
+  settled instrument also protects future value gates from reading
+  order bias as config value.
+- *The cost*: one window (~25 min: the duel's two arms + the prepares —
+  the image is warm, the fingerprints unchanged).
+- *The alternatives rejected*: accepting the +6.1% as read (the risk:
+  every future value gate inherits a ~3-point order bias — the gate
+  would pass candidates that buy nothing); widening the duel with a
+  third arm in the same window (the order effect IS the between-serve
+  drift — a third arm in one window measures the same thing with more
+  noise, not independently); waiting for the v1.2.7 rebase (the
+  instrument question is now).
+- *The kill criterion*: none — a measurement window. The outcomes: (a)
+  the second arm wins c4 again → the order effect is real; the anchors
+  note the order-corrected c4 value (the first-arm/second-arm mean or
+  the smaller arm), and future value gates bind on order-matched
+  readings; (b) the second arm loses or converges → the window-45/46
+  pattern was coincidence; the rows stand. Either way the §2/hardmode/
+  vision guards are NOT re-run (they rode window 45's adoption receipt;
+  the engine is unchanged since).
+
