@@ -829,12 +829,11 @@ diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue
 index 40fd01361..4babd26ac 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
-@@ -33,6 +33,7 @@ pub const Kernels = struct {
+@@ -33,5 +33,6 @@ pub const Kernels = struct {
      swiglu_64: cuda.Function,
      group_sums: cuda.Function,
      topk: cuda.Function,
 +    topk_group: cuda.Function,
-     router_part: cuda.Function,
      router_tile: cuda.Function,
      hc_partial: cuda.Function,
 @@ -187,6 +188,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,

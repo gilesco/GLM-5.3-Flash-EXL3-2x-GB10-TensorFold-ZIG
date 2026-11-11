@@ -218,17 +218,17 @@ the same caches.
 | **README.md** (this file) | **the current state only** — what this is, how it performs, how to run it, the knobs; no history |
 | [AGENTS.md](AGENTS.md) | **the working conventions for agents**: the boundaries, the loop, the gotchas — read it before working here |
 | [docs/DELTAS.md](docs/DELTAS.md) | the current scoreboard — the per-metric comparison and its receipts |
-| [docs/PERF_PLAN.md](docs/PERF_PLAN.md) | the perf frontier: the levers, the prices, the attack order, the next step |
-| [docs/TOOL_EVAL_TESTING.md](docs/TOOL_EVAL_TESTING.md) | the matrix, the campaign phases, the result tables and open items |
-| [docs/LAUNCH.md](docs/LAUNCH.md) | the append-only session log — every round's receipts and decisions (ALL history lives here, never in the README) |
+| [docs/PERF_PLAN.md](docs/PERF_PLAN.md) | the perf frontier: the levers, the prices, the attack order, the next step; retired sections in [docs/perf-history.md](docs/perf-history.md) |
+| [docs/TOOL_EVAL_TESTING.md](docs/TOOL_EVAL_TESTING.md) | the matrix, the campaign phases, the result tables and open items; completed round arcs in [docs/eval-history.md](docs/eval-history.md) |
+| [docs/LAUNCH.md](docs/LAUNCH.md) | the append-only session log — every round's receipts and decisions (ALL history lives here, never in the README). It carries the current week; earlier weeks are archived immutable under [docs/log/](docs/log/), with the generated round index at [docs/LAUNCH_INDEX.md](docs/LAUNCH_INDEX.md) |
 | [docs/VALIDATION.md](docs/VALIDATION.md) | the gate definitions (§2 exactness, §3 capacity, §4 speed) and their receipts |
 | [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) | the context ladder's math and outcome |
-| [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | the upstream watch: releases, issues, PRs, what transfers |
+| [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | the upstream watch: releases, issues, PRs, what transfers; the dated watch history is [docs/watch-archive.md](docs/watch-archive.md) |
 | [docs/perf-anchors.tsv](docs/perf-anchors.tsv) + `perf-vs-production.svg` | the chart's data and its generated SVG (never hand-edited — render with `scripts/render-perf-chart.sh`) |
 | [docs/bpw4-sweep.tsv](docs/bpw4-sweep.tsv) + `bpw4-sweep-cards.svg` | the checkpoint sweep's scorecards (rendered by `scripts/render-sweep-cards.sh`) |
 | [docs/SITE.md](docs/SITE.md) *(git-ignored)* | this site's real values (hostnames, addresses, devices) |
 | [MODEL_CARD.md](MODEL_CARD.md) | the model card for the forums |
-| [patches/README.md](patches/README.md) | **every patch's record** — provenance, port notes, knobs, status |
+| [patches/README.md](patches/README.md) | **the serving stack's per-patch record** — provenance, port notes, knobs, status; retired instruments live in [patches/RETIRED.md](patches/RETIRED.md) |
 
 ## Provenance
 

@@ -69,13 +69,15 @@ diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 index 90e9b79a0..e67e63caa 100644
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
-@@ -66,7 +66,8 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
+@@ -74,9 +74,10 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
      const snapshots_run = b.addRunArtifact(b.addTest(.{ .root_module = snapshots }));
      b.step("test-glm-snapshots-host", "Prompt-sized GLM state copies, page budgets and rank ordering without devices").dependOn(&snapshots_run.step);
      step.dependOn(&snapshots_run.step);
 -    b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
-+        b.step("test-glm-kv-pages-host", "TF_KV_PAGES for bf16 and E4M3, the page layouts, admission and refusals, on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{ "TF_KV_PAGES", "capacity keeps", "the plan's window" } })).step);
-+b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
++    b.step("test-glm-kv-pages-host", "TF_KV_PAGES for bf16 and E4M3, the page layouts, admission and refusals, on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{ "TF_KV_PAGES", "capacity keeps", "the plan's window" } })).step);
++    b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
+     const request_starts = b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"glm request starts:"} }));
+     b.step("test-glm-request-starts-host", "GLM message-start prompt cuts and the shared-KV startup refusal without devices").dependOn(&request_starts.step);
      const mm_record = b.createModule(.{ .root_source_file = b.path("zig/test_support/glm_mm_cuda.zig"), .target = host, .optimize = .debug });
      const mm_actual = b.createModule(.{ .root_source_file = b.path("zig/src/families/glm/cuda_mm.zig"), .target = host, .optimize = .debug, .imports = &.{.{ .name = "cuda", .module = mm_record }} });
      const mm_policy = b.createModule(.{ .root_source_file = b.path("zig/glm_mm_policy_host.zig"), .target = host, .optimize = .debug, .imports = &.{ .{ .name = "cuda", .module = mm_record }, .{ .name = "mm", .module = mm_actual } } });
@@ -393,7 +395,7 @@ diff --git a/zig/src/core/contract/registry_joins.zig b/zig/src/core/contract/re
 index 7b19de3d6..ccb24cc45 100644
 --- a/zig/src/core/contract/registry_joins.zig
 +++ b/zig/src/core/contract/registry_joins.zig
-@@ -39,7 +39,8 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
+@@ -39,8 +39,9 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
      @import("cuda_lane_pending.zig").records ++
      @import("weight_only_records.zig").cuda ++
      @import("hc_activation_records.zig").cuda ++
@@ -401,6 +403,7 @@ index 7b19de3d6..ccb24cc45 100644
 +    @import("qwen4_records.zig").cuda ++
 +    @import("glm_kv_paged_records.zig").cuda;
  pub const metal_before = @import("fsr_records.zig").metal ++
+     @import("scale_index_records.zig").metal ++
      @import("lfm3_records.zig").metal;
  pub const all_metal = @import("lane_q8_records.zig").records ++
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
@@ -744,7 +747,7 @@ diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_na
 index 61125fb72..98d40a299 100644
 --- a/zig/src/families/glm/cuda_native.zig
 +++ b/zig/src/families/glm/cuda_native.zig
-@@ -502,6 +502,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
+@@ -502,8 +502,10 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
          error.NoCommId => "GLM-5.3-Flash's ranks meet over NCCL: with TF_GLM_WORLD 2 or more, set NCCL_COMM_ID to rank 0's address:port on every host",
          error.RankMismatch => "the ranks' settings differ (each rank's log names the one): start them alike",
          error.Fp8OnPages => "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to auto or off",
@@ -752,6 +755,8 @@ index 61125fb72..98d40a299 100644
 +        error.PoolTooSmall => "this request's prompt and max_tokens need more KV pages than the whole pool holds, even with every other stream done: shorten the prompt or lower max_tokens",
          error.BadKvShare => "TF_KV_SHARE: give how many states the prompt store over the KV pages keeps, or 0 or unset for off",
          error.GlmKvShareMoved => "TF_GLM_KV_SHARE is now TF_KV_SHARE, the prompt store every family on the KV pool shares: set that instead",
+         error.GlmRequestStartsWithSharedKv => "TF_GLM_REQUEST_STARTS=1 cannot be used with TF_KV_SHARE above 0: unset request starts or disable shared KV",
+         error.GlmRequestStartsWithLearnConversations => "TF_GLM_REQUEST_STARTS=1 cannot be used with --learn-conversations: unset request starts or serve without it",
          error.GlmShareNeedsPages => "TF_KV_SHARE keeps prompts as KV pool pages: set TF_KV_PAGES=on as well",
 @@ -547,18 +549,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
          try std.testing.expect(!try paging("off", w, false));
@@ -1194,7 +1199,7 @@ diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue
 index 4babd26ac..0ef3873fc 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
-@@ -44,6 +44,7 @@ pub const Kernels = struct {
+@@ -43,6 +43,7 @@ pub const Kernels = struct {
      expand_v: cuda.Function,
      lat_write: cuda.Function,
      lat_write_fp8: cuda.Function,
@@ -1202,7 +1207,7 @@ index 4babd26ac..0ef3873fc 100644
      index_write: cuda.Function,
      pool_keys: cuda.Function,
      select_rows: cuda.Function,
-@@ -60,6 +61,8 @@ pub const Kernels = struct {
+@@ -59,6 +60,8 @@ pub const Kernels = struct {
      chunks_32: cuda.Function,
      chunks_16_fp8: cuda.Function,
      chunks_32_fp8: cuda.Function,
@@ -1211,7 +1216,7 @@ index 4babd26ac..0ef3873fc 100644
      merge: cuda.Function,
      scores: cuda.Function,
      latent_mma_kn: cuda.Function, // TF_GLM_ABSORB_MMA (glm_glue_num.cuh): absorb_q's head-batched GEMM, B as [K][N]
-@@ -74,6 +77,8 @@ pub const Kernels = struct {
+@@ -71,6 +74,8 @@ pub const Kernels = struct {
          try k.chunks_32.allowDynamicShared(chunksSmem(32));
          try k.chunks_16_fp8.allowDynamicShared(chunksSmem(16));
          try k.chunks_32_fp8.allowDynamicShared(chunksSmem(32));

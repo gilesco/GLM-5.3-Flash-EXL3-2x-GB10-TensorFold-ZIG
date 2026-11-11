@@ -115,12 +115,25 @@ if [[ -d results ]]; then
   [[ -z $_phantom ]] && pass "every cited campaign dir exists" \
     || fail "docs cite campaign dirs that do not exist:$_phantom"
   newest=$(ls -t results | head -1)
-  if grep -q "$newest" docs/LAUNCH.md docs/TOOL_EVAL_TESTING.md 2>/dev/null; then
+  if grep -q "$newest" docs/LAUNCH.md docs/log/*.md docs/TOOL_EVAL_TESTING.md 2>/dev/null; then
     pass "the newest campaign ($newest) is in the log or the ledger"
   else
     fail "the newest campaign ($newest) is not in LAUNCH.md or the ledger — fold it in"
   fi
 fi
+
+# --- 6b. the launch index is fresh ------------------------------------------------
+# The index is generated from the split log (LAUNCH.md + docs/log/); regenerate it
+# in the same sitting a log append lands, or this fails the commit. The check
+# diffs a fresh render against the committed file (the chart's --check pattern):
+# content must be identical, so a stale index fails no matter how the counts drift.
+_tmp=$(mktemp)
+if OUT="$_tmp" ./scripts/render-launch-index.sh >/dev/null 2>&1 && diff -q "$_tmp" docs/LAUNCH_INDEX.md >/dev/null 2>&1; then
+  pass "LAUNCH_INDEX.md matches the log ($(grep -c '^\| \[' docs/LAUNCH_INDEX.md) round entries)"
+else
+  fail "LAUNCH_INDEX.md is stale vs the split log (LAUNCH.md + docs/log/) — ./scripts/render-launch-index.sh then commit both"
+fi
+rm -f "$_tmp"
 
 # --- 7. links resolve ------------------------------------------------------------
 _badlinks=""

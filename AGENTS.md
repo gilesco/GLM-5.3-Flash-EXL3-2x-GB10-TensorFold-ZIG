@@ -63,7 +63,7 @@ Hard boundaries, never crossed:
 | **The current status snapshot** | **`README.md` — current status and pointers ONLY; no history** | round references, narratives, duplicated scoreboards |
 | Run receipts, raw outputs | `results/campaign-*/` (one dir per run, on the head's checkout) | ad-hoc scratch dirs or files |
 | **The production-vs-native scoreboard** | **`docs/DELTAS.md`** (+ `docs/perf-anchors.tsv` for the chart's pairs) | second copies in the README or PERF_PLAN |
-| Session log, decisions, incidents | `docs/LAUNCH.md` — **append-only**, one `## (round N)` header each | new log files |
+| Session log, decisions, incidents | `docs/LAUNCH.md` — **append-only**, one `## (round N)` header each; carries the current week, earlier weeks archived immutable in `docs/log/2026-WNN.md` (navigation across all weeks: the generated `docs/LAUNCH_INDEX.md`) | new log files |
 | Matrix status, open items, result tables | `docs/TOOL_EVAL_TESTING.md` — the ledger | per-round summary files |
 | Gate definitions + the native-line receipt | `docs/VALIDATION.md` | new gate docs |
 | Production-vs-native comparison | `docs/DELTAS.md` | — |
@@ -99,6 +99,16 @@ Hard boundaries, never crossed:
     same sitting the qualified fact lands — the round summary includes the
     state-doc sweep, and a post-window checklist item verifies the engine
     pin, the streak count, and the dated headers.
+  - **The weekly log cut.** `docs/LAUNCH.md` carries the current week's log
+    only; after a Monday's first sitting, the finished week moves verbatim
+    into `docs/log/2026-WNN.md` (immutable once cut — never edited or
+    appended), `docs/LAUNCH_INDEX.md` regenerates, and the round summary
+    records the cut. The same retirement rule covers the other accumulators:
+    `docs/watch-archive.md` (ECOSYSTEM's dated watch entries),
+    `docs/eval-history.md` (the ledger's completed round arcs),
+    `docs/perf-history.md` (PERF_PLAN's retired sections) and
+    `patches/ARCHIVE.md` (the retired instruments). Digests read the living
+    doc plus only the index and the current week — never all the archives.
 
 - **Every number in the docs quotes a receipt** — a file in `results/` or a LAUNCH.md
   entry. No number without a run behind it. Correcting a wrong number gets a round
