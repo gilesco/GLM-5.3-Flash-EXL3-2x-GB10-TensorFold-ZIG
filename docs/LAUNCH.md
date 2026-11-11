@@ -10889,3 +10889,34 @@ NOT in config.sh's PATCHES — no adoption on a confounded reading.
 
 **Round 141's watch: 4 windows run, 1 void — the loop is healthy at the
 process level; the value questions close when their instruments are clean.**
+
+## (round 141, cont. 10) WINDOW 40'S ROOM-GATED VALUE READING IS CLEAN — AND THE PROBE WAS THE WRONG INSTRUMENT; THE CONCURRENT-PAIR RACE IS WINDOW 41'S (2026-11-11)
+
+**The window** (campaign-20261111-010825, `preflight vision2744 summary`,
+rc=0, ~42 min): the corrected battery ran — the room gate PASSED (the arms'
+room lines 13.2 vs 13.0 GiB, well inside the < 1.0 GiB gate; the ON arm's
+room-match restart settled the build's memory residue), every guard held
+(the greedy TEXT sha `80cc3802…` identical across all three serves, §2 ALL
+PASS, **hardmode 95 — the TWENTY-SEVENTH consecutive** — the vision suite
+4/4, steady-state 73.1 tok/s), production restored healthy (200).
+
+**The value gate MISSED — and the miss is the instrument, not the fix**:
+the single-stream two-turn probe read parity (the ON arm's room-matched
+t2-with-history 2.684 s vs the OFF arm's 2.667 s — −0.6%, nowhere near the
+>5% win the gate demands). Reading the mechanism honestly: the #2744 fix
+moves the OWNER HANDOFF — two streams serving multi-image prompts
+CONCURRENTLY re-encode each other's images on every chunk switch pre-fix
+(`b.image_owner != s` after the other stream takes the shared rows); a
+single-stream sequential probe never loses ownership, so its parity is the
+EXPECTED baseline, not the value. Upstream's own receipt (18 → 12 tower
+passes) measured "two interleaved image prompts" — the concurrent shape.
+
+**The corrected instrument (v3, window 41)**: TWO CONCURRENT multi-image
+multi-chunk prompts — each stream an image + a d4096 fill (three chunks),
+a warm-up pair then the race; the aggregate race wall is the value number,
+re-run room-matched after the settle restart. The kill criterion stands:
+no value on the corrected instrument retires the patch — the v1.2.7
+release carries it free either way.
+
+**Round 141's watch: 5 windows run (36/37/38/39/40), 1 void — the loop is
+healthy; the value questions close when their instruments are clean.**

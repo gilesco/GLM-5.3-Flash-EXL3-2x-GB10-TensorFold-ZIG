@@ -1439,8 +1439,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
-- [ ] **The #2744 vision re-encode port — window 39's value A/B CONFOUNDED, the
-  corrected battery is window 40's** (campaign-20261111-000839): upstream's
+- [ ] **The #2744 vision re-encode port — window 39's A/B CONFOUNDED, window 40's
+  room-gated reading CLEAN but on the WRONG instrument; the corrected
+  concurrent-pair instrument is window 41's** (campaign-20261111-000839,
+  campaign-20261111-010825): window 40's room gate PASSED (the arms' room
+  lines 13.2 vs 13.0 GiB — the confound gone) and all guards held (the
+  greedy TEXT sha `80cc3802…` identical, §2 ALL PASS, **hardmode 95 — the
+  TWENTY-SEVENTH consecutive** — the vision 4/4), but the single-stream
+  two-turn probe's value gate MISSED (the ON arm's room-matched t2
+  2.684 s vs the OFF arm's 2.667 s — parity, not a >5% win) — and the
+  parity is the EXPECTED baseline: the fix's mechanism is the OWNER
+  HANDOFF (two streams serving multi-image prompts concurrently
+  re-encode each other's images on every chunk switch pre-fix; a
+  single-stream probe never loses ownership). The corrected instrument
+  (window 41): TWO CONCURRENT multi-image multi-chunk prompts (each an
+  image + a d4096 fill), the race aggregate the value number, the
+  room-match restart kept. The kill criterion stands: no value on the
+  corrected instrument retires the patch. (campaign-20261111-000839): upstream's
   fix (5151f19f3, main-only) ported as `021-vision2744.patch` (the body
   byte-identical to upstream's diff; applies clean on the full 18-patch
   stack, verified on a scratch clone of the tag; host-side only). Window 39's
