@@ -19,9 +19,9 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 
 ## 2. Exactness (the same gates upstream's EXL3 receipts used, through the API)
 
-> **STANDING STATE (round 141): §2 has PASSED thirty consecutive times**
-> (every battery since the round-127 era; the newest: campaign-20261111-035237
-> window 43's vision2744 battery — g1-g4 + the g5 note, on the v1.2.6 engine +
+> **STANDING STATE (round 141): §2 has PASSED thirty-one consecutive times**
+> (every battery since the round-127 era; the newest: campaign-20261111-081848
+> window 44's vision2744 battery — g1-g4 + the g5 note, on the v1.2.6 engine +
 > the 18-patch stack). The checkboxes below are the gate DEFINITIONS — they stay
 > unchecked here because the receipt lives in each battery, not in a manual
 > run of this file; VALIDATION.md is the definitions home, the batteries are

@@ -11054,3 +11054,52 @@ quality row re-dated, the ledger's #2744 item rewritten to the true
 window-43 state. The forged retirement never entered any committed state
 doc; it dies in this entry.
 
+
+## (round 141, cont. 14) WINDOW 44 RAN THE FIXED VISION2744 BATTERY — THE FIRST VALID ROOM-GATED READING; THE VALUE GATE MISSED; THE KILL CRITERION FIRED LEGITIMATELY — 021-vision2744 RETIRES, THE #2744 QUESTION CLOSES AS UPSTREAM DATA (2026-11-11)
+
+**The window** (campaign-20261111-081848, `preflight vision2744 summary`,
+rc=0): the fixed battery ran end to end — the race plumbing guards in the
+receipt, the room-matched race carrying real envelopes. Production
+restored healthy (200) and the flag cleared.
+
+**Every validity condition the window-43 failure mode broke now held**:
+- the arm-loop race: OFF 25.52 s vs ON 25.64 s, both plumbing guards OK,
+  `cached=0` on every race stream (the mechanism witness true);
+- the room gate PASSED: the ON arm's room-matched serve 12.2 GiB vs the
+  OFF arm's 12.4 — 0.2 GiB, well inside the < 1.0 GiB gate;
+- the room-matched race RAN: 25.53 s aggregate, both streams answered
+  (real `rm-cp-*` envelopes in the campaign dir this time).
+
+**The value gate MISSED**: the ON arm's room-matched race 25.53 s vs the
+OFF arm's 25.52 s — parity (−0.04%), nowhere near the >5% the value gate
+asks. The single-stream probes read parity again too (room-matched t2
+2.698 vs the OFF arm's 2.692 s). The kill criterion's retire path is
+explicit: any guard fail OR no value => RETIRE. The guards all passed;
+the value is absent on the first valid reading — **the kill criterion
+fired legitimately, and this time the evidence chain is complete**: the
+mechanism-exact instrument (three images per stream, one per chunk), the
+room gate passed, both plumbing guards OK, and the number is parity.
+
+**The verdict: RETIRE.** `021-vision2744.patch` leaves the candidate
+stack (it never entered config.sh's PATCHES — nothing to un-adopt; it
+stays in patches/ as receipted provenance, byte-identical to upstream's
+diff). The #2744 question CLOSES as upstream data: the fix's value does
+not reproduce on OUR shape — 2×GB10 TP=2, PARALLEL=4, the 2048-row
+chunking, our image sizes (18k/17k-token vision prompts) — and the
+mechanism reading is consistent: upstream's receipt measured multi-image
+interleaved prompts re-encoding each other's chunks (12 vs 18 tower
+passes on their shape); on ours the interleaved race's chunk switches
+carry no measurable re-encode cost, so removing them moves nothing
+user-visible. The v1.2.7 rebase picks the fix up free; the phase retires
+from run-qualification.sh (session-specific, its question closed).
+
+**The guards that held are recorded**: the greedy TEXT sha `80cc3802…`
+identical across both arms and the room-matched serve, §2 ALL PASS —
+**hardmode 95, the THIRTY-FIRST consecutive** — the vision suite 4/4,
+steady-state 73.1 tok/s (in band), the bench bands held.
+
+**Round 141's watch: 9 windows run (36–44), 1 void (35) — the loop is
+healthy; four questions closed this round (the #2699 cache, the #2181
+live-half, the #2257 watch, and now the #2744 port), every one by a
+receipt.**
+

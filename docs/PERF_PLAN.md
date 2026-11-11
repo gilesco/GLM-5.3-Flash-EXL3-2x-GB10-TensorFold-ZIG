@@ -1,18 +1,23 @@
 # Performance plan: closing the measured fronts
 
 > **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 141, 2026-11-10)**: **round 141 closed three questions in
-> three windows** — the #2699 prompt-cache recovery (window 36: the funded
-> cache adds no resume value the page cache lacks, at a window + 1 GiB of
-> room — the cacheless standing holds), the #2181 live-half knob (window 37:
-> the mechanism reproduces on our shape — the keep cost −31%, enough-for
-> held, every guard green — but does not close the eviction warning at
-> PARALLEL=4; no adoption), and the #2257 regression watch (window 38: PASS —
-> the concurrent 4-prefix resume hit 4/4 at an aggregate of 5.41 s vs the
-> round-133 receipt's 7.41 s, −27%, zero eviction; the round-133 receipt
-> re-anchors on v1.2.6, the warm ttft 1.841 → 1.34 s). **The cacheless
-> standing holds; no knob adopted; the board is at its receipted ceilings**
-> (quality 95 ×25; perf crossed vs the retired recipe and flat
+> the trail, round 141, 2026-11-11)**: **round 141 closed four questions in
+> nine windows (36–44, one void)** — the #2699 prompt-cache recovery (window
+> 36: the funded cache adds no resume value the page cache lacks, at a
+> window + 1 GiB of room — the cacheless standing holds), the #2181
+> live-half knob (window 37: the mechanism reproduces on our shape — the
+> keep cost −31%, enough-for held, every guard green — but does not close
+> the eviction warning at PARALLEL=4; no adoption), the #2257 regression
+> watch (window 38: PASS — the concurrent 4-prefix resume hit 4/4 at an
+> aggregate of 5.41 s vs the round-133 receipt's 7.41 s, −27%, zero
+> eviction; the round-133 receipt re-anchors on v1.2.6, the warm ttft
+> 1.841 → 1.34 s), and the #2744 vision re-encode port (window 44: the
+> first VALID room-gated reading after four instrument generations and one
+> dead-race void — the value gate MISSED at parity, 25.53 vs 25.52 s; the
+> kill criterion fired legitimately; the patch retires, the v1.2.7 rebase
+> carries it free; the race-plumbing-guard lesson is permanent). **The
+> cacheless standing holds; no knob adopted; the board is at its receipted
+> ceilings** (quality 95 ×31; perf crossed vs the retired recipe and flat
 > native-vs-native; resume re-anchored PASSING and faster). The remaining
 > levers: the 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool
 > at a decode cost), the DRAFTS=0+LIVE_HALF four-window composition (the

@@ -1439,10 +1439,29 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
-- [ ] **The #2744 vision re-encode port — windows 39/40/41/42 narrowed the instrument
-  four times; window 43's interleaved race ran but its verdict leg did NOT —
-  the value question is still OPEN** (campaign-20261111-000839,
-  campaign-20261111-010825, campaign-20261111-035237): window 40's room gate PASSED (the arms' room
+- [x] **The #2744 vision re-encode port — RETIRED (window 44's value-first
+  verdict: MISSED on the first valid room-gated reading; the kill criterion
+  fired legitimately; the question closes as upstream data)** — windows
+  39/40/41/42 narrowed the instrument four times; window 43's interleaved
+  race ran but its verdict leg did NOT (the stale `cp2-` name killed the
+  room-matched curl — a dead race recorded as 0.01 s, no verdict); window
+  44 (campaign-20261111-081848) fixed the phase adversarially (the `cp-`
+  name + race plumbing guards) and delivered the first VALID reading: the
+  room gate PASSED (12.2 vs 12.4 GiB — 0.2), both plumbing guards OK, the
+  mechanism witness true (`cached=0` on every race stream), §2 ALL PASS
+  (**hardmode 95 — the THIRTY-FIRST consecutive**), the vision 4/4 — and
+  the value gate MISSED: the room-matched interleaved race 25.53 s vs the
+  OFF arm's 25.52 s (parity, −0.04%; the >5% ask unmet). The kill
+  criterion's retire path is explicit: no value on a valid reading =>
+  RETIRE. `021-vision2744.patch` leaves the candidate stack (never
+  entered config.sh's PATCHES — nothing to un-adopt; stays in patches/ as
+  receipted provenance) and the v1.2.7 rebase picks the fix up free. The
+  mechanism reading: upstream's receipt measured multi-image interleaved
+  prompts re-encoding each other's chunks on THEIR shape; on OURS
+  (2×GB10 TP=2, PARALLEL=4, the 2048-row chunking, 18k/17k-token vision
+  prompts) the chunk-switch re-encode cost is not measurable — removing
+  it moves nothing user-visible. The instrument's history: window 40's
+  room gate PASSED (the arms' room
   lines 13.2 vs 13.0 GiB — the confound gone) and all guards held (the
   greedy TEXT sha `80cc3802…` identical, §2 ALL PASS, **hardmode 95 — the
   TWENTY-SEVENTH consecutive** — the vision 4/4), but the single-stream
