@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744 driftmap; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1458,6 +1458,102 @@ fi
 # docs/LAUNCH.md round 141 cont. 22.
 # ---------------------------------------------------------------------------
 DRAFTLIVE_RETIRED=1
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# phase: driftmap — the c4 window-drift decomposition (SESSION-SPECIFIC;
+# retires with the receipt; NO adoption branch — an instrument
+# calibration). The window-drift watch FIRED on window 48: the c4
+# aggregate's first-arm levels climbed 170.0 → 182.0 → 185.1 → 195.8
+# across w45/46/47/48 (+15% cumulative, ~+5%/window) while solo/c2/ITL/
+# overhead stayed flat — the drift is c4-SPECIFIC, not generic thermal.
+# This phase maps the drift's structure: SIX fresh serves of the
+# standing config in ONE window, the full duel_arm instrument set on
+# each. The readings separate:
+#   (a) the WITHIN-WINDOW order effect — the second-arm edges w45/46/47
+#       showed (+6.1/+3.4/+4.4%): if the six serves' c4 climbs
+#       serve-index-by-serve-index inside this one window, the order
+#       effect is the dominant term and it reproduces;
+#   (b) the WINDOW-TO-WINDOW state term — if this window's serves sit
+#       FLAT across the index, the climb needs something a window
+#       boundary carries (days? reboots? the page/state of the HOST?),
+#       and the across-window series is the only drift channel;
+#   (c) the INSTRUMENT SIGNATURE — whether solo/c2/ITL drift with c4 or
+#       stay flat inside the window (w45-48 read them flat ACROSS
+#       windows; their within-window behaviour is unmapped).
+# The value-if-yes: every future value gate gets a calibrated drift
+# model — the honest margin a c4 reading must beat, and whether an
+# order-matched same-window pair is enough or the comparison must
+# anchor on the serve index. The receipt is the model.
+# ---------------------------------------------------------------------------
+if want driftmap && ! phase_done driftmap; then
+  log "=== driftmap (the c4 window-drift decomposition: six fresh serves, the full instrument set each)"
+  P="$OUT/08-driftmap.md"; : > "$P"
+  echo "# driftmap (the c4 window-drift decomposition: SIX fresh serves of the standing config, duel_arm's instrument set each — the within-window order effect vs the across-window climb)" >> "$P"
+  DRIFTSERIES="170.0(w45-off) 182.0(w46-base) 185.1(w47-base) 195.8(w48-off)"
+  echo "- the across-window first-arm series this map decomposes: $DRIFTSERIES (the window-drift watch, LAUNCH cont. 20/22)" >> "$P"
+  for i in 1 2 3 4 5 6; do
+    S=$(date +%s)
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+      echo "## serve $i (load $(( $(date +%s) - S )) s)" >> "$P"
+      echo "- the serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
+      # the delivered clocks (a thermal/drift covariate): the same probe
+      # the preflight uses, per serve — if the climb tracks a clock
+      # change, the model has its cause.
+      echo "- the head clock: $(clock_mhz local) MHz delivered; the worker: $(clock_mhz "$WORKER") MHz" >> "$P"
+      duel_arm "dm-$i" "$SERVED_NAME"
+      DMOK=1
+      for f in "$OUT"/duel-dm-$i-c4-*.json; do
+        [ -f "$f" ] || { DMOK=0; continue; }
+        python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d['usage']['completion_tokens'] > 0" "$f" >/dev/null 2>&1 || DMOK=0
+      done
+      echo "- the c4 value plumbing guard: $([ "$DMOK" = "1" ] && echo OK || echo FAILED — the c4 DOES NOT COUNT)" >> "$P"
+    else
+      echo "## serve $i — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  # the map: c4/solo/c2 per serve index, the within-window slope
+  python3 - "$OUT" >> "$P" << 'PYEOF'
+import glob, json, re, sys
+out = sys.argv[1]
+rows = []
+for i in range(1, 7):
+    tag = f"dm-{i}"
+    try:
+        walls = {}
+        for line in open(f"{out}/duel-{tag}-walls.txt"):
+            k, s, e = line.split(); walls[k] = float(e) - float(s)
+        c4tot = sum(json.load(open(f))["usage"]["completion_tokens"] for f in glob.glob(f"{out}/duel-{tag}-c4-*.json"))
+        c2tot = sum(json.load(open(f))["usage"]["completion_tokens"] for f in glob.glob(f"{out}/duel-{tag}-c2-*.json"))
+        rates = []
+        for r in ("a", "b"):
+            d = json.load(open(f"{out}/duel-{tag}-solo-{r}.json"))
+            rates.append(d["usage"]["completion_tokens"] / walls[r])
+        rows.append((i, sum(rates) / len(rates), c2tot / walls["c2"], c4tot / walls["c4"]))
+    except Exception as e:
+        print(f"- serve {i}: unreadable ({e})")
+if len(rows) >= 3:
+    print("- the per-serve map (serve | solo | c2 | c4):")
+    for i, s, c2, c4 in rows:
+        print("  %d | %.1f | %.1f | %.1f" % (i, s, c2, c4))
+    n = len(rows)
+    def slope(col):
+        xs = list(range(1, n + 1)); ys = [r[col] for r in rows]
+        mx = sum(xs) / n; my = sum(ys) / n
+        return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+    print("- the within-window slope per serve: solo %+.2f, c2 %+.2f, c4 %+.2f t/s/serve" % (slope(1), slope(2), slope(3)))
+    c4s = [r[3] for r in rows]
+    print("- c4 first-to-last within this window: %.1f → %.1f (%+.1f%%)" % (c4s[0], c4s[-1], (c4s[-1] - c4s[0]) / c4s[0] * 100))
+    print("- the model: the across-window series climbed ~+5%%/window; this window's within-window slope is the ORDER term —")
+    print("  if the within-window slope explains most of the across-window step, the drift is order-shaped (serve")
+    print("  index within a window), and value gates compare ORDER-MATCHED INDICES, not just same-window arms;")
+    print("  if this window is flat, the drift lives in the window-to-window channel (host state across days),")
+    print("  and value gates anchor on the same window exclusively (the standing discipline).")
+PYEOF
+  echo "- VERDICT (no adoption branch — the instrument's calibration receipt): the within-window slope + the six-serve map ARE the drift model; the value gates that follow cite THIS receipt for their margin. The across-window first-arm series (170.0 → 182.0 → 185.1 → 195.8) re-reads against this map: the order term vs the window term, decomposed." >> "$P"
+  touch "$OUT/.driftmap.done"
+fi
+
 # ---------------------------------------------------------------------------
 # phase: regresswatch (SESSION-SPECIFIC; retires with the receipt). The
 # concurrent-resume regression watch on v1.2.6: the round-133 adoption
