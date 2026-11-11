@@ -2878,3 +2878,23 @@ the poke).
 **The lesson (a promotion-sync rule)**: a promotion sync mirrors the WHOLE
 patch store and staging, never just the changed patch — the store must
 correspond to the served engine at every commit.
+
+## (round 141, cont. 30) THE RESTORE RECEIPT — PRODUCTION SERVES V1.2.7 (2026-11-11, the (user) wake)
+
+**Production is back**: the promotion-sync image (93a2e93 + the 18-patch
+stack) healthy at 22:41:29 after 86 s — both ranks up, the serve line
+carrying the KV_SHARE=16 store (16 kept slots, 3.6 GiB) and the DFlash2
+drafter. The restore path: the (user)-directed script stopped the vllm
+troubleshooting node, freed 8000 in 1 s, and the first start attempt tripped
+the worker-memory check mid-race (rc=1 at 22:38:30 — the worker rank was
+still releasing its GPU memory when the check ran); the crash-net's 22:40
+tick completed the start cleanly. **The v127val campaign's digest landed the
+sitting prior** (2adf77f: the anchors re-paired — the loading row 83/84 on
+the v1.2.7 engine, the prefill row 1,520 — the chart re-rendered, the
+promotion-sync rule in AGENTS.md).
+
+**The standing queue after the bump**: the warm-resume ledger item re-reads
+on the v1.2.7 ground FIRST (the source read — `resumeFrom` now checks
+`engine.prompt_cuts.resumes(...)` instead of the `% prefill_rows` grid), its
+stage brief follows the read; the duel re-pair on the v1.2.7 engine
+re-grounds the decode rows after.

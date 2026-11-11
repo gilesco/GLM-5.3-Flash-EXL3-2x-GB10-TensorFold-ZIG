@@ -374,3 +374,4 @@
 | [round 141 cont. 28] (round 141, cont. 28) THE V1.2.7 REBASE INTEGRATED — THE CHAIN PROVEN, THE BATTERY STAGED, THE LAUNCH (2026… | docs/LAUNCH.md | campaign-20261111-094017 | — |
 | [round 141 cont. 28] (round 141, cont. 28) WINDOW 51 RAN THE V127VAL BATTERY — THE V1.2.7 BUMP QUALIFIED EVERY GATE (2026-11-11) | docs/LAUNCH.md | campaign-20261111-191641 | qualified |
 | [round 141 cont. 29] (round 141, cont. 29) THE OUTAGE CATCH — PRODUCTION DOWN ~3 H ON A STALE PATCH STORE (2026-11-11, (user) re… | docs/LAUNCH.md | — | — |
+| [round 141 cont. 30] (round 141, cont. 30) THE RESTORE RECEIPT — PRODUCTION SERVES V1.2.7 (2026-11-11, the (user) wake) | docs/LAUNCH.md | — | — |
