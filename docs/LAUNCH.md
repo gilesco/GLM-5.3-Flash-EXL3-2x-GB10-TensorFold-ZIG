@@ -2840,3 +2840,41 @@ three re-anchors, the mainlined pair, the verification chain).
 - **Kill criterion**: any §2 gate FAIL, the greedy witness moving, or
   hardmode < 95 holds the pin at v1.2.6 until understood.
 - **Phase list**: `preflight v127val summary`.
+
+## (round 141, cont. 28) WINDOW 51 RAN THE V127VAL BATTERY — THE V1.2.7 BUMP QUALIFIED EVERY GATE (2026-11-11)
+
+**The receipt** (campaign-20261111-191641, the 18-patch stack on 93a2e93):
+the same-bits greedy witness **IDENTICAL** (the same 80cc3802… sha as every
+window — the bump did not move the deterministic probes), the §2 gates **ALL
+PASS**, hardmode **95** (the THIRTY-THIRD consecutive), the vision **4/4**
+(#2744's fix mainlined — the suite is the witness), the walls **83/84 s**,
+zero strict-TF_ refusals at boot. The bench rows: pp d0 **1,520** (the
+prefill row re-dated, flat vs 1,519), the decode rows stay paired to the
+last duel (no duel ran in a val battery).
+
+**The bump qualifies — the promotion sync landed in the production repo**
+(c4df7e0): the pin 93a2e93, the 18-patch store+staging mirrored
+byte-identical, config.sh drops 022, the README status. The stack SHRANK by
+two patches (021-vision2744, 022-shared-budgets — mainlined upstream; their
+value rides the engine now).
+
+## (round 141, cont. 29) THE OUTAGE CATCH — PRODUCTION DOWN ~3 H ON A STALE PATCH STORE (2026-11-11, (user) reported)
+
+**The user reported production not starting.** The crash-net's rebuilds were
+dying at `git apply 001-absorb-mma.patch` (cuda_ranks.zig:183) — production's
+patch store carried the PRE-REBASE 001: the round-140 v1.2.6 re-anchors were
+never mirrored to the promoted repo (only 022 was, round 141), so after the
+pin landed on 6e9af930 every rebuild failed. The fingerprint excludes the
+pin, which is why the staleness hid until a rebuild was forced (the v127val
+window's stop at 19:20).
+
+**The fix IS the promotion sync** (c4df7e0): the store+staging now carry the
+byte-identical 18-patch set that just qualified. The restore runs through the
+production repo's start.sh with the crash-net's lock held (the (user) vllm
+troubleshooting node holds 8000 and this session is served BY it — the stop
+and the start run scripted, the session goes dark mid-restore and wakes on
+the poke).
+
+**The lesson (a promotion-sync rule)**: a promotion sync mirrors the WHOLE
+patch store and staging, never just the changed patch — the store must
+correspond to the served engine at every commit.

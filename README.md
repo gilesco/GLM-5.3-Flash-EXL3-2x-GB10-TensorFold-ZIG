@@ -19,11 +19,12 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold v1.2.6 + **the adopted 19-patch stack re-anchored**
+- **Engine**: TensorFold **v1.2.7** + **the adopted 18-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
-  the v1.2.6 rebase's round-trip is proven byte-identical — pristine v1.2.6 + the
-  18 patches = the rebase tree; the v126val battery QUALIFIED the pin —
-  campaign-20261110-162034, the round-140 cont. 2 receipt).
+  the v1.2.7 rebase's round-trip is proven byte-identical — pristine v1.2.7 + the
+  18 patches = the rebase tree; the v127val battery QUALIFIED the pin —
+  campaign-20261111-191641, the round-141 cont. 28 receipt; 021-vision2744 and
+  022-shared-budgets mainlined upstream (#2744/#2793) and dropped from the stack).
 - **Testing runs from this same repo**: a start FOR OPENCODE serves 8000; a start FOR
   TESTING serves 8001 (intent-keyed ports). Opencode never touches 8001; the quality
   gates never touch 8000. The lifecycle is autonomous — see *The autonomous loop*.
@@ -134,7 +135,7 @@ site's). The ones that matter:
 | `PROD_REPO` | *(required by the autonomous scripts)* | the production checkout's dir name on this host — the window flow's stop/restore path and the poke's live check anchor it |
 | `TF_REF` / `TF_COMMIT` / `TF_REPO` | latest v1.\* release / upstream | the TensorFold line to track; **pin in `local.sh`, never the session env** — `start.sh`'s auto-prepare re-resolves the default whenever the config fingerprint changes and silently drops a shell pin |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint; present on both hosts |
-| `PATCHES` | the 19-patch stack (below) | the adopted engine modifications; empty = stock engine |
+| `PATCHES` | the 18-patch stack (below) | the adopted engine modifications; empty = stock engine |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` | `524288` | the window — the qualified optimum |
 | `PARALLEL` | `4` | concurrent streams |

@@ -1442,3 +1442,28 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 The completed round arcs (the round-140 v1.2.6 rebase + cachefixqual era) moved to
 [docs/eval-history.md](eval-history.md) — the receipts stay quoted from results/.
 
+## Round 141, cont. 27-29 (2026-11-11) — the v1.2.7 rebase, the battery, the promotion, the outage catch
+
+- [x] **THE V1.2.7 REBASE QUALIFIED AND PROMOTED** (the v127val battery,
+  campaign-20261111-191641, the 18-patch stack on 93a2e93): the same-bits
+  greedy witness IDENTICAL (the same 80cc3802… sha as every window), the
+  §2 gates ALL PASS, hardmode 95 (the THIRTY-THIRD consecutive), the
+  vision 4/4 (#2744's fix mainlined — the suite is the witness), the walls
+  83/84 s. The drift map: 16 of 18 patches applied verbatim in stack order;
+  003/012/020 re-anchored (the request-starts build step, the router_tile
+  Kernels after #2557 removed router_part, the cacheWanted ground);
+  021-vision2744 and 022-shared-budgets DROPPED — mainlined upstream, the
+  stack shrinks by two. The promotion sync (pin 93a2e93, the 18-patch
+  store+staging byte-identical, config drops 022) landed in the production
+  repo (c4df7e0).
+- [x] **THE OUTAGE CATCH — THE STALE PATCH STORE** (production down ~3 h,
+  19:20–22:35): the crash-net rebuilds cloned v1.2.6 and applied production's
+  patch store, whose 001-absorb-mma.patch was the PRE-REBASE version — the
+  round-140 re-anchors were never mirrored (only 022 was, round 141) — so
+  every rebuild died at `git apply 001-absorb-mma.patch` (cuda_ranks.zig:183).
+  The promotion sync repaired the store as a side effect. **Lesson**: a
+  promotion sync mirrors the WHOLE patch store, not just the changed patch —
+  the store and the served engine must correspond (the fingerprint excluded
+  the pin, so the store's staleness hid until a rebuild was forced).
+- [ ] The warm-resume cost in the paged+share era (carried; see Open items).
+
