@@ -1494,7 +1494,20 @@ json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role'
   touch "$OUT/.regresswatch.done"
 fi
 # ---------------------------------------------------------------------------
-# phase: vision2744 (SESSION-SPECIFIC; retires with the receipt). The #2744
+# phase: vision2744 — the verdict is INCOMPLETE (window 43's receipt,
+# campaign-20261111-035237: the kill criterion did NOT fire — the
+# room-matched value leg, the only reading the value gate binds on, never
+# RAN. The room-matched curl read stale cp2- body names (renamed to cp-
+# by the round-141 cont. 12 commit the same night), died under || true,
+# and the receipt recorded a 0.01 s "aggregate" — the race never happened;
+# there are no rm-cp-* envelopes in the campaign dir and no valid verdict.
+# The arm-loop race's 25.52-vs-25.56 parity does not count either: the ON
+# arm's first serve had 11.0 GiB room vs the OFF arm's 12.4 — the room
+# gate FAILED at 1.4 GiB, which is exactly why the room-matched leg exists.
+# This run's fix: the cp2- name corrected to cp- AND the race plumbing
+# guards (a dead race now fails the receipt loudly instead of recording a
+# spurious qualify-able number). The question stays OPEN until a run where
+# the room-matched guard reads OK). The original brief: the #2744
 # port A/B: upstream's own fix (5151f19f3, main-only post-v1.2.6) — a prompt
 # chunk sends the tower only the images that end after its start, so
 # multi-image prompts stop re-encoding images their earlier chunks already
@@ -1675,6 +1688,18 @@ PYV2
       wait
       E=$(date +%s.%N)
       echo "- the concurrent-pair race: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate — THE VALUE NUMBER (concurrent)" >> "$P"
+      # THE RACE PLUMBING GUARD (window 43's lesson): a dead race request (the
+      # stale cp2- body name under || true) measures ~0.01 s — a value LESS
+      # than any real race, which would SPURIOUSLY QUALIFY the patch. The
+      # race's aggregate counts only when BOTH streams answered with a real
+      # envelope; otherwise the receipt records the failure and NO value
+      # verdict exists from this run.
+      ROK=1
+      for s in a b; do
+        python3 -c "import json,sys; json.load(open(sys.argv[1]))['id']" "$OUT/v2744-$arm-cp-$s-race.json" >/dev/null 2>&1 || ROK=0
+      done
+      echo "- the race plumbing guard: $([ "$ROK" = "1" ] && echo OK — both streams answered || echo FAILED — a race stream returned no envelope; the value number DOES NOT COUNT)"
+      echo "- the race plumbing guard: $([ "$ROK" = "1" ] && echo OK — both streams answered || echo FAILED — a race stream returned no envelope; the value number DOES NOT COUNT)" >> "$P"
       # the per-stream walls from the engine's own lines (the ttft of the two race requests)
       echo "- the race's engine lines:" >> "$P"
       docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -2 >> "$P" || true
@@ -1785,11 +1810,22 @@ json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-on-t2.json" "$A1"
   done
   S=$(date +%s.%N)
   for s in a b; do
-    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp2-$s.json" -o "$OUT/v2744-on-rm-cp-$s-race.json" || true
+    curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-cp-$s.json" -o "$OUT/v2744-on-rm-cp-$s-race.json" || true
   done &
   wait
   E=$(date +%s.%N)
   echo "- the room-matched concurrent-pair race: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate — THE VALUE NUMBER (room-matched, concurrent)" >> "$P"
+  # THE RACE PLUMBING GUARD (window 43's lesson, the exact failure: the
+  # room-matched curl read the stale cp2- body names, died under || true,
+  # and the receipt recorded 0.01 s — a value that would SPURIOUSLY QUALIFY
+  # the patch). The room-matched value number counts only when BOTH race
+  # streams answered with a real envelope.
+  MOK=1
+  for s in a b; do
+    python3 -c "import json,sys; json.load(open(sys.argv[1]))['id']" "$OUT/v2744-on-rm-cp-$s-race.json" >/dev/null 2>&1 || MOK=0
+  done
+  echo "- the room-matched race plumbing guard: $([ "$MOK" = "1" ] && echo OK — both streams answered || echo FAILED — a race stream returned no envelope; the value number DOES NOT COUNT)"
+  echo "- the room-matched race plumbing guard: $([ "$MOK" = "1" ] && echo OK — both streams answered || echo FAILED — a race stream returned no envelope; the value number DOES NOT COUNT)" >> "$P"
   echo "- the room-matched race's engine lines:" >> "$P"
   docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -2 >> "$P" || true
   echo "- room-matched t2's answer: $(python3 -c "

@@ -10992,3 +10992,65 @@ stands: no value on the corrected instrument retires the patch.
 
 **Round 141's watch: 7 windows run, 1 void — the loop is healthy; the
 instrument is now mechanism-exact.**
+
+## (round 141, cont. 13) WINDOW 43 DIGESTED HONESTLY — THE VERDICT LEG NEVER RAN; THE RETIREMENT CLAIM WITHDRAWN; WINDOW 44 RE-RUNS VALUE-FIRST (2026-11-11)
+
+**The correction**: the cont. 12 sitting left an uncommitted edit claiming
+window 43's kill criterion FIRED ("three instruments read parity, the patch
+retires"). The receipt says otherwise — the primary evidence
+(campaign-20261111-035237 on the head) contradicts the claim:
+
+- **The value gate's number never existed.** The kill criterion binds on
+  the ROOM-MATCHED interleaved race beating the OFF arm by >5%. The
+  receipt's room-matched race reads `0.01 s aggregate` with `cached=6144`
+  on both streams — the stale warm-primed `cp2-` bodies (the pre-cont. 12
+  path). The room-matched curl read the OLD body names (the cont. 12
+  commit renamed them to `cp-`), died under `|| true`, and the receipt
+  recorded the dead race's ~0.01 s. There are no `rm-cp-*` envelopes in
+  the campaign dir; the direction of the error makes it WORSE than a
+  void — a dead race would have SPURIOUSLY QUALIFIED the patch (0.01 s
+  beats everything by >5%). No VERDICT block exists in the receipt.
+- **The arm-loop race's parity does not feed the gate.** 25.52 vs 25.56 s
+  with `cached=0` on every stream is a clean mechanism witness — but the
+  ON arm's first serve had **11.0 GiB room vs the OFF arm's 12.4** — the
+  room gate FAILED at 1.4 GiB. That is exactly why the room-matched leg
+  exists; the arm-loop number is a room-confounded reading, not value.
+- **What held is real and recorded**: the greedy TEXT sha `80cc3802…`
+  identical across both arms, §2 ALL PASS (hardmode 95 — the THIRTIETH
+  consecutive), the vision suite 4/4, steady-state 73.1 tok/s. The
+  experiment was honest; the retirement was not. The question stays OPEN.
+
+**The phase fixes (adversarially staged against the failure mode)**: the
+`cp2-` → `cp-` path corrected in the room-matched curl (the uncommitted
+fix, kept); PLUS the race plumbing guards in BOTH race blocks — the
+aggregate counts only when both streams answered with a real envelope
+(the receipt records `FAILED … DOES NOT COUNT` otherwise), so a dead race
+fails the battery loudly instead of recording a qualify-able number.
+
+**The stage brief — window 44**: re-run `vision2744` value-first with the
+fixed phase.
+- *The question*: does upstream's #2744 re-encode fix (021-vision2744)
+  deliver its >5% concurrent value on OUR shape — 2×GB10 TP=2, PARALLEL=4,
+  the 2048-row chunking, our image sizes — under a valid room-gated
+  reading, on the mechanism-exact interleaved instrument?
+- *The value-if-yes*: multi-image concurrent vision prompts (the
+  opencode screenshot-per-turn shape) get their chunk-switch re-encodes
+  removed — the first user-visible TTFT number the vision line could move.
+- *The cost*: one ~45 min window (the rebuild rides the ON arm's restart;
+  production stops once).
+- *The alternatives rejected*: adopting on the window-43 arm-loop parity
+  (room-confounded — refused); retiring on the fabricated reading
+  (withdrawn); widening the instrument again (three generations of
+  narrowing have landed the mechanism-exact shape — a fourth refinement
+  would be motion, not measurement).
+- *The kill criterion*: the value gate binds ONLY on a run where the
+  room-matched race plumbing guard reads OK and the room gate holds —
+  no value there retires the patch (the v1.2.7 rebase picks it up free);
+  any guard fail voids the window and the question stays open.
+
+**The state-doc sweep (same sitting)**: VALIDATION's streak 26 → 30
+(windows 40/41/42/43's receipts — each battery's §2 ALL PASS), README's
+quality row re-dated, the ledger's #2744 item rewritten to the true
+window-43 state. The forged retirement never entered any committed state
+doc; it dies in this entry.
+

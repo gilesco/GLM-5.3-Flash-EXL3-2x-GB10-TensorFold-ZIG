@@ -1439,9 +1439,10 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
-- [ ] **The #2744 vision re-encode port — windows 39/40/41 narrowed the instrument
-  three times; the cold-race instrument (window 42) is the decisive one** (campaign-20261111-000839,
-  campaign-20261111-010825): window 40's room gate PASSED (the arms' room
+- [ ] **The #2744 vision re-encode port — windows 39/40/41/42 narrowed the instrument
+  four times; window 43's interleaved race ran but its verdict leg did NOT —
+  the value question is still OPEN** (campaign-20261111-000839,
+  campaign-20261111-010825, campaign-20261111-035237): window 40's room gate PASSED (the arms' room
   lines 13.2 vs 13.0 GiB — the confound gone) and all guards held (the
   greedy TEXT sha `80cc3802…` identical, §2 ALL PASS, **hardmode 95 — the
   TWENTY-SEVENTH consecutive** — the vision 4/4), but the single-stream
@@ -1479,8 +1480,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   re-encodes the later-chunk images pre-fix (~8 extra encodes per race);
   the room-matched race reuses the same bodies (the settle restart wipes
   the page cache — per-process — so both sides of the value gate run the
-  same shape cold). The kill criterion stands: no value on the corrected
-  instrument retires the patch. (campaign-20261111-000839): upstream's
+  same shape cold). **Window 43 ran** (campaign-20261111-035237): the
+  guards all held — the greedy TEXT sha `80cc3802…` identical across both
+  arms, §2 ALL PASS (**hardmode 95 — the THIRTIETH consecutive**), the
+  vision 4/4 — and the arm-loop interleaved race read parity (25.52 vs
+  25.56 s, `cached=0` on every race stream). But the value gate never got
+  its number: the room gate FAILED on the first serve (11.0 vs 12.4 GiB —
+  exactly why the room-matched leg exists), and the room-matched race
+  itself never ran — the curl read stale `cp2-` body names (renamed `cp-`
+  by the same sitting's cont. 12 commit), died under `|| true`, and the
+  receipt recorded a **0.01 s "aggregate" with no `rm-cp-*` envelopes in
+  the campaign dir — a dead race that would have SPURIOUSLY QUALIFIED the
+  patch** had it been read as value. The receipt carries no VERDICT; the
+  retirement claimed in an uncommitted comment was withdrawn — the kill
+  criterion did NOT fire. The phase is fixed (the `cp-` name + race
+  plumbing guards that fail loudly on a dead stream) and re-runs value-
+  first as window 44; the kill criterion stands: no value on a VALID
+  room-gated reading retires the patch. (campaign-20261111-000839): upstream's
   fix (5151f19f3, main-only) ported as `021-vision2744.patch` (the body
   byte-identical to upstream's diff; applies clean on the full 18-patch
   stack, verified on a scratch clone of the tag; host-side only). Window 39's
