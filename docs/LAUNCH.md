@@ -11339,3 +11339,57 @@ first end-to-end ride through the window flow.**
   vision guards are NOT re-run (they rode window 45's adoption receipt;
   the engine is unchanged since).
 
+
+## (round 141, cont. 20) WINDOW 47 RAN THE ORDER-DRIFT SETTLE — THE SECOND ARM WON AGAIN, BUT THE ORDER-MATCHED CROSS-WINDOW READING STRENGTHENS THE ADOPTION; THE WINDOW-DRIFT WATCH OPENS (2026-11-11)
+
+**The window** (campaign-20261111-150137, `preflight duel summary`, rc=0):
+the third A/A pair on the adopted 19-patch stack. Production restored
+healthy (200), the flag cleared.
+
+**The order watch's outcome (a) fired**: the second arm won c4 again
+(ours 193.2 vs baseline 185.1, +4.4%) — the third consecutive second-arm
+c4 edge (+6.1% in the w45 A/B, +3.4% in w46). **But the settle's deeper
+reading goes the other way**: the pre-adoption pairs read FLAT (the
+first pair +0.7%, the second pair −1.4%), so the second-arm edge is not
+a constant environmental order effect. And the ORDER-MATCHED
+cross-window comparison — first arm vs first arm across the adoption
+boundary, identical order, only the config differs — reads:
+
+- pre-adoption first arms: 170.0 (w45 OFF), 169.7/168.5 (the second/
+  first pairs) — a stable ~168-170 level;
+- post-adoption first arms: 182.0 (w46), 185.1 (w47) — **+7.1% to
+  +8.9% over the pre-adoption level**.
+
+**The adoption's value survives every decomposition and is, if
+anything, STRENGTHENED**: the order-confounded A/B reading (+6.1%) sits
+inside the plausible band the order-matched comparisons bracket
+(+2.2% naive-subtractive at one extreme, +8.9% order-matched at the
+other). The value gate's conclusion stands; 022-shared-budgets stays
+adopted; no un-adopt branch. The anchors' c4 row carries the
+order-matched band as the value statement.
+
+**The window-drift watch opens**: c4 levels climbed ~+2%/window on BOTH
+arms across w45→47 (second arms 180.4 → 188.1 → 193.2; first arms
+170.0 → 182.0 → 185.1), and w47's baseline solo stability Δ hit 2.4%
+(the widest recorded; the prior windows read 0.1-0.6%). The arms are
+identical configs, so the climb is window-to-window — thermal or
+environmental, not config. The watch: if the next windows' c4 first-arm
+readings keep climbing >2%/window, the instrument's absolute levels
+need re-anchoring before any future value gate reads a small delta as
+real.
+
+**The rows re-dated on the newest pair** (the fourth pair, w47, with
+w46 corroborating): solo 70.5 vs 69.9 (100.9%), c2 121.9 vs 120.7
+(100.6%; the w46 pair read 117.3 vs 121.7 — the c2 instrument swings
+±3-4% between windows at these levels), ITL ~14.6 vs ~14.6 ms/token
+(the chunk rhythm 58.6/58.3), overhead 183 vs 186 ms, the cold d8192
+3,767 vs 3,768 (slope 0.438/0.437) — all flat inside the band on the
+adopted engine.
+
+**Round 141's final tally: 12 windows run (36–47), 1 void (35) — the
+loop's best round closes: one adoption (the #2793 shared-budgets,
+confirmed twice on independent instruments), one retirement (the
+#2744 port), four questions closed by receipt, one forged verdict
+caught, the promotion protocol ridden end to end, and the instrument's
+order/drift structure mapped.**
+
