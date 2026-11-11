@@ -10805,3 +10805,51 @@ launcher with a refusal path is not a test harness — replay a launcher's
 refusals with inputs that cannot pass the gates, never with the real
 launch arguments**, and the launcher could gain a DRY_RUN=1 that prints the
 gates' verdicts without starting the window (next sitting's candidate).
+
+## (round 141, cont. 7) THE ECOSYSTEM READ + THE STAGE BRIEF — WINDOW 39: THE #2744 VISION RE-ENCODE PORT (2026-11-11)
+
+**The ecosystem read** (recorded in docs/ECOSYSTEM.md): upstream main is 87
+commits past v1.2.6, no v1.2.7 tag yet; two GLM-relevant main-only items —
+the #2744 vision re-encode fix and the router-mma refactor (byte-identical,
+no perf claim). The four-GB10 ring is out of scope (the site's shape is a
+pair). The full read is in ECOSYSTEM.md.
+
+**THE STAGE BRIEF — window 39**:
+
+- **Question**: does the #2744 vision fix (a chunk sends the tower only the
+  images ending after its start) cut the multi-image multi-turn prompt's
+  prefill cost on our pair — the opencode screenshot-per-turn shape?
+- **Value-if-yes**: the turn-2 TTFT of a two-image two-turn conversation
+  drops measurably (the tower stops re-encoding turn-1's image on turn-2's
+  chunks; upstream's host test: 18 → 12 tower passes) — a user-visible
+  number for every opencode session that carries screenshots, on the
+  standing vision default.
+- **The port**: `021-vision2744.patch` — upstream's own diff
+  (`5151f19f3`), the body verified BYTE-IDENTICAL to upstream's commit, the
+  header carries the provenance. Applies clean against pristine v1.2.6 AND
+  on the full 18-patch stack (verified in a scratch clone of the tag,
+  49 files from our stack + 5 more from this patch). Host-side only: no
+  kernels, no contract records; upstream's own host tests ride in the patch.
+- **The battery**: the A/B pattern — the OFF arm (the 18-patch stack) and
+  the ON arm (the 19-patch stack), each serving the multi-image value
+  probe: a two-image two-turn conversation (turn 1 carries image A + fill;
+  turn 2 adds image B), the walls of both turns per arm; the greedy sha
+  (the same-bits witness — a text-only probe must be IDENTICAL), the §2
+  gates on the ON arm, hardmode 95, the vision 4/4, the bench +
+  steady-state decode.
+- **Cost**: one window (~50 min: the rebuild rides the fingerprint change —
+  the patch list moves — plus two restarts and the probes).
+- **Alternatives rejected**: waiting for the v1.2.7 release (the fix is
+  receipted upstream; the port pattern exists and the collision map is
+  empty — no patch touches prompt_images.zig or backend.zig; waiting costs
+  the value for no risk reduction); the 0110 KV-SHARD port (user-parked,
+  multi-sitting).
+- **Kill criterion**: the ON arm's turn-2 wall does not beat the OFF arm's
+  by a clear margin (>5%), OR any guard fails (the greedy sha moved on the
+  text probes, the §2 gates, hardmode, the vision suite) ⇒ RETIRE — the
+  patch leaves the PATCHES list and the question closes as upstream data
+  (the release carries it; the rebase picks it up free).
+- **Verification before launch**: the staged patch applies clean on the
+  full stack (run, above); the phase-name gate + DRY_RUN from the head; the
+  value probe's two-image bodies staged with the manifest's CC-licensed
+  assets — never ad-hoc fixtures (the round-132 rule).

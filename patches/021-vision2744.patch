@@ -1,0 +1,195 @@
+upstream #2744 (5151f19f3): a prompt chunk sends the tower only the images that end after
+its start. prepare ran before every chunk, and when another prompt had taken the shared
+image rows it re-encoded every image past the restore point, so images earlier chunks had
+already injected went through the tower again on each switch. It now encodes from the
+position it is given: the restore point before the first chunk, then each chunk's start.
+A chunk's rows read no image ending by that start, and the rows are read through the
+spans the encode writes, so a suffix lands where the chunks read it. Ownership unchanged.
+PROVENANCE: ashhart/TensorFold commit 5151f19f3 (2026-11-10), main-only (post-v1.2.6);
+applies clean against pristine v1.2.6 AND on the full 18-patch stack (verified in a
+scratch clone of the tag). Host-side only: prompt_images.zig's prepare gains a from arg
+(the restore point, then each chunk's start) + backend.zig's two call sites; no kernels,
+no contract records. Upstream's own host tests ride in the patch. Value hypothesis: a
+multi-image multi-turn prompt re-encodes less (their host test: 18 -> 12 tower passes);
+opencode's screenshot-per-turn shape is the beneficiary. No knob: the behavior IS the
+fix; the A/B flips by staging the patch list (the two-arm duel pattern).
+
+diff --git a/zig/src/families/glm/backend.zig b/zig/src/families/glm/backend.zig
+index 036562133..494c8ba9a 100644
+--- a/zig/src/families/glm/backend.zig
++++ b/zig/src/families/glm/backend.zig
+@@ -142,7 +142,7 @@ pub const Backend = struct {
+             }
+         }
+         // the images the restored state does not hold through the tower: the chunks inject their rows
+-        if (s.images.len > 0) try @import("prompt_images.zig").prepare(b, s, i);
++        if (s.images.len > 0) try @import("prompt_images.zig").prepare(b, s, i, s.cached);
+         s.fill_at.store(at, .monotonic);
+         return .{ .stream = s, .slot = i, .at = at };
+     }
+@@ -154,7 +154,7 @@ pub const Backend = struct {
+     }
+     pub fn chunkPrompt(b: *Backend, s: *Stream, i: u32, at: u32, n: u32) !void {
+         const e = b.sl.e;
+-        try @import("prompt_images.zig").prepare(b, s, i);
++        try @import("prompt_images.zig").prepare(b, s, i, at); // the chunk's rows read no image ending by `at`
+         try b.copyOut(i, at);
+         try mirror.send(e, .chunk, &.{ i, at, n });
+         const draws = @import("draw_rule.zig").promptDraws(s.sampling, @intCast(s.prompt_len), e.c.vocab);
+diff --git a/zig/src/families/glm/prefill_test.zig b/zig/src/families/glm/prefill_test.zig
+index de2653d24..0ca5a57e6 100644
+--- a/zig/src/families/glm/prefill_test.zig
++++ b/zig/src/families/glm/prefill_test.zig
+@@ -252,13 +252,13 @@ test "glm prefill: an image handoff failure invalidates the old owner before cha
+     second.images = &images;
+     var io: Images = .{ .image_owner = &first };
+     const input = @import("prompt_images.zig");
+-    try std.testing.expectError(error.GpuFailed, input.prepare(&io, &second, 1));
++    try std.testing.expectError(error.GpuFailed, input.prepare(&io, &second, 1, second.cached));
+     try std.testing.expect(io.image_owner == null and !io.inject);
+     io.fail = false;
+-    try input.prepare(&io, &first, 0);
++    try input.prepare(&io, &first, 0, first.cached);
+     try std.testing.expect(io.image_owner == &first and io.inject);
+     try std.testing.expectEqual(@as(usize, 2), io.writes);
+-    try input.prepare(&io, &first, 0);
++    try input.prepare(&io, &first, 0, first.cached);
+     try std.testing.expectEqual(@as(usize, 2), io.writes);
+ }
+ test "glm prefill: a resumed image prompt sends the tower only the images its restored state does not hold" {
+@@ -283,7 +283,7 @@ test "glm prefill: a resumed image prompt sends the tower only the images its re
+     for ([_]u32{ 0, 3, 5 }, [_]usize{ 2, 1, 1 }) |cached, n| {
+         var io: Images = .{};
+         s.cached = cached;
+-        try input.prepare(&io, &s, 0);
++        try input.prepare(&io, &s, 0, s.cached);
+         try std.testing.expectEqual(@as(usize, 1), io.writes);
+         try std.testing.expectEqual(n, io.sent.len);
+         try std.testing.expectEqual(images[2 - n].at, io.sent[0].at);
+@@ -292,7 +292,7 @@ test "glm prefill: a resumed image prompt sends the tower only the images its re
+     // kept past every image: no tower run, and another prompt's rows stay its own
+     var io: Images = .{ .image_owner = &other };
+     s.cached = 7;
+-    try input.prepare(&io, &s, 0);
++    try input.prepare(&io, &s, 0, s.cached);
+     try std.testing.expectEqual(@as(usize, 0), io.writes);
+     try std.testing.expect(io.image_owner == &other);
+ }
+diff --git a/zig/src/families/glm/prompt_images.zig b/zig/src/families/glm/prompt_images.zig
+index d34426fae..f651e5352 100644
+--- a/zig/src/families/glm/prompt_images.zig
++++ b/zig/src/families/glm/prompt_images.zig
+@@ -9,9 +9,9 @@ pub fn past(images: []const Image, from: usize) []const Image {
+     return images[images.len..];
+ }
+ 
+-/// The stream's images past its restored prefix through the tower, unless its rows are already the shared ones.
+-pub fn prepare(b: anytype, s: *Stream, slot: u32) !void {
+-    const todo = past(s.images, s.cached);
++/// The images ending after `from` (the restore point, then each chunk's start) through the tower, unless held.
++pub fn prepare(b: anytype, s: *Stream, slot: u32, from: usize) !void {
++    const todo = past(s.images, from);
+     if (todo.len == 0 or b.image_owner == s) return;
+     b.image_owner = null;
+     b.endImages();
+diff --git a/zig/src/families/glm/prompt_images_test.zig b/zig/src/families/glm/prompt_images_test.zig
+new file mode 100644
+index 000000000..288ff6a94
+--- /dev/null
++++ b/zig/src/families/glm/prompt_images_test.zig
+@@ -0,0 +1,83 @@
++//! The tower runs an image prompt asks for at its restore point and at each prompt chunk, through a recording tower.
++const std = @import("std");
++const lanes = @import("lanes");
++const prompt_images = @import("prompt_images.zig");
++const a = std.testing.allocator;
++const Stream = lanes.Stream;
++const Image = lanes.stream.Image;
++
++/// One tower run: the first image's prompt row and the image count (`past` always sends a suffix).
++const Run = struct { first: u32, n: usize };
++
++/// The backend's image seam: who holds the shared rows, and the runs `encodeImages` received.
++const Tower = struct {
++    image_owner: ?*Stream = null,
++    runs: [8]Run = undefined,
++    n: usize = 0,
++    pub fn endImages(_: *Tower) void {}
++    pub fn encodeImages(t: *Tower, _: u32, imgs: []const Image) !void {
++        if (t.n == t.runs.len) return error.TooManyRuns;
++        t.runs[t.n] = .{ .first = if (imgs.len > 0) imgs[0].at else 0, .n = imgs.len };
++        t.n += 1;
++    }
++    fn expect(t: *const Tower, want: []const Run) !void {
++        try std.testing.expectEqualSlices(Run, want, t.runs[0..t.n]);
++    }
++};
++
++fn pic(at: u32, n: u32) Image {
++    return .{ .pixels = &.{}, .gh = 0, .gw = 0, .at = at, .tokens = n };
++}
++
++const tokens: [24]u32 = @splat(7);
++const three = [_]Image{ pic(2, 3), pic(6, 4), pic(12, 3) }; // rows [2, 5), [6, 10) and [12, 15)
++
++test "glm prefill: a chunk sends the tower exactly the images that end after its start" {
++    var s = try Stream.init(a, .{ .id = "a", .prompt = &tokens, .max_new = 1 });
++    defer s.deinit(a);
++    var other = try Stream.init(a, .{ .id = "b", .prompt = &tokens, .max_new = 1 });
++    defer other.deinit(a);
++    s.images = &three;
++    // chunk starts: before every image, at the first's end, inside the second (it straddles), at its end, past all
++    for ([_]u32{ 0, 5, 8, 10, 15 }, [_]u32{ 2, 6, 6, 12, 0 }, [_]usize{ 3, 2, 2, 1, 0 }) |at, first, n| {
++        var t: Tower = .{ .image_owner = &other };
++        try prompt_images.prepare(&t, &s, 0, at);
++        try t.expect(if (n == 0) &.{} else &.{.{ .first = first, .n = n }});
++        try std.testing.expect(t.image_owner == if (n == 0) &other else &s);
++    }
++}
++
++test "glm prefill: interleaved image prompts send the tower only the images left after each chunk start" {
++    var x = try Stream.init(a, .{ .id = "x", .prompt = &tokens, .max_new = 1, .chunks = &.{ 8, 16 } });
++    defer x.deinit(a);
++    var y = try Stream.init(a, .{ .id = "y", .prompt = &tokens, .max_new = 1, .chunks = &.{ 8, 16 } });
++    defer y.deinit(a);
++    const x_pics = [_]Image{ pic(1, 3), pic(6, 4), pic(14, 4) }; // the second straddles the chunk at 8, the third 16
++    const y_pics = [_]Image{ pic(0, 2), pic(9, 3), pic(20, 2) };
++    x.images = &x_pics;
++    y.images = &y_pics;
++    var t: Tower = .{};
++    // as prefill.step calls the backend: a first step's beginPrompt and first chunk, then one chunk a turn
++    for ([_]*Stream{ &x, &y }) |s| {
++        try prompt_images.prepare(&t, s, 0, s.cached);
++        try prompt_images.prepare(&t, s, 0, 0);
++    }
++    for ([_]u32{ 8, 16 }) |at| for ([_]*Stream{ &x, &y }) |s| try prompt_images.prepare(&t, s, 0, at);
++    try t.expect(&.{
++        .{ .first = 1, .n = 3 }, .{ .first = 0, .n = 3 }, // each prompt's whole list before its first chunk
++        .{ .first = 6, .n = 2 }, .{ .first = 9, .n = 2 }, // at 8: not the images the chunks at 0 injected
++        .{ .first = 14, .n = 1 }, .{ .first = 20, .n = 1 }, // at 16: the one image each prompt has left
++    });
++    try std.testing.expect(t.image_owner == &y);
++}
++
++test "glm prefill: a prompt that still holds the shared image rows sends the tower nothing at any chunk" {
++    var s = try Stream.init(a, .{ .id = "a", .prompt = &tokens, .max_new = 1 });
++    defer s.deinit(a);
++    s.images = &three;
++    var t: Tower = .{ .image_owner = &s };
++    try prompt_images.prepare(&t, &s, 0, s.cached);
++    for ([_]u32{ 0, 5, 8, 10, 15 }) |at| try prompt_images.prepare(&t, &s, 0, at);
++    try t.expect(&.{});
++    try std.testing.expect(t.image_owner == &s);
++}
+diff --git a/zig/src/glm_schedule_tests.zig b/zig/src/glm_schedule_tests.zig
+index cb20f831d..8e0ffe0d5 100644
+--- a/zig/src/glm_schedule_tests.zig
++++ b/zig/src/glm_schedule_tests.zig
+@@ -1,6 +1,7 @@
+ //! GLM's actual prefill capability and chunk driver behind the real shared lane host, without Metal execution.
+ test {
+     _ = @import("families/glm/prefill_test.zig");
++    _ = @import("families/glm/prompt_images_test.zig");
+ }
+ 
+ test {

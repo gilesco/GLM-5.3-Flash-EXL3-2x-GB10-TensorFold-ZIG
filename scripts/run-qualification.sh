@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1492,6 +1492,174 @@ json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role'
     tail -4 "$LOG" | sed 's/^/  /' >> "$P"
   fi
   touch "$OUT/.regresswatch.done"
+fi
+# ---------------------------------------------------------------------------
+# phase: vision2744 (SESSION-SPECIFIC; retires with the receipt). The #2744
+# port A/B: upstream's own fix (5151f19f3, main-only post-v1.2.6) — a prompt
+# chunk sends the tower only the images that end after its start, so
+# multi-image prompts stop re-encoding images their earlier chunks already
+# injected (their host test: 18 -> 12 tower passes). Staged as
+# patches/021-vision2744.patch (the body byte-identical to upstream's diff;
+# applies clean on the full 18-patch stack, verified on a scratch clone of
+# the tag; host-side only — no kernels, no contract records). The value
+# probe (the stage brief, round 141 cont. 7): a two-image two-turn
+# conversation — turn 1 carries image A + a d2048 fill, turn 2 adds image B
+# on the same history — the opencode screenshot-per-turn shape; the tower
+# re-encodes turn-1's image on turn-2's chunks pre-fix when the shared rows
+# were taken. The arms: the OFF arm (the standing 18-patch stack) vs the ON
+# arm (the stack + 021-vision2744.patch; the fingerprint moves, the rebuild
+# rides the restart). The value gate: the ON arm's turn-2 TTFT beats the
+# OFF arm's by >5%; the guards: the greedy same-bits sha on a TEXT probe
+# (a vision fix must not move the deterministic text probes), the §2 gates
+# on the ON arm, hardmode 95, the vision 4/4 (the fix must not change the
+# suite's single-image answers), the bench + steady-state decode.
+# QUALIFIED = ADOPT: 021 joins the PATCHES default. Any guard fail or no
+# value => RETIRE: the patch leaves the stack, the question closes as
+# upstream data (the release carries it; the rebase picks it up free).
+# ---------------------------------------------------------------------------
+if want vision2744 && ! phase_done vision2744; then
+  log "=== vision2744 (the #2744 re-encode port: the standing stack vs the stack + 021)"
+  P="$OUT/14-vision2744.md"; : > "$P"
+  echo "# vision2744 (the #2744 port A/B: the 18-patch standing stack vs + 021-vision2744; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  # the value probe's bodies: turn 1 (image A + fill), turn 2 (image B + the
+  # same fill + the history) — the repo's own CC-licensed assets (the
+  # round-132 rule: the suite's assets, never ad-hoc fixtures).
+  for arm in off on; do
+    if [ "$arm" = on ]; then
+      # ONE quoted argument per K=V pair (the AGENTS rule): the value carries
+      # spaces, so the pair must reach restart as a single word — stage the
+      # LIST into a var first, then the pair quotes it whole.
+      V2744_LIST="$PATCHES 021-vision2744.patch"
+      PENV=(PATCHES="$V2744_LIST")
+    else
+      PENV=()
+    fi
+    S=$(date +%s)
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 "${PENV[@]}"; then
+      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      echo "- the serve line: $(serve_line)" >> "$P"
+      # the patch witness: the patches ride the image build — the container's
+      # runtime log cannot name them. The honest witness is the fingerprint
+      # chain: prepare's "patch overlay" line (in THIS campaign log) must
+      # name 021-vision2744 on the ON arm. Grep THE CAMPAIGN LOG (the
+      # window's own receipt), not the container.
+      APPLIED=$(grep -c "021-vision2744" "$LOG" 2>/dev/null || true)
+      if [ "$arm" = on ]; then
+        if [ "$APPLIED" -ge 1 ] 2>/dev/null; then
+          echo "- the patch witness: 021-vision2744 in the campaign's prepare/build lines ($APPLIED mentions)" >> "$P"
+        else
+          echo "- the patch witness: FAILED (021-vision2744 not in the campaign log — a placebo arm; nothing downstream counts)" >> "$P"
+        fi
+      else
+        echo "- the patch witness: 021 absent as intended" >> "$P"
+      fi
+      # the greedy same-bits witness (TEXT — a vision fix must not move it):
+      req_file "$OUT/vi-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+      chat "$OUT/vi-$arm-req.json" > "$OUT/vi-$arm-resp.json" || true
+      echo "- the greedy text sha: $(content_sha "$OUT/vi-$arm-resp.json")" >> "$P"
+      # THE VALUE PROBE: two-image two-turn (the opencode screenshot shape).
+      # turn 1: image A (bridge.jpg) + a d2048 fill; turn 2: image B
+      # (zebra.jpg) + the same fill + the turn-1 answer — the multi-chunk,
+      # multi-image, multi-turn shape where the pre-fix tower re-encodes.
+      python3 - "$OUT" "$arm" <<'PYVI'
+import base64, json, sys
+out, arm = sys.argv[1], sys.argv[2]
+def durl(p):
+    mime = "image/png" if p.endswith(".png") else "image/jpeg"
+    return "data:%s;base64," % mime + base64.b64encode(open(p, "rb").read()).decode()
+fill = " ".join(f"harbor-{i%89}" for i in range(2048))
+qa = "What bridge is shown in this photo? Answer with its name."
+qb = "What animal is in this photo? Answer with the animal word only."
+t1 = {"model": "X", "temperature": 0, "max_tokens": 256,
+      "messages": [{"role": "user", "content": [
+          {"type": "image_url", "image_url": {"url": durl("assets/vision/bridge.jpg")}},
+          {"type": "text", "text": fill + "\n\n" + qa}]}]}
+json.dump(t1, open(f"{out}/v2744-{arm}-t1.json", "w"))
+# turn 2's body gets the model name + turn-1's answer filled at send time
+t2 = {"model": "X", "temperature": 0, "max_tokens": 256,
+      "messages": [
+          {"role": "user", "content": [
+              {"type": "image_url", "image_url": {"url": durl("assets/vision/bridge.jpg")}},
+              {"type": "text", "text": fill + "\n\n" + qa}]},
+          {"role": "assistant", "content": "PLACEHOLDER"},
+          {"role": "user", "content": [
+              {"type": "image_url", "image_url": {"url": durl("assets/vision/zebra.jpg")}},
+              {"type": "text", "text": qb}]}]}
+json.dump(t2, open(f"{out}/v2744-{arm}-t2.json", "w"))
+print("- the value probe bodies staged (turn 1: bridge + d2048 fill; turn 2: zebra on the history)")
+PYVI
+      for turn in t1 t2; do
+        python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-$arm-$turn.json" "$SERVED_NAME"
+        T=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-$turn.json" -o "$OUT/v2744-$arm-$turn-resp.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+        echo "- $turn ttft_wall ${T}s" >> "$P"
+      done
+      # turn 2's wall needs the turn-1 answer inside its history — RESEND
+      # turn 2 with the real answer (the placeholder breaks content
+      # realism, not the cache/encode path: the history length is what
+      # matters; record both forms' walls).
+      A1=$(python3 -c "
+import json
+try: print(json.load(open('$OUT/v2744-$arm-t1-resp.json'))['choices'][0]['message']['content'][:200])
+except Exception: print(' Golden Gate Bridge.')" )
+      python3 -c "
+import json, sys
+b = json.load(open(sys.argv[1]))
+b['messages'][1]['content'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-$arm-t2.json" "$A1"
+      T2R=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-t2.json" -o "$OUT/v2744-$arm-t2-resp2.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      echo "- t2 (the real-answer history) ttft_wall ${T2R}s — THE VALUE NUMBER" >> "$P"
+      echo "- t2's answer: $(python3 -c "
+import json
+try: print(json.load(open('$OUT/v2744-$arm-t2-resp2.json'))['choices'][0]['message']['content'][:120])
+except Exception as e: print('unreadable:', e)")" >> "$P"
+    else
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
+  run_gates vi DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$PATCHES 021-vision2744.patch" || true
+  echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
+  mkdir -p "$OUT/vihm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "vision2744" --output-dir "$OUT/vihm" --parallel 2 \
+    --json-file "$OUT/vihm/hm.json" > "$OUT/vihm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/vihm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/vihm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/vihm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold — the fix must not move the single-image answers)" >> "$P"
+  mkdir -p "$OUT/vivision"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/vivision/vision.json" > "$OUT/vivision/vision.log" 2>&1 || true
+  tail -6 "$OUT/vivision/vision.log" >> "$P" 2>/dev/null || true
+  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  bench_perf vi "$OUT/vi-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/vi.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/vi-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/vi-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill; the band: 70-76)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "- VERDICT (VALUE-FIRST, window 39 on): QUALIFIED = the patch PLACED (the boot-log witness) AND the greedy TEXT sha == the standing 80cc3802… AND (the value gate) the ON arm's t2-with-history ttft BEATS the OFF arm's by >5% AND the §2 gates ALL PASS AND hardmode 95 AND the vision suite 4/4 (the single-image answers unchanged) AND the bench/decode bands hold => 021-vision2744.patch joins config.sh's PATCHES default. Any guard fail or no value => RETIRE: the patch leaves the stack, the question closes as upstream data (the v1.2.7 release carries it; the rebase picks it up free)." >> "$P"
+  touch "$OUT/.vision2744.done"
 fi
 
 

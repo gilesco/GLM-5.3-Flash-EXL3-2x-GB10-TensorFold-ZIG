@@ -993,6 +993,32 @@ ours — two Sparks, TP=2 direct split; its TP=4 recipe was removed):
 worth a look when the quality instruments next run). Their raw-markup incident
 never reproduced on the pair; the top-k 20 mitigation stays.
 
+## 2026-11-11 — the main watch (round 141 cont. 7): 87 commits past the tag; two GLM-relevant main-only items
+
+**Upstream main** is 87 commits past v1.2.6; no v1.2.7 tag yet. The GLM-relevant
+main-only items:
+
+- **#2744 — the vision tower encodes only images that end after a chunk's
+  start**: multi-image prompts stop re-encoding images their earlier chunks
+  already injected (their host test: 12 tower passes instead of 18). **We
+  serve vision as the standing default** — a vision-prefill perf candidate
+  when the next release lands (our vision suite's assets are single-image
+  per request, so the gain shows on multi-image workloads we do not
+  currently bench; the watch item is the release, not a port).
+- **c0f8e1c4c — the router's K slices on the shared mma tiles**
+  (`common/router_mma.cuh`): a refactor claiming byte-identical outputs and
+  "replies, prompt and decode speed at TP=2 are unchanged" — no perf claim,
+  a code-health item for the next rebase. Our router_tile is vanilla (no
+  patch touches it), so the rebase is mechanical when the release comes.
+- The Unreleased changelog's other CUDA items are non-GLM (LightOnOCR-3,
+  Qwen 3.5, Flash Next Metal scale-index) — no move for us.
+- The four-GB10 switchless ring (#2569/#2742: TP=4 on
+  `TF_GLM_PREFILL_REDUCE=gather` + the NCCL settings) needs four hosts; our
+  pair is the site's shape — recorded, out of scope.
+- #2699's mainline entry carries the 16-agent prompt-cache rework with
+  measured GB10 numbers (105 s → 25.8 s at 16 agents); the mechanism class
+  is already in the v1.2.6 engine we serve.
+
 ## 2026-11-10 — v1.2.6 released; the rebase absorbed it same-day (round 140)
 
 **Upstream v1.2.6** (6e9af9302, released 2026-11-10): carried #2257 (GLM TP=2
