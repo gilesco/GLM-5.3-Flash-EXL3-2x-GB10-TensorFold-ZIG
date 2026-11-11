@@ -11103,3 +11103,69 @@ healthy; four questions closed this round (the #2699 cache, the #2181
 live-half, the #2257 watch, and now the #2744 port), every one by a
 receipt.**
 
+
+## (round 141, cont. 15) THE STAGE BRIEF — WINDOW 45: THE #2793 SHARED-BUDGETS A/B (BUDGETSQUAL) (2026-11-11)
+
+**The ECOSYSTEM read that staged it** (the subagent scan, 2026-11-11):
+main is ~175 commits past v1.2.6 in ~21 h (upstream moves fast); no v1.2.7
+yet. The GLM-path item with numbers on OUR EXACT SHAPE: **#2793** (commit
+cc2fa8d23690, fixes #2720) — DFlash2's shared draft rounds priced every
+stream's drafts by last grant + slack without the budgets rule, so a
+BLOCKED lane ratcheted its stream to zero drafts while peers decoded.
+Upstream's #2720 receipt ran on TWO GB10s AT TP=2 — our exact hardware:
+four-stream aggregate −1.9% to −8.8% across shapes, and the mechanism
+witness (the drafter counters) shows drafted rows per stream-round
+ratcheting 3.27 → 2.36. The fix: `.allocate_shared_drafts = drafting and
+!block`; upstream's fix claim: **+3.7% greedy four-stream decode, +3.5%
+at T=0.7, one-stream unchanged, tokens unchanged**. Two more upstream
+candidates (#2852 EXL3 whole-pass routing, #2856 batched shared MTP) are
+open WITHOUT numbers — watched, not staged. #2744 is Metal-only ("GLM on
+CUDA keeps its own per-slot image rows and is unaffected" — the PR body)
+— window 44's retire verdict is confirmed from upstream's own text; the
+CUDA side never had the mechanism, which explains the four-generation
+parity hunt. Also noted: upstream's #2404 opt-in prompt-cut knob
+(`TF_GLM_REQUEST_STARTS=1`) exists but refuses above `TF_KV_SHARE=0` —
+incompatible with our adopted KV_SHARE=16; not staged.
+
+**The patch**: 022-shared-budgets.patch — upstream's own diff staged
+verbatim (host-side only: one lane-admission line + two host-test files;
+no kernels, no contract records; applies clean against pristine v1.2.6
+AND on the full 18-patch default stack in alphabetical order — verified
+in a scratch clone of the tag, 2026-11-11; symbol check clean: no
+introduced names, the functional line reuses the in-scope `block`
+variable).
+
+**The stage brief — window 45** (`budgetsqual` value-first):
+- *The question*: does the shared-budgets fix deliver its >3% concurrent
+  decode value on OUR shape — 2×GB10 TP=2, PARALLEL=4, DFlash2 drafts at
+  the 524,288 window, the adopted 18-patch stack?
+- *The value-if-yes*: the four-stream aggregate decode rate (the c4
+  instrument) moves >3% — a user-visible concurrency number on the
+  shipping config; the drafter counters record the ratchet's recovery as
+  the mechanism witness.
+- *The cost*: one ~50-min window (the rebuild rides the ON arm's restart;
+  production stops once).
+- *The alternatives rejected*: waiting for the v1.2.7 rebase to carry it
+  free (the value question would wait weeks on upstream's release
+  cadence — and if the answer is RETIRE, the rebase must NOT carry an
+  unmeasured claim into production); staging #2852/#2856 (no numbers
+  claimed yet — upstream's own device receipts are pending; staging them
+  would measure an upstream hypothesis, not a claim); the DRAFTS=0+
+  LIVE_HALF composition (a trade-off already priced in PERF_PLAN — this
+  window's question is cheaper and user-visible).
+- *The kill criterion*: QUALIFIED = the room-matched c4 beats the OFF
+  arm's c4 by >3% with every guard green (the greedy sha, the room gate
+  within 1.0 GiB, both c4 plumbing guards OK, §2 ALL PASS, hardmode 95,
+  the vision 4/4, the bench/decode bands). Any guard fail or no value =>
+  RETIRE: the patch stays staged as provenance, the question closes as
+  upstream data, and the v1.2.7 rebase decision carries the receipt
+  either way. The value gate binds ONLY on a run where both c4 plumbing
+  guards read OK (window 43's lesson is baked into the phase).
+
+**The phase**: `budgetsqual` in run-qualification.sh (session-specific;
+retires with the receipt) — the OFF arm → ON arm (the rebuild rides the
+restart) → the room-match settle restart → the value gate on the
+room-matched c4, the duel_arm instrument set (solo twins, c2, c4, ITL,
+prefill slope, the drafter-counter deltas), the §2 gates + hardmode +
+vision + bench/steady-state guards.
+

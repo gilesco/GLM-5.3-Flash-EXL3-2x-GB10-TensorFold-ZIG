@@ -1169,3 +1169,32 @@ documented in LAUNCH.md round 119.
   117.1 vs 115.9 (+1.0%), ITL 58.4 vs 59.3 ms/chunk (−1.5%), solo flat,
   prefill flat (the prompt path untouched by design — the bench pp d0 1,468),
   the load walls unchanged (83/87 s); config.sh's tenth patch).
+
+## 022-shared-budgets.patch — DFlash2's shared rounds keep the budgets rule (round 141, the #2793 port)
+
+- WHAT: upstream #2793 (commit cc2fa8d23690, PR #2793, fixes #2720, 2026-11-11)
+  — DFlash2's shared draft rounds sized every stream's drafts by last grant +
+  slack WITHOUT the budgets rule, so a stream whose lane was BLOCKED (the pool's
+  fits() refusing at the 524,288 window) sat at zero drafts while its peers
+  decoded. The one functional line: `.allocate_shared_drafts = drafting and
+  !block` — a blocked stream stops pricing shared drafts, so the budget
+  redistributes to the streams that can use it. Upstream's measured claim on OUR
+  exact shape (two GB10s, TP=2, four-stream decode): **3.7% faster greedy / 3.5%
+  at T=0.7; one-stream unchanged; every reply's tokens unchanged.**
+- PORT: no port needed — upstream's own diff, staged verbatim as
+  022-shared-budgets.patch with the provenance header. Host-side only:
+  cuda_lanes.zig's one lane-admission line + two host-test files
+  (cuda_zero_budget_test.zig, copy_drafts_cuda_test.zig); no kernels, no
+  contract records. Numbered 022 to sort LAST (the line's rule: the next port
+  takes the next free number; the fix assumes the whole adopted stack's lane
+  state, and no stack member touches cuda_lanes.zig — order-free among them).
+- Verify: applies clean against pristine v1.2.6 AND on the full 18-patch
+  DEFAULT stack in alphabetical order (scratch clone of the tag, 2026-11-11;
+  the 017/019/021 non-default patches excluded from the verify composition).
+  Symbol check clean: no introduced names — the functional line reuses the
+  in-scope `block` variable; no duplicate-member or shadow risk. Compile risk
+  minimal (one boolean conjunction in an existing struct literal).
+- OWNER: this line; STATUS: STAGED (value-first; the A/B battery is
+  stagebrief'd in LAUNCH.md round 141 cont. 15 — the value gate reads the
+  CONCURRENT steady-state instruments: c2/c4 decode, the ITL, hardmode holding
+  95; QUALIFIED = joins config.sh's PATCHES default).

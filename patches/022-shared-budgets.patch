@@ -1,0 +1,175 @@
+upstream #2793 (cc2fa8d23690): DFlash2's shared rounds keep the budgets rule; MTP still
+prices drafts first. The shared draft rounds sized every stream's drafts by last grant +
+slack without the budgets rule, so a stream whose lane was BLOCKED (a decode window at
+the 524,288-token window, the pool's fits() refusing) sat at zero drafts while its
+peers decoded. The one functional line: .allocate_shared_drafts = drafting and !block —
+a blocked stream stops pricing shared drafts, so the budget redistributes to the
+streams that can use it. Upstream's measured claim on OUR exact shape (two GB10s,
+TP=2, four-stream decode): 3.7% faster greedy / 3.5% at T=0.7; one-stream unchanged;
+every reply's tokens unchanged.
+PROVENANCE: ashhart/TensorFold commit cc2fa8d23690 (2026-11-11), main-only
+(post-v1.2.6, PR #2793, fixes #2720); applies clean against pristine v1.2.6 AND on
+the full 18-patch default stack (verified in a scratch clone of the tag, alphabetical
+order). Host-side only: cuda_lanes.zig's one lane-admission line + two host-test
+files (cuda_zero_budget_test.zig, copy_drafts_cuda_test.zig); no kernels, no
+contract records. Upstream's own host tests ride in the patch. Value hypothesis: the
+four-stream decode win lands on our serving mode (DRAFTS=1, PARALLEL=4 at the 524,288
+window — the shared-rounds mechanism is ours); the value gate reads the concurrent
+steady-state instruments (c2/c4 decode, the ITL). No knob: the behavior IS the fix;
+the A/B flips by staging the patch list (the two-arm duel pattern).
+From cc2fa8d2369001aa26bfaf1bd585fce672539169 Mon Sep 17 00:00:00 2001
+From: Matthew Kelch <172301+kelchm@users.noreply.github.com>
+Date: Tue, 10 Nov 2026 10:12:09 -0500
+Subject: [PATCH] glm cuda: DFlash2's shared rounds keep the budgets rule; MTP
+ still prices drafts first
+
+A DFlash2 block drafts every proposing stream in one pass, so pricing a
+shared round's drafts first saves little there, and pricing from chances
+the chain cut zeroed leaves a stream at no drafts while its peers decode.
+
+Refs #2720.
+---
+ zig/src/families/glm/cuda_lanes.zig           |  2 +-
+ .../families/glm/cuda_zero_budget_test.zig    | 99 +++++++++++++++++--
+ zig/src/native/copy_drafts_cuda_test.zig      |  2 +-
+ 3 files changed, 92 insertions(+), 11 deletions(-)
+
+diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
+index db91093275..0746623073 100644
+--- a/zig/src/families/glm/cuda_lanes.zig
++++ b/zig/src/families/glm/cuda_lanes.zig
+@@ -100,7 +100,7 @@ pub const Lanes = struct {
+         const costs = if (block) null else if (self.costs) |*c| c else null;
+         const sharing = drafting and !self.alone;
+         return .{
+-            .allocate_shared_drafts = drafting,
++            .allocate_shared_drafts = drafting and !block, // cut chances would price a block's stream at none
+             .exact_width = if (drafting) max_rows else 1,
+             .first_copy_rows = 4, // a first copy starts narrow; it grows as its tokens land
+             .gpu_tokens = false,
+diff --git a/zig/src/families/glm/cuda_zero_budget_test.zig b/zig/src/families/glm/cuda_zero_budget_test.zig
+index ddc753e512..2988ccb29a 100644
+--- a/zig/src/families/glm/cuda_zero_budget_test.zig
++++ b/zig/src/families/glm/cuda_zero_budget_test.zig
+@@ -5,18 +5,99 @@ const engine = @import("cuda_engine.zig");
+ const dflash = @import("dflash.zig");
+ const proposals = @import("dflash_proposals.zig");
+ 
+-test "zero grant: GLM CUDA MTP and DFlash2 preserve tokens through a long skip" {
++test "zero grant: GLM CUDA MTP preserves tokens through a long skip" {
+     var e: engine.Engine = undefined;
+     e.mtp = true;
+-    for ([_]bool{ false, true }) |block| {
+-        e.drafter = if (block) @ptrFromInt(16) else null;
+-        var b: @import("cuda_lanes.zig").Lanes = undefined;
+-        b.x.e = &e;
+-        b.alone = false;
+-        b.mtp_confidence = null;
+-        b.costs = null;
+-        try lanes.shared_draft_check.check(b.facts(), false);
++    e.drafter = null;
++    var b: @import("cuda_lanes.zig").Lanes = undefined;
++    b.x.e = &e;
++    b.alone = false;
++    b.mtp_confidence = null;
++    b.costs = null;
++    try lanes.shared_draft_check.check(b.facts(), false);
++}
++
++/// The fake target with DFlash2's chain cut: one stream's first block held a weak draft and zeros, its later ones sure.
++const Cut = struct {
++    target: lanes.fake.Fake = .{ .gpa = std.testing.allocator },
++    stream: ?*lanes.Stream = null,
++    cuts: u32 = 1, // the stream's blocks still to cut
++    cut: bool = false, // its held block was cut
++    depths: std.ArrayList(u32) = .empty, // its depth in each shared round from its first grant of none
++
++    fn of(ptr: *anyopaque) *Cut {
++        return @fieldParentPtr("target", @as(*lanes.fake.Fake, @ptrCast(@alignCast(ptr))));
++    }
++
++    fn draft(ptr: *anyopaque, reqs: []const lanes.backend.DraftRequest) !void {
++        const c = of(ptr);
++        for (reqs) |r| if (r.stream == c.stream) {
++            if (reqs.len > 1 and (c.depths.items.len > 0 or r.stream.granted == 0)) try c.depths.append(std.testing.allocator, r.depth);
++            c.cut = r.depth > 0 and c.cuts > 0;
++            if (c.cut) c.cuts -= 1;
++        };
++        try c.target.backend().vtable.draft(ptr, reqs);
++    }
++
++    fn chances(ptr: *anyopaque, s: *lanes.Stream, out: []f64) !bool {
++        const c = of(ptr);
++        var chain: f64 = 1;
++        for (out, 0..) |*o, j| {
++            chain *= if (s != c.stream or !c.cut) 0.9 else if (j == 0) 0.05 else 0;
++            o.* = chain;
++        }
++        return true;
++    }
++};
++
++/// Three streams decoded together, the first cut once: its depths from its first grant of none.
++fn cutDepths(m: lanes.Model, shared: bool) !std.ArrayList(u32) {
++    const a = std.testing.allocator;
++    var c: Cut = .{};
++    defer c.target.deinit();
++    errdefer c.depths.deinit(a);
++    var table = c.target.backend().vtable.*;
++    table.draft = Cut.draft;
++    table.probabilities = Cut.chances;
++    var model = m;
++    model.allocate_shared_drafts = shared;
++    var cfg = try lanes.Config.init(a, model, model.exact_width, model.drafts);
++    defer cfg.deinit(a);
++    cfg.timed = false;
++    var clock: lanes.fake.FixedClock = .{};
++    var e = lanes.Engine.init(a, &cfg, .{ .ptr = &c.target, .vtable = &table }, clock.clock());
++    defer e.deinit();
++    var streams: [3]lanes.Stream = undefined;
++    var made: usize = 0;
++    defer for (streams[0..made]) |*s| s.deinit(a);
++    for (&streams, 0..) |*s, i| {
++        s.* = try lanes.Stream.init(a, .{ .id = "cut", .prompt = &.{ 7, 13, @intCast(i) }, .max_new = 96 });
++        made += 1;
+     }
++    c.stream = &streams[0];
++    for (&streams) |*s| try e.addStream(s);
++    for (0..1000) |_| if (e.activeCount() > 0) try e.step();
++    try std.testing.expectEqual(@as(usize, 0), e.activeCount());
++    return c.depths;
++}
++
++test "zero grant: a GLM DFlash2 stream cut to none drafts again within a few rounds while its peers decode" {
++    var e: engine.Engine = undefined;
++    e.mtp = true;
++    e.drafter = @ptrFromInt(16);
++    var b: @import("cuda_lanes.zig").Lanes = undefined;
++    b.x.e = &e;
++    b.alone = false;
++    b.mtp_confidence = null;
++    b.costs = null;
++    const m = b.facts();
++    var fixed = try cutDepths(m, m.allocate_shared_drafts);
++    defer fixed.deinit(std.testing.allocator);
++    try std.testing.expect(fixed.items.len >= 3 and std.mem.max(u32, fixed.items[0..3]) > 0);
++    // priced from its cut chances, which only a drafted block refreshes, it stays at none while its peers decode
++    var priced = try cutDepths(m, true);
++    defer priced.deinit(std.testing.allocator);
++    try std.testing.expect(priced.items.len >= 32 and std.mem.allEqual(u32, priced.items[0..32], 0));
+ }
+ 
+ test "zero grant: GLM DFlash2 skips the actual block pass and transmits a stable proposal mask" {
+diff --git a/zig/src/native/copy_drafts_cuda_test.zig b/zig/src/native/copy_drafts_cuda_test.zig
+index 49e1da8df9..c355206305 100644
+--- a/zig/src/native/copy_drafts_cuda_test.zig
++++ b/zig/src/native/copy_drafts_cuda_test.zig
+@@ -70,7 +70,7 @@ const families = std.enums.values(Family);
+ fn mainFacts(family: Family) lanes.Model {
+     if (family == .glm_mtp or family == .glm_block) {
+         const block = family == .glm_block;
+-        return .{ .allocate_shared_drafts = true, .exact_width = 32, .first_copy_rows = 4, .gpu_tokens = false, .mtp = true, .speculate = true, .speculate_early = false, .drafts = if (block) 7 else 15, .draft_streams = block, .mtp_step_ms = if (block) 1.6 / @as(f64, 7) else 0, .draft_probabilities = block, .window_costs = if (block) &glm_window_costs else &.{}, .shared_costs = if (block) &glm_shared_costs else &.{}, .shared_drafts = if (block) 0 else 3, .hidden_rows = true, .batch_rows = 32, .max_streams = 16 };
++        return .{ .allocate_shared_drafts = !block, .exact_width = 32, .first_copy_rows = 4, .gpu_tokens = false, .mtp = true, .speculate = true, .speculate_early = false, .drafts = if (block) 7 else 15, .draft_streams = block, .mtp_step_ms = if (block) 1.6 / @as(f64, 7) else 0, .draft_probabilities = block, .window_costs = if (block) &glm_window_costs else &.{}, .shared_costs = if (block) &glm_shared_costs else &.{}, .shared_drafts = if (block) 0 else 3, .hidden_rows = true, .batch_rows = 32, .max_streams = 16 };
+     }
+     if (family == .minimax or family == .minimax_head) {
+         const head = family == .minimax_head;
