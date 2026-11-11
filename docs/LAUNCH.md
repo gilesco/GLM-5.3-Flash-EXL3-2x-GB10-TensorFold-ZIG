@@ -11634,3 +11634,53 @@ carries no cached key — verified against window 49's real envelopes)
 to the engine's own done line (cached= is the verdict — the pattern
 every battery uses).
 
+
+## (round 141, cont. 26) WINDOW 50 RAN THE STATE-OF-THE-LINE RE-ANCHOR — THE DEPTH LADDER HOLDS 12/12; THE WARM-TTFT ROW MOVED (302 → 945 ms): A STALE-RECEIPT CATCH, THE NEXT QUESTION NAMED (2026-11-11)
+
+**The window** (campaign-20261111-174642, `preflight depth warmttft
+summary`, rc=0): both instruments ran on the adopted engine. Production
+restored healthy (200), the flag cleared.
+
+**The depth ladder HOLDS: 12/12 on the adopted engine** (3/3 at each of
+8k/64k/192k/384k) — the context front's standing claim re-qualified on
+the 19-patch stack; the round-140 bump and the #2793 adoption did not
+move the fact ladder.
+
+**The warm-TTFT row MOVED — a stale-receipt catch (the brief's
+outcome (b))**:
+- d8192: cold 3,755 ms → warm **945 ms** (`cached=6144` — a genuine
+  page-cache hit, the witness from the engine's own done line);
+- d4096: cold 2,522 ms → warm **1,347 ms** (`cached=2048`);
+- the row's old receipt (302 ms at d8192) was measured on the
+  **window-mode KV architecture** (the v1.2.1-era serve: model 84.75
+  GiB, a 3.7 GiB whole-window prompt cache — the campaign-20261102-
+  233025 serve line carries no pool-pages clause). The current
+  architecture is the paged pool + the share store (model 81.64 GiB,
+  the store as pool pages) — **the warm resume on the CURRENT
+  architecture is ~3.1× the old architecture's receipt, and ~4.5×
+  production's full-hit skip (~212 ms)**.
+- The comparison is honest as a ROW definition (the warm resume on the
+  standing config), not as a regression claim: the architecture changed
+  under the row, and the row now carries the current truth. The old
+  number remains receipted as the window-mode architecture's value.
+
+**The next question this catch names**: the warm-resume cost in the
+paged+share era — the row moved FROM 302 ms (window-mode) TO 945 ms
+(paged+share) across the architecture change, and the deltas are NOT
+the drift band (3× is far outside ±5%/window). Whether it is the page
+restore path's granularity (the 2048-aligned tail the PERF_PLAN parks),
+the share-store's slot lookup, or the fp8 page readback is a source-
+level question with a priced upstream analog — the stage brief for the
+next window needs the source read first (the round-34 shape: root-cause
+before instrument).
+
+**The re-anchored rows land in the anchors** (the warm-TTFT row
+re-dated with the architecture-change note; the depth rows carry the
+12/12-on-the-adopted-engine re-qual).
+
+**Round 141's watch: 15 windows run (36–50), 1 void (35) — the round's
+final state: one adoption confirmed twice, one retirement, five
+questions closed by receipt, one forged verdict caught, the promotion
+protocol ridden end to end, the instrument's drift structure mapped,
+and now one stale-receipt catch with its next question named.**
+

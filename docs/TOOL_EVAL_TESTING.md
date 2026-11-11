@@ -1586,6 +1586,19 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   campaign-20261111-150137 — the order-matched cross-window value +7.1% to +8.9%, the
   second-arm edge repeating across w45/46/47 while the pre-adoption pairs read flat;
   the window-drift watch is OPEN, LAUNCH cont. 20).
+- [ ] **The warm-resume cost in the paged+share era — OPENED by the window-50
+  stale-receipt catch** (campaign-20261111-174642): the warmttft re-anchor read the
+  warm resume at **945 ms (d8192, cached=6144)** and 1,347 ms (d4096, cached=2048) on
+  the adopted engine — **~3.1× the row's old 302 ms receipt and ~4.5× production's
+  full-hit skip (~212 ms)**. The old receipt was measured on the WINDOW-MODE KV
+  architecture (the v1.2.1-era serve, a whole-window 3.7 GiB prompt cache); the current
+  architecture is the paged pool + the share store — the architecture changed under
+  the row, so this is a re-anchor, not a regression claim. The depth fact ladder
+  re-qualified **12/12 on the adopted engine** in the same window (the context front
+  holds; 3/3 at 8k/64k/192k/384k). The next question: WHERE the warm-resume cost lives
+  in the paged+share era (the page restore's granularity, the share-store's slot
+  lookup, or the fp8 page readback) — the stage brief needs the source read first
+  (the round-34 shape: root-cause before instrument).
 - [x] **The #2257 pool plan's concurrent-resume regression watch — PASS (window
   38, campaign-20261110-234815)**: the kvshare2 instrument's shape re-run on
   the standing v1.2.6 config: the solo warm hit `cached=2048` at ttft 1.339 s;
