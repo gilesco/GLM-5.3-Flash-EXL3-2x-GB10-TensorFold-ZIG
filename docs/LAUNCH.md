@@ -11504,3 +11504,46 @@ closes its last locally-actionable question; the queue is now
 upstream-gated (the #2852/#2856 device receipts, the v1.2.7 rebase) or
 user-parked (the 0110 KV-SHARD port).**
 
+
+## (round 141, cont. 23) THE STAGE BRIEF — WINDOW 49: THE DRIFT MAP (THE FIRED WATCH'S DECOMPOSITION) (2026-11-11)
+
+**The stage brief — window 49** (`preflight driftmap summary`):
+- *The question*: the window-drift watch FIRED on window 48 (the c4
+  first-arm level climbed 170.0 → 182.0 → 185.1 → 195.8 across four
+  windows, +15% cumulative, while solo/c2/ITL/overhead stayed flat).
+  What IS the drift? The map: six fresh serves of the standing config
+  in ONE window, the full duel_arm instrument set each, the delivered
+  clocks as the covariate.
+- *The value-if-yes*: the drift model every future value gate cites —
+  the within-window slope (the order term vs the w45/46/47 second-arm
+  edges) separated from the window-to-window term, plus the
+  within-window behaviour of solo/c2/ITL (unmapped until now). The
+  honest margin a c4 reading must beat becomes a receipt, not a guess.
+- *The cost*: one window (~30 min: six short serves + the instruments;
+  no rebuild — the fingerprint does not move).
+- *The alternatives rejected*: assuming the drift is order-shaped and
+  moving on (the w45/46/47 edges could equally be a warming HOST — the
+  two explanations make different value-gate rules); re-anchoring the
+  anchors to the newest reading alone (the drift structure would still
+  be unknown); the 0110 KV-SHARD port (user-parked); the upstream watch
+  (no new release, both watched PRs unchanged — checked this sitting).
+- *The kill criterion*: none — a calibration window, no adoption
+  branch. The outcomes: (a) the within-window slope explains the
+  across-window step → the drift is order-shaped; value gates compare
+  order-matched INDICES; (b) the six serves sit flat → the drift
+  lives across windows (host state across days); value gates anchor
+  on the same window exclusively (the standing discipline made
+  precise); (c) either way, the c4-specific signature (solo/c2/ITL
+  flat) is itself the finding — the drift lives in the concurrent
+  decode path alone, which is where the #2793 adoption also lives and
+  where the perf frontier now sits.
+
+**The staging's adversarial catches** (both pre-launch, this sitting):
+the phase's first draft carried `serve's` inside a `$()` — a bare
+apostrophe in a command substitution opens a quote bash never closes
+(caught by the file-wide `bash -n`, not by phase-lint; the patrol
+pattern for future phase staging); and the worker clock probe carried
+a literal site identifier — the docs guard refused the commit before
+the push (the never-commit-site-identity rule; the probe now reads
+`$WORKER`).
+
