@@ -1431,6 +1431,141 @@ except Exception as e:
   echo "- VERDICT (VALUE-FIRST, window 37 on): QUALIFIED = the env PLACED (the container-env witness) AND all 16 slots funded CACHELESS (the ON arm's serve line) AND the enough-for count >= the OFF arm's AND the eviction warning ABSENT on the ON arm AND the greedy sha == the standing 80cc3802… AND the §2 gates ALL PASS AND hardmode 95 AND the vision 4/4 AND the bench/decode bands hold => TF_GLM_KV_LIVE_HALF=1 becomes the config.sh default. Any witness/guard miss => RETIRE: the knob goes nowhere, the standing config stays, the question closes as upstream data (upstream's scope caveat stands: not qualified on our shape)." >> "$P"
   touch "$OUT/.livehalf.done"
 fi
+
+# ---------------------------------------------------------------------------
+# phase: draftlive — the DRAFTS=0 + TF_GLM_KV_LIVE_HALF composition A/B
+# (SESSION-SPECIFIC; retires with the receipt). The composition the perf
+# plan prices: DRAFTS=0 (no DFlash2 draft block — the serial reference,
+# the served knob the round-139 #2699 battery's OFF arm ran) plus the
+# #2181 live-half keep (a kept state holds the live KDA half alone, the
+# keep ~30-35% smaller). The window-37 livehalf battery measured the
+# live-half mechanism REAL on our shape (the per-slot keep cost −31%:
+# ~237 → ~164 MiB/state) but the DRAFTS=1 serve's slot arithmetic did
+# not move (the eviction warning stayed at PARALLEL=4). The hypothesis
+# this battery decides: WITHOUT the draft block's memory, the smaller
+# keep funds ALL 16 TF_KV_SHARE slots — closing the eviction warning —
+# and the draft-off decode cost is the trade. The value question is the
+# USER-VISIBLE PAIR: (a) does the composition fund all 16 kept states
+# (the serve line's slots witness) with the eviction warning ABSENT,
+# (b) what does the concurrent resume cost (the 4-prefix aggregate) —
+# the resume value the funded store should deliver — and (c) the decode
+# trade: the c2/c4 aggregates vs the standing DRAFTS=1 engine's fourth
+# pair (185.1/193.2 c4, 120.7/121.9 c2 — the w47 receipt). The value
+# gate: the composition QUALIFIES only if all 16 funded AND the warning
+# ABSENT AND the resume aggregate improves on the round-133 receipt's
+# re-anchored 5.41 s AND the c4 aggregate stays within 5% of the
+# standing engine's w47 first-arm reading (185.1) — the decode trade
+# must not cost more than the resume gains. Guards: the env witnesses
+# (DRAFTS=0 and TF_GLM_KV_LIVE_HALF=1 both PLACED in the container env),
+# the greedy sha == the standing 80cc3802… (the composition must not
+# move the deterministic probes), the §2 gates ALL PASS, hardmode 95,
+# the vision 4/4, the bench + steady-state decode recorded (the decode
+# band re-reads against DRAFTS=0's own shape — the drafted decode path
+# is off, so the band is the serial reference's, not the drafted 70-76).
+# QUALIFIED => DRAFTS=0 + TF_GLM_KV_LIVE_HALF=1 become config.sh's
+# defaults TOGETHER (the composition; neither alone). Any witness/guard
+# miss or the c4 trade beyond 5% => RETIRE: the standing config stays,
+# the composition question closes with its receipt.
+# ---------------------------------------------------------------------------
+if want draftlive && ! phase_done draftlive; then
+  log "=== draftlive (the DRAFTS=0 + live-half composition A/B)"
+  P="$OUT/13-draftlive.md"; : > "$P"
+  echo "# draftlive (the DRAFTS=0 + TF_GLM_KV_LIVE_HALF composition: the composition vs the standing DRAFTS=1 engine; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
+  for arm in off on; do
+    if [ "$arm" = on ]; then
+      DLENV=(DRAFTS=0 TF_GLM_KV_LIVE_HALF=1)
+    else
+      DLENV=()
+    fi
+    S=$(date +%s)
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 "${DLENV[@]}"; then
+      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      # the env witnesses (both knobs must PLACE on the ON arm — the
+      # window-33 placebo lesson; the container env is the witness):
+      for kv in DRAFTS=0 TF_GLM_KV_LIVE_HALF=1; do
+        W=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" "$CONTAINER_NAME" 2>/dev/null | grep -c "^${kv}$" || true)
+        if [ "$arm" = on ]; then
+          echo "- the env witness ${kv%%=*}: $([ "$W" -ge 1 ] 2>/dev/null && echo PLACED || echo FAILED — a placebo arm; nothing downstream counts)" >> "$P"
+        else
+          echo "- the env witness ${kv%%=*}: the knob absent as intended" >> "$P"
+        fi
+      done
+      echo "- the serve line: $(serve_line)" >> "$P"
+      echo "- the slots witness: $(serve_line | grep -oE "[0-9]+( of TF_KV_SHARE=16)? kept states. slots \([0-9.]+ GiB\)|no prompt cache")" >> "$P"
+      echo "- the enough-for witness: $(serve_line | grep -oE "enough for [0-9]+ at a 524288")" >> "$P"
+      if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "live streams evict each other"; then
+        echo "- the eviction warning: PRESENT" >> "$P"
+      else
+        echo "- the eviction warning: ABSENT" >> "$P"
+      fi
+      # the greedy witness (the same-bits guard):
+      req_file "$OUT/dl-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+      chat "$OUT/dl-$arm-req.json" > "$OUT/dl-$arm-resp.json" || true
+      echo "- the greedy content sha: $(content_sha "$OUT/dl-$arm-resp.json")" >> "$P"
+      # THE VALUE INSTRUMENTS: the resume aggregate (the funded store's
+      # value — the kvshare2 shape: 4 concurrent warm prefixes) + the c2/c4
+      # decode aggregates (the trade). The OFF arm reads the STANDING
+      # engine's shape (DRAFTS=1); the ON arm reads the composition's.
+      duel_arm "dl-$arm" "$SERVED_NAME"
+      DLOK=1
+      for f in "$OUT"/duel-dl-$arm-c4-*.json; do
+        [ -f "$f" ] || { DLOK=0; continue; }
+        python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d['usage']['completion_tokens'] > 0" "$f" >/dev/null 2>&1 || DLOK=0
+      done
+      echo "- the c4 value plumbing guard: $([ "$DLOK" = "1" ] && echo OK — all four streams answered || echo FAILED — the value number DOES NOT COUNT)" >> "$P"
+      # THE CONCURRENT-RESUME PROBE (the kvshare2 shape, regresswatch's
+      # recovered instrument — measured on BOTH arms so the comparison is
+      # same-window order-matched, not against a two-day-old receipt; the
+      # window-drift watch is open): four d4096 fill prefixes cold
+      # sequential, then the four concurrent warms; the engine lines'
+      # cached= values are the hit verdict.
+      for i in 1 2 3 4; do
+        bf="$OUT/dl-$arm-cc$i.json"
+        FILL_WORDS="$FILL_WORDS" python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split(); off = int(sys.argv[1])
+fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + off) % 89}' for i, w in ((i, words[i % len(words)]) for i in range(4096 // 4)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
+" "$((i * 7))" "$bf"
+        python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+        T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/dl-$arm-cc$i-r.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+        echo "- cc$i cold ttft_wall ${T}s" >> "$P"
+      done
+      S=$(date +%s.%N)
+      for i in 1 2 3 4; do
+        curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/dl-$arm-cc$i.json" -o "$OUT/dl-$arm-cc$i-w.json" || true
+      done &
+      wait
+      E=$(date +%s.%N)
+      echo "- the 4 concurrent resumes: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate — THE RESUME VALUE NUMBER" >> "$P"
+      echo "- the concurrent warms' engine lines (cached= is the hit verdict):" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -8 | sed 's/^/  /' >> "$P" || true
+    else
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
+  run_gates dl DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 DRAFTS=0 TF_GLM_KV_LIVE_HALF=1 || true
+  echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
+  mkdir -p "$OUT/dlhm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "draftlive" --output-dir "$OUT/dlhm" --parallel 2 \
+    --json-file "$OUT/dlhm/hm.json" > "$OUT/dlhm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/dlhm/hm.json" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold — the composition must not move them)" >> "$P"
+  mkdir -p "$OUT/dlvision"
+  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/dlvision/vision.json" > "$OUT/dlvision/vision.log" 2>&1 || true
+  tail -5 "$OUT/dlvision/vision.log" >> "$P" 2>/dev/null || true
+  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  bench_perf dl "$OUT/dl-bench" 4 >> "$P" 2>&1 || true
+  echo "- VERDICT (VALUE-FIRST): QUALIFIED = BOTH env witnesses PLACED AND all 16 slots funded (the ON arm's slots witness) AND the eviction warning ABSENT AND the greedy sha == the standing 80cc3802… AND the c4 aggregate within 5% of the standing engine's w47 first-arm reading (185.1 — the decode trade must not cost more) AND the c4 plumbing guard OK AND the §2 gates ALL PASS AND hardmode 95 AND the vision 4/4 AND the resume aggregate BETTER than the OFF arm's same-window reading (the order-matched comparison; the round-133 receipt's 5.41 s and the w38 re-anchor 5.41/4/4 cited as the historical references) => DRAFTS=0 + TF_GLM_KV_LIVE_HALF=1 become config.sh's defaults TOGETHER. Any witness/guard miss or the c4 trade beyond 5% => RETIRE: the standing config stays, the composition question closes with its receipt." >> "$P"
+  touch "$OUT/.draftlive.done"
+fi
 # ---------------------------------------------------------------------------
 # phase: regresswatch (SESSION-SPECIFIC; retires with the receipt). The
 # concurrent-resume regression watch on v1.2.6: the round-133 adoption

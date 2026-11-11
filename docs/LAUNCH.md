@@ -11393,3 +11393,52 @@ confirmed twice on independent instruments), one retirement (the
 caught, the promotion protocol ridden end to end, and the instrument's
 order/drift structure mapped.**
 
+
+## (round 141, cont. 21) THE STAGE BRIEF — WINDOW 48: THE DRAFTS=0 + LIVE_HALF COMPOSITION A/B (DRAFTLIVE) (2026-11-11)
+
+**The stage brief — window 48** (`preflight draftlive summary`):
+- *The question*: the perf plan's priced composition — DRAFTS=0 (the
+  serial reference, no DFlash2 draft block) plus the #2181 live-half
+  keep (~30-35% smaller) — does it fund ALL 16 TF_KV_SHARE kept states
+  cacheless (closing the eviction warning window 37 measured as
+  unresolvable at PARALLEL=4 with drafts on), and what does the
+  concurrent resume + decode trade read?
+- *The value-if-yes*: the multi-turn resume at 4/4 cache hits without
+  eviction (the opencode interaction's own cost), priced against the
+  decode trade — the c4 gate binds at within 5% of the standing
+  engine's w47 first-arm reading (185.1). A funded store + a bounded
+  trade is a user-visible win on both axes.
+- *The cost*: one window (~50 min: two serves + the rebuild-free
+  restarts — no new patch, both knobs exist in the adopted engine;
+  the fingerprint does not move).
+- *The alternatives rejected*: the 0110 KV-SHARD port (user-parked —
+  a multi-sitting scope; the composition question is one window);
+  the window-drift re-anchor as a standalone window (the drift watch's
+  checkpoint rides this window's OFF arm free — the OFF arm IS another
+  same-window A/A-ish reading at the standing config); waiting for the
+  v1.2.7 rebase (the composition's knobs exist NOW and the question is
+  user-visible).
+- *The kill criterion*: QUALIFIED = BOTH env witnesses PLACED AND all
+  16 slots funded AND the eviction warning ABSENT AND the greedy sha ==
+  the standing 80cc3802… AND the c4 aggregate within 5% of 185.1 AND
+  the c4 plumbing guard OK AND §2 ALL PASS AND hardmode 95 AND the
+  vision 4/4 AND the resume aggregate BETTER than the OFF arm's
+  same-window reading => DRAFTS=0 + TF_GLM_KV_LIVE_HALF=1 become
+  config.sh's defaults TOGETHER (neither alone). Any miss => RETIRE,
+  the standing config stays, the composition closes with its receipt.
+  The value gate binds on order-matched instruments throughout (the
+  window-drift watch is open).
+
+**The phase**: `draftlive` in run-qualification.sh (session-specific;
+retires with the receipt) — the OFF arm (the standing DRAFTS=1 engine)
+vs the ON arm (DRAFTS=0 + TF_GLM_KV_LIVE_HALF=1), the duel_arm
+instrument set + the kvshare2-shape concurrent-resume probe on BOTH
+arms (order-matched), the slots/enough-for/eviction witnesses from the
+serve lines, the §2 gates + hardmode + vision + the bench on the ON
+arm.
+
+**The window-drift watch rides**: this window's OFF arm is the
+standing config measured again — its c4/solo readings are the drift
+watch's third checkpoint (w45 170.0, w46 182.0, w47 185.1 first-arm
+levels).
+
