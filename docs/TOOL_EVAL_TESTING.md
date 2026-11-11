@@ -1552,7 +1552,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   campaign log's restart line prove placement); the witness instrument must match the
   knob's forwarding path. The window-drift watch FIRED: the OFF arm's c4 195.8 is the
   fourth consecutive first-arm climb (170.0 → 182.0 → 185.1 → 195.8, +15% cumulative);
-  no cross-window c4 comparison is valid as a delta.
+  no cross-window c4 comparison is valid as a delta. **The watch's
+  decomposition (window 49, campaign-20261111-170638): the drift is
+  WINDOW-TO-WINDOW, not order** — six fresh serves in one window read
+  FLAT (c4 −0.19 t/s/serve, −0.7% first-to-last; solo/c2/ITL flatter
+  still; the clocks 3,894–3,898 MHz throughout), so the order term does
+  NOT explain the climb; the value-gate rule is precise: order-matched
+  same-window comparison is sufficient, no cross-window c4 delta is
+  valid, and any value gate inside the ±5%-per-window drift band judges
+  on order-matched same-window instruments exclusively. A guard-timing
+  artifact (three receipt lines say FAILED while every checked artifact
+  is valid; re-run passes 6/6) is recorded in the same entry — the
+  model stands, no value gate depended on the guard lines.
 - [x] **The #2793 shared-budgets port — QUALIFIED and ADOPTED (window 45's value-first
   verdict: the value gate CROSSED at +6.1%)** (campaign-20261111-094017): upstream #2793
   (commit cc2fa8d23690, fixes #2720) — DFlash2's shared draft rounds priced every stream's

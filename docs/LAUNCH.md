@@ -11547,3 +11547,51 @@ a literal site identifier — the docs guard refused the commit before
 the push (the never-commit-site-identity rule; the probe now reads
 `$WORKER`).
 
+
+## (round 141, cont. 24) WINDOW 49 RAN THE DRIFT MAP — THE DRIFT IS WINDOW-TO-WINDOW, NOT ORDER; THE VALUE-GATE RULE MADE PRECISE; A GUARD-TIMING ARTIFACT RECORDED (2026-11-11)
+
+**The window** (campaign-20261111-170638, `preflight driftmap summary`,
+rc=0): six fresh serves of the standing config in one window, the full
+duel_arm instrument set each, the delivered clocks as the covariate.
+Production restored healthy (200), the flag cleared.
+
+**The drift model (the receipt the value gates cite)**:
+- **The within-window slope is FLAT**: c4 −0.19 t/s/serve across six
+  serves (196.8 → 195.5, −0.7% first-to-last; solo −0.05, c2 −0.02).
+  **The order term does NOT explain the across-window climb.**
+- The c4-specific signature holds inside the window too: solo/c2/ITL
+  drift less than c4 does (c2 wobbles ±2% between serves, c4 ±1%).
+- The clocks are flat (3,894–3,898 MHz delivered, both hosts, all six
+  serves) — the covariate rules out clock throttling as the mover.
+- **The conclusion: the drift lives in the WINDOW-TO-WINDOW channel** —
+  host state across days/reboots, not serve order within a window. The
+  across-window first-arm series (170.0 → 182.0 → 185.1 → 195.8) is a
+  between-windows property; within a window the instrument is stable
+  to ±1%.
+- **The value-gate rule, now precise**: order-matched same-window
+  comparison is sufficient (the standing discipline) — no
+  order-index correction is needed; but NO cross-window c4 comparison
+  is valid as a delta, and any value gate whose margin is inside the
+  ±5%-per-window drift band must be judged on order-matched
+  same-window instruments exclusively. The #2793 adoption's value
+  (+7.1% to +8.9% order-matched) clears the band comfortably and
+  stands.
+
+**A guard-timing artifact, recorded honestly**: serves 1–3's receipt
+lines say `the c4 value plumbing guard: FAILED — the c4 DOES NOT
+COUNT`, but every artifact the guard checks is valid — all 24 c4
+envelopes exist with tokens=2048, 24 unique ids, and the guard logic
+re-run against the saved files passes 6/6 (the guard code is byte-
+identical to the proven budgetsqual pattern). The aggregates the map
+read came from the same files the guard now validates, so the model
+stands; the FAILED lines are a run-time artifact of the phase's first
+campaign run — most plausibly the guard's glob evaluating before the
+files settled. The map's verdict does not depend on the guard lines
+(no value gate fired on them; the phase has no adoption branch).
+
+**Round 141's watch: 14 windows run (36–49), 1 void (35) — the round
+closes with the instrument's drift structure MAPPED and the value-gate
+rule made precise. The locally-actionable queue is empty; the remaining
+items are upstream-gated (the #2852/#2856 device receipts, the v1.2.7
+rebase) or user-parked (the 0110 KV-SHARD port).**
+
