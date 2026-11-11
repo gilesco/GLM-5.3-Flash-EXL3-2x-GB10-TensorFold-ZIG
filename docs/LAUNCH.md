@@ -11209,3 +11209,38 @@ loop's best round: one upstream port retired by a valid negative
 claim (#2793, +6.1%), three questions closed by receipt, one forged
 verdict caught and corrected by the primary evidence.**
 
+
+## (round 141, cont. 17) THE STAGE BRIEF — WINDOW 46: THE DUEL RE-PAIR ON THE ADOPTED 19-PATCH STACK (+ THE PROMOTION'S RESTORE) (2026-11-11)
+
+**The stage brief — window 46** (`preflight duel summary`):
+- *The question*: does the adopted 19-patch stack hold the A/B's gains on
+  the duel's five direct instruments — and what do the re-dated perf rows
+  read against the adopted engine, both arms the promoted config (the
+  round-139 A/A design)?
+- *The value-if-yes*: the perf rows re-dated on the adopted engine — c4
+  expected near its new 180.4 reading (~106% of production's floor row),
+  solo/c2/ITL/overhead/cold settled on a proper same-window pair (the
+  A/B's ITL spread 14.1/14.4/15.3 ms/token across three serves was a
+  watch item; the re-pair settles it).
+- *The cost*: one window; the fingerprint moved on BOTH repos (the
+  testing config and production's promotion sync), so the first arm's
+  start re-prepares (~15–25 min) and the exit-path restore re-prepares
+  production's 19-patch image — the promotion's designed deployment path;
+  no manual serve touch.
+- *The alternatives rejected*: a separate validation window on the new
+  default (the one-line-patch pattern doesn't need one — the A/B's ON arm
+  WAS the validation: §2 ALL PASS + hardmode 95 + the vision 4/4 on the
+  patched engine); waiting for the v1.2.7 rebase (the re-pair is due
+  regardless — the last adoption's duel re-pair has carried every
+  round-136–139 adoption).
+- *The kill criterion*: the re-pair is a measurement, not an adoption —
+  every instrument reads and re-dates the rows; an arm refusing to start
+  is the fail-honest void. The §2 gates + hardmode rode the adoption
+  window; the duel's job is the rows.
+
+**The promotion state at launch**: the testing repo carries the 19-patch
+PATCHES default (7393d5b); production's repo carries the mirrored patch
+(byte-identical in the store AND image/patches), the config append, and
+the README status (7819ddf + 086c1ae) — production keeps serving the
+18-patch image until this window's exit-path restore re-prepares it.
+
