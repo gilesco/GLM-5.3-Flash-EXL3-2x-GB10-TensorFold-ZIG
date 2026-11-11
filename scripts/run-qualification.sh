@@ -1521,154 +1521,22 @@ VISION2744_RETIRED=1
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# phase: budgetsqual — the #2793 shared-budgets A/B: the standing 18-patch
-# stack vs the stack + 022-shared-budgets (SESSION-SPECIFIC; retires with the
-# receipt). Upstream #2793 (cc2fa8d23690, fixes #2720): DFlash2's shared
-# draft rounds priced every stream's drafts by last grant + slack without
-# the budgets rule, so a BLOCKED lane (the pool's fits() refusing at the
-# 524,288 window) ratcheted its stream to zero drafts while peers decoded —
-# drafted rows per stream-round fell 3.27 -> 2.36 in upstream's own two-GB10
-# TP=2 receipt (OUR exact hardware shape), four-stream decode down 2-9%.
-# The fix: .allocate_shared_drafts = drafting and !block — a blocked stream
-# stops pricing shared drafts. Upstream's fix claim: four-stream decode
-# +3.7% greedy / +3.5% at T=0.7; one-stream unchanged; tokens unchanged.
-# The value gate reads the C4 AGGREGATE DECODE RATE (duel_arm's instrument
-# 5): the ON arm's room-matched c4 must beat the OFF arm's c4 by >3% —
-# upstream's 3.7% greedy claim minus the instrument's spread. The drafter
-# counters (drafted/accepted/rounds deltas from /health) ride along as the
-# MECHANISM WITNESS (report-only): pre-fix, four streams' drafted rows
-# ratchet down; post-fix they recover. Guards: the greedy TEXT sha
-# identical on both arms (a decode-only fix must not move the probes), the
-# room gate (the arms' room lines within 1.0 GiB — window 39's lesson), the
-# VALUE PLUMBING GUARD on every aggregate (all streams answered with real
-# envelopes — window 43's lesson: a dead race reads ~0.01 s and would
-# SPURIOUSLY QUALIFY), the §2 gates ALL PASS, hardmode 95, the vision 4/4,
-# the bench + steady-state decode in band. QUALIFIED => 022 joins
-# config.sh's PATCHES default. Any guard fail or no value => RETIRE: the
-# patch stays staged in patches/ as receipted provenance; the v1.2.7
-# rebase carries it free.
 # ---------------------------------------------------------------------------
-if want budgetsqual && ! phase_done budgetsqual; then
-  log "=== budgetsqual (the #2793 shared-budgets A/B: the standing stack vs the stack + 022)"
-  P="$OUT/14-budgetsqual.md"; : > "$P"
-  echo "# budgetsqual (the #2793 shared-budgets A/B: the 18-patch standing stack vs + 022; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
-  BQ_LIST="${PATCHES-}"   # the standing stack by default; the ON arm extends it
-  OFFROOM=0               # the OFF arm's room line; 0 => the room gate FAILs loudly (no OFF arm = no value reading)
-  for arm in off on; do
-    if [ "$arm" = on ]; then
-      # ONE quoted argument per K=V pair (the AGENTS rule): the value carries
-      # spaces, so the pair must reach restart as a single word — stage the
-      # LIST into a var first, then the pair quotes it whole.
-      BQ_LIST="$PATCHES 022-shared-budgets.patch"
-      PENV=(PATCHES="$BQ_LIST")
-    else
-      PENV=()
-    fi
-    S=$(date +%s)
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 "${PENV[@]}"; then
-      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
-      echo "- the serve line: $(serve_line)" >> "$P"
-      # the patch witness: the patches ride the image build — the container's
-      # runtime log cannot name them. The honest witness is the fingerprint
-      # chain: prepare's "patch overlay" line (in THIS campaign log) must
-      # name 022-shared-budgets on the ON arm. Grep THE CAMPAIGN LOG (the
-      # window's own receipt), not the container.
-      APPLIED=$(grep -c "022-shared-budgets" "$LOG" 2>/dev/null || true)
-      if [ "$arm" = on ]; then
-        if [ "$APPLIED" -ge 1 ] 2>/dev/null; then
-          echo "- the patch witness: 022-shared-budgets in the campaign's prepare/build lines ($APPLIED mentions)" >> "$P"
-        else
-          echo "- the patch witness: FAILED (022-shared-budgets not in the campaign log — a placebo arm; nothing downstream counts)" >> "$P"
-        fi
-      else
-        echo "- the patch witness: 022 absent as intended" >> "$P"
-      fi
-      # the greedy same-bits witness (TEXT — a decode-path fix must not move it):
-      req_file "$OUT/bq-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-      chat "$OUT/bq-$arm-req.json" > "$OUT/bq-$arm-resp.json" || true
-      echo "- the greedy text sha: $(content_sha "$OUT/bq-$arm-resp.json")" >> "$P"
-      # THE VALUE INSTRUMENTS (duel_arm's set, on this arm's serve): the solo
-      # twins (stability), c2, c4 aggregate — THE VALUE NUMBER — the ITL
-      # stream, the prefill slope, and the drafter counters' deltas (the
-      # mechanism witness: pre-fix the four streams' drafted rows ratchet
-      # DOWN under the blocked-lane pricing; post-fix they recover).
-      duel_arm "bq-$arm" "$SERVED_NAME"
-      # THE VALUE PLUMBING GUARD (window 43's lesson): every aggregate counts
-      # only when ALL its streams answered with real envelopes carrying
-      # tokens; a dead stream would deflate the total and masquerade as a
-      # WIN or a LOSS.
-      BQOK=1
-      for f in "$OUT"/duel-bq-$arm-c4-*.json; do
-        [ -f "$f" ] || { BQOK=0; continue; }
-        python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d['usage']['completion_tokens'] > 0" "$f" >/dev/null 2>&1 || BQOK=0
-      done
-      BQROOM=$(serve_line | grep -oE "of [0-9.]+ GiB left after" | grep -oE "[0-9.]+" || echo 0)
-      echo "- the c4 value plumbing guard: $([ "$BQOK" = "1" ] && echo OK — all four streams answered || echo FAILED — a c4 stream returned no envelope; the value number DOES NOT COUNT)" >> "$P"
-      echo "- the room line: of $BQROOM GiB left after" >> "$P"
-      [ "$arm" = off ] && OFFROOM="$BQROOM"
-    else
-      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
-    fi
-  done
-  # THE ROOM-MATCHED RERUN (window 39's confound lesson): the ON arm booted
-  # right after the rebuild — the unified-memory pool carries the build's
-  # residue and the value probe would measure the room confound. ONE
-  # build-free restart settles the room; the value probes re-run there and
-  # THE VALUE GATE READS THE ROOM-MATCHED NUMBERS.
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$BQ_LIST"; then
-    echo "## the ON arm's room-matched serve (the settle restart)" >> "$P"
-    RMROOM=$(serve_line | grep -oE "of [0-9.]+ GiB left after" | grep -oE "[0-9.]+" || echo 0)
-    echo "- the room line: of $RMROOM GiB left after" >> "$P"
-    req_file "$OUT/bq-onrm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-    chat "$OUT/bq-onrm-req.json" > "$OUT/bq-onrm-resp.json" || true
-    echo "- the room-matched greedy text sha: $(content_sha "$OUT/bq-onrm-resp.json")" >> "$P"
-    duel_arm "bq-onrm" "$SERVED_NAME"
-    RMOK=1
-    for f in "$OUT"/duel-bq-onrm-c4-*.json; do
-      [ -f "$f" ] || { RMOK=0; continue; }
-      python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d['usage']['completion_tokens'] > 0" "$f" >/dev/null 2>&1 || RMOK=0
-    done
-    echo "- the room-matched c4 value plumbing guard: $([ "$RMOK" = "1" ] && echo OK — all four streams answered || echo FAILED — a c4 stream returned no envelope; the value number DOES NOT COUNT)" >> "$P"
-  else
-    echo "- the ON arm's room-match restart REFUSED — the battery is void; the value gate does not fire" >> "$P"
-    touch "$OUT/.budgetsqual.done"
-    log "budgetsqual: the room-match restart refused — phase void (fail-honest)"
-    exit 0
-  fi
-  # THE ROOM GATE (the value gate reads only when the arms' room agrees):
-  BQGATE=$(python3 -c "print('PASS' if abs($OFFROOM - $RMROOM) < 1.0 else 'FAIL')")
-  echo "- the room gate: the OFF arm's room $OFFROOM GiB vs the room-matched serve's $RMROOM GiB — $BQGATE (the gate: within 1.0 GiB)" >> "$P"
-  echo "## the §2 content gates (the ON arm's room-matched serve stands)" >> "$P"
-  run_gates bq DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$BQ_LIST" || true
-  echo "## hardmode (the 95 must hold, the ON arm's room-matched serve)" >> "$P"
-  mkdir -p "$OUT/bqhm"
-  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")' 2>/dev/null) || model=""
-  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
-    --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "budgetsqual" --output-dir "$OUT/bqhm" --parallel 2 \
-    --json-file "$OUT/bqhm/hm.json" > "$OUT/bqhm/hm.log" 2>&1 || true
-  grep -o '"final_score": [0-9]*' "$OUT/bqhm/hm.json" >> "$P" 2>/dev/null || true
-  echo "## the vision suite (4/4 must hold — the decode fix must not move them)" >> "$P"
-  mkdir -p "$OUT/bqvision"
-  python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/bqvision/vision.json" > "$OUT/bqvision/vision.log" 2>&1 || true
-  tail -5 "$OUT/bqvision/vision.log" >> "$P" 2>/dev/null || true
-  echo "## the regression watch (the bench + steady-state on the ON arm's room-matched serve)" >> "$P"
-  bench_perf bq "$OUT/bq-bench" 4 >> "$P" 2>&1 || true
-  bf=$(mktemp /tmp/bq.XXXXXX.json)
-  python3 -c "
-import json, sys
-print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
-  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
-  S=$(date +%s)
-  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/bq-decode.json" || true
-  W=$(( $(date +%s) - S )); rm -f "$bf"
-  echo "- steady-state decode: 2048 tokens in $W s = $(python3 -c "print(f'{2048/$W:.1f}' if $W else 'n/a')") tok/s (the band: 70-76)" >> "$P"
-  echo "- VERDICT (VALUE-FIRST): QUALIFIED = the patch PLACED (the campaign-log witness) AND the greedy TEXT sha == the standing 80cc3802… AND (the value gate) the ON arm's ROOM-MATCHED c4 aggregate BEATS the OFF arm's c4 by >3% (upstream's 3.7% greedy claim on this exact shape, minus the instrument's spread) AND (the value plumbing) both c4 guards OK AND (the room gate) the arms' room lines within 1.0 GiB AND the §2 gates ALL PASS AND hardmode 95 AND the vision 4/4 AND the bench/decode bands hold => 022-shared-budgets.patch joins config.sh's PATCHES default. Any guard fail or no value => RETIRE: the patch stays staged in patches/ as receipted provenance; the question closes as upstream data (the v1.2.7 rebase carries it free; the mechanism witness — the drafter counters — records whether the ratchet reproduces here either way)." >> "$P"
-  touch "$OUT/.budgetsqual.done"
-fi
+# phase: budgetsqual — RETIRED (window 45's value-first verdict,
+# campaign-20261111-094017: QUALIFIED — the value gate CROSSED at +6.1%).
+# The #2793 shared-budgets port ADOPTED as the sixteenth patch: the
+# room-matched c4 aggregate 180.4 vs the OFF arm's 170.0 t/s (+6.1%,
+# beyond the >3% gate and upstream's own 3.7% greedy claim); the
+# mechanism gradient confirms the blocked-lane ratchet's signature
+# (solo +1.0%, c2 flat, c4 +6.1%); the greedy TEXT sha identical on all
+# three serves, the room gate PASS (12.4 vs 13.0 GiB), both c4 plumbing
+# guards OK, the §2 gates ALL PASS (hardmode 95 — the THIRTY-SECOND
+# consecutive), the vision 4/4, the bench bands held. The patch joined
+# config.sh's PATCHES default; the promoted repo mirrors it on its
+# promotion sync. The phase retires with its question closed; the
+# window-43 plumbing guards remain in the phase pattern's wake.
+# ---------------------------------------------------------------------------
+BUDGETSQUAL_RETIRED=1
 
 # ---------------------------------------------------------------------------
 

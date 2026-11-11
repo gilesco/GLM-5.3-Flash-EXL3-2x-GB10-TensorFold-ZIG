@@ -1534,6 +1534,23 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   room gate (the arms' room lines must differ by < 1.0 GiB). The patch stays
   staged but NOT in config.sh's PATCHES (no adoption on a confounded
   reading).
+- [x] **The #2793 shared-budgets port — QUALIFIED and ADOPTED (window 45's value-first
+  verdict: the value gate CROSSED at +6.1%)** (campaign-20261111-094017): upstream #2793
+  (commit cc2fa8d23690, fixes #2720) — DFlash2's shared draft rounds priced every stream's
+  drafts by last grant + slack without the budgets rule, so a BLOCKED lane ratcheted its
+  stream to zero drafts while peers decoded (upstream's own two-GB10 TP=2 receipt: drafted
+  rows/stream-round 3.27 → 2.36, four-stream aggregate −1.9% to −8.8%). Ported as
+  022-shared-budgets.patch (upstream's own diff verbatim; scratch-clone verified against
+  pristine v1.2.6 AND the full 18-patch default stack; no introduced names). The A/B: the
+  greedy TEXT sha `80cc3802…` IDENTICAL on all three serves, the room gate PASS (12.4 vs
+  13.0 GiB), both c4 plumbing guards OK, the §2 gates ALL PASS (**hardmode 95 — the
+  THIRTY-SECOND consecutive**), the vision 4/4, the bench bands held — and the value gate
+  CROSSED: the room-matched c4 aggregate **180.4 vs the OFF arm's 170.0 t/s (+6.1%)**,
+  beyond the >3% gate and upstream's own 3.7% greedy claim. The mechanism gradient
+  (solo +1.0%, c2 flat, c4 +6.1%) confirms the blocked-lane ratchet's signature — the
+  concurrent shape is where the ratchet lived. ADOPTED as the sixteenth patch
+  (config.sh's PATCHES default); the promoted repo mirrors it on its promotion sync;
+  the phase retired with its question closed.
 - [x] **The #2257 pool plan's concurrent-resume regression watch — PASS (window
   38, campaign-20261110-234815)**: the kvshare2 instrument's shape re-run on
   the standing v1.2.6 config: the solo warm hit `cached=2048` at ttft 1.339 s;

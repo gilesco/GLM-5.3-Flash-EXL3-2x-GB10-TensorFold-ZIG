@@ -18,9 +18,9 @@
     <text x="505" y="131.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
     <text x="537" y="131.5" font-size="10" fill="#8b949e">118.4 vs 119.7 t/s</text>
     <text x="12" y="171.5" font-size="12.5" fill="#9fb1c9">decode c4 aggregate (measured)</text>
-    <rect x="270" y="154" width="227" height="26" rx="4" fill="#d29922"/>
-    <text x="505" y="171.5" font-size="13.5" font-weight="700" fill="#d29922">99%</text>
-    <text x="537" y="171.5" font-size="10" fill="#8b949e">167.4 vs 169.7 t/s</text>
+    <rect x="270" y="154" width="243" height="26" rx="4" fill="#3fb950"/>
+    <text x="521" y="171.5" font-size="13.5" font-weight="700" fill="#3fb950">106%</text>
+    <text x="562" y="171.5" font-size="10" fill="#8b949e">180.4 vs 169.7 t/s</text>
     <text x="12" y="211.5" font-size="12.5" fill="#9fb1c9">request overhead (TTFT, 1-token, solo)</text>
     <rect x="270" y="194" width="232" height="26" rx="4" fill="#3fb950"/>
     <text x="510" y="211.5" font-size="13.5" font-weight="700" fill="#3fb950">101%</text>
@@ -50,6 +50,6 @@
   <!-- the 100% line -->
   <line x1="499" y1="26" x2="499" y2="428" stroke="#8b949e" stroke-opacity="0.55" stroke-dasharray="4 4"/>
 
-  <text x="12" y="450" font-size="10" fill="#8b949e">Yellow = open fronts; green = won. Higher is always better (time metrics inverted). Receipts (2026-11-10 (the v1.2.6 bump qualified, campaign-20261110-162034; the loading row re-dated to 84/83 s on the v1.2.6 engine)): the served default is the TR3-4bpw checkpoint (reshared locally 120 -> 55 shards, byte-identical,</text>
+  <text x="12" y="450" font-size="10" fill="#8b949e">Yellow = open fronts; green = won. Higher is always better (time metrics inverted). Receipts (2026-11-11 (the #2793 shared-budgets adopted: the c4 row re-dated to the budgetsqual room-matched 180.4, campaign-20261111-094017; the v1.2.6 bump's loading row 84/83 s stands)): the served default is the TR3-4bpw checkpoint (reshared locally 120 -> 55 shards, byte-identical,</text>
 
 </svg>

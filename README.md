@@ -19,7 +19,7 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold v1.2.6 + **the adopted 18-patch stack re-anchored**
+- **Engine**: TensorFold v1.2.6 + **the adopted 19-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
   the v1.2.6 rebase's round-trip is proven byte-identical — pristine v1.2.6 + the
   18 patches = the rebase tree; the v126val battery QUALIFIED the pin —
@@ -47,7 +47,7 @@ nothing but docker, ssh and the NVIDIA driver.
 
 | question | answer |
 | --- | --- |
-| Quality | **Hardmode 95/104** on the shipping config — receipted thirty-one consecutive times, every one with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
+| Quality | **Hardmode 95/104** on the shipping config — receipted thirty-two consecutive times, every one with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
 | Speed | All three (user) fronts **CROSSED** against the retired Python recipe — loading 112.9%, solo decode 116.8% (the standing high), prefill 100.1%; the first **native-vs-native calibration pair** (both arms the promoted config) reads flat inside the ±2% band on every instrument: solo 99.1%, c2 99.4%, c4 99.3%, overhead 98.9%, cold depth 100.3%, ITL 100% (campaign-20261108-162810). Future candidate duels measure against that floor — the pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv), the scoreboard: [docs/DELTAS.md](docs/DELTAS.md) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
@@ -134,7 +134,7 @@ site's). The ones that matter:
 | `PROD_REPO` | *(required by the autonomous scripts)* | the production checkout's dir name on this host — the window flow's stop/restore path and the poke's live check anchor it |
 | `TF_REF` / `TF_COMMIT` / `TF_REPO` | latest v1.\* release / upstream | the TensorFold line to track; **pin in `local.sh`, never the session env** — `start.sh`'s auto-prepare re-resolves the default whenever the config fingerprint changes and silently drops a shell pin |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint; present on both hosts |
-| `PATCHES` | the 18-patch stack (below) | the adopted engine modifications; empty = stock engine |
+| `PATCHES` | the 19-patch stack (below) | the adopted engine modifications; empty = stock engine |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` | `524288` | the window — the qualified optimum |
 | `PARALLEL` | `4` | concurrent streams |
@@ -156,7 +156,7 @@ site's). The ones that matter:
 | `MEMORY_LIMIT_GB` | engine default | → `TENSORFOLD_CUDA_MEMORY_LIMIT_GB` |
 | `BASE_IMAGE` / `ZIG_VERSION` / `SM_ARCH` | NGC pytorch 26.07 / `0.17.0` / `121` | the builder |
 
-### The 18-patch stack (`PATCHES`)
+### The 19-patch stack (`PATCHES`)
 
 The image applies the patches **in filename order — the three-digit prefix IS the
 application order** (`001-` first, `.done` numbers are never reused; the next
@@ -182,6 +182,7 @@ port takes the next free number). What each does:
 | `016-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
 | `018-callquote` | a call after prose that quotes its opener is still a call — the envelope closer scans value-aware (server-layer; no knob) |
 | `020-cachefirst` | the prompt cache is set aside before the streams' windows are counted (`TF_PROMPT_CACHE_FIRST=0` windows-first); the fund-report line prints when the room funds less than `PROMPT_CACHE_GIB` asks |
+| `022-shared-budgets` | DFlash2's shared draft rounds keep the budgets rule — a blocked lane (the pool's `fits()` refusing at the 524,288 window) stops pricing shared drafts, so its peers keep their grant (`TF_GLM_`-free; the upstream #2793 fix; the room-matched c4 +6.1%, campaign-20261111-094017) |
 
 Every patch's provenance, port receipts and knobs: [patches/README.md](patches/README.md).
 

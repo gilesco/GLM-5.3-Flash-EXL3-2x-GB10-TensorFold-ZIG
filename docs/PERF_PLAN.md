@@ -1,33 +1,31 @@
 # Performance plan: closing the measured fronts
 
 > **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 141, 2026-11-11)**: **round 141 closed four questions in
-> nine windows (36–44, one void)** — the #2699 prompt-cache recovery (window
-> 36: the funded cache adds no resume value the page cache lacks, at a
-> window + 1 GiB of room — the cacheless standing holds), the #2181
-> live-half knob (window 37: the mechanism reproduces on our shape — the
-> keep cost −31%, enough-for held, every guard green — but does not close
-> the eviction warning at PARALLEL=4; no adoption), the #2257 regression
-> watch (window 38: PASS — the concurrent 4-prefix resume hit 4/4 at an
-> aggregate of 5.41 s vs the round-133 receipt's 7.41 s, −27%, zero
-> eviction; the round-133 receipt re-anchors on v1.2.6, the warm ttft
-> 1.841 → 1.34 s), and the #2744 vision re-encode port (window 44: the
-> first VALID room-gated reading after four instrument generations and one
-> dead-race void — the value gate MISSED at parity, 25.53 vs 25.52 s; the
-> kill criterion fired legitimately; the patch retires, the v1.2.7 rebase
-> carries it free; the race-plumbing-guard lesson is permanent). **The
-> cacheless standing holds; no knob adopted; the board is at its receipted
-> ceilings** (quality 95 ×31; perf crossed vs the retired recipe and flat
-> native-vs-native; resume re-anchored PASSING and faster). The remaining
-> levers: the 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool
-> at a decode cost), the DRAFTS=0+LIVE_HALF four-window composition (the
-> decode trade — enough for FOUR at 512K, 10 of 16 slots), and the upstream
-> watch (main is 36 commits past the v1.2.6 tag, the fork's 0078 exl3p
-> absorbed — the next release may mainline more). The next sitting opens
-> with the ECOSYSTEM read and a stage brief naming a user-visible number —
-> no launch without one. The loop runs under the discipline layer (the
-> stage brief, the value gate, phase-lint, the phase-name gate, DRY_RUN, the
-> hit-rate watch — AGENTS.md).
+> the trail, round 141, 2026-11-11)**: **round 141 closed four questions AND
+> banked one adoption in ten windows (36–45, one void)** — the #2699 prompt-cache
+> recovery (window 36: the cacheless standing holds), the #2181 live-half knob
+> (window 37: measured out), the #2257 regression watch (window 38: PASS), the
+> #2744 vision re-encode port (window 44: retired — upstream's own PR text
+> confirms the fix is Metal-only; the CUDA side never had the mechanism), and
+> **the #2793 shared-budgets port ADOPTED as the sixteenth patch** (window 45:
+> the value gate CROSSED at +6.1% — the room-matched c4 aggregate 180.4 vs the
+> OFF arm's 170.0 t/s, beyond upstream's own 3.7% greedy claim; the mechanism
+> gradient solo +1.0%/c2 flat/c4 +6.1% confirms the blocked-lane ratchet's
+> signature; the first VALID room-gated value reading on this line —
+> campaign-20261111-094017). **The board moved**: the c4 row re-dated to 180.4
+> (the anchors + the chart), quality holds 95 ×32, the decode front's
+> concurrent shape improved past every prior reading. The remaining levers:
+> the 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool at a
+> decode cost), the DRAFTS=0+LIVE_HALF four-window composition (the decode
+> trade — enough for FOUR at 512K, 10 of 16 slots), the upstream watch
+> (#2852 EXL3 whole-pass routing and #2856 batched shared MTP are OPEN with
+> no numbers — their own device receipts pending; the next release may
+> mainline them), and the v1.2.7 rebase when upstream cuts it (main ~175
+> commits past v1.2.6 in ~21 h — the rebase folds the adopted stack forward).
+> The next sitting opens with the ECOSYSTEM read and a stage brief naming a
+> user-visible number — no launch without one. The loop runs under the
+> discipline layer (the stage brief, the value gate, phase-lint, the
+> phase-name gate, DRY_RUN, the hit-rate watch — AGENTS.md).
 
 > **The bar (user, 2026-10-23):** surpass production 0.6.6 on model loading time,
 > generation tok/s, and prefill rate. This document is the continuing-look home for

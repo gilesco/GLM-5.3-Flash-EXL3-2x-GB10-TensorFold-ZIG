@@ -11169,3 +11169,43 @@ room-matched c4, the duel_arm instrument set (solo twins, c2, c4, ITL,
 prefill slope, the drafter-counter deltas), the §2 gates + hardmode +
 vision + bench/steady-state guards.
 
+
+## (round 141, cont. 16) WINDOW 45 RAN THE BUDGETSQUAL A/B — THE VALUE GATE CROSSED: THE ROOM-MATCHED C4 +6.1% — 022-SHARED-BUDGETS ADOPTED (2026-11-11)
+
+**The window** (campaign-20261111-094017, `preflight budgetsqual summary`,
+rc=0, ~56 min): the A/B ran end to end — the OFF arm (the standing 18-patch
+stack, load 83 s), the ON arm (+ 022-shared-budgets; the rebuild rode the
+restart, load 521 s, the patch witness 4 mentions in the campaign's
+prepare/build lines), then the room-match settle restart. Production
+restored healthy (200) and the flag cleared.
+
+**THE VALUE GATE CROSSED — beyond the ask**:
+- **The value number**: the ON arm's room-matched c4 aggregate **180.4 t/s**
+  vs the OFF arm's **170.0 t/s = +6.1%** — beyond the >3% gate AND beyond
+  upstream's own 3.7% greedy claim on this shape.
+- **The mechanism gradient confirms the mechanism**: solo +1.0% (69.3 →
+  70.0/70.1), c2 flat (119.7 → 119.7), c4 +6.1% — exactly the signature
+  upstream's #2720 analysis predicted (the ratchet bites hardest at four
+  streams; one stream was always unchanged).
+- **Every guard green**: the greedy TEXT sha `80cc3802…` IDENTICAL on all
+  three serves (the fix must not move the probes — it didn't), both c4
+  plumbing guards OK, the room gate PASS (the OFF arm 12.4 vs the settle
+  serve 13.0 GiB), the §2 gates ALL PASS — **hardmode 95, the
+  THIRTY-SECOND consecutive** — the vision suite 4/4 (the saved JSON's
+  answers verified real), the bench bands held, steady-state 73.1 tok/s
+  in band, the prefill untouched (the TTFT slope 0.439 → 0.437).
+
+**The adoption**: `022-shared-budgets.patch` joins config.sh's PATCHES
+default (the sixteenth patch, the nineteenth file member counting the
+opt-in 017 and the retired companions); the promoted production repo
+mirrors it on its promotion sync this sitting. The phase retires from
+run-qualification.sh with its question closed (session-specific, its
+receipt complete and valid — the first VALID room-gated value reading
+for a perf candidate on this line).
+
+**Round 141's final watch: 10 windows run (36–45), 1 void (35) — the
+loop's best round: one upstream port retired by a valid negative
+(#2744), one upstream port adopted on a valid positive beyond its own
+claim (#2793, +6.1%), three questions closed by receipt, one forged
+verdict caught and corrected by the primary evidence.**
+
