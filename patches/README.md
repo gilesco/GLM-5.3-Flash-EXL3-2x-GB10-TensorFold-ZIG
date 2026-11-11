@@ -97,6 +97,54 @@ applied verbatim (002-exl3prompt, 008-loaddirect, 010-tools256, 011-zclose,
 fork.s 0078 exl3p prompt loop (bc166dbfd) plus the cp.async/ldmatrix/mma
 common-module extractions — the next release may mainline more of the stack.
 
+## THE v1.2.7 REBASE (2026-11-11) — the 18-patch stack on 93a2e93; TWO PATCHES MAINLINED
+
+The adopted stack re-anchored onto **TensorFold v1.2.7** (93a2e93, released
+2026-11-11). The stack-order drift map: **16 of 18 apply verbatim**; the
+v1.2.6-era mla.cuh drift resolved through the 001/002 cascade. The hands-on
+surface: 6 hunks in 3 patches —
+
+- **003-fp8-pages** (3 hunks re-anchored): the build step hunk now sits on
+  v1.2.7's `test-glm-request-starts-host` ground (#2404 mainlined the
+  request-starts step; the header is `@@ -74,9 +74,10`); the
+  `registry_joins` join extended with the `scale_index_records.zig` context
+  line; the `cuda_native` explain hunks re-headed around v1.2.7's two
+  `GlmRequestStartsWith*` entries.
+- **012-zmoe-fuse** (1 hunk): the `topk_group` field hunk re-cut onto the
+  `router_tile` context — **v1.2.7 REMOVED the `router_part` kernel**
+  (#2557: the unaligned-router fallback dies; `error.RowShape` refuses
+  instead). The hunk header is `@@ -33,5 +33,6`.
+- **020-cachefirst** (2 hunks): the two `cuda_kv_pool` call sites re-cut
+  onto v1.2.7's `cacheWanted(F, o)` / `keepsNoPrompts` ground (#2699's
+  evolution added both).
+
+**MAINLINED — DROPPED from the applied stack** (two round-141 windows'
+verdicts confirmed in the release):
+- **021-vision2744**: #2744's `past()` from-position logic is in
+  `prompt_images.zig` — the window-39/44 port is upstream's now.
+- **022-shared-budgets**: #2793's line
+  `.allocate_shared_drafts = drafting and !block` sits at
+  `zig/src/families/glm/cuda_lanes.zig:103` — byte-identical to our port;
+  the budgetsqual receipt (campaign-20261111-094017, +6.1% c4) carried the
+  value that promoted it.
+
+**The v1.2.7 facts the rebase absorbed**: the request-starts module
+(`cuda_prompt_cuts.zig`, `TF_GLM_REQUEST_STARTS` — refuses above
+`TF_KV_SHARE=0`, so NOT staged against our adopted KV_SHARE=16); the resume
+ground moved (`resumeFrom` checks `engine.prompt_cuts.resumes(...)` instead
+of the `% prefill_rows` grid — the warm-resume ledger item re-reads on THIS
+ground after the bump); `keepsNoPrompts`/`cacheWanted` in
+`zig/src/native/cuda_kv_pool.zig`; new modules `cuda_prompt_cuts.zig`,
+`cuda_thin_bytes.zig`; `weightShare` gained a `drafts` arg.
+
+**Verification**: the four GLM host suites RC=0 (test-glm-kv-pages-host,
+test-glm-snapshots-host, test-glm-request-starts-host,
+test-glm-prompt-settings-host); the full native build RC=0 in the builder
+container (fatbins sm_121 + tensorfold-native); the round-trip PROVEN —
+pristine 93a2e93 + the 18-patch chain applies clean and reproduces the
+verified tree byte-identically (0 diff lines). **The v127val battery
+decides the pin.**
+
 ## The rules
 
 1. **Upstream first.** A patch exists here only while upstream lacks the feature (check

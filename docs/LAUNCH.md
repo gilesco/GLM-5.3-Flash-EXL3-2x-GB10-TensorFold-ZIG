@@ -2809,3 +2809,34 @@ verified by the zero-diff round-trip — pristine `93a2e93` + the 16-patch
 chain reproduces the verified tree byte-identically) are committed here.
 The rest (config.sh's 022 drop, the pin flip, the v127val battery staging)
 follows.
+
+## (round 141, cont. 28) THE V1.2.7 REBASE INTEGRATED — THE CHAIN PROVEN, THE BATTERY STAGED, THE LAUNCH (2026-11-11)
+
+**The integration landed**: the three re-anchored patch files committed
+(003/012/020 — the hunks re-cut onto v1.2.7's request-starts,
+router_tile-only and cacheWanted grounds); config.sh's PATCHES default
+DROPS 022-shared-budgets.patch (mainlined by #2793 — the budgetsqual
+receipt campaign-20261111-094017 carried the +6.1% c4 value; the comment
+now cites the mainline); the head's `scripts/local.sh` pin flipped to
+93a2e93 (the v127val battery decides whether it STAYS); patches/README.md
+gained the v1.2.7 rebase section (the drift map: 16 of 18 verbatim, the
+three re-anchors, the mainlined pair, the verification chain).
+
+**The stage brief — the v127val battery window**:
+- **The question**: does the v1.2.7 engine + the 16-patch re-anchored
+  stack hold every standing gate (the same-bits greedy witness 80cc3802…,
+  the §2 content gates, hardmode 95, the vision 4/4, the load walls) and
+  what do #2557's router_tile-only router and the request-starts module
+  move on our shape?
+- **Value-if-yes**: the line rides upstream's release (the two round-141
+  window verdicts — #2744/#2793 — stay adopted without carrying their
+  patches), the patch stack shrinks by two, and the anchors re-ground on
+  the newest engine.
+- **Cost**: one window (~40 min: prepare + restart + the battery legs).
+- **Alternatives rejected**: staying at v1.2.6 (the fork's mainline keeps
+  outpacing us; every next release rebase gets harder), staging the
+  request-starts knob now (refuses above KV_SHARE=0 — incompatible with
+  the adopted TF_KV_SHARE=16).
+- **Kill criterion**: any §2 gate FAIL, the greedy witness moving, or
+  hardmode < 95 holds the pin at v1.2.6 until understood.
+- **Phase list**: `preflight v127val summary`.

@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744 driftmap warmttft; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744 driftmap warmttft v127val; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1636,6 +1636,102 @@ PRODCOLD_RETIRED=1
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
+# bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
+# re-anchored (the request-starts build step, the registry_joins
+# scale_index context, the router_tile-only Kernels after #2557 removed
+# router_part; 021-vision2744 and 022-shared-budgets DROPPED — mainlined
+# by #2744/#2793). The receipt: the explicit prepare (the fingerprint
+# moved: TF_COMMIT + the patch bodies), the same-bits greedy witness (the
+# 80cc3802... sha — the bump must not move the deterministic probes), the
+# section-2 content gates at the standing config, one bench pass + the
+# steady-state decode probe, ONE hardmode run at the bench harness's
+# --parallel 2 (the 95 must hold), the vision suite (4/4), and TWO timed
+# load walls. The release carries #2404's request-starts module natively
+# (inert at our KV_SHARE=16) and #2557's router_tile-only router — the
+# bench row records what they move on our shape.
+# ---------------------------------------------------------------------------
+if want v127val && ! phase_done v127val; then
+  log "=== v127val (the v1.2.7 bump: gates + battery + vision + the wall)"
+  P="$OUT/29-v127val.md"; : > "$P"
+  echo "# v127val (v1.2.7 93a2e93 + the 16-patch stack, the request-starts/router_tile re-anchors; 021+022 mainlined)" >> "$P"
+  log "v127val: explicit prepare (the fingerprint moved)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v127val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.2.7 engine + the adopted defaults)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
+    req_file "$OUT/v127-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v127-req.json" > "$OUT/v127-greedy.json" || true
+    echo "- the greedy content sha: $(content_sha "$OUT/v127-greedy.json")" >> "$P"
+    echo "- the same-bits witness: $([ "$(content_sha "$OUT/v127-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v127 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  echo "## the regression watch (the release carries #2557's router_tile-only router natively)" >> "$P"
+  bench_perf v127 "$OUT/v127-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/v127d.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v127-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v127-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" >> "$P"
+  mkdir -p "$OUT/v127hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "v127val" --output-dir "$OUT/v127hm" --parallel 2 \
+    --json-file "$OUT/v127hm/hm.json" > "$OUT/v127hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/v127hm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/v127hm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/v127hm/hm.log" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold; #2744's fix is mainlined now — the suite is the witness)" >> "$P"
+  mkdir -p "$OUT/v127vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v127vision/vision.json" > "$OUT/v127vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/v127vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on the v1.2.7 engine)" >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls = the v1.2.7 bump qualifies (the digest re-pairs the anchors and moves the pin); any FAIL holds the pin at v1.2.6 until understood" >> "$P"
+  touch "$OUT/.v127val.done"
+fi
 
 # ---------------------------------------------------------------------------
 

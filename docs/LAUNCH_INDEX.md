@@ -371,3 +371,4 @@
 | [round 141 cont. 25] (round 141, cont. 25) THE STAGE BRIEF — WINDOW 50: THE STATE-OF-THE-LINE RE-ANCHOR (DEPTH + WARMTTFT) (2026… | docs/LAUNCH.md | — | — |
 | [round 141 cont. 26] (round 141, cont. 26) WINDOW 50 RAN THE STATE-OF-THE-LINE RE-ANCHOR — THE DEPTH LADDER HOLDS 12/12; THE WAR… | docs/LAUNCH.md | campaign-20261111-174642 | void (body) |
 | [round 141 cont. 27] (round 141, cont. 27) THE DOCS SPLIT — THE CONTEXT COST OF A DIGEST CUT ~3× (2026-11-11) | docs/LAUNCH.md | — | — |
+| [round 141 cont. 28] (round 141, cont. 28) THE V1.2.7 REBASE INTEGRATED — THE CHAIN PROVEN, THE BATTERY STAGED, THE LAUNCH (2026… | docs/LAUNCH.md | campaign-20261111-094017 | — |
