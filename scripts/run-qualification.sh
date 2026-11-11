@@ -1608,6 +1608,15 @@ b['messages'][1]['content'] = sys.argv[2]
 json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-$arm-t2.json" "$A1"
       T2R=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-$arm-t2.json" -o "$OUT/v2744-$arm-t2-resp2.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
       echo "- t2 (the real-answer history) ttft_wall ${T2R}s — THE VALUE NUMBER" >> "$P"
+      # THE ROOM GUARD (window 39's confound lesson): the ON arm booted right
+      # after the 560 s rebuild — the unified-memory pool carried the build's
+      # residue (11.5 GiB left vs the OFF arm's 13.0), the serve funded ZERO
+      # kept states, and the value probe measured the cache-state confound,
+      # not the fix. THE FIX: the ON arm gains ONE build-free restart before
+      # its probes — the room settles — and BOTH arms' value sections carry
+      # the room line so a future room mismatch fails the battery loudly
+      # (the value gate reads only when the arms' room differs by < 1.0 GiB).
+      echo "- the room line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
       echo "- t2's answer: $(python3 -c "
 import json
 try: print(json.load(open('$OUT/v2744-$arm-t2-resp2.json'))['choices'][0]['message']['content'][:120])
@@ -1658,7 +1667,48 @@ try:
 except Exception as e:
     print('- the decode probe FAILED: ' + repr(e))
 " >> "$P"
-  echo "- VERDICT (VALUE-FIRST, window 39 on): QUALIFIED = the patch PLACED (the boot-log witness) AND the greedy TEXT sha == the standing 80cc3802… AND (the value gate) the ON arm's t2-with-history ttft BEATS the OFF arm's by >5% AND the §2 gates ALL PASS AND hardmode 95 AND the vision suite 4/4 (the single-image answers unchanged) AND the bench/decode bands hold => 021-vision2744.patch joins config.sh's PATCHES default. Any guard fail or no value => RETIRE: the patch leaves the stack, the question closes as upstream data (the v1.2.7 release carries it; the rebase picks it up free)." >> "$P"
+  # THE ROOM-MATCH RESTART (window 39's confound lesson): the ON arm's first
+  # boot rode the rebuild's memory residue — the serve funded zero kept
+  # states and the value probe measured the cache-state confound, not the
+  # fix. Restart the ON arm build-free (the fingerprint matches the prepared
+  # marker now) so its value probes read the settled room, and gate the
+  # verdict on the arms' room lines agreeing within 1.0 GiB.
+  log "vision2744: the ON arm's room-match restart (build-free; the room settles)"
+  V2744_LIST="$PATCHES 021-vision2744.patch"
+  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$V2744_LIST"; then
+    echo "- the ON arm's room-match restart REFUSED — the battery is void; the value gate does not fire" >> "$P"
+    touch "$OUT/.vision2744.done"
+    log "vision2744: the room-match restart refused — phase void (fail-honest)"
+    exit 0
+  fi
+  echo "## the ON arm's room-matched serve (the settle restart)" >> "$P"
+  echo "- the room line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
+  echo "- the slots line: $(serve_line | grep -oE "[0-9]+ of TF_KV_SHARE=16 kept states[^;]*|[0-9]+ kept states. slots \([0-9.]+ GiB\)|no prompt cache")" >> "$P"
+  # re-run the value probe on the room-matched serve (the greedy sha witness rides too)
+  req_file "$OUT/vi-on-rm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/vi-on-rm-req.json" > "$OUT/vi-on-rm-resp.json" || true
+  echo "- the room-matched greedy text sha: $(content_sha "$OUT/vi-on-rm-resp.json")" >> "$P"
+  for turn in t1 t2; do
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$OUT/v2744-on-$turn.json" "$SERVED_NAME"
+    T=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-$turn.json" -o "$OUT/v2744-on-rm-$turn-resp.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+    echo "- room-matched $turn ttft_wall ${T}s" >> "$P"
+  done
+  A1=$(python3 -c "
+import json
+try: print(json.load(open('$OUT/v2744-on-rm-t1-resp.json'))['choices'][0]['message']['content'][:200])
+except Exception: print(' Golden Gate Bridge.')" )
+  python3 -c "
+import json, sys
+b = json.load(open(sys.argv[1]))
+b['messages'][1]['content'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$OUT/v2744-on-t2.json" "$A1"
+  T2R=$(curl -s -m 600 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/v2744-on-t2.json" -o "$OUT/v2744-on-rm-t2-resp2.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+  echo "- room-matched t2 (the real-answer history) ttft_wall ${T2R}s — THE VALUE NUMBER (room-matched)" >> "$P"
+  echo "- room-matched t2's answer: $(python3 -c "
+import json
+try: print(json.load(open('$OUT/v2744-on-rm-t2-resp2.json'))['choices'][0]['message']['content'][:120])
+except Exception as e: print('unreadable:', e)")" >> "$P"
+  echo "- VERDICT (VALUE-FIRST, window 39 on): QUALIFIED = the patch PLACED (the boot-log witness) AND the greedy TEXT sha == the standing 80cc3802… AND (the value gate) the ON arm's room-matched t2-with-history ttft BEATS the OFF arm's by >5% AND (the room gate) the arms' room lines differ by < 1.0 GiB AND the §2 gates ALL PASS AND hardmode 95 AND the vision suite 4/4 (the single-image answers unchanged) AND the bench/decode bands hold => 021-vision2744.patch joins config.sh's PATCHES default. Any guard fail or no value => RETIRE: the patch leaves the stack, the question closes as upstream data (the v1.2.7 release carries it; the rebase picks it up free)." >> "$P"
   touch "$OUT/.vision2744.done"
 fi
 
