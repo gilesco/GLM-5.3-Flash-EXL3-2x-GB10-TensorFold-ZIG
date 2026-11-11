@@ -10853,3 +10853,39 @@ pair). The full read is in ECOSYSTEM.md.
   full stack (run, above); the phase-name gate + DRY_RUN from the head; the
   value probe's two-image bodies staged with the manifest's CC-licensed
   assets — never ad-hoc fixtures (the round-132 rule).
+
+## (round 141, cont. 8) WINDOW 39 RAN THE #2744 VISION A/B — THE VALUE READING IS CONFOUNDED; THE BATTERY IS CORRECTED (2026-11-11)
+
+**The window** (campaign-20261111-000839, `preflight vision2744 summary`,
+rc=0, ~48 min): the port A/B ran end to end — the OFF arm (the 18-patch
+stack, build-free) and the ON arm (the stack + `021-vision2744.patch`; the
+fingerprint moved, the rebuild took 560 s and compiled the vision fatbin).
+Production restored healthy (200).
+
+**The guards all held on the 19-patch stack**: the greedy TEXT sha
+`80cc3802…` IDENTICAL across both arms (the fix must not move the
+deterministic text probes — it didn't), §2 ALL PASS, **hardmode 95 — the
+TWENTY-SIXTH consecutive** — the vision suite 4/4 (the single-image answers
+unchanged), steady-state decode 73.1 tok/s, pp d0 1,522/1,525/1,521 flat.
+
+**The value reading is CONFOUNDED — invalid, not negative**: the ON arm
+booted immediately after the 560 s rebuild; the unified-memory pool carried
+the build's residue (**11.5 GiB left vs the OFF arm's 13.0** — the room
+ladder's worst rung), the serve funded **ZERO kept states** ("no prompt
+cache — none of the 16 slots fit"), and the value probe measured the
+page-cache miss cascade: the ON arm's t2-with-history read **6.837 s vs the
+OFF arm's 2.677 s** — the cache-state difference, not the encode count the
+fix moves. The ON arm's own t1→t2 delta (8.017 → 6.837 = 1.18 s saved) vs
+the OFF arm's (7.966 → 2.677 = 5.29 s saved) says the ON arm's turn 2
+skipped nothing — its serve had no page cache to hit.
+
+**The kill criterion does NOT fire**: it fires on "any guard fail or no
+value"; this is neither — the value reading is invalid. The corrected
+battery (window 40) re-runs value-first with the room gate: the ON arm
+gains ONE build-free room-match restart before its value probes, both arms'
+value sections record the room line, and the verdict requires the arms'
+room lines to differ by < 1.0 GiB. The patch stays staged in patches/ but
+NOT in config.sh's PATCHES — no adoption on a confounded reading.
+
+**Round 141's watch: 4 windows run, 1 void — the loop is healthy at the
+process level; the value questions close when their instruments are clean.**

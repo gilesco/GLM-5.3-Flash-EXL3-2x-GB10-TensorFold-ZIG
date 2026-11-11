@@ -1439,6 +1439,26 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   (the fork's issue-16 class) now has six rungs: v126val 11.5 left/0 slots, w33-OFF
   12.1/3, w33-ON 13.0/6, DRAFTS=0 16.1/11, w34-OFF 13.0/7 — plus w36-OFF 13.0/6
   (reproduces w33-ON's shape) and w36-ON 12.2/16 funded on the battery's ON arm.
+- [ ] **The #2744 vision re-encode port — window 39's value A/B CONFOUNDED, the
+  corrected battery is window 40's** (campaign-20261111-000839): upstream's
+  fix (5151f19f3, main-only) ported as `021-vision2744.patch` (the body
+  byte-identical to upstream's diff; applies clean on the full 18-patch
+  stack, verified on a scratch clone of the tag; host-side only). Window 39's
+  A/B ran but the ON arm booted immediately after the 560 s rebuild — the
+  unified-memory pool carried the build's residue (11.5 GiB left vs the OFF
+  arm's 13.0), the serve funded ZERO kept states, and the value probe
+  measured the cache-state confound (the page-cache miss cascade: the ON
+  arm's t2 6.837 s vs the OFF arm's 2.677 s), not the fix's value. The
+  guards all held on the 19-patch stack: the greedy TEXT sha `80cc3802…`
+  IDENTICAL across both arms, §2 ALL PASS, **hardmode 95 — the
+  TWENTY-SIXTH consecutive** — the vision suite 4/4, steady-state 73.1
+  tok/s, pp d0 1,522/1,525/1,521 flat. The value question REMAINS OPEN (the
+  reading is invalid, not negative). The corrected battery (window 40): the
+  ON arm gains ONE build-free room-match restart before its value probes,
+  both arms' value sections record the room line, and the verdict gains the
+  room gate (the arms' room lines must differ by < 1.0 GiB). The patch stays
+  staged but NOT in config.sh's PATCHES (no adoption on a confounded
+  reading).
 - [x] **The #2257 pool plan's concurrent-resume regression watch — PASS (window
   38, campaign-20261110-234815)**: the kvshare2 instrument's shape re-run on
   the standing v1.2.6 config: the solo warm hit `cached=2048` at ttft 1.339 s;
