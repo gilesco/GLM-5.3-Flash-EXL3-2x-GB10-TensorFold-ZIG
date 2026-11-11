@@ -1460,14 +1460,27 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   re-encodes; the aggregate read parity (the OFF arm 4.27 s vs the
   room-matched ON arm 4.25 s). The room gate PASSED again (13.1 vs 12.2 —
   0.9 GiB) and every guard held (the sha identical, **hardmode 95 — the
-  TWENTY-EIGHTH consecutive** — the vision 4/4). The corrected instrument
-  (window 42): the race runs COLD (no warm-up pair), the race bodies share
-  NO prefix with the t1/t2 probes or each other (zebra/sign + meadow fills
-  for the arm-loop race; sign/zebra + cistern fills for the room-matched
-  race — the page cache cannot prime the race's prefixes), and the engine
-  lines' cached= values stay the mechanism witness (cached≈0 expected on
-  the race streams; the chunk-switch handoff carries the value). The kill
-  criterion stands: no value on the corrected instrument retires the patch. (campaign-20261111-000839): upstream's
+  TWENTY-EIGHTH consecutive** — the vision 4/4). Window 42 ran the COLD race
+  (no warm-up; the race bodies' prefixes de-collided from the t1/t2
+  probes): the mechanism witness READ TRUE — `cached=0` on every race
+  stream, both arms — and the decisive comparison is PARITY: the OFF arm's
+  cold race 23.38 s vs the ON arm's 23.41 s (−0.1%; the ttft pairs
+  10.80/10.89 vs 10.82/10.92). The room gate sat AT the line (12.4 vs
+  11.4 GiB). The room-matched race ran a DIFFERENT shape (the cistern fill
+  word tokenizes +1 vs meadow — 4096 more prompt tokens — so it had no
+  OFF-arm counterpart; recorded at 31.29 s, not a value number). **The
+  mechanism reading**: the re-encode fires per chunk-switch when the owner
+  flipped AND the chunk's span contains image rows — a single image at the
+  TOP of a d4096 prompt gets ONE encode (chunk 1); chunks 2–3 carry no
+  image rows, so the owner flips never re-encode anything. Upstream's
+  receipt measured interleaved MULTI-image prompts (their 12 vs 18 tower
+  passes = 6 re-encodes). **The v5 instrument (window 43)**: THREE images
+  per stream, one per chunk — each chunk switch with an owner flip
+  re-encodes the later-chunk images pre-fix (~8 extra encodes per race);
+  the room-matched race reuses the same bodies (the settle restart wipes
+  the page cache — per-process — so both sides of the value gate run the
+  same shape cold). The kill criterion stands: no value on the corrected
+  instrument retires the patch. (campaign-20261111-000839): upstream's
   fix (5151f19f3, main-only) ported as `021-vision2744.patch` (the body
   byte-identical to upstream's diff; applies clean on the full 18-patch
   stack, verified on a scratch clone of the tag; host-side only). Window 39's

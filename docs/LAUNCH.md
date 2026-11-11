@@ -10953,3 +10953,42 @@ carries it free either way.
 **Round 141's watch: 6 windows run (36/37/38/39/40/41), 1 void — the loop
 is healthy; the instrument generations narrowed each round and the
 mechanism witness now reads directly from the receipt.**
+
+## (round 141, cont. 12) WINDOW 42 RAN THE COLD RACE — PARITY; THE MECHANISM READING LANDS THE V5 INSTRUMENT (THREE IMAGES PER STREAM) (2026-11-11)
+
+**The window** (campaign-20261111-025646, `preflight vision2744 summary`,
+rc=0, ~43 min): the cold race ran end to end — the warm-up pair gone, the
+race bodies' prefixes de-collided from the t1/t2 probes. Production
+restored healthy (200).
+
+**The mechanism witness finally READ TRUE**: the race's engine lines show
+`cached=0` on every race stream (both arms) — the page cache did NOT
+hijack the race this time; the chunk-switch handoff path RAN. And the
+decisive comparison is parity: the OFF arm's cold race **23.38 s** vs the
+ON arm's **23.41 s** (−0.1%; the ttft pairs 10.80/10.89 vs 10.82/10.92 —
+within noise). The room gate sat AT the line (12.4 vs 11.4 GiB — exactly
+1.0); the room-matched race ran a DIFFERENT shape (the cistern variant
+tokenized +4096 tokens — the fill word set's BPE length differs — so it
+had no OFF-arm counterpart and cannot feed the gate; the receipt records
+it as 31.29 s at a different shape, not a value number).
+
+**The mechanism reading — why parity is the honest result on this shape**:
+the re-encode fires per chunk-switch when the owner flipped AND the
+chunk's span contains image rows. A single image at the TOP of a d4096
+prompt gets ONE encode (chunk 1); chunks 2–3 carry no image rows — the
+owner flips in a two-stream race never re-encode anything. Upstream's
+receipt measured "two interleaved image prompts" — MULTIPLE images spread
+through the chunks (their 12 vs 18 tower passes = 6 re-encodes). Our race
+had one image per stream at the top: zero exposures.
+
+**The v5 instrument (window 43)**: THREE images per stream, one per chunk
+(the upstream shape) — each chunk switch with an owner flip re-encodes the
+later-chunk images pre-fix; the exposure is ~2 images × 2 later chunks ×
+2 streams = up to 8 extra tower encodes (~1.8 s) per race. The fill words
+share no prefix with the t1/t2 probes; the room-matched race reuses the
+same bodies (the settle restart wipes the page cache — per-process — so
+both sides of the value gate run the same shape cold). The kill criterion
+stands: no value on the corrected instrument retires the patch.
+
+**Round 141's watch: 7 windows run, 1 void — the loop is healthy; the
+instrument is now mechanism-exact.**
