@@ -1,0 +1,163 @@
+#! 023-warmkeep.patch — the warm resume's full-hit skip, ported from the round-131
+#! fork-era patch glm-full-hit-skip (patches/archive/) onto the v1.2.7 ground
+#! (round 141 cont. 31-32). The mechanism: the share store's radix keeps a state
+#! at the pass's END (at == len, its key the plain prompt's pages — no page
+#! follows it, so the lookahead row cannot differ), and an identical re-send
+#! installs it and draws without a pass: the warm resume stops re-prefilling
+#! the tail chunk (~2,048 rows at d8192, ~1.3 s at the adopted engine's prefill
+#! rate — the campaign-20261111-174642 reading 945 ms) and moves toward
+#! production's ~212 ms full-hit skip. The four pieces:
+#!   1. radix find(): a page-aligned prompt's cap admits its own full length.
+#!   2. radix marks(): the full-length tail mark emitted when page-aligned.
+#!   3. radix keep(): the end state admitted (at == len; lookahead waived —
+#!      the key is the plain prompt; the fork-era token-paste dropped: the end
+#!      state has no following page whose KV could differ).
+#!   4. engine prefill(): the resume at len installs the state, projects the
+#!      held last-row hidden through the head (promptHead — public upstream
+#!      now), draws ONE row; the end keep fires after the last chunk's commit
+#!      and holdPrompt (the arena final). The follow chunk() routes the same
+#!      skip in steps mode (TF_GLM_PROMPT_STEPS unset). The lanes resumeFrom
+#!      admits k.at == len. Partial resumes, unaligned lens, the chunked and
+#!      pair paths, prompt_logprobs: unchanged.
+#! The fork-era receipts stand (campaign-20261101-120948: the gates ALL PASS
+#! and the bench held 95 with the mechanism in; the first build's keep never
+#! fired — the end-keep hole fixed here the same way: prefill fires it).
+#! The warmkeep A/B (the warmkeep phase) re-receipts the mechanism on the
+#! v1.2.7 engine: the value gate is the warm-TTFT row moving from ~945 ms
+#! toward ~212 ms; the greedy witness 80cc3802… must hold on both arms.
+
+
+
+diff --git a/zig/src/core/prompt_radix.zig b/zig/src/core/prompt_radix.zig
+index e1fd558..3a9547c 100644
+--- a/zig/src/core/prompt_radix.zig
++++ b/zig/src/core/prompt_radix.zig
+@@ -88,7 +88,13 @@ pub const Store = struct {
+     /// The deepest node whose state `prompt` resumes exactly: its tokens and lookahead a prefix, a token left.
+     pub fn find(s: *const Store, prompt: []const u32) ?*Node {
+         if (!s.on() or prompt.len < s.past() + 1) return null;
+-        return s.tree.deepest(prompt, (prompt.len - s.past()) / s.rules.page * s.rules.page, s.step());
++        // a page-aligned prompt may resume its own full-length tail state (the full-hit skip);
++        // otherwise a token stays left for the pass's last row
++        const cap: usize = if (prompt.len % @as(usize, s.rules.page) == 0)
++            prompt.len
++        else
++            (prompt.len - s.past()) / s.rules.page * s.rules.page;
++        return s.tree.deepest(prompt, cap, s.step());
+     }
+ 
+     /// Restores the longest state `prompt` resumes into `owner`, its pages into `adopt` (held once more); plans marks.
+@@ -208,6 +214,12 @@ pub const Store = struct {
+             }
+             if (std.mem.indexOfScalar(u32, out.items, m) == null) try out.append(a, m);
+         }
++        // the full-length tail state (the full-hit skip): when the prompt lands on the step,
++        // a state at its end lets an identical re-send install and draw without a pass
++        if (prompt.len >= s.step() and prompt.len % @as(usize, s.step()) == 0) {
++            const m: u32 = @intCast(prompt.len);
++            if (std.mem.indexOfScalar(u32, out.items, m) == null) try out.append(a, m);
++        }
+         std.mem.sort(u32, out.items, {}, std.sort.asc(u32));
+         return out.toOwnedSlice(a);
+     }
+@@ -215,9 +227,12 @@ pub const Store = struct {
+     /// At `at` the tree takes the pages of `mine` it lacks and the snapshot, evicting to fit; `path` gets its pages.
+     pub fn keep(s: *Store, prompt: []const u32, at: u32, owner: ?*anyopaque, mine: []const u32, path: []u32) Kept {
+         const t = &s.tree;
+-        if (!s.on() or at == 0 or at % s.step() != 0 or at + s.rules.lookahead > prompt.len or mine.len != at / s.rules.page or path.len != mine.len) return .{ .held = false, .shared = 0 };
++        if (!s.on() or at == 0 or at % s.step() != 0 or mine.len != at / s.rules.page or path.len != mine.len) return .{ .held = false, .shared = 0 };
++        // the full-length end state (the full-hit skip): no page follows it, so the lookahead
++        // row's token cannot differ — the key is the plain prompt's pages, the resume exact
++        if (at > prompt.len or (at < prompt.len and at + s.rules.lookahead > prompt.len)) return .{ .held = false, .shared = 0 };
+         t.clock += 1;
+-        const tokens = prompt[0 .. at + s.rules.lookahead]; // a page past which the lookahead differs is another page
++        const tokens = if (at == prompt.len) prompt else prompt[0 .. at + s.rules.lookahead]; // a page past which the lookahead differs is another page
+         const flagged = std.mem.indexOfScalar(u64, s.shared_keys.items, sharedKey(tokens)) != null;
+         while (true) {
+             var last: ?*Node = null;
+diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
+index fb392fe..1d73398 100644
+--- a/zig/src/families/glm/cuda_engine.zig
++++ b/zig/src/families/glm/cuda_engine.zig
+@@ -375,14 +375,37 @@ pub const Engine = struct {
+ 
+     /// decode.prefill: `ids` chunk by chunk to each cut, then the first token from the last row; `from` resumes.
+     pub fn prefill(e: *Engine, ids: []const u32, from: ?Resume, cancel: ?Cancel, marks: ?Marks) !u32 {
++        if (from) |r| if (r.at == ids.len) return e.resumeFirst(r, ids.len);
+         var start = try e.prefillStart(ids.len, from);
+         while (true) {
+             const end = prompt_cuts.nextCut(ids.len, e.cur.cuts.items, start);
+-            if (try e.prefillChunk(ids[start..@min(ids.len, end + 1)], start, ids.len, null, cancel, marks)) |first| return first;
++            if (try e.prefillChunk(ids[start..@min(ids.len, end + 1)], start, ids.len, null, cancel, marks)) |first| {
++                // the full-length tail keep (the full-hit skip's state): the pass's own keep
++                // callbacks fire only at chunk STARTS, and no chunk starts at the prompt's
++                // end — fire it here, after the last chunk's commit and holdPrompt, so the
++                // arena (and the held last-row hidden) are final
++                if (marks) |m| if (std.mem.indexOfScalar(u32, m.at, @intCast(ids.len)) != null) m.call(m.ctx, @intCast(ids.len));
++                return first;
++            }
+             start = end;
+         }
+     }
+ 
++    /// A full-hit resume: the kept state covers the whole prompt — install it, project the held
++    /// last row through the head (one row), draw. No pass runs: the re-run's GEMMs become one row.
++    pub fn resumeFirstPub(e: *Engine, r: Resume, len: usize) !u32 {
++        return e.resumeFirst(r, len);
++    }
++
++    fn resumeFirst(e: *Engine, r: Resume, len: usize) !u32 {
++        try e.restoreState(r.id);
++        if (e.drafter) |dr| try dr.restart(e.slot, r.at); // the rows before it were never tapped
++        try e.promptHead();
++        var t: [1]u32 = undefined;
++        try e.draw(e.bd.logits, 1, len, 0, &t);
++        return t[0];
++    }
++
+     /// Where a prompt pass of `len` ids starts: 0, or `from`'s position with its kept state restored.
+     fn prefillStart(e: *Engine, len: usize, from: ?Resume) !usize {
+         if (len == 0 or len + fw.window_rows >= e.cur.st.capacity) return error.PromptTooLong;
+diff --git a/zig/src/families/glm/cuda_follow.zig b/zig/src/families/glm/cuda_follow.zig
+index 25ef795..a4633de 100644
+--- a/zig/src/families/glm/cuda_follow.zig
++++ b/zig/src/families/glm/cuda_follow.zig
+@@ -242,6 +242,11 @@ pub const Leader = struct {
+     /// One prompt step on every rank (Engine.prefillChunk): to the next cut, or two if `alone` and solo or pair allow.
+     pub fn chunk(x: Leader, ids: []const u32, start: usize, alone: bool, from: ?engine.Resume, cancel: ?engine.Cancel, marks: ?engine.Marks) !Chunk {
+         if (start >= ids.len) return error.BadChunk;
++        // the full-hit skip: a full-length state covering `ids` installs and draws without a pass
++        if (start == ids.len) {
++            const first = try x.e.resumeFirstPub(from.?, ids.len);
++            return .{ .first = first, .rows = 0 };
++        }
+         try x.flush();
+         const wide = alone and (prompt_solo.at(x.e, start, ids.len, from, marks) or prompt_pair.pairedAt(x.e, start, ids.len, from, marks));
+         const n = prompt_cuts.leaderRows(ids.len, x.e.cur.cuts.items, start, wide);
+diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
+index 47fb94b..78f0f8f 100644
+--- a/zig/src/families/glm/cuda_lanes.zig
++++ b/zig/src/families/glm/cuda_lanes.zig
+@@ -310,6 +310,8 @@ pub const Lanes = struct {
+         if (share) {
+             const k = owner.pending orelse return null;
+             s.cached = k.at;
++            // the full-hit skip: a state covering the whole prompt installs and draws
++            // without a pass (the engine's prefill sees `r.at == ids.len` and skips)
+             return .{ .id = k.id, .at = k.at };
+         }
+         return if (s.prompt_logprobs != null) null else self.resumeFrom(s, ids.len); // prompt rows need every row
+@@ -382,9 +384,11 @@ pub const Lanes = struct {
+     pub fn resumeFrom(self: *Lanes, s: *lanes.Stream, len: usize) ?engine.Resume {
+         const saved = s.reuse.saved orelse return null;
+         const k: *const engine.Kept = @ptrCast(@alignCast(saved));
+-        if (k.at != s.reuse.at or k.at == 0 or k.at >= len or !engine.prompt_cuts.resumes(len, s.chunks, k.at, k.below) or !self.x.e.holds(k.id)) {
++        // the full-length end state (the full-hit skip): `k.at == len` resumes too — the
++        // engine's prefill installs it and draws without a pass
++        if (k.at != s.reuse.at or k.at == 0 or k.at > len or !engine.prompt_cuts.resumes(len, s.chunks, k.at, k.below) or !self.x.e.holds(k.id)) {
+             s.reuse_failed = true;
+-            s.reuse_error = if (k.at == 0 or k.at >= len) error.SnapshotNotPrefix else if (k.at != s.reuse.at or !engine.prompt_cuts.resumes(len, s.chunks, k.at, k.below)) error.SnapshotOutOfStep else error.SnapshotStale;
++            s.reuse_error = if (k.at == 0 or k.at > len) error.SnapshotNotPrefix else if (k.at != s.reuse.at or !engine.prompt_cuts.resumes(len, s.chunks, k.at, k.below)) error.SnapshotOutOfStep else error.SnapshotStale;
+             return null;
+         }
+         s.cached = k.at;

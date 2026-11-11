@@ -2898,3 +2898,51 @@ on the v1.2.7 ground FIRST (the source read — `resumeFrom` now checks
 `engine.prompt_cuts.resumes(...)` instead of the `% prefill_rows` grid), its
 stage brief follows the read; the duel re-pair on the v1.2.7 engine
 re-grounds the decode rows after.
+
+## (round 141, cont. 31-32) THE WARM-RESUME SOURCE READ + THE 023-WARMKEEP PORT STAGED — THE WINDOW LAUNCHES (2026-11-11)
+
+**The source read** (the ledger's OPEN item's stage-brief prerequisite, on the
+v1.2.7 tree 800b5ce): the warm-hit path traced end to end. The share store's
+radix hit ADOPTS the kept pages (`tree.take` retains the ids — no KV copy);
+the state restore is per-page-piece DtoD over the NON-page state only
+(`heldPages` excludes the share-held pages); keeps fire at the pass's
+chunk-start MARKS (`Keeps.at`) — never at the pass's end. So a warm resume
+re-prefills the tail (~2,048 rows at d8192, ~1.3 s at the adopted engine's
+prefill rate) — the same order as the measured 945/1,347 ms readings. The
+mechanism gap named: no end-state keep, no skip.
+
+**The upstream ground found**: v1.2.7's prompt rules carry the warm-end
+DESIGN (`rules.warm`/`.waits`, `warm_usable`) — but only in the unpaged
+store path (prompt_cache.zig); the radix store lacks it, and GLM doesn't
+opt in (`warm_quiet` is Nemotron's). The fork-era patch
+(glm-full-hit-skip, patches/archive/) carried the radix-side receipt —
+its receipt-2 names the exact hole (the keep fires only at chunk starts).
+
+**The port staged as 023-warmkeep.patch** (the round-131 fork-era
+mechanism onto the v1.2.7 ground): the radix end state at `at == len`
+(its key the plain prompt's pages — no page follows it, so the lookahead
+row cannot differ; the fork-era token-paste DROPPED as semantically
+vacuous), the keep guard waiving the lookahead for the end state, the
+engine prefill's `resumeFirst` skip (restore → promptHead's one-row
+projection → draw), the end-keep fired after the last chunk's commit and
+holdPrompt, the lanes `resumeFrom` and the follow `chunk` admitting the
+full-length resume. **The verification**: pristine 93a2e93 + the
+19-patch chain applies clean and reproduces the ported tree byte-
+identically (0 diff lines); the four GLM host suites RC=0; the full
+native build RC=0 (fatbins sm_121 + the binary).
+
+**The stage brief — the warmkeep A/B window**:
+- **The question**: does the end-state keep turn the warm resume from a
+  ~945 ms tail re-prefill into production's ~212 ms full-hit skip?
+- **Value-if-yes**: the anchors' warm-TTFT row — the opencode multi-turn
+  interaction's resume latency — moves ~4.5× toward the skip; the fork
+  era's measured mechanism finally lands on the native line.
+- **Cost**: one window (~35 min: two arms × (restart + the d4096/d8192
+  cold-warm pairs + the greedy witness)).
+- **Alternatives rejected**: upstream's `warm` rules route (unpaged-only,
+  needs the radix work anyway — the fork patch IS that work, receipted);
+  re-measuring without a mechanism (the wrong-instrument void, w40's class).
+- **Kill criterion**: the ON arm's warm TTFT at parity with the OFF arm's,
+  or the greedy witness moving off 80cc3802… — either voids the branch and
+  the patch retires with its receipt.
+- **Phase list**: `preflight warmkeep summary`.
