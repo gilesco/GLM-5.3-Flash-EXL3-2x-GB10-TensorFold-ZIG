@@ -14,9 +14,17 @@
 > mainline them), the user-parked 0110 KV-SHARD port. (The DRAFTS=0+
 > LIVE_HALF composition is NOT a lever — w48's A/B retired it on the
 > decode trade: DFlash2 drafts are worth ~2× on decode, the ON arm's c4
-> 35.1; the anchor's row carries the receipt.) The next sitting opens
-> with the ECOSYSTEM read and a stage brief naming a user-visible
-> number — no launch without one.
+> 35.1; the anchor's row carries the receipt.) **THE (USER) DECISION
+> (round 141 cont. 50): WE WAIT FOR THE NEXT TENSORFOLD RELEASE — the
+> #2856 stage brief is SHELVED, not discarded; the next release's
+> rebase carries #2843's EXL3 decode-grid fix free (already merged into
+> main) and possibly #2856's batched shared MTP and #3064's paged FP8
+> KV. The watch is ARMED: `scripts/upstream-release-watch.sh` (the
+> deep cron every 30 min) pokes the session the moment a tag newer
+> than v1.2.7 lands; the wake names the release notes and the bump
+> protocol (the round-141 v1.2.7 shape). The next sitting then opens
+> with the release read and the rebase stage — no launch without the
+> battery's stage brief, per the bump protocol.**
 > The board behind it: the warmkeep arc CLOSED
 > (windows 52-61: NINE instrument voids, then the first VALID A/B — window
 > 61's page-aligned fills on both arms, the colds honest, the greedy shas
