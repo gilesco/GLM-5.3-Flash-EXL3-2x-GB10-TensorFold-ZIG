@@ -2,7 +2,10 @@
 
 Working notes for the fork-tail and upstream port work. Full recipes from the
 round-139 cont. 7 subagent scan (2026-11-08); line numbers reference our tree
-at `f202781d3` (the v124-rebase head). **The dispositions come from
+at `f202781d3` (the v124-rebase head — TWO rebases stale now: the recipes'
+line numbers are historical anchors, the dispositions are the live content;
+the tree is v1.2.7 `93a2e93` since the round-141 promotion). **The
+dispositions come from
 docs/ECOSYSTEM.md's scan** — port order reflects value and risk, not just
 readiness.
 
