@@ -11,9 +11,12 @@
 > native serving path; 023 retired). The re-ground closes the re-pair
 > item. What remains: the upstream watch (#2852 EXL3 whole-pass routing,
 > #2856 batched shared MTP — OPEN with no numbers; the next release may
-> mainline them), the user-parked 0110 KV-SHARD port, the DRAFTS=0+
-> LIVE_HALF composition. The next sitting opens with the ECOSYSTEM read
-> and a stage brief naming a user-visible number — no launch without one.
+> mainline them), the user-parked 0110 KV-SHARD port. (The DRAFTS=0+
+> LIVE_HALF composition is NOT a lever — w48's A/B retired it on the
+> decode trade: DFlash2 drafts are worth ~2× on decode, the ON arm's c4
+> 35.1; the anchor's row carries the receipt.) The next sitting opens
+> with the ECOSYSTEM read and a stage brief naming a user-visible
+> number — no launch without one.
 > The board behind it: the warmkeep arc CLOSED
 > (windows 52-61: NINE instrument voids, then the first VALID A/B — window
 > 61's page-aligned fills on both arms, the colds honest, the greedy shas
@@ -32,9 +35,8 @@
 > arm the same 18-patch stack — an A/A by design: the five instruments
 > re-ground the decode rows on the promoted engine, the pair's delta IS
 > the noise floor). Remaining levers after it: the 0110 KV-SHARD port
-> (user-parked), the DRAFTS=0+LIVE_HALF four-window composition, the
-> upstream watch (#2852/#2856 — no numbers yet). The stage brief rides the
-> launch (round 141 cont. 44). (The earlier round-141 arc — the #2699
+> (user-parked), the upstream watch (#2852/#2856 — no numbers yet). The
+> stage brief rides the launch (round 141 cont. 44). (The earlier round-141 arc — the #2699
 > recovery, the #2181 live-half knob, the #2257 watch, the #2744
 > retirement, the #2793 ADOPTION (+6.1% c4, campaign-20261111-094017), the
 > v1.2.7 rebase + promotion — sits in the round history below.)
