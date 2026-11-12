@@ -3166,3 +3166,28 @@ instrument now has zero assumed constants: fill measured (two-point),
 tail picked by variant parity, probe measured per-candidate.
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 41) WINDOW 59 RAN THE WARMKEEP V8 — THE SWEEP MEASURED THE BUSTER'S SIZE: EVERY DIGIT IS 1 TOKEN AT WORD 1; THE V9 BUSTER IS LENGTH-SAFE BY CONSTRUCTION (2026-11-12)
+
+**The receipt** (campaign-20261112-015035): the self-void guard held a
+seventh time, and this void is itself a measurement: all nine candidate
+digits at word 1 read **prompt=4095** (the last digit "9" recorded), while
+the fill's "0" at word 1 reads 4,096. Nine independent measurements of
+one fact: **digits 1-9 are all exactly 1 token at word 1**; the fill's
+"0" is 2. The candidate family was never diverse in LENGTH — only in
+key — so no single-digit buster can match the length. The sweep design
+is dead; the constants are all measured now.
+
+**The v9 buster is length-safe BY CONSTRUCTION from those measured
+facts**: word 1's "0" (2 tokens) is replaced by TWO single-digit words
+(1+1 = 2 tokens) — the same length with a different page-1 key. The
+arithmetic closes on the window's own numbers: 2,038 × 2 + 1 + 1 + 18 =
+4,096 exactly. Per-depth starting digits (d4096 leads "55", d8192 leads
+"88") keep the page-1 keys distinct — the v7 d8192-cold-hit lesson
+stands. Each candidate is still measured by its send (any miss voids
+the arm), and a staging bug caught before launch: every candidate now
+starts from a PRISTINE fill copy (the v9 sweep as first staged would
+have compounded its edits across candidates — candidate 2 editing
+candidate 1's output).
+
+phase-lint 0 failing classes. The window relaunches this sitting.

@@ -1581,24 +1581,26 @@ if want warmkeep && ! phase_done warmkeep; then
     if [ "$n" != "$target" ]; then
       echo "- the arithmetic calibration MISSED ($n vs $target) — the arm VOIDs" >> "$P"; return 1
     fi
-    # the probe: v7's flip (the first word "0"->"1") lost a token — the done
-    # line read prompt=4095/8191, the probe was NEVER page-aligned, so the
-    # end state could not be kept and the skip could not fire on either arm.
-    # v8 gives the probe the same oracle treatment as the fill: NO assumed
-    # token count for the buster either. The buster moves to WORD 1 (the v7
-    # d4096 fill proves every space-prefixed "0" is 2 tokens; word 1 reads
-    # prompt=4097 — no leading-position ambiguity) and each candidate is
-    # MEASURED by a real send whose done line must read exactly $target
-    # (page-aligned). The accepted candidate's first send IS the cold run
-    # (its cached=0 is verified by the caller) — no unmeasured send exists.
-    local cand tries=0 n_probe=0 start_digit=$(( target == 4096 ? 1 : 2 ))
-    for cand in $(seq "$start_digit" $((start_digit + 8))); do
+    # the probe: v8's single-digit sweep measured the truth but couldn't use
+    # it — every digit 1-9 at word 1 is ONE token (nine readings of 4095),
+    # while the fill's "0" at word 1 is TWO (the fill landed exactly at
+    # 4,096). No single-digit word can match the length. v9's buster is
+    # length-safe BY CONSTRUCTION from those measured facts: word 1's "0"
+    # (2 tokens) is replaced by TWO single-digit words (1+1 = 2 tokens), the
+    # same length with a different page-1 key. Each candidate is still
+    # MEASURED by a real send whose done line must read exactly $target; the
+    # accepted candidate's first send IS the cold run. Per-depth starting
+    # digits keep the two depths' page-1 keys distinct.
+    local cand tries=0 n_probe=0 start_digit=$(( target == 4096 ? 5 : 8 ))
+    cp "$bf" "$OUT/wk-fill-$target.ref" # the pristine fill: every candidate starts from it (no compounding edits)
+    for cand in "$start_digit$start_digit" "$start_digit$((start_digit + 1))" "$((start_digit + 1))$start_digit" "$((start_digit + 1))$((start_digit + 1))" "$start_digit$((start_digit + 2))" "$((start_digit + 2))$start_digit" "$((start_digit + 2))$((start_digit + 2))" "$((start_digit + 1))$((start_digit + 2))"; do
+      cp "$OUT/wk-fill-$target.ref" "$bf"
       python3 - "$bf" "$cand" << 'PYPROBE' >> "$P" 2>&1 || true
 import json, sys
-bf, digit = sys.argv[1], sys.argv[2]
+bf, pair = sys.argv[1], sys.argv[2]
 b = json.load(open(bf))
 words = b["messages"][0]["content"].split()
-words[1] = digit # word 1 flips (word 0 stays "0"): the buster carries no length assumption
+words[1:2] = [pair[0], pair[1]] # word 1's "0" (2 tokens) -> two 1-token digits: the same length, a different page-1 key
 b["messages"][0]["content"] = " ".join(words)
 json.dump(b, open(bf, 'w'))
 PYPROBE
@@ -1606,15 +1608,16 @@ PYPROBE
       tt=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-probe-try-$target.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
       n_probe=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
       tries=$((tries + 1))
+      echo "- the probe candidate \"$cand\" (two 1-token digits at word 1): the engine counted prompt=$n_probe (the target $target)" >> "$P"
       if [ "$n_probe" = "$target" ]; then
         COLD=$tt # the accepted candidate's send IS the arm's cold: keep its timing
         break
       fi
-      if [ "$tries" -ge 9 ]; then
-        echo "- no probe candidate landed page-aligned (the last digit \"$cand\" read $n_probe) — the arm VOIDs" >> "$P"; return 1
+      if [ "$tries" -ge 8 ]; then
+        echo "- no probe candidate landed page-aligned — the arm VOIDs" >> "$P"; return 1
       fi
     done
-    echo "- the probe locked after $tries candidate(s): word 1 = \"$cand\", the engine counted prompt=$n_probe (page-aligned, $(( n_probe / 512 )) pages exactly) — THIS send is the arm's d$target cold" >> "$P"
+    echo "- the probe locked after $tries candidate(s): word 1 = \"${cand:0:1} ${cand:1:1}\", the engine counted prompt=$n_probe (page-aligned, $(( n_probe / 512 )) pages exactly) — THIS send is the arm's d$target cold" >> "$P"
   }
   run_arm() { # $1 = arm label, $2 = the arm's PATCHES value ("" = the config default)
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$2"; then
@@ -1623,8 +1626,8 @@ PYPROBE
     echo "- the $1 arm's serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
     for depth in 4096 8192; do
       bf="$OUT/wk-d$depth.json"
-      # v8: aligned_probe's accepted candidate send IS the cold (the probe is
-      # page-aligned or the arm voids inside). The per-depth digit on word 1
+      # v8/v9: aligned_probe's accepted candidate send IS the cold (the probe is
+      # page-aligned or the arm voids inside). The per-depth starting digit
       # keeps the two depths' page-1 keys distinct (the v7 d8192 cold hit the
       # d4096 probe's chunk-1 keep: both probes read "1"-led page 1).
       if ! aligned_probe "$depth" "$bf"; then echo "- the $1 arm VOIDED: the $depth probe never landed page-aligned" >> "$P"; return 1; fi
