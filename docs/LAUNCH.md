@@ -3359,3 +3359,32 @@ PERF_PLAN (three cells), the sweep cards regenerated with the corrected
 (scripts/render-sweep-cards.sh). No receipts changed — the numbers were
 always right in the receipts; only the prose's denominator was wrong.
 No window — desk work.
+
+## (round 141, cont. 47) THE MAINTENANCE PAUSE + THE PUSH CREDENTIAL LAPSE (2026-11-12)
+
+**The maintenance pause landed** (the (user) maintenance-reboot notice): a
+`/tmp/autonomous-maintenance.pause` file on either host makes the loop's
+arms hands off — the head's crash-net (`autonomous-cron.sh`) exits before
+any restart check; the deep poke (`autonomous-poke.sh`) exits before any
+ssh. The pause is SELF-CLEARING: the reboot that ends maintenance removes
+the /tmp file, and both arms re-arm on their next ticks — no manual
+re-enable step to forget. The head's cron file is LIVE on the head
+(scp'd directly; commit `c2f45fc` carries both edits).
+
+**The push credential lapsed mid-sitting**: `gh auth status` reads "The
+token in hosts.yml is invalid" — the earlier pushes today succeeded, so
+the token lapsed within hours (possibly maintenance-related). Commit
+`c2f45fc` sits UNPUSHED on deep; the head's checkout carries the cron
+edit as an uncommitted scp'd file. RECOVERY (the user, one command):
+`gh auth login -h github.com` on deep, then `git push origin main` from
+this repo and `git ff-sync` the head — or let the next sitting's first
+launch catch it (the launcher ff-syncs from origin/main and will see the
+head is AHEAD by the scp'd file; the sync protocol needs the push first).
+
+**The pre-reboot checklist for the (user)**: (1) no window in flight
+(verified — no flag on the head); (2) optionally
+`touch /tmp/autonomous-maintenance.pause` on the head AND the agent host
+before the reboots (self-clearing); (3) the re-auth above when
+convenient — nothing in the loop needs the network until the next launch
+or poke-to-head ssh (which works: the lapse is the GitHub HTTPS
+credential only, not the site's ssh).
