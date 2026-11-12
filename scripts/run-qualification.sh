@@ -1546,7 +1546,7 @@ fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, wo
 json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
 " "$(( $target / 5 ))" "$bf" 2>/dev/null
     python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-    for attempt in 1 2 3 4 5; do
+    for attempt in 1 2 3 4 5 6 7 8; do
       curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-cal-$target-a$attempt.json" >/dev/null 2>&1 || true
       n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
       echo "- the calibration round $attempt: the engine counted prompt=$n (the target $target)" >> "$P"
@@ -1557,22 +1557,36 @@ bf, target, got = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 b = json.load(open(bf))
 fill = b["messages"][0]["content"]
 words = fill.split()
-if abs(got - target) > 64: # coarse: scale the word count
-    import os
-    base = os.environ['FILL_WORDS'].split()
-    n_words = max(1, int(len(words) * target / max(got, 1)))
-    fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, base[i % len(base)]) for i in range(n_words)))
-else: # fine: single-token "0" words, one per token of deficit
+if got < target:
     deficit = target - got
-    pad = " 0" * deficit if deficit > 0 else ""
-    if deficit < 0: # over: drop trailing words (each ~4.8 tokens)
-        words = words[: len(words) + deficit // 5]
-        fill = " ".join(words)
-    else:
-        fill = fill + pad
+    if deficit > 64: # coarse: scale the word count
+        import os
+        base = os.environ['FILL_WORDS'].split()
+        n_words = max(1, int(len(words) * target / max(got, 1)))
+        fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, base[i % len(base)]) for i in range(n_words)))
+        fill = fill + " 0" * (deficit % 5) # the coarse round leaves a small residue: pad it now
+    else: # fine: single-token "0" words
+        fill = fill + " 0" * deficit
+else: # over: trim CHARACTERS off the last word's digit suffix (digits tokenize near 1:1), then whole "0" words off the tail
+    over = got - target
+    m = 0
+    while over > 0 and m < len(words):
+        w = words[-1 - m]
+        d = 0
+        for ch in reversed(w):
+            if ch.isdigit(): d += 1
+            else: break
+        if d == 0: break
+        cut = min(d, over)
+        words[-1 - m] = w[: len(w) - cut]
+        over -= cut
+        m += 1
+    while over > 0 and words and words[-1] == "0": # trailing pads: drop whole words
+        words.pop(); over -= 1
+    fill = " ".join(words)
 b["messages"][0]["content"] = fill + ' Name three colors.'
 json.dump(b, open(bf, 'w'))
-print(f"- the calibration adjusted (the deficit {target - got} tokens)")
+print(f"- the calibration adjusted ({'pad' if got < target else 'trim'} {abs(target - got)} tokens)")
 PYCAL
     done
     if [ "$n" != "$target" ]; then

@@ -3048,3 +3048,24 @@ fix mapped to its void's root cause:
   the signature check inline.
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 36) WINDOW 54 RAN THE WARMKEEP V3 — THE SELF-VOID GUARD WORKED; THE CALIBRATION'S TRIM PATH STUCK; THE V4 FIX LANDED (2026-11-12)
+
+**The receipt** (campaign-20261112-001810): the v3 guard did its job — the
+calibration failed to land page-aligned and **the arms voided themselves
+before any near-miss row entered the receipt** (both arms VOID at
+prompt=4,107 vs the 4,096 target). But the failure mode is now diagnostic:
+the under-run path works (2,978 → 4,106 in one coarse+pad round), the
+**over-run path stuck** — rounds 3–5 all read 4,107: dropping whole words
+re-indexes the fill's suffix digits and jitters the token count
+non-uniformly (4,106 → 4,107 while removing ~10 tokens). The d8192 arm
+never ran (the 4096 calibration voided first).
+
+**The v4 fix** (the trim path rebuilt): over-runs trim CHARACTERS off the
+last words' digit suffixes (digits tokenize near 1:1 — the count moves
+monotonically toward the target), trailing single-token "0" pads drop
+whole; the coarse under-run pre-pads its residue (`deficit % 5` zeros) so
+the fine path starts close; the round cap rises to 8. The self-void guard
+stands unchanged — no near-miss rows, ever.
+
+phase-lint 0 failing classes. The window relaunches this sitting.
