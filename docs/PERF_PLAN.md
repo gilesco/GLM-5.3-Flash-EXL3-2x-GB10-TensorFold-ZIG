@@ -68,8 +68,8 @@ Every named lever is now **adopted, measured out, parked with a price, or
 upstream-gated**:
 
 - **Quality (Front 1)**: UPDATED round 132 — the 4bpw sweep moved the ceiling:
-  **TR3-4bpw 94/104** (the served default, the (user) swap) ties the MIA pack
-  and ties **production's current-bench anchor: 94/104** (the prodbench receipt,
+  **TR3-4bpw Quality 94/100** (the served default, the (user) swap) ties the MIA pack
+  and ties **production's current-bench anchor: Quality 94/100** (the prodbench receipt,
   cont. 22 — production FOR TESTING on the clean 8001, the same bench_cell
   instrument; campaign-20261102-213954) — the quality bar is met AT the number. The
   checkpoint-lever idea this bullet gestured at is now DONE — the sweep ran it
@@ -293,7 +293,7 @@ Prompt chunks are 90% router+routed (a 2,048-row chunk: router 910 + routed 793 
   **SCOPE (user, round 132): requants are OUT OF SCOPE for this repo until a safe,
   efficient method exists** — no requant tasks or plans live in this doc; the requant
   mentions below are the AZ pack's executed provenance only (its artifacts:
-  `local/GLM-5.3-Flash-AZ-EXL3`, receipted 90/104 in the 4bpw sweep). Sub-4bpw work
+  `local/GLM-5.3-Flash-AZ-EXL3`, receipted Quality 90/100 in the 4bpw sweep). Sub-4bpw work
   proceeds by SERVING community-built packs (the 3bpw track), never by local
   quantization. The arc's design doc (docs/REQUANT.md) is deleted; its lessons live in
   the append-only log and the agent-skill stores.

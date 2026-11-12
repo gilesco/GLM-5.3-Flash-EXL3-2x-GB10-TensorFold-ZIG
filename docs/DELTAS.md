@@ -10,15 +10,17 @@
 > never cross-compare). The section below the separator is the pre-re-target
 > record, kept for its receipts.
 
-**The current state (round 141, 2026-11-11, the re-pair)**: the engine is TensorFold
-**v1.2.6** (`6e9af9302`) + the **adopted 19-patch stack re-anchored** (the
-round-trip proven byte-identical — pristine v1.2.6 + the 18 rebase patches,
-plus the round-141 #2793 shared-budgets port 022). The v126val battery QUALIFIED the bump on every instrument
-(campaign-20261110-162034): the same-bits greedy witness IDENTICAL (the
-`80cc3802…` sha holds across the bump), the §2 gates ALL PASS, **hardmode 95
-— now the TWENTY-FIFTH consecutive** (windows 36–37 added three more
-all-pass serves), the vision 4/4, zero strict-TF_ refusals,
-the walls 84/83 s, prefill 1,523, steady-state decode 73.1 tok/s. Production
+**The current state (round 141, 2026-11-12, the promotion + the duel A/A re-ground)**: the engine is TensorFold
+**v1.2.7** (`93a2e93`) + the **adopted 18-patch stack re-anchored** (the
+round-trip proven byte-identical — pristine v1.2.7 + the 18 rebase patches;
+021-vision2744 and 022-shared-budgets mainlined upstream and dropped from the
+stack; the round-141 warmkeep port 023 RETIRED on its valid negative). The v127val battery QUALIFIED the bump on every instrument
+(campaign-20261111-191641): the same-bits greedy witness IDENTICAL (the
+`80cc3802…` sha holds across the bump), the §2 gates ALL PASS, **hardmode
+Quality 95/100 (197/208 points), Deployability 76/100**
+— now the THIRTY-THIRD consecutive Quality-95 receipt, the vision 4/4, zero strict-TF_ refusals,
+the walls 83/84 s, the duel re-paired on the v1.2.7 engine the same sitting
+(campaign-20261112-030105: all five instruments flat — the A/A re-ground). Production
 serves opencode on 8000 from this repo's config. **Vision is ON as the
 standing default and receipted** (the vision suite 4/4 in every battery since
 round 132). **The #2699 prompt-cache question is CLOSED** (window 36,
@@ -60,11 +62,13 @@ receipted at 8 on v1.2.3's mechanism, kvshare2/kvsharequal, campaign-20261106-09
 native store at 16 boots clean, v124val) and **`TF_GLM_INDEX_CUDA=1`** as the
 standing default (round 49: the depth ladder −2.6% at 131k → −5.5% at 393k, gates ALL
 PASS). The served default is the **TR3-4bpw checkpoint** (the round-132
-(user) swap after the 4bpw sweep: 94/104 hardmode, the best top-8 decode —
+(user) swap after the 4bpw sweep: Quality 94/100 hardmode, the best top-8 decode —
 docs/bpw4-sweep-cards.svg; the AZ-Focus stays receipted at 93) — the **(user) call: hardmode is THE quality
 measure, target = beat production's run-level 94 or come close**. On the
-CURRENT instrument (the 104-scenario hardmode battery): the served config **95** (receipted three
-times: campaign-20261106-043015/-065920/-093921 — byte-identical token profiles), production's stock **92**, the Focus **92**, the AZ top-4 **87** — the **re-sweep (2026-11-06, docs/bpw4-sweep-cards.svg): all four packs on the SHIPPING stack; the served pack 3 points clear** (the round-132 v1.2.1 sweep's 93/94/90 is history) — and **production's current-bench anchor: 94/104** (the prodbench
+CURRENT instrument (the 104-scenario hardmode battery; final_score is a 0-100
+scale — round(points/max_points × 100), NOT "out of 104 scenarios"; the points
+denominator is 208 in this era): the served config **95** (receipted three
+times: campaign-20261106-043015/-065920/-093921 — byte-identical token profiles), production's stock **92**, the Focus **92**, the AZ top-4 **87** — the **re-sweep (2026-11-06, docs/bpw4-sweep-cards.svg): all four packs on the SHIPPING stack; the served pack 3 points clear** (the round-132 v1.2.1 sweep's 93/94/90 is history) — and **production's current-bench anchor: 94/100** (the prodbench
 receipt, campaign-20261102-213954: the same bench_cell instrument on the clean 8001) — **the served config is a point ABOVE production at the bar**. On the
 OLD bench eras: the Focus scored 92 (round-38), the top4cfg 89 (76% subset) — the
 eras are not cross-comparable (the (user) rule: hardmode scores never cross families

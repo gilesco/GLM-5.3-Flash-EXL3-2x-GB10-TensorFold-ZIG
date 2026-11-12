@@ -389,3 +389,4 @@
 | [round 141 cont. 43] (round 141, cont. 43) WINDOW 61 RAN THE WARMKEEP V10 — THE FIRST VALID A/B READING; THE KILL CRITERION FIRE… | docs/LAUNCH.md | campaign-20261112-023109 | — |
 | [round 141 cont. 44] (round 141, cont. 44) WINDOW 62 RAN THE DUEL — THE V1.2.7 A/A RE-GROUND: ALL FIVE INSTRUMENTS FLAT; THE C4 … | docs/LAUNCH.md | campaign-20261112-030105 | — |
 | [round 141 cont. 45] (round 141, cont. 45) THE ECOSYSTEM READ — NO STAGED CANDIDATE; THE QUEUE IS UPSTREAM-GATED; NOTHING TO TES… | docs/LAUNCH.md | — | — |
+| [round 141 cont. 46] (round 141, cont. 46) THE SCORE-NOTATION CORRECTION ((user) catch) — final_score IS 0–100, NOT "/104"; DEPL… | docs/LAUNCH.md | campaign-20261111-191641 | — |

@@ -19,10 +19,16 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 
 ## 2. Exactness (the same gates upstream's EXL3 receipts used, through the API)
 
-> **STANDING STATE (round 141): §2 has PASSED thirty-two consecutive times**
-> (every battery since the round-127 era; the newest: campaign-20261111-094017
-> window 45's budgetsqual battery — g1-g4 + the g5 note, on the v1.2.6 engine +
-> the adopted stack + the 022-shared-budgets patch). The checkboxes below are the gate DEFINITIONS — they stay
+> **STANDING STATE (round 141): §2 has PASSED thirty-three consecutive times**
+> (every battery since the round-127 era; the newest: campaign-20261111-191641
+> window 51's v127val battery — g1-g4 + the g5 note, on the v1.2.7 engine +
+> the adopted 18-patch stack; the v1.2.7 bump QUALIFIED and promoted). The
+> hardmode score is a **0–100 quality scale** — round(points/max_points × 100),
+> 197/208 → Quality 95 — NOT "out of 104 scenarios"; the battery also reports
+> **Deployability 76/100** (round(0.7 × Quality + 0.3 × Responsiveness);
+> Responsiveness 30 from the 5.2 s median turn) and its safety gate flags
+> TC-98 (prompt-injection) on nearly every run, ours and production's alike —
+> priced in the P category (62/70). The checkboxes below are the gate DEFINITIONS — they stay
 > unchecked here because the receipt lives in each battery, not in a manual
 > run of this file; VALIDATION.md is the definitions home, the batteries are
 > the executions.
@@ -122,7 +128,10 @@ No agent runtime is required: **tool-eval-bench is the client** (see
 [TOOL_EVAL_TESTING.md](TOOL_EVAL_TESTING.md) — the same fixed command on every
 configuration).
 
-- [ ] The full bench run passes end to end: 97 scenarios (69 standard + 28 Hard Mode) with
+- [ ] The full bench run passes end to end: the current suite (104 scenarios in the
+      v3.0.1 era — 79 standard + 25 Hard Mode; the P category's 70 points of the 208
+      max are the Hard-Mode weight; the older 69-scenario era is history)
+      with
       streamed tool calls, multi-turn tool results and `response_format`/structured cases —
       the scenarios themselves exercise the client-side API surface an agent would.
 - [ ] `tool_choice` handling matches what clients send: `"auto"` works (the engine refuses

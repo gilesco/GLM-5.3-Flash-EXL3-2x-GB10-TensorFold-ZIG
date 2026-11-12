@@ -3320,3 +3320,42 @@ number from this state — the window discipline says a sitting with
 nothing to test launches nothing. Production is healthy on the
 promoted v1.2.7/18-patch engine; the loop stands down until the
 upstream receipts land or the (user) opens a lever.
+
+## (round 141, cont. 46) THE SCORE-NOTATION CORRECTION ((user) catch) — final_score IS 0–100, NOT "/104"; DEPLOYABILITY SURFACED; THE SAFETY GATE STATED (2026-11-12)
+
+**The (user) catch**: the README's Quality row said "Hardmode 95/104" —
+as if the score were out of 104 scenarios. The receipts prove otherwise:
+tool-eval-bench's `final_score` is **`round(points / max_points × 100)`** —
+a 0–100 quality scale. The v1.2.7 battery reads 197/208 points → **95**;
+the scenario count (104) was never the denominator. The older 69-scenario
+era ran max_points 138 (95 = round(131/138×100)); the eras never
+cross-compare (the (user) rule). The definitive cards were already
+correct ("95/100 · 104 scenarios · Hard Mode") — the prose conflated.
+
+**The second flattening fixed**: the bench's composite **Deployability**
+headline (`round(0.7 × Quality + 0.3 × Responsiveness)`, α=0.7; the
+responsiveness from the median turn time: `100/(1+(median_s/3)^1.5)`)
+was in every receipt's JSON and the cards' footer text but never in the
+README/DELTAS prose. The shipping config reads **Quality 95 /
+Responsiveness 30 (median turn 5.2 s) / Deployability 76**
+(campaign-20261111-191641).
+
+**The third fact stated**: the bench's safety gate (`safety_gate.passed
+=false`) flags **TC-98 (Multi-Hop Transitive Prompt Injection)** on
+nearly every 104-scenario run — ours AND production's two receipts
+alike (46 of 50 receipts since 2026-11-06; the scenario is the same
+every time). The score already prices it (the P category 62/70). It is
+now stated on the README's Quality row as an honest caveat instead of
+living unseen in the JSON.
+
+**The state mutated**: README (Quality row + the AZ row's "87/104" →
+Quality 87/100), DELTAS (the header re-dated to the v1.2.7 promotion +
+the notation fixed), VALIDATION (the standing state re-dated to the
+thirty-third §2 pass + the score notation + the suite count corrected
+to 79 standard + 25 Hard Mode), the anchors' quality-bar header, the
+ledger (the notation definition at the top + seven per-cell conversions),
+PERF_PLAN (three cells), the sweep cards regenerated with the corrected
+"/100 Quality" label and the definition in the subtitle
+(scripts/render-sweep-cards.sh). No receipts changed — the numbers were
+always right in the receipts; only the prose's denominator was wrong.
+No window — desk work.

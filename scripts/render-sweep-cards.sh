@@ -35,7 +35,7 @@ parts = [
     '<text x="16" y="28" font-size="17" font-weight="bold" fill="#212121">'
     'GLM-5.3-Flash 4bpw sweep — v1.2.3 + the 4-patch stack, paged KV + KV_SHARE=8, dense4fp8, 512K×4, vision</text>',
     '<text x="16" y="48" font-size="12" fill="#616161">'
-    'hardmode = the 104-scenario battery (bench v3.0.1) · pp = llama-benchy pp2048 @ d0 tok/s · '
+    'hardmode = the 104-scenario battery final_score (Quality, 0-100 = round(points/208 x 100) — NOT out of 104 scenarios; bench v3.0.1) · pp = llama-benchy pp2048 @ d0 tok/s · '
     'tg = solo tg128 tok/s at depth · c4 = 4 streams at d8192</text>',
     '<text x="16" y="66" font-size="11" fill="#9e9e9e">'
     'the re-sweep (2026-11-06, the (user) ask): every pack on the SHIPPING stack — these cards are the CURRENT ranking; the served TR3 pack\'s standing receipts: hardmode 95 three times, byte-identical token profiles.'
@@ -49,7 +49,7 @@ for r in rows:
     parts.append(f'<rect x="{x}" y="86" width="{CARD_W}" height="6" rx="3" fill="{c}"/>')
     parts.append(f'<text x="{x+14}" y="116" font-size="14" font-weight="bold" fill="#212121">{pack}</text>')
     parts.append(f'<text x="{x+14}" y="156" font-size="34" font-weight="bold" fill="{c}">{hm}</text>')
-    parts.append(f'<text x="{x+86}" y="156" font-size="12" fill="#757575">/104 hardmode</text>')
+    parts.append(f'<text x="{x+86}" y="156" font-size="12" fill="#757575">/100 Quality</text>')
     metric = [
         ("prefill pp2048 @ d0", pp, best["pp_d0"]),
         ("tg128 solo @ d0", tg0, best["tg_d0"]),

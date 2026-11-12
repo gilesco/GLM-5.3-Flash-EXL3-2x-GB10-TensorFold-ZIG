@@ -6,6 +6,8 @@
 > the manual single-config fallback. **(User) The bar: surpass production 0.6.6 on
 > loading time, generation tok/s, and prefill rate.**
 
+> **Score notation (corrected 2026-11-12, the (user) catch)**: tool-eval-bench's `final_score` is a **0–100 quality scale** — `round(points / max_points × 100)` — NOT a count of scenarios. In the current bench era (v3.0.1, 104 scenarios incl. Hard Mode) the points denominator is **208**; in the older 69-scenario era it was 138 (the eras never cross-compare — the (user) rule). Older entries below written `X/104` meant the same 0–100 final score — the `/104` was the scenario count misread as the denominator; the receipts' own points rows (e.g. 197/208 → 95) were always correct. The bench also reports two composites this line's prose had flattened: **Responsiveness** (0–100, from the median turn time: `100/(1+(median_s/3)^1.5)`) and **Deployability = round(0.7 × Quality + 0.3 × Responsiveness)** — the shipping config reads Quality 95 / Responsiveness 30 (median turn 5.2 s) / **Deployability 76** (campaign-20261111-191641). The bench's safety gate (`safety_gate.passed=false`) flags TC-98 (Multi-Hop Transitive Prompt Injection) on nearly every run — ours and production's alike (46 of 50 receipts since 2026-11-06); the score already prices it in the P category (62/70).
+
 **Strategy:** quick performance measurements select the best server configuration; the
 scenario suites (tool-calling, Hard Mode) run only on the winner. **No `--hardmode` in
 early testing.**
@@ -214,7 +216,7 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       per-pack windows), the scenario receipts carry the failing-TC detail; the
       production-side comparison: CLOSED (cont. 22) — production's current-bench
       hardmode anchor landed via prodbench (production FOR TESTING on 8001, the
-      same bench_cell instrument): **94/104** (campaign-20261102-213954) — the
+      same bench_cell instrument): **94/100** (the prodbench receipt, campaign-20261102-213954) — the
       served TR3 TIES it at 94; the battery's saturation warning (--parallel 2)
       recorded on both sides alike.
 - [x] ~~Small hygiene: worker clock probe reads 0 via ssh~~ FIXED (cont. 29):
@@ -251,16 +253,16 @@ The context campaign (docs/CONTEXT_512K_PLAN.md) is separate and already perform
       5/6/8 refused at 512K (climb/climbP retired — the (user) cap at 4). The
       hardmode-instrument campaign (the (user) hardmode-only directive, the
       standard batch rides inside): **the standing config (dense4fp8, Focus,
-      vision) 93/104** — the cell's best hardmode receipt (ties the
-      effort-tail-era 93); dense8+fp8 88/104 (TC-99 partial + TC-101/104).
+      vision) Quality 93/100** — the cell's best hardmode receipt (ties the
+      effort-tail-era 93); dense8+fp8 Quality 88/100 (TC-99 partial + TC-101/104 fail).
       Standard tool-eval 95 (dense8 cell, the morning campaign) — recorded as
       tool-eval, never cross-compared. Owed: production's current-bench prodqual.
       → CLOSED (cont. 22): **prodbench** — production's current-bench hardmode
       anchor on the clean 8001 (production FOR TESTING, the duel's choreography,
-      the same bench_cell instrument): **94/104** (campaign-20261102-213954) —
+      the same bench_cell instrument): **Quality 94/100** (campaign-20261102-213954) —
       the served TR3 TIES it; the phase retired, its receipt stands.
       The bpw4sweep (the 4bpw local packs, one per window): **Mia-AiLab 4bpw
-      94/104** (production's own family, the best) · **Focus 93** · **AZ 90**
+      94/100** (production's own family, the best) · **Focus 93** · **AZ 90**
       (017-topk4b applies on v1.2.1; the perf leader) · TR3 **94** (the sweep complete: TR3 94 · MIA 94 · Focus 93 · AZ 90;
       **the 3bpw track CLOSED on the engine's 4-bit expert floor** — the CUDA
       family reads 4-bit EXL3 experts: turboderp 3.05bpw refused (campaign-
@@ -981,7 +983,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       pool: a stream takes the pages its request needs; 6,380 bytes/token
       E4M3 beside DFlash2 vs 13,056 bf16).
 - [x] **ABSORB_MMA — ADOPTED AND CLOSED** (round 133, cont. 21): the
-      hardmode re-take on the ABSORB-only shipping config reads **95/104**
+      hardmode re-take on the ABSORB-only shipping config reads **Quality 95/100**
       (campaign-20261105-003101 — the 95 was not the tables' artifact; the
       serve line's ABSORB-ON shape, the wall flat at 103 s). The full
       receipt chain: the deep fills −6.8/−7.0/−6.9% (campaign-20261104-
@@ -994,7 +996,7 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 - [x] **The ABSORB_MMA confirmation window** (round 133, cont. 17): hardmode
       on the full stack (the first boot inherited the adopted config — the
       serve line's 13.9 GiB / 2.6 GiB cache is the ABSORB-ON shape):
-      **95/104 — one point ABOVE production's 94** (the standing control in
+      **Quality 95/100 — one point ABOVE production's 94** (the standing control in
       the prior window: 94). The restart wall 120 s. **The plumbing catch**:
       the resumecost phase carried a `PATCHES="${RC_PATCHES:-}"` override
       from the RC_PATCHES era — with RC_PATCHES unset it expanded to EMPTY,

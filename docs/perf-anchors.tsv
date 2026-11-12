@@ -5,8 +5,9 @@
 # The bar (user, 2026-10-23): this line succeeds when it surpasses production 0.6.6 on
 # loading time, generation tok/s, and prefill rate.
 # The quality bar (user, 2026-10-27): hardmode is THE quality measure — beat production's
-# run-level 94 — fresh round-103 prodqual: 96 on its current engine — or come close. The served default is now the TR3-4bpw checkpoint (the round-132 (user) swap: 94/104 hardmode, the best top-8 decode — docs/bpw4-sweep-cards.svg; the duel rows below are the TR3 cell's (re-paired round 132, same-window);
-# 86% subset); the top4cfg (89 / 76%) stays receipted as the perf leader.
+# run-level 94 (final_score is a 0-100 scale: round(points/max_points x 100), NOT "out of 104 scenarios";
+# the max_points denominator is 208 in the current bench era) — fresh round-103 prodqual: 96 on its current engine — or come close. The served default is now the TR3-4bpw checkpoint (the round-132 (user) swap: Quality 94/100 hardmode, the best top-8 decode — docs/bpw4-sweep-cards.svg; the duel rows below are the TR3 cell's (re-paired round 132, same-window);
+# 86% subset); the top4cfg (Quality 89/100, a 76%-point subset) stays receipted as the perf leader.
 #
 # title=The fronts — this line vs production (the retired Python recipe's pairs
 # are history; the round-139 (user) directive re-targets the chart NATIVE-vs-NATIVE

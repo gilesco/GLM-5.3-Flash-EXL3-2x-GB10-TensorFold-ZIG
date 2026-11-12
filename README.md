@@ -48,7 +48,7 @@ nothing but docker, ssh and the NVIDIA driver.
 
 | question | answer |
 | --- | --- |
-| Quality | **Hardmode 95/104** on the shipping config — receipted thirty-two consecutive times, every one with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
+| Quality | **Tool-eval-bench Hard Mode: Quality 95/100 (197/208 points), Deployability 76/100** on the shipping config — receipted thirty-three consecutive times (every one Quality 95, byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261111-191641 (the v1.2.7 v127val battery; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
 | Speed | All three (user) fronts **CROSSED** against the retired Python recipe — loading 112.9%, solo decode 116.8% (the standing high), prefill 100.1%; the first **native-vs-native calibration pair** (both arms the promoted config) reads flat inside the ±2% band on every instrument: solo 99.1%, c2 99.4%, c4 99.3%, overhead 98.9%, cold depth 100.3%, ITL 100% (campaign-20261108-162810). Future candidate duels measure against that floor — the pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv), the scoreboard: [docs/DELTAS.md](docs/DELTAS.md) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
@@ -194,7 +194,7 @@ Every patch's provenance, port receipts and knobs: [patches/README.md](patches/R
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` *(default)* | Mia's TR3 4bpw (topk=8, mcg); real files on both hosts |
 | `local/GLM-5.3-Flash-AZ-Focus-EXL3` | AxonZeta's efficiency-track Focus (topk=8, old-format mcg, integer bits); real files on both hosts |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the top-4 variant of the stock pack (needs `PATCHES=017-topk4b.patch`) |
-| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (needs `PATCHES=017-topk4b.patch`) — the sweep's perf leader at 87/104 hardmode |
+| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (needs `PATCHES=017-topk4b.patch`) — the sweep's perf leader at Quality 87/100 (181/208 points; 94.7% is the shipping config's 95) |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` *(stock)* | the stock pack; already in both caches |
 | `incoai/GLM-5.3-Flash-DFlash2` | the drafter; already in both caches (non-commercial terms) |
 
