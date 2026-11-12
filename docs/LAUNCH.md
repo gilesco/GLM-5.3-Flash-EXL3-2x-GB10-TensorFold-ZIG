@@ -3443,3 +3443,63 @@ credential only, not the site's ssh).
 **No window** — the loop is stood down (cont. 45); this is desk work
 inside the standing state. Production healthy; the maintenance pause
 mechanism live on both arms.
+
+## (round 141, cont. 49) THE HORIZON REVIEW — #2856 CROSSED ITS TRIGGER; THE STAGE BRIEF IS WRITTEN (2026-11-12)
+
+**The (user) asked for the upstream state, the community's moves, the
+horizon, and the next steps. Two read-only sweeps + hands-on
+verification landed the synthesis in ECOSYSTEM.md's new deep-read
+section. The decision-relevant facts:**
+
+1. **#2856 CROSSED its staging trigger**: rebased onto today's main,
+   the review fixes are in, and **its TP=2 receipts are on the record**
+   (four-stream chat +19.3/+19.6%, code +7.2/+7.8%, tokens equal 52/52,
+   one stream level, prompt level — the maintainer's own two-GB10
+   device result, both run orders). Only the `glm-mtp-shared-check`
+   device check remains before THEY land it. The round-141 cont. 15
+   rule — "staging them now would measure an upstream hypothesis" — no
+   longer applies: this is now a claimed number on our exact shape.
+2. **#2843 MERGED into main today** (the EXL3 grouped-experts grid
+   fix): three quarters of the shared decode grid exited at once; the
+   fix is bit-equal and lands free in the next release. Our next rebase
+   inherits it.
+3. **gr8 is the first real ease-of-use competitor** (kindlingai's
+   from-scratch CUDA engine, v1.0 out today): receipts published, but
+   no TEB-quality evidence and a measured 262,144 per-request context
+   vs our 524,288. Our differentiators hold; the watch item is SET.
+4. **The stage brief — the #2856 port (mtpshared, value-first)**:
+   - *The question*: does the batched shared MTP deliver its measured
+     concurrent-decode value on OUR shape — 2×GB10 TP=2, the adopted
+     18-patch stack, EXL3 TR3 DFlash2 (upstream's receipts are NVFP4+MTP;
+     the EXL3 transfer is the open question)?
+   - *The value-if-yes*: the c4 aggregate (the order-matched concurrent
+     instrument) moves >5% — user-visible four-stream decode on the
+     shipping config; the drafter counters record the batching as the
+     mechanism witness; one-stream solo stays level (upstream's own
+     claim — a kill if it regresses).
+   - *The cost*: one ~50-min window (the port rides the rebase-free
+     diff against v1.2.7's 18-patch ground; the ON arm's restart
+     re-prepares ~8 min).
+   - *The alternatives rejected*: waiting for upstream to land it (then
+     the next release carries it free — but the value question would
+     wait on their cadence, and the #2843-merged main is moving daily);
+     staging #2852 too (its TP=2 EXL3 receipts are still absent — the
+     round-141 cont. 15 rule STILL applies there); the 0110 KV-SHARD
+     port (user-parked).
+   - *The kill criterion*: QUALIFIED = the order-matched c4 beats the
+     OFF arm's c4 by >5% with every guard green (the greedy sha
+     80cc3802…, §2 ALL PASS, hardmode 95, the vision 4/4); KILLED =
+     one-stream solo regresses, or the c4 is flat/negative — the port
+     retires and the note records the EXL3 non-transfer (the third
+     not-to-transfer after zshfl/zstep if it fires).
+   - *The gates before launch*: the port applies clean on the v1.2.7
+     18-patch ground (the scratch verify); the arm-distinctness lint
+     passes; the desk-check of the diff's env knobs against the
+     consumers' contract.
+5. **The next sitting**: stage the #2856 port against the v1.2.7
+   ground per the brief above, then launch — the value gate answers
+   whether the concurrent decode claim transfers to EXL3.
+
+**The loop re-arms**: the stand-down from cont. 45 is lifted — a
+stage brief now names a user-visible number. The launch is the LAST
+action of the staging sitting, per the discipline.

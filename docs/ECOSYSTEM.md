@@ -290,3 +290,49 @@ The dated release reviews, community sweeps and upstream-watch entries moved to
 [docs/watch-archive.md](watch-archive.md) — one entry each, immutable once written.
 The living watch state is this file's top; the LAUNCH log cites receipts.
 
+
+## The 2026-11-12 evening deep read (the (user) horizon review; the read-only sweeps, verified hands-on)
+
+**Upstream (ashhart/TensorFold)**: main moved twice past the morning snapshot
+— `6c5cef8941` now, **137 commits past v1.2.7**. No v1.2.8 tag, no release
+commit staged. **#2843 MERGED at 13:33Z today — CUDA EXL3 grouped experts
+launch and size storage at the caller's tile/pair count** (fixes #2823): the
+shared EXL3 grouped path launched its decode grid at the 64-row prompt tile
+while decode/verify route at 16 — **three quarters of the decode grid's
+workgroups exited at once** — and pair storage was sized 4× a step's need.
+Bit-equal outputs, the host steps pass; the served EXL3-MoE check (Qwen
+3.6-35B) is still "to run" per the body, but the merge already carries it.
+This is our line's kernel territory: free in the next release. #2673 (the
+dense-GQA CUDA engine) also merged today — not our MoE path. **#2856
+rebased onto today's main and flipped dirty→clean; the review fixes are
+in; only the `glm-mtp-shared-check` device check remains before landing**
+— and its TP=2 receipts are ALREADY ON THE RECORD (the 2026-11-11 07:03
+comment, two GB10s, NVFP4+MTP: tokens equal 52/52; four-stream chat
++19.3/+19.6%, code +7.2/+7.8%; one stream level; prompt level). #2852 is
+unchanged (clean, the TP=2 EXL3 A/B still the trigger) but rides the
+maintainer's CI train #3056. **New on our line's radar: #3064/#3062
+(explicitly paged FP8 KV for GLM CUDA — OUR adopted mode becoming a
+first-class upstream path; implementation done, qualification open),
+#3027 (full-prefix repetition penalties), #2894 (NVFP4_NZ5), #3063 (the
+full GLM-5.3 on three GB10s), #1583 (the Apache DFlash2 drafter load).**
+
+**The community**: **kindlingai's gr8 is the first real ease-of-use
+competitor** — a from-scratch CUDA engine (no vLLM/PyTorch at serve time),
+v1.0 released TODAY, 74 stars, one-command Docker for 1-6 GB10s, GLM-5.3/
+Flash/DS-V4.1-Flash from their own exlr8 v2 weights. Their 2-box Flash
+card: decode 76.5/41.8/93.1 tok/s, concurrent 55.1/70.3/82.9 at 1/2/4,
+2.09M-token pool, 25 s warm boot — receipts published, MTP=3 waterfill
+drafting (+10.45% pooled concurrent). The honest edges: **no TEB-equivalent
+quality evidence published at all**; max per-request context **measured at
+262,144** (their 1M path is experimental CP-KV); the exlr8 card's own
+warning says the trellis values are E4M3-rounded at encode — a stock EXL3
+decoder reads measurably worse weights from the same bytes (format-hostile
+to our checkpoints). technigmaai's TEB leader is static since Oct 18. The
+thread's new MRCR@400k result (TensorFold 18/34 vs exlr8-vLLM 8/34 fully
+correct, p=0.013) supports the TF-native direction at depth. MiaAI's fork
+now runs to patch 0121; their 0100/0101 (cp-async stages, drafter knobs)
+measured neutral per their own changelog; their 0115 (32-row windows) is
+upstream #2257 — **we already mainline it free in v1.2.7**; their L2PF
+(opt-in L2 prefetch, +2% one-stream, flat under load) is the one measured
+port candidate of theirs. goshi's exporter now names three more native
+GB10 engines (velo, flare, tandem) — the field is densifying fast.
