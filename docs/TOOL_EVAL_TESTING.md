@@ -1434,7 +1434,14 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   holds; 3/3 at 8k/64k/192k/384k). The next question: WHERE the warm-resume cost lives
   in the paged+share era (the page restore's granularity, the share-store's slot
   lookup, or the fp8 page readback) — the stage brief needs the source read first
-  (the round-34 shape: root-cause before instrument).
+  (the round-34 shape: root-cause before instrument). The arc so far: the root
+  cause is READ (the fork-era end-state keep + skip, ported as 023-warmkeep onto
+  v1.2.7); the instrument (windows 52-58, six voids) fought the page-aligned probe
+  requirement — v7 landed the fill page-aligned exactly (the tail-variant parity
+  solver) but the probe's cache-buster flip lost a token (prompt=4095/8191); the
+  v8 instrument measures the probe per-candidate too — no assumed constants
+  anywhere; the value gate now binds on the DIRECT witness (the ON arm's warm
+  cached == prompt) with the TTFT delta behind it.
 
 
 ## Round history
