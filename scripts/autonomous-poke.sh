@@ -11,6 +11,11 @@
 # scripts/local.sh in THIS clone (git-ignored site config).
 set -uo pipefail
 cd "$(dirname "$0")/.."
+# the maintenance pause (the (user) maintenance window, round 141): while this
+# file exists the poke HANDS OFF — no wake attempts while deep itself reboots
+# or the head is under planned maintenance. Self-clearing in /tmp: the reboot
+# that ends maintenance removes it too.
+[ -f /tmp/autonomous-maintenance.pause ] && exit 0
 [ -f scripts/local.sh ] && source scripts/local.sh
 : "${SSH_TARGET:?set SSH_TARGET (user@head) in scripts/local.sh}"
 : "${PROD_REPO:?set PROD_REPO (the production repo dir name) in scripts/local.sh}"
