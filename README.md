@@ -157,7 +157,7 @@ site's). The ones that matter:
 | `MEMORY_LIMIT_GB` | engine default | → `TENSORFOLD_CUDA_MEMORY_LIMIT_GB` |
 | `BASE_IMAGE` / `ZIG_VERSION` / `SM_ARCH` | NGC pytorch 26.07 / `0.17.0` / `121` | the builder |
 
-### The 19-patch stack (`PATCHES`)
+### The 18-patch stack (`PATCHES`)
 
 The image applies the patches **in filename order — the three-digit prefix IS the
 application order** (`001-` first, `.done` numbers are never reused; the next

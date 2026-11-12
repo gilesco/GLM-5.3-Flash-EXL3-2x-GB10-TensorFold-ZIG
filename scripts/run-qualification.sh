@@ -1509,8 +1509,12 @@ DRIFTMAP_RETIRED=1
 # ---------------------------------------------------------------------------
 WARMTTFT_RETIRED=1
 # ---------------------------------------------------------------------------
-# phase: warmkeep (SESSION-SPECIFIC; retires with the receipt). The
-# warm-resume cost decomposition, leg 2: the END-STATE keep A/B, v2. The
+# phase: warmkeep (SESSION-SPECIFIC; RETIRED with its receipt, round 141
+# cont. 43 — window 61's valid A/B read the kill criterion (the warm
+# parity; the end state never admitted on the GLM native serving path);
+# the phase is dead code now and takes no launches; the receipts stand in
+# results/campaign-20261112-023109 and the arc's record in LAUNCH.md).
+# The warm-resume cost decomposition, leg 2: the END-STATE keep A/B, v2. The
 # first run (window 52, campaign-20261111-232645) was VOID as a value
 # instrument: the A/B was structurally an A/A (the port has no env gate —
 # both arms ran the same binary) AND the probes tokenized to 3,719/7,424
@@ -1656,7 +1660,7 @@ if want warmkeep && ! phase_done warmkeep; then
   echo "## the OFF arm (the 18-patch image: the standing engine, no 023)" >> "$P"
   # the OFF arm's PATCHES: the config default minus 023 (the restart env pair carries it —
   # start.sh sources config.sh fresh and ${PATCHES-...} honors the set env over the default)
-  OFF_PATCHES=$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh | sed 's/ 023-warmkeep.patch//')
+  OFF_PATCHES=$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh || true)
   run_arm off "$OFF_PATCHES" || true
   echo "## the ON arm (the 19-patch image: the fork mechanism)" >> "$P"
   run_arm on "$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh)" || true

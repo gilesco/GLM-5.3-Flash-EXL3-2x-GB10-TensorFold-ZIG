@@ -543,3 +543,49 @@ if the line ever pins below v1.2.2. -->
   adopted.** Kept as the record (and as the ready-made port if the pin ever
   bumps past #1623's landing).
 
+
+## 023-warmkeep.patch (retired as glm-full-hit-skip-v2.patch) — the fork-era end-state keep + full-hit skip on v1.2.7 (rounds 131/141)
+
+- WHAT: the fork's `glm-full-hit-skip.patch` ported onto v1.2.7 — the radix
+  end state kept at a page-aligned prompt's full length (`at == len`), the
+  engine's `prefill` resumeFirst skip (restore → `promptHead` one-row
+  projection → draw), so an identical re-send of a page-aligned prompt
+  installs and draws without a prefill pass. The value-if-yes: the warm
+  resume at depth moving from ~930 ms toward production's ~212 ms full-hit
+  skip.
+- THE TEN-WINDOW ARC (windows 52-61, campaigns 20261111-232645 through
+  20261112-023109): six instrument voids then two valid readings. The void
+  trail is the instrument's own history — the page-aligned probe requirement
+  fought the tokenizer at every turn (v2 image-pair A/B; v3 page-aligned
+  probes; v4 char-trim diverged +4/round; v5 the 1-token assumption died,
+  pw=2; v6 the two-point measurement + the parity trap; v7 the tail-variant
+  solver landed the fill exactly but the probe's buster lost a token;
+  v8 measured the buster per-candidate — every digit is 1 token; v9 the
+  length-safe-by-construction pair buster read 4097 — a digit pair is 3
+  tokens; v10 deleted the probe entirely, the buster riding inside the
+  fill: k zeros + one digit + the odd tail closed exactly at 4,096/8,192).
+- **THE VERDICT — window 61 (campaign-20261112-023109), the first VALID
+  A/B reading: the value gate DID NOT CROSS; the kill criterion FIRED**.
+  Page-aligned fills on both arms (prompt=4096/8192 exact), the colds
+  honest (cached=0 on all four), the greedy shas IDENTICAL (80cc3802… on
+  both arms) — and the ON arm's warm read **cached=2048/6144, IDENTICAL
+  to the OFF arm**: the page resume covers exactly len−2048 (the last
+  chunk never covered without the end state), the skip never engaged, the
+  warm TTFTs are parity (d4096 1.469 vs 1.478 s; d8192 1.215 vs 1.220 s).
+  The end state is never admitted on the serving path as ported.
+- WHY NOT ADOPTED: the kill criterion (warm parity) fired legitimately on
+  a valid reading. The WHY is unobservable on our engine: the GLM native
+  family never wires the radix report() line (spark25/kolibri1/dory call
+  pr.report after each pass; GLM does not), so the store's
+  hits/misses/refused/kept counters are invisible per request — the
+  end-state question (which layer refuses: the keep's limits, the marks
+  planner, or the resume path) cannot be answered without new engine
+  instrumentation. An upstream-data note, not an adoption branch: the
+  ported mechanism is exactly the fork's, and the fork's own receipts
+  were on a different engine shape.
+- RETIRED as glm-full-hit-skip-v2.patch (the -v2 suffix keeps it clear of
+  the production store's glm-full-hit-skip.patch, the v1 fork-era patch).
+  Never promoted to production (the store there never carried it — the
+  promotion-sync rule intact). Re-openable only with a stage brief that
+  FIRST adds the report() wiring (the engine-side engagement witness) —
+  the direct-observation instrument the ten-window arc lacked.

@@ -1422,26 +1422,34 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
-- [ ] **The warm-resume cost in the paged+share era — OPENED by the window-50
-  stale-receipt catch** (campaign-20261111-174642): the warmttft re-anchor read the
-  warm resume at **945 ms (d8192, cached=6144)** and 1,347 ms (d4096, cached=2048) on
-  the adopted engine — **~3.1× the row's old 302 ms receipt and ~4.5× production's
-  full-hit skip (~212 ms)**. The old receipt was measured on the WINDOW-MODE KV
-  architecture (the v1.2.1-era serve, a whole-window 3.7 GiB prompt cache); the current
-  architecture is the paged pool + the share store — the architecture changed under
-  the row, so this is a re-anchor, not a regression claim. The depth fact ladder
-  re-qualified **12/12 on the adopted engine** in the same window (the context front
-  holds; 3/3 at 8k/64k/192k/384k). The next question: WHERE the warm-resume cost lives
-  in the paged+share era (the page restore's granularity, the share-store's slot
-  lookup, or the fp8 page readback) — the stage brief needs the source read first
-  (the round-34 shape: root-cause before instrument). The arc so far: the root
-  cause is READ (the fork-era end-state keep + skip, ported as 023-warmkeep onto
-  v1.2.7); the instrument (windows 52-58, six voids) fought the page-aligned probe
-  requirement — v7 landed the fill page-aligned exactly (the tail-variant parity
-  solver) but the probe's cache-buster flip lost a token (prompt=4095/8191); the
-  v8 instrument measures the probe per-candidate too — no assumed constants
-  anywhere; the value gate now binds on the DIRECT witness (the ON arm's warm
-  cached == prompt) with the TTFT delta behind it.
+- [x] **The warm-resume cost in the paged+share era — CLOSED round 141, the
+  kill criterion fired on the first VALID A/B reading (window 61,
+  campaign-20261112-023109)**. The arc: the warmttft re-anchor (window 50)
+  read the warm resume at 945 ms (d8192, cached=6144) / 1,347 ms (d4096,
+  cached=2048) on the adopted engine — ~3.1× the row's old 302 ms receipt,
+  ~4.5× production's full-hit skip (~212 ms). The root cause was READ (the
+  fork-era end-state keep + skip, ported as 023-warmkeep onto v1.2.7); the
+  instrument fought the page-aligned probe requirement for six voids
+  (windows 52-58: the tokenizer's word cost table measured completely —
+  pw=2, the tail 17, every digit 1 token at word 1, a digit pair 3);
+  v9/v10 (windows 59-61) closed it: v10 deleted the probe entirely, the
+  buster riding inside the fill (k zeros + one digit + the odd tail =
+  4,096/8,192 exactly, the engine's own count). **Window 61's reading:
+  page-aligned fills on both arms, the colds honest, the greedy shas
+  IDENTICAL — and the ON arm's warm read cached=2048/6144 IDENTICAL to the
+  OFF arm**. The page resume covers exactly len−2048 (the last chunk is
+  never covered without the end state); the skip never engaged; the warm
+  TTFTs are parity (d4096 1.469 vs 1.478 s; d8192 1.215 vs 1.220 s).
+  The end state is never admitted on the serving path as ported — the
+  kill criterion (warm parity) fired legitimately. 023 RETIRED
+  (patches/glm-full-hit-skip-v2.patch; config.sh back to the 18-patch
+  qualified optimum). The WHY is unobservable without new engine
+  instrumentation: the GLM native family never wires the radix report()
+  line (spark25/kolibri1/dory call pr.report after each pass; GLM does
+  not), so the store's hits/misses/refused/kept counters are invisible
+  per request — an upstream-data note carries it. Re-openable only with a
+  stage brief that FIRST adds the report() wiring (the engine-side
+  engagement witness).
 
 
 ## Round history
@@ -1472,5 +1480,6 @@ The completed round arcs (the round-140 v1.2.6 rebase + cachefixqual era) moved 
   promotion sync mirrors the WHOLE patch store, not just the changed patch —
   the store and the served engine must correspond (the fingerprint excluded
   the pin, so the store's staleness hid until a rebuild was forced).
-- [ ] The warm-resume cost in the paged+share era (carried; see Open items).
+- [x] The warm-resume cost in the paged+share era (CLOSED round 141 — the
+  kill criterion fired on the first valid A/B; see the round-141 arc).
 

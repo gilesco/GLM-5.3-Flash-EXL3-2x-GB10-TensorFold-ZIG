@@ -3219,3 +3219,40 @@ two unguarded greps in the new code (the window-33/34 burn class) before
 the launch — fixed to `|| true`.
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 43) WINDOW 61 RAN THE WARMKEEP V10 — THE FIRST VALID A/B READING; THE KILL CRITERION FIRED: THE END STATE IS NEVER ADMITTED (2026-11-12)
+
+**The receipt** (campaign-20261112-023109): the v10 instrument ran clean
+end-to-end — page-aligned fills on both arms (prompt=4096/8192 exact,
+the engine's own count), all four colds honest (cached=0), the greedy
+shas IDENTICAL (80cc3802… on both arms). And the value question answered
+**negative**: the ON arm's warm read **cached=2048/6144 — IDENTICAL to
+the OFF arm**. The page resume covers exactly len−2048 (the last chunk —
+the 2,048-row pass limit — is never covered without the end state); the
+skip never engaged even with page-aligned prompts; the warm TTFTs are
+parity (d4096 1.469 vs 1.478 s; d8192 1.215 vs 1.220 s). **The kill
+criterion (warm parity) fired legitimately on a valid reading — the
+adoption branch DIES; 023 does not adopt.**
+
+**The closing state**: config.sh back to the 18-patch qualified optimum
+(023-warmkeep removed); the patch retired as
+patches/glm-full-hit-skip-v2.patch (the -v2 keeps it clear of the
+production store's glm-full-hit-skip.patch — the promotion-sync intact:
+production never carried it, its store is 18 active patches on the
+served v1.2.7 engine). The ledger's OPEN warm-resume item CLOSES with
+the ten-window trail (six voids, two valid readings).
+
+**The upstream-data fact the arc bought**: the WHY is unobservable on
+our engine — the GLM native family never wires the radix report() line
+(spark25/kolibri1/dory call pr.report after each pass; GLM does not), so
+the store's hits/misses/refused/kept counters are invisible per request.
+The end-state question (which layer refuses: the keep's limits, the
+marks planner, or the resume path) needs the report() wiring FIRST — a
+re-open requires a stage brief that adds it before any instrument runs.
+The warm front stands measured: ~930 ms at d8192 (the page resume's
+len−2048 coverage), the skip region (the last 2,048 rows) is
+upstream-gated on the GLM native path.
+
+**The perf plan continues**: the duel re-pairs on the v1.2.7 engine
+(the 18-patch promoted stack), re-grounding the decode rows after the
+warmkeep arc. Next sitting opens with the duel's stage brief.
