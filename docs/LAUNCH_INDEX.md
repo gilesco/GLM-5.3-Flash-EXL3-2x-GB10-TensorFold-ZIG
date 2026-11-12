@@ -382,3 +382,4 @@
 | [round 141 cont. 36] (round 141, cont. 36) WINDOW 54 RAN THE WARMKEEP V3 — THE SELF-VOID GUARD WORKED; THE CALIBRATION'S TRIM PA… | docs/LAUNCH.md | campaign-20261112-001810 | VOID |
 | [round 141 cont. 37] (round 141, cont. 37) WINDOW 55 RAN THE WARMKEEP V4 — THE TRIM PATH DIVERGED (+4/ROUND); THE V5 DESIGN IS A… | docs/LAUNCH.md | campaign-20261112-003122 | void (body) |
 | [round 141 cont. 38] (round 141, cont. 38) WINDOW 56 RAN THE WARMKEEP V5 — THE 1-TOKEN ASSUMPTION DIED; THE V6 TWO-POINT DESIGN … | docs/LAUNCH.md | campaign-20261112-004657 | void (body) |
+| [round 141 cont. 39] (round 141, cont. 39) WINDOW 57 RAN THE WARMKEEP V6 — ONE TOKEN OVER (4,097); THE PARITY TRAP ESCAPED BY CH… | docs/LAUNCH.md | campaign-20261112-010212 | void (body) |

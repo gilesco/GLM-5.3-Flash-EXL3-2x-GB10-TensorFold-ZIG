@@ -3109,3 +3109,23 @@ VOIDs the arm). Dry-checked against the window's own measured constants:
 4096 → k=2039 × 2 + 17 + 1 = 4096 ✓; 8192 → k=4087 × 2 + 17 + 1 = 8192 ✓.
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 39) WINDOW 57 RAN THE WARMKEEP V6 — ONE TOKEN OVER (4,097); THE PARITY TRAP ESCAPED BY CHANGING THE TAIL'S TEXT (2026-11-12)
+
+**The receipt** (campaign-20261112-010212): the two-point measurement was
+EXACT (pw=2, tail=17 — matching the dry-check), but the balancer word
+repeated v5's mistake in a new costume: a lone "0" is **2 tokens too**
+(the fill landed at 4,097, one over). The structural truth behind it: with
+pw=2 and an odd tail, `k×2 + 17` is always odd and the page boundary is
+even — no balancer drawn from the same word family can fix parity.
+
+**The v7 escape**: the tail is MY text — change its parity. The tail
+variants (" Name three colors.", " Name three colors now.", " Name three
+colors today.", " Name three colors and three shades.") carry different
+token counts; the phase now measures pw once, then tries tail variants
+until `(target − tail_i) % pw == 0`, and builds k from THAT tail. The
+balancer word is gone (no new constant to guess); the verification round
+and the self-void guard stand. The variant state resets per call (the
+arm-isolation gotcha guarded at staging).
+
+phase-lint 0 failing classes. The window relaunches this sitting.
