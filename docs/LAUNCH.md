@@ -3129,3 +3129,40 @@ and the self-void guard stand. The variant state resets per call (the
 arm-isolation gotcha guarded at staging).
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 40) WINDOW 58 RAN THE WARMKEEP V7 — THE CALIBRATION LANDED PAGE-ALIGNED BUT THE BUSTER FLIP LOST A TOKEN; THE V8 PRINCIPLE: NO ASSUMED CONSTANTS, ANYWHERE (2026-11-12)
+
+**The receipt** (campaign-20261112-011716): the v7 tail-variant parity
+solver worked — both arms' fills landed EXACTLY page-aligned (k=2039×2+18
+= 4,096; k=4087×2+18 = 8,192, the engine's own count). But the probe's
+cache-buster ("0"→"1" at word 0) lost a token at the leading position:
+the done lines read **prompt=4095/8191**, the probe was never
+page-aligned, the end state could never be kept, and the skip could not
+fire on either arm. The warm witnesses decode the mechanism exactly:
+**cached=2048 (d4096) / 6144 (d8192) — always len−2047** — the page
+resume covers every chunk keyed through the lookahead row; the last
+chunk (2,048 rows) is unverifiable without an end state. The skip exists
+precisely for that region. The d8192 cold was dishonest too
+(cached=2048: the d4096 probe's page-1 keys survived — both probes were
+"1"-led). Warm TTFTs are parity as expected when neither arm's skip
+engages (d4096: 1.474 vs 1.472 s; d8192: 1.227 vs 1.222 s). Greedy shas
+IDENTICAL on both arms (80cc3802…) — the deterministic probes unmoved.
+
+**This is the sixth consecutive warmkeep void — the hit-rate watch
+demanded this reframe before any sixth iteration**: the value gate no
+longer binds on the warm-TTFT proxy alone. The gate's primary witness is
+now the DIRECT engagement fact: the ON arm's warm `cached == prompt`
+(the end state admitted and the skip taken) vs the OFF arm's
+`cached < prompt` (the page resume only). The TTFT delta rides behind
+it. The v8 instrument kills the last assumed constant: the buster word
+gets NO assumed token count — the buster moves to word 1 (word 0 keeps
+"0"; the fill's own two-point data proves every space-prefixed "0" is 2
+tokens), each candidate is MEASURED by a real send whose done line must
+read exactly the page-aligned target, and the accepted candidate's first
+send IS the arm's cold run (its cached=0 is verified; the cold's
+dishonesty guard VOIDs the arm). Per-depth leading digits (d4096 word-1
+"1", d8192 word-1 "2") keep the two depths' page-1 keys distinct. The
+instrument now has zero assumed constants: fill measured (two-point),
+tail picked by variant parity, probe measured per-candidate.
+
+phase-lint 0 failing classes. The window relaunches this sitting.

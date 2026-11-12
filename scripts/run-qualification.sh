@@ -1581,20 +1581,40 @@ if want warmkeep && ! phase_done warmkeep; then
     if [ "$n" != "$target" ]; then
       echo "- the arithmetic calibration MISSED ($n vs $target) — the arm VOIDs" >> "$P"; return 1
     fi
-    # the probe: the same length, the FIRST fill word flips "0" -> "1" (the same pw tokens,
-    # a different radix key) — the store misses the calibration keep on the cold shot
-    python3 - "$bf" << 'PYPROBE' >> "$P" 2>&1 || true
+    # the probe: v7's flip (the first word "0"->"1") lost a token — the done
+    # line read prompt=4095/8191, the probe was NEVER page-aligned, so the
+    # end state could not be kept and the skip could not fire on either arm.
+    # v8 gives the probe the same oracle treatment as the fill: NO assumed
+    # token count for the buster either. The buster moves to WORD 1 (the v7
+    # d4096 fill proves every space-prefixed "0" is 2 tokens; word 1 reads
+    # prompt=4097 — no leading-position ambiguity) and each candidate is
+    # MEASURED by a real send whose done line must read exactly $target
+    # (page-aligned). The accepted candidate's first send IS the cold run
+    # (its cached=0 is verified by the caller) — no unmeasured send exists.
+    local cand tries=0 n_probe=0 start_digit=$(( target == 4096 ? 1 : 2 ))
+    for cand in $(seq "$start_digit" $((start_digit + 8))); do
+      python3 - "$bf" "$cand" << 'PYPROBE' >> "$P" 2>&1 || true
 import json, sys
-bf = sys.argv[1]
+bf, digit = sys.argv[1], sys.argv[2]
 b = json.load(open(bf))
-fill = b["messages"][0]["content"]
-words = fill.split()
-words[0] = "1" # the same token count, a different store key
+words = b["messages"][0]["content"].split()
+words[1] = digit # word 1 flips (word 0 stays "0"): the buster carries no length assumption
 b["messages"][0]["content"] = " ".join(words)
 json.dump(b, open(bf, 'w'))
-print("- the probe built: the first word 0->1 (the same token length, a different store key)")
 PYPROBE
-    echo "- the probe locked: prompt=$n tokens, page-aligned ($(( n / 512 )) pages exactly)" >> "$P"
+      local tt
+      tt=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-probe-try-$target.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      n_probe=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
+      tries=$((tries + 1))
+      if [ "$n_probe" = "$target" ]; then
+        COLD=$tt # the accepted candidate's send IS the arm's cold: keep its timing
+        break
+      fi
+      if [ "$tries" -ge 9 ]; then
+        echo "- no probe candidate landed page-aligned (the last digit \"$cand\" read $n_probe) — the arm VOIDs" >> "$P"; return 1
+      fi
+    done
+    echo "- the probe locked after $tries candidate(s): word 1 = \"$cand\", the engine counted prompt=$n_probe (page-aligned, $(( n_probe / 512 )) pages exactly) — THIS send is the arm's d$target cold" >> "$P"
   }
   run_arm() { # $1 = arm label, $2 = the arm's PATCHES value ("" = the config default)
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$2"; then
@@ -1603,12 +1623,18 @@ PYPROBE
     echo "- the $1 arm's serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
     for depth in 4096 8192; do
       bf="$OUT/wk-d$depth.json"
-      if ! aligned_probe "$depth" "$bf"; then echo "- the $1 arm VOIDED: the $depth calibration never landed page-aligned" >> "$P"; return 1; fi
-      COLD=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$1-d$depth-cold.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      # v8: aligned_probe's accepted candidate send IS the cold (the probe is
+      # page-aligned or the arm voids inside). The per-depth digit on word 1
+      # keeps the two depths' page-1 keys distinct (the v7 d8192 cold hit the
+      # d4096 probe's chunk-1 keep: both probes read "1"-led page 1).
+      if ! aligned_probe "$depth" "$bf"; then echo "- the $1 arm VOIDED: the $depth probe never landed page-aligned" >> "$P"; return 1; fi
       COLDHIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1)
+      case "$COLDHIT" in *"cached=0") ;; *)
+        echo "- the $depth cold was DISHONEST (its witness: $COLDHIT — cached=0 required) — the arm VOIDs" >> "$P"; return 1 ;;
+      esac
       WARM=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$1-d$depth-warm.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
       HIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1)
-      echo "- $1 d$depth: cold ${COLD}s (its witness: $COLDHIT — cached must be 0 for an honest cold), warm ${WARM}s" >> "$P"
+      echo "- $1 d$depth: cold ${COLD:-?}s (its witness: $COLDHIT — honest), warm ${WARM}s" >> "$P"
       echo "- $1 d$depth warm hit witness: $HIT — the SKIP FIRED only if cached == prompt == $depth; cached == floor($depth/512)*512 = the page resume, not the skip" >> "$P"
     done
     req_file "$OUT/wk-$1-greedy-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
