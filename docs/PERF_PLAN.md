@@ -1,31 +1,30 @@
 # Performance plan: closing the measured fronts
 
 > **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 141, 2026-11-11)**: **round 141 closed four questions AND
-> banked one adoption in ten windows (36–45, one void)** — the #2699 prompt-cache
-> recovery (window 36: the cacheless standing holds), the #2181 live-half knob
-> (window 37: measured out), the #2257 regression watch (window 38: PASS), the
-> #2744 vision re-encode port (window 44: retired — upstream's own PR text
-> confirms the fix is Metal-only; the CUDA side never had the mechanism), and
-> **the #2793 shared-budgets port ADOPTED as the sixteenth patch** (window 45:
-> the value gate CROSSED at +6.1% — the room-matched c4 aggregate 180.4 vs the
-> OFF arm's 170.0 t/s, beyond upstream's own 3.7% greedy claim; the mechanism
-> gradient solo +1.0%/c2 flat/c4 +6.1% confirms the blocked-lane ratchet's
-> signature; the first VALID room-gated value reading on this line —
-> campaign-20261111-094017). **The board moved**: the c4 row re-dated to 180.4
-> (the anchors + the chart), quality holds 95 ×32, the decode front's
-> concurrent shape improved past every prior reading. The remaining levers:
-> the 0110 KV-SHARD port (user-parked, multi-sitting: the 1.8× pool at a
-> decode cost), the DRAFTS=0+LIVE_HALF four-window composition (the decode
-> trade — enough for FOUR at 512K, 10 of 16 slots), the upstream watch
-> (#2852 EXL3 whole-pass routing and #2856 batched shared MTP are OPEN with
-> no numbers — their own device receipts pending; the next release may
-> mainline them), and the v1.2.7 rebase when upstream cuts it (main ~175
-> commits past v1.2.6 in ~21 h — the rebase folds the adopted stack forward).
-> The next sitting opens with the ECOSYSTEM read and a stage brief naming a
-> user-visible number — no launch without one. The loop runs under the
-> discipline layer (the stage brief, the value gate, phase-lint, the
-> phase-name gate, DRY_RUN, the hit-rate watch — AGENTS.md).
+> the trail, round 141 cont. 43, 2026-11-12)**: **the warmkeep arc CLOSED
+> (windows 52-61: six instrument voids, then the first VALID A/B — window
+> 61's page-aligned fills on both arms, the colds honest, the greedy shas
+> IDENTICAL, and the ON arm's warm `cached=2048/6144` IDENTICAL to the OFF
+> arm: the end state is never admitted on the GLM native serving path; the
+> kill criterion fired; 023 retired; the ledger's OPEN warm-resume item
+> CLOSED; the upstream-data fact the arc bought: the GLM native family
+> never wires the radix report() line, so the store's per-request counters
+> are invisible — a re-open requires the report() wiring FIRST)**. The
+> board: config.sh back at the 18-patch qualified optimum on v1.2.7; the
+> warm row stands measured at 945 ms (d8192, the page resume's len−2048
+> coverage); quality holds 95 ×33; the anchors' duel rows date to the
+> round-133 re-pair on the v1.2.6-era 16-patch stack. **THE NEXT STEP: the
+> duel re-pairs on the v1.2.7 engine** — the round-139 native-vs-native
+> shape (the baseline arm IS this repo's promoted config on 8001; the ours
+> arm the same 18-patch stack — an A/A by design: the five instruments
+> re-ground the decode rows on the promoted engine, the pair's delta IS
+> the noise floor). Remaining levers after it: the 0110 KV-SHARD port
+> (user-parked), the DRAFTS=0+LIVE_HALF four-window composition, the
+> upstream watch (#2852/#2856 — no numbers yet). The stage brief rides the
+> launch (round 141 cont. 44). (The earlier round-141 arc — the #2699
+> recovery, the #2181 live-half knob, the #2257 watch, the #2744
+> retirement, the #2793 ADOPTION (+6.1% c4, campaign-20261111-094017), the
+> v1.2.7 rebase + promotion — sits in the round history below.)
 
 > **The bar (user, 2026-10-23):** surpass production 0.6.6 on model loading time,
 > generation tok/s, and prefill rate. This document is the continuing-look home for
