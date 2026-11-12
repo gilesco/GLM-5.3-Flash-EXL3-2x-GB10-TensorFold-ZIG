@@ -1531,42 +1531,61 @@ if want warmkeep && ! phase_done warmkeep; then
   echo "# warmkeep v2 (the end-state keep A/B on v1.2.7; the OFF arm the 18-patch image, the ON arm the 19-patch image + 023-warmkeep; the probes page-aligned at 4096/8192 tokens)" >> "$P"
   # the page-aligned probe builder: append filler tokens until the engine's prompt= lands on the target
   aligned_probe() { # $1 = target token length, $2 = out file
-    local target=$1 bf=$2 n=0 t=0
-    # v5: EXACT BY ARITHMETIC, no iteration. The tokenizer fights back against
-    # word-level tuning (v3's word drop re-indexed suffix digits; v4's char trim
-    # never reduced a word below 1 token and diverged +4/round). Instead: measure
-    # the fixed tail's token count ONCE with a prompt of K single-token words,
-    # then build the fill as exactly (target - tail_tokens) single-token words.
-    # Single-token words are verified by the same measurement (the engine counts
-    # every token); the tail is fixed text so its count is constant.
-    # (a) the tail measurement: 16 words of "0" + " Name three colors."
-    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 16))" > "$bf"
-    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-tailprobe-$target.json" >/dev/null 2>&1 || true
-    local m
-    m=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-    if [ -z "$m" ]; then echo "- the tail measurement failed (no done line) — the arm VOIDs" >> "$P"; return 1; fi
-    # the tail's count t = m - 16 (each "0" verified a single token by this very round)
-    t=$((m - 16))
-    if [ "$t" -lt 1 ] || [ "$t" -ge "$target" ]; then echo "- the tail measured $t tokens (m=$m) — nonsensical; the arm VOIDs" >> "$P"; return 1; fi
-    echo "- the tail measured: $t tokens (the probe $m with 16 single-token words)" >> "$P"
-    # (b) the fill: exactly (target - t) single-token "0" words + the tail
-    local k=$((target - t))
-    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 "$k"))" > "$bf"
+    local target=$1 bf=$2 m1=0 m2=0 n=0
+    # v6: TWO-POINT MEASUREMENT, no token-size assumption. v5 assumed each "0"
+    # word is one token; the engine counted 2 (49 = 16*2 + 17; the fill probe
+    # 8143 = 4063*2 + 17 — the linear model holds EXACTLY, the constant was the
+    # only wrong thing). Measure the per-word cost and the tail from TWO probes
+    # (K and K+N words): pw = (m2-m1)/N, tail = m1 - K*pw. Then solve
+    # k*pw + tail + extra == target with ONE balancing word of a different size
+    # (the parity of k*pw never changes, so an odd tail needs one odd-size word).
+    # Verify once; any miss VOIDs the arm.
+    local K=16 N=16
+    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 "$K"))" > "$bf"
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-m1-$target.json" >/dev/null 2>&1 || true
+    m1=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
+    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 "$((K + N))"))" > "$bf"
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-m2-$target.json" >/dev/null 2>&1 || true
+    m2=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
+    if [ -z "$m1" ] || [ -z "$m2" ]; then echo "- the measurement probes failed (m1=$m1 m2=$m2) — the arm VOIDs" >> "$P"; return 1; fi
+    local pw tail_tokens k extra extra_words
+    pw=$(( (m2 - m1) / N ))
+    tail_tokens=$((m1 - K * pw))
+    echo "- the two-point measurement: m1=$m1 (K=$K words), m2=$m2 (K+N=$((K+N)) words) — pw=$pw tokens/word, the tail $tail_tokens tokens" >> "$P"
+    if [ "$pw" -lt 1 ]; then echo "- pw=$pw nonsensical — the arm VOIDs" >> "$P"; return 1; fi
+    # solve k*pw + tail + extra == target: the parity of k*pw is fixed (pw * anything), so
+    # if (target - tail) % pw != 0, balance with one word of (target - tail) % pw tokens
+    local rem=$(( (target - tail_tokens) % pw ))
+    if [ "$rem" -lt 0 ]; then rem=$((rem + pw)); fi
+    if [ "$rem" -eq 0 ]; then
+      extra=0; extra_words=0
+    else
+      # one balancing word of exactly `rem` tokens: a "0"*rem string — its token
+      # count is VERIFIED by the verification round below (any miss VOIDs)
+      extra=$rem; extra_words=1
+    fi
+    k=$(( (target - tail_tokens - extra) / pw ))
+    if [ "$k" -lt 1 ]; then echo "- k=$k nonsensical — the arm VOIDs" >> "$P"; return 1; fi
+    local fill_words bal_word=""
+    [ "$extra_words" -eq 1 ] && bal_word=$(printf '0%.0s' $(seq 1 "$extra"))
+    fill_words="$(printf '0 %.0s' $(seq 1 "$k"))"
+    [ -n "$bal_word" ] && fill_words="$fill_words $bal_word"
+    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$fill_words" > "$bf"
     curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-cal-$target-check.json" >/dev/null 2>&1 || true
     n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-    echo "- the calibrated fill: $k single-token words + the tail = the engine counted prompt=$n (the target $target)" >> "$P"
+    echo "- the calibrated fill: k=$k words x $pw + the tail $tail_tokens + a $extra-token balancer = the engine counted prompt=$n (the target $target)" >> "$P"
     if [ "$n" != "$target" ]; then
       echo "- the arithmetic calibration MISSED ($n vs $target) — the arm VOIDs" >> "$P"; return 1
     fi
-    # (c) the probe: the same length, the LAST word's value differs ("0" -> "1"), so the
-    # radix MISSES the calibration keep's key on the cold shot; the warm re-send hits its own
+    # the probe: the same length, the FIRST fill word flips "0" -> "1" (the same pw tokens,
+    # a different radix key) — the store misses the calibration keep on the cold shot
     python3 - "$bf" << 'PYPROBE' >> "$P" 2>&1 || true
 import json, sys
 bf = sys.argv[1]
 b = json.load(open(bf))
 fill = b["messages"][0]["content"]
 words = fill.split()
-words[0] = "1" # the first "0" word flips: the same token count, a different radix key
+words[0] = "1" # the same token count, a different store key
 b["messages"][0]["content"] = " ".join(words)
 json.dump(b, open(bf, 'w'))
 print("- the probe built: the first word 0->1 (the same token length, a different store key)")

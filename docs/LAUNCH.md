@@ -3090,3 +3090,22 @@ flips "0" → "1" (the same token count, a different radix key), so the
 cold shot misses the calibration's keeps. The self-void guard stands.
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 38) WINDOW 56 RAN THE WARMKEEP V5 — THE 1-TOKEN ASSUMPTION DIED; THE V6 TWO-POINT DESIGN SOLVES THE TOKENIZER EXACTLY (2026-11-12)
+
+**The receipt** (campaign-20261112-004657): the self-void guard held
+(both arms VOID), and the miss is fully explained: the tail probe read 49
+with 16 "0" words, the fill probe 8,143 with 4,063 — the linear model
+gives **pw = 2 tokens per "0" word, the tail 17 tokens, EXACTLY**. The
+tokenizer is perfectly consistent; my v5 assumption (1 token/word) was
+the only wrong constant. The parity trap surfaced too: with pw=2 and an
+odd tail, `k*pw + tail` can never hit an even page boundary — the fill
+needs ONE balancing word of odd size (`rem = (target − tail) % pw`).
+
+**The v6 design**: two-point measurement solves pw and tail exactly (no
+assumed constant), the balancer word's size comes from the same
+arithmetic (`rem`), one verification round confirms the total (any miss
+VOIDs the arm). Dry-checked against the window's own measured constants:
+4096 → k=2039 × 2 + 17 + 1 = 4096 ✓; 8192 → k=4087 × 2 + 17 + 1 = 8192 ✓.
+
+phase-lint 0 failing classes. The window relaunches this sitting.
