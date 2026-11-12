@@ -87,7 +87,26 @@ Hard boundaries, never crossed:
     re-verified against its OWN failure mode before re-launch (the failure
     replayed, not the happy path re-checked). `scripts/phase-lint.sh` runs
     mechanically inside `autonomous-launch.sh` and refuses the launch on
-    unguarded-grep/unknown-env findings — both window-33/34 burn classes.
+    unguarded-grep/unknown-env/arm-distinctness findings — the window-33/34
+    burn classes plus the w52 A/A class (the arms' inputs are checked for
+    trivial equality; the dynamic half is the phase's own duty: name each
+    arm's distinguishing input and verify it reaches the binary).
+  - **Measure the constants before the window, not in it.** An instrument
+    whose arithmetic depends on engine-side constants (token costs, page
+    alignments, key layouts) is desk-calibrated FIRST — the two-point
+    measurement, the tokenizer's word costs, the alignment arithmetic —
+    never discovered one GPU window at a time (the w52-60 burn: nine voids
+    of page-alignment arithmetic that a CPU-side calibration would have
+    closed before the first launch). The aligned-probe-oracle skill carries
+    the method; the stage brief names which constants the instrument
+    assumes and where each was measured.
+  - **Cite the closest prior instrument.** A stage brief that re-shapes a
+    past instrument must name the closest prior one in the repo's history
+    and diff its shape against the new design (w52 inherited the warmttft
+    probe shape when the fork-era skipqual instrument already used
+    page-aligned prompts — the correct shape was in the repo's own record).
+    A sitting that cannot name the prior instrument re-reads the record
+    before staging, not after a void.
   - **The hit-rate watch.** The round summary counts windows voided vs run;
     above half void in a round, the loop pauses launches until the process
     itself is reviewed.

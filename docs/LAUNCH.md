@@ -3393,3 +3393,53 @@ before the reboots (self-clearing); (3) the re-auth above when
 convenient — nothing in the loop needs the network until the next launch
 or poke-to-head ssh (which works: the lapse is the GitHub HTTPS
 credential only, not the site's ssh).
+
+## (round 141, cont. 48) THE WORKFLOW REVIEW LANDED — THE DISCIPLINE'S FIRST PRE-LAUNCH SEMANTIC GUARD; THE DEAD CODE OUT; THE COUNTS RECONCILED (2026-11-12)
+
+**The (user) review asked for issues and efficiencies; the two sweeps
+(living docs, skills) plus the hands-on verification landed these:**
+
+1. **The review's central finding, stated honestly**: no guard in the
+   layer caught any of the warmkeep arc's NINE semantic voids before the
+   window launched — every one was page-alignment/tokenizer arithmetic
+   discovered one GPU window at a time (~19 min each, 9 of 10 sittings
+   voided). The layer is reactive or static; the mechanism that saved
+   receipts was the phase's in-phase self-void guard, which fires after
+   production is stopped.
+2. **The structural answers** (AGENTS.md's discipline layer):
+   - **Measure the constants before the window, not in it** — the
+     desk-calibration rule (the two-point measurement, the tokenizer's
+     word costs, the alignment arithmetic); the stage brief names which
+     constants the instrument assumes and where each was measured.
+   - **Cite the closest prior instrument** — a stage brief that re-shapes
+     a past instrument names the closest prior one and diffs its shape
+     (w52 inherited the warmttft shape when the fork-era skipqual
+     instrument already used page-aligned prompts).
+   - **phase-lint class (d) arm-distinctness** — the A/A static catch,
+     adversarially verified against the w52 shape (landed earlier this
+     sitting).
+3. **The retirement policy enforced**: the five closed session phases
+   (warmkeep, cachefixqual, livehalf, regresswatch, v127val) converted
+   from live code to stubs and dropped from the dispatch table — 541
+   lines of dead code out (the warmkeep block's "dead code now" comment
+   was FALSE: the launcher accepted the name and a stray launch would
+   have stopped production then failed mid-run). A stray launch of any
+   retired phase now refuses at the gate before production is stopped.
+4. **The manual per-sitting bogus-phase replay RETIRED** — DRY_RUN=1
+   already runs every gate with no window; the replay was duplicative
+   (AGENTS.md's gotcha reworded to the answered state).
+5. **The state-fact drift swept**: AGENTS.md (ARCHIVE→RETIRED, the
+   launcher description, the DRY_RUN gotcha), PORT_QUEUE's pin lines
+   re-dated to the v1.2.7 promotion, the warm-row split reconciled
+   (945 w50 receipt; w52's A/A re-read 930 inside noise — both named).
+6. **The skills layer**: the new metric-derivation-first skill (the
+   score-notation pattern's fourth recurrence promoted), the
+   aligned-probe-oracle corrections (nine voids, the arm-distinctness
+   step 0, the calibration-warms-the-cold gotcha), the wake-pair
+   boundary sharpened with See-also cross-refs, the verify-shell
+   folds, the lessons-log hygiene (the stray file folded, the
+   opencode-agent-wake provenance backfilled).
+
+**No window** — the loop is stood down (cont. 45); this is desk work
+inside the standing state. Production healthy; the maintenance pause
+mechanism live on both arms.
