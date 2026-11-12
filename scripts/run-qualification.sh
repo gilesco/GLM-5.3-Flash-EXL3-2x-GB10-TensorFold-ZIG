@@ -1559,7 +1559,7 @@ if want warmkeep && ! phase_done warmkeep; then
         echo "- the two-point measurement: m1=$m1, m2=$m2 — pw=$pw tokens/word" >> "$P"
         [ "$pw" -lt 1 ] && { echo "- pw=$pw nonsensical — the arm VOIDs" >> "$P"; return 1; }
       fi
-      local rem=$(( (target - tail_v) % pw ))
+      local rem=$(( (target - 1 - tail_v) % pw )) # v10: the word-1 digit carries 1 token — the variant must solve (target - 1 - tail_v) % pw == 0 (the ODD tail wins now)
       [ "$rem" -lt 0 ] && rem=$((rem + pw))
       echo "- the tail variant \"$variant\" measures $tail_v tokens — rem=$rem" >> "$P"
       if [ "$rem" -eq 0 ]; then
@@ -1570,54 +1570,61 @@ if want warmkeep && ! phase_done warmkeep; then
     if [ -z "${TAIL_TEXT:-}" ]; then
       echo "- no tail variant landed the parity (pw=$pw) — the arm VOIDs" >> "$P"; return 1
     fi
-    local k=$(( (target - TAIL_TOKENS) / pw ))
+    local k=$(( (target - 1 - TAIL_TOKENS) / pw )) # w1 = 1 token: the digit at word 1 IS the buster (v8: every digit is 1 token there)
     if [ "$k" -lt 1 ]; then echo "- k=$k nonsensical — the arm VOIDs" >> "$P"; return 1; fi
-    local fill_words
-    fill_words="$(printf '0 %.0s' $(seq 1 "$k"))"
-    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s %s"}]}' "$SERVED_NAME" "$fill_words" "$TAIL_TEXT" > "$bf"
-    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-cal-$target-check.json" >/dev/null 2>&1 || true
-    n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-    echo "- the calibrated fill: k=$k words x $pw + the \"$TAIL_TEXT\" tail ($TAIL_TOKENS) = the engine counted prompt=$n (the target $target)" >> "$P"
-    if [ "$n" != "$target" ]; then
-      echo "- the arithmetic calibration MISSED ($n vs $target) — the arm VOIDs" >> "$P"; return 1
+    local start_digit=$(( target == 4096 ? 5 : 8 ))
+    local digit="$start_digit" n=0 tt=0 w1_actual=0
+    # v10: NO SEPARATE PROBE. The v9 sweep measured the word-1 cost table
+    # completely ("0"=2, any single digit=1, a digit pair=3) and no
+    # same-family replacement can match the fill's 2 tokens — but a
+    # COMPOSITION closes exactly: k zeros + ONE single digit at word 1 (+1)
+    # against the odd tail: k*2 + 1 + 17 = 4096 AND 8192. The digit rides
+    # INSIDE the fill (word 1), so the buster re-keys page 1 without a
+    # length change and the separate probe — the artifact six windows
+    # fought to page-align — is GONE. The fill's FIRST send is the arm's
+    # cold by construction (nothing page-aligned precedes it: the m1/m2
+    # probes are sub-page, nothing is kept), its re-send is the warm, and
+    # the per-depth digit (d4096 leads "5", d8192 leads "8") keeps the two
+    # depths' page-1 keys distinct (the v7 d8192-cold-hit lesson). On a
+    # length miss the done line MEASURES w1 at that depth (the linear
+    # solve w1_actual = n - k*pw - tail — the two-point philosophy applied
+    # to the fill itself), k rebuilds once, and the digit FLIPS (page-1
+    # re-key) so the rebuilt cold is still honest. A second miss VOIDs.
+    build_fill() { # $1 = the digit at word 1
+      local i words=""
+      words="0 $1"
+      for i in $(seq 2 "$k"); do words="$words 0"; done
+      printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s %s"}]}' "$SERVED_NAME" "$words" "$TAIL_TEXT" > "$bf"
+    }
+    send_fill() { # -> sets tt/n
+      tt=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$target-cold.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+      n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1 || true)
+    }
+    build_fill "$digit"
+    send_fill
+    echo "- the fill built: k=$k zeros + the digit \"$digit\" at word 1 (1 token, v8-measured) + the \"$TAIL_TEXT\" tail ($TAIL_TOKENS) — the engine counted ${n:-nothing}" >> "$P"
+    if [ -z "$n" ]; then echo "- the fill's first send got no done line — the arm VOIDs" >> "$P"; return 1; fi
+    local n_val
+    n_val=$(echo "$n" | grep -oE "prompt=[0-9]+" | grep -oE "[0-9]+" || true)
+    if [ "$n_val" != "$target" ]; then
+      # the done line measured w1 at THIS depth: solve it from the linear model
+      w1_actual=$(( n_val - k * pw - TAIL_TOKENS ))
+      echo "- the length MISSED ($n_val vs $target): the linear solve reads w1_actual=$w1_actual at this depth (n - k*pw - tail)" >> "$P"
+      if [ "$w1_actual" -lt 1 ] || [ "$w1_actual" -gt 4 ]; then echo "- w1_actual=$w1_actual insane — the arm VOIDs" >> "$P"; return 1; fi
+      local rem2=$(( (target - w1_actual - TAIL_TOKENS) % pw ))
+      [ "$rem2" -lt 0 ] && rem2=$((rem2 + pw))
+      if [ "$rem2" -ne 0 ]; then echo "- no integer k solves k*$pw + $w1_actual + $TAIL_TOKENS = $target — the arm VOIDs" >> "$P"; return 1; fi
+      k=$(( (target - w1_actual - TAIL_TOKENS) / pw ))
+      digit=$((start_digit + 1)) # the page-1 re-key: the rebuilt cold must not hit the first send's keeps
+      build_fill "$digit"
+      send_fill
+      echo "- the fill REBUILT (k=$k, the digit \"$digit\") — the engine counted ${n:-nothing}" >> "$P"
+      n_val=$(echo "$n" | grep -oE "prompt=[0-9]+" | grep -oE "[0-9]+" || true)
+      if [ -z "$n_val" ] || [ "$n_val" != "$target" ]; then echo "- the rebuilt fill MISSED again (${n_val:-none} vs $target) — the arm VOIDs" >> "$P"; return 1; fi
     fi
-    # the probe: v8's single-digit sweep measured the truth but couldn't use
-    # it — every digit 1-9 at word 1 is ONE token (nine readings of 4095),
-    # while the fill's "0" at word 1 is TWO (the fill landed exactly at
-    # 4,096). No single-digit word can match the length. v9's buster is
-    # length-safe BY CONSTRUCTION from those measured facts: word 1's "0"
-    # (2 tokens) is replaced by TWO single-digit words (1+1 = 2 tokens), the
-    # same length with a different page-1 key. Each candidate is still
-    # MEASURED by a real send whose done line must read exactly $target; the
-    # accepted candidate's first send IS the cold run. Per-depth starting
-    # digits keep the two depths' page-1 keys distinct.
-    local cand tries=0 n_probe=0 start_digit=$(( target == 4096 ? 5 : 8 ))
-    cp "$bf" "$OUT/wk-fill-$target.ref" # the pristine fill: every candidate starts from it (no compounding edits)
-    for cand in "$start_digit$start_digit" "$start_digit$((start_digit + 1))" "$((start_digit + 1))$start_digit" "$((start_digit + 1))$((start_digit + 1))" "$start_digit$((start_digit + 2))" "$((start_digit + 2))$start_digit" "$((start_digit + 2))$((start_digit + 2))" "$((start_digit + 1))$((start_digit + 2))"; do
-      cp "$OUT/wk-fill-$target.ref" "$bf"
-      python3 - "$bf" "$cand" << 'PYPROBE' >> "$P" 2>&1 || true
-import json, sys
-bf, pair = sys.argv[1], sys.argv[2]
-b = json.load(open(bf))
-words = b["messages"][0]["content"].split()
-words[1:2] = [pair[0], pair[1]] # word 1's "0" (2 tokens) -> two 1-token digits: the same length, a different page-1 key
-b["messages"][0]["content"] = " ".join(words)
-json.dump(b, open(bf, 'w'))
-PYPROBE
-      local tt
-      tt=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-probe-try-$target.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
-      n_probe=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-      tries=$((tries + 1))
-      echo "- the probe candidate \"$cand\" (two 1-token digits at word 1): the engine counted prompt=$n_probe (the target $target)" >> "$P"
-      if [ "$n_probe" = "$target" ]; then
-        COLD=$tt # the accepted candidate's send IS the arm's cold: keep its timing
-        break
-      fi
-      if [ "$tries" -ge 8 ]; then
-        echo "- no probe candidate landed page-aligned — the arm VOIDs" >> "$P"; return 1
-      fi
-    done
-    echo "- the probe locked after $tries candidate(s): word 1 = \"${cand:0:1} ${cand:1:1}\", the engine counted prompt=$n_probe (page-aligned, $(( n_probe / 512 )) pages exactly) — THIS send is the arm's d$target cold" >> "$P"
+    COLD=$tt
+    COLDHIT="$n" # the accepted send's own done line: the caller verifies cached=0
+    echo "- the probe locked: prompt=$n_val (page-aligned, $(( n_val / 512 )) pages exactly) — THIS send is the arm's d$target cold" >> "$P"
   }
   run_arm() { # $1 = arm label, $2 = the arm's PATCHES value ("" = the config default)
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$2"; then
@@ -1626,12 +1633,12 @@ PYPROBE
     echo "- the $1 arm's serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
     for depth in 4096 8192; do
       bf="$OUT/wk-d$depth.json"
-      # v8/v9: aligned_probe's accepted candidate send IS the cold (the probe is
-      # page-aligned or the arm voids inside). The per-depth starting digit
-      # keeps the two depths' page-1 keys distinct (the v7 d8192 cold hit the
-      # d4096 probe's chunk-1 keep: both probes read "1"-led page 1).
+      # v10: aligned_probe's accepted send IS the cold (COLD/COLDHIT set
+      # inside; the request file is saved for the warm re-send). The
+      # per-depth word-1 digit (d4096 "5", d8192 "8") keeps the two depths'
+      # page-1 keys distinct (the v7 d8192 cold hit the d4096 probe's
+      # chunk-1 keep: both probes read "1"-led page 1).
       if ! aligned_probe "$depth" "$bf"; then echo "- the $1 arm VOIDED: the $depth probe never landed page-aligned" >> "$P"; return 1; fi
-      COLDHIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1)
       case "$COLDHIT" in *"cached=0") ;; *)
         echo "- the $depth cold was DISHONEST (its witness: $COLDHIT — cached=0 required) — the arm VOIDs" >> "$P"; return 1 ;;
       esac

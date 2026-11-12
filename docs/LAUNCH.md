@@ -3191,3 +3191,31 @@ have compounded its edits across candidates — candidate 2 editing
 candidate 1's output).
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 42) WINDOW 60 RAN THE WARMKEEP V9 — THE COST TABLE AT WORD 1 IS COMPLETE; THE V10 DESIGN DELETES THE PROBE ITSELF (2026-11-12)
+
+**The receipt** (campaign-20261112-020900): all eight v9 candidates read
+**prompt=4097** — one over. Eight more measurements complete the word-1
+cost table: "0" = 2 tokens (the fill landed exactly 4,096), any single
+digit = 1 (nine readings of 4,095, window 59), a digit pair = 3 (eight
+readings of 4,097, window 60). No same-family replacement matches the
+"0"'s 2 tokens — the sweep family is exhausted, and the composite
+answer (a pair minus nothing) cannot close the +1 either.
+
+**The v10 design stops measuring artifacts and deletes the artifact**:
+the word-1 digit rides INSIDE the fill — k zeros + ONE single digit
+(+1 token) against the now-required ODD tail closes exactly: k×2 + 1 +
+17 = 4,096 AND 8,192 (dry-checked; the variant-parity condition flips
+to `(target − 1 − tail) % pw == 0`, so the odd tail "Name three
+colors." is picked). The separate probe — the artifact six windows
+fought to page-align — is GONE: the fill's FIRST send is the arm's cold
+by construction (the m1/m2 probes are sub-page, nothing is kept), its
+re-send is the warm. On a length miss the done line measures w1 at that
+depth (the linear solve `w1_actual = n − k·pw − tail`), k rebuilds once,
+and the digit flips (page-1 re-key) so the rebuilt cold stays honest; a
+second miss VOIDs. Per-depth digits (d4096 "5", d8192 "8") keep the
+page-1 keys distinct (the v7 d8192-cold-hit lesson). phase-lint caught
+two unguarded greps in the new code (the window-33/34 burn class) before
+the launch — fixed to `|| true`.
+
+phase-lint 0 failing classes. The window relaunches this sitting.
