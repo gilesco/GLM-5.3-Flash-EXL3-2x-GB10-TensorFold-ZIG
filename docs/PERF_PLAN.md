@@ -24,7 +24,7 @@
 > never wires the radix report() line, so the store's per-request counters
 > are invisible — a re-open requires the report() wiring FIRST)**. The
 > board: config.sh back at the 18-patch qualified optimum on v1.2.7; the
-> warm row stands measured at 945 ms (d8192, the page resume's len−2048
+> warm row stands measured at 945 ms (d8192, w50's receipt; w52's same-binary A/A re-read 930/917 ms — inside noise; the page resume's len−2048
 > coverage); quality holds 95 ×33; the anchors' duel rows date to the
 > round-133 re-pair on the v1.2.6-era 16-patch stack. **THE NEXT STEP: the
 > duel re-pairs on the v1.2.7 engine** — the round-139 native-vs-native

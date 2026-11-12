@@ -107,7 +107,7 @@ Hard boundaries, never crossed:
     `docs/watch-archive.md` (ECOSYSTEM's dated watch entries),
     `docs/eval-history.md` (the ledger's completed round arcs),
     `docs/perf-history.md` (PERF_PLAN's retired sections) and
-    `patches/ARCHIVE.md` (the retired instruments). Digests read the living
+    `patches/RETIRED.md` (the retired instruments). Digests read the living
     doc plus only the index and the current week — never all the archives.
 
 - **Every number in the docs quotes a receipt** — a file in `results/` or a LAUNCH.md
@@ -147,8 +147,9 @@ Hard boundaries, never crossed:
   nothing to test launches nothing.
 - **The autonomous loop is the standing mode (user) — its map, all four scripts in
   this repo**: `autonomous-launch.sh` (on the head; the ONLY launcher — syncs to
-  origin/main, refuses a double launch via the flag file, starts the window
-  detached) → `autonomous-window.sh` (detached; the only thing allowed to stop
+  origin/main, refuses a double launch via the flag file, validates the phase
+  names against the known set, runs phase-lint, honors DRY_RUN=1 (every gate,
+  no window), starts the window detached) → `autonomous-window.sh` (detached; the only thing allowed to stop
   production, always through the production repo's own stop/start scripts which
   handle BOTH ranks; runs the phases; restores production on EVERY exit path via
   the EXIT trap) → `autonomous-cron.sh` (the head's 5-min cron: production down +
@@ -219,7 +220,8 @@ head's checkout under `results/` and are not committed — quote them from there
   launch arguments: the valid-arguments "replay" IS a real launch (window 35's
   recovery sitting ran its replay on the agent host and started a stray window;
   the site guards contained it, but the shape was one guard away from a real
-  stop). Run launch replays against the head via ssh, or ask for a DRY_RUN mode.
+  stop). DRY_RUN=1 now runs every gate with no window (round 141) — use it for
+  the replay; the per-sitting manual bogus-phase replay is retired.
 - **Thinking eats small `max_tokens`** — gate probes use ≥1024.
 - **`VAR=x func` persists in bash** — any function that overrides a config variable
   (e.g. `SERVED_NAME`) restores it after the override; keep that pattern for any new

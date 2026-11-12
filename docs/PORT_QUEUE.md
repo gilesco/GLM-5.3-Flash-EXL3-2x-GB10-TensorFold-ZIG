@@ -12,7 +12,7 @@ readiness.
    verbatim, 003-fp8-pages re-anchored onto the registry_joins move; the tree
    verified byte-identical; the v125val battery qualified it (the greedy sha
    IDENTICAL across the engine bump, hardmode 95, the vision 4/4, the walls
-   83/83 s). The pin held at v1.2.5 then; it HOLDS at v1.2.6 (6e9af9302) now — the round-140 cont. 2 receipt.
+   83/83 s). The pin held at v1.2.5 then v1.2.6 (6e9af9302) — it HOLDS at v1.2.7 (93a2e93) now, the round-141 promotion (the v127val battery, campaign-20261111-191641).
 2. **0104 warm-turns** — PORTED, MEASURED, **PARKED** (round 139 cont. 14-15):
    the mechanism engages on our KV_SHARE mode (the share-store substrate fix;
    3 done / 3 stepped aside per ON arm) but buys NOTHING — the deepened
@@ -387,7 +387,7 @@ readiness.
      (the 80cc3802… sha holds across the engine bump), the §2 gates ALL
      PASS, hardmode 95 — the TWENTY-SECOND consecutive — the vision 4/4,
      zero strict-TF_ refusals, the walls 84/83 s, prefill 1,523,
-     steady-state decode 73.1 tok/s. **The pin HOLDS at 6e9af9302**; the
+     steady-state decode 73.1 tok/s. **The pin HOLDS at 93a2e93 (v1.2.7, the round-141 promotion)**; the
      anchors' loading row re-dated; the chart regenerated. **The pool
      plan moved** (the #2257 trade): window_rows 8 -> 32 and the KDA
      projection into each stream cost +51 MiB/stream fixed (364 -> 415)

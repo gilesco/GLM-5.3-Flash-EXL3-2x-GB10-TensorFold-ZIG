@@ -70,7 +70,7 @@ want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 # Do the selected phases need the testing stack on the GPUs? (everything except the
 # read-only production passes and the summary — those run against production AS IS)
 NEEDS_GPU=0
-for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung cachefixqual livehalf regresswatch vision2744 driftmap warmttft v127val warmkeep; do
+for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
 done
 
@@ -1529,144 +1529,11 @@ WARMTTFT_RETIRED=1
 # from ~945 ms toward production's ~212 ms full-hit skip. The greedy
 # witness (80cc3802…) runs on both arms.
 # ---------------------------------------------------------------------------
-if want warmkeep && ! phase_done warmkeep; then
-  log "=== warmkeep v2 (the end-state keep A/B: the image pair + the page-aligned probes)"
-  P="$OUT/13-warmkeep.md"; : > "$P"
-  echo "# warmkeep v2 (the end-state keep A/B on v1.2.7; the OFF arm the 18-patch image, the ON arm the 19-patch image + 023-warmkeep; the probes page-aligned at 4096/8192 tokens)" >> "$P"
-  # the page-aligned probe builder: append filler tokens until the engine's prompt= lands on the target
-  aligned_probe() { # $1 = target token length, $2 = out file
-    local target=$1 bf=$2 m1=0 m2=0 n=0
-    # v7: TWO-POINT MEASUREMENT + TAIL-VARIANT PARITY SOLVER. v6 measured pw=2
-    # and the tail 17 exactly — but k*2 + 17 is always ODD, and the page
-    # boundary is even: with this tail text the target is unreachable, and the
-    # balancer word repeated v5's mistake (a lone "0" is 2 tokens too; the
-    # fill landed at 4,097). The escape: CHANGE THE TAIL'S PARITY — the tail
-    # is my text (" Name three colors." plus the template); variants ending in
-    # different words carry different token counts. Measure pw once, then try
-    # tail variants until (target - tail_i) % pw == 0; build k from THAT tail.
-    # The probe's cache-buster stays (the first fill word 0->1).
-    local K=16 N=16
-    local pw="" TAIL_TEXT="" TAIL_TOKENS=0
-    for variant in "Name three colors." "Name three colors now." "Name three colors today." "Name three colors and three shades."; do
-      printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s %s"}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 "$K"))" "$variant" > "$bf"
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-m1-$target.json" >/dev/null 2>&1 || true
-      m1=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-      printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s %s"}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 "$((K + N))"))" "$variant" > "$bf"
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-m2-$target.json" >/dev/null 2>&1 || true
-      m2=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-      if [ -z "$m1" ] || [ -z "$m2" ]; then echo "- the measurement probes failed (m1=$m1 m2=$m2) — the arm VOIDs" >> "$P"; return 1; fi
-      local pw_v tail_v
-      pw_v=$(( (m2 - m1) / N ))
-      tail_v=$((m1 - K * pw_v))
-      if [ -z "$pw" ]; then
-        pw=$pw_v
-        echo "- the two-point measurement: m1=$m1, m2=$m2 — pw=$pw tokens/word" >> "$P"
-        [ "$pw" -lt 1 ] && { echo "- pw=$pw nonsensical — the arm VOIDs" >> "$P"; return 1; }
-      fi
-      local rem=$(( (target - 1 - tail_v) % pw )) # v10: the word-1 digit carries 1 token — the variant must solve (target - 1 - tail_v) % pw == 0 (the ODD tail wins now)
-      [ "$rem" -lt 0 ] && rem=$((rem + pw))
-      echo "- the tail variant \"$variant\" measures $tail_v tokens — rem=$rem" >> "$P"
-      if [ "$rem" -eq 0 ]; then
-        TAIL_TEXT="$variant"; TAIL_TOKENS=$tail_v
-        break
-      fi
-    done
-    if [ -z "${TAIL_TEXT:-}" ]; then
-      echo "- no tail variant landed the parity (pw=$pw) — the arm VOIDs" >> "$P"; return 1
-    fi
-    local k=$(( (target - 1 - TAIL_TOKENS) / pw )) # w1 = 1 token: the digit at word 1 IS the buster (v8: every digit is 1 token there)
-    if [ "$k" -lt 1 ]; then echo "- k=$k nonsensical — the arm VOIDs" >> "$P"; return 1; fi
-    local start_digit=$(( target == 4096 ? 5 : 8 ))
-    local digit="$start_digit" n=0 tt=0 w1_actual=0
-    # v10: NO SEPARATE PROBE. The v9 sweep measured the word-1 cost table
-    # completely ("0"=2, any single digit=1, a digit pair=3) and no
-    # same-family replacement can match the fill's 2 tokens — but a
-    # COMPOSITION closes exactly: k zeros + ONE single digit at word 1 (+1)
-    # against the odd tail: k*2 + 1 + 17 = 4096 AND 8192. The digit rides
-    # INSIDE the fill (word 1), so the buster re-keys page 1 without a
-    # length change and the separate probe — the artifact six windows
-    # fought to page-align — is GONE. The fill's FIRST send is the arm's
-    # cold by construction (nothing page-aligned precedes it: the m1/m2
-    # probes are sub-page, nothing is kept), its re-send is the warm, and
-    # the per-depth digit (d4096 leads "5", d8192 leads "8") keeps the two
-    # depths' page-1 keys distinct (the v7 d8192-cold-hit lesson). On a
-    # length miss the done line MEASURES w1 at that depth (the linear
-    # solve w1_actual = n - k*pw - tail — the two-point philosophy applied
-    # to the fill itself), k rebuilds once, and the digit FLIPS (page-1
-    # re-key) so the rebuilt cold is still honest. A second miss VOIDs.
-    build_fill() { # $1 = the digit at word 1
-      local i words=""
-      words="0 $1"
-      for i in $(seq 2 "$k"); do words="$words 0"; done
-      printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s %s"}]}' "$SERVED_NAME" "$words" "$TAIL_TEXT" > "$bf"
-    }
-    send_fill() { # -> sets tt/n
-      tt=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$target-cold.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
-      n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1 || true)
-    }
-    build_fill "$digit"
-    send_fill
-    echo "- the fill built: k=$k zeros + the digit \"$digit\" at word 1 (1 token, v8-measured) + the \"$TAIL_TEXT\" tail ($TAIL_TOKENS) — the engine counted ${n:-nothing}" >> "$P"
-    if [ -z "$n" ]; then echo "- the fill's first send got no done line — the arm VOIDs" >> "$P"; return 1; fi
-    local n_val
-    n_val=$(echo "$n" | grep -oE "prompt=[0-9]+" | grep -oE "[0-9]+" || true)
-    if [ "$n_val" != "$target" ]; then
-      # the done line measured w1 at THIS depth: solve it from the linear model
-      w1_actual=$(( n_val - k * pw - TAIL_TOKENS ))
-      echo "- the length MISSED ($n_val vs $target): the linear solve reads w1_actual=$w1_actual at this depth (n - k*pw - tail)" >> "$P"
-      if [ "$w1_actual" -lt 1 ] || [ "$w1_actual" -gt 4 ]; then echo "- w1_actual=$w1_actual insane — the arm VOIDs" >> "$P"; return 1; fi
-      local rem2=$(( (target - w1_actual - TAIL_TOKENS) % pw ))
-      [ "$rem2" -lt 0 ] && rem2=$((rem2 + pw))
-      if [ "$rem2" -ne 0 ]; then echo "- no integer k solves k*$pw + $w1_actual + $TAIL_TOKENS = $target — the arm VOIDs" >> "$P"; return 1; fi
-      k=$(( (target - w1_actual - TAIL_TOKENS) / pw ))
-      digit=$((start_digit + 1)) # the page-1 re-key: the rebuilt cold must not hit the first send's keeps
-      build_fill "$digit"
-      send_fill
-      echo "- the fill REBUILT (k=$k, the digit \"$digit\") — the engine counted ${n:-nothing}" >> "$P"
-      n_val=$(echo "$n" | grep -oE "prompt=[0-9]+" | grep -oE "[0-9]+" || true)
-      if [ -z "$n_val" ] || [ "$n_val" != "$target" ]; then echo "- the rebuilt fill MISSED again (${n_val:-none} vs $target) — the arm VOIDs" >> "$P"; return 1; fi
-    fi
-    COLD=$tt
-    COLDHIT="$n" # the accepted send's own done line: the caller verifies cached=0
-    echo "- the probe locked: prompt=$n_val (page-aligned, $(( n_val / 512 )) pages exactly) — THIS send is the arm's d$target cold" >> "$P"
-  }
-  run_arm() { # $1 = arm label, $2 = the arm's PATCHES value ("" = the config default)
-    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$2"; then
-      echo "- the $1 arm's serve REFUSED (the refusal is the receipt):" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"; return 1
-    fi
-    echo "- the $1 arm's serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
-    for depth in 4096 8192; do
-      bf="$OUT/wk-d$depth.json"
-      # v10: aligned_probe's accepted send IS the cold (COLD/COLDHIT set
-      # inside; the request file is saved for the warm re-send). The
-      # per-depth word-1 digit (d4096 "5", d8192 "8") keeps the two depths'
-      # page-1 keys distinct (the v7 d8192 cold hit the d4096 probe's
-      # chunk-1 keep: both probes read "1"-led page 1).
-      if ! aligned_probe "$depth" "$bf"; then echo "- the $1 arm VOIDED: the $depth probe never landed page-aligned" >> "$P"; return 1; fi
-      case "$COLDHIT" in *"cached=0") ;; *)
-        echo "- the $depth cold was DISHONEST (its witness: $COLDHIT — cached=0 required) — the arm VOIDs" >> "$P"; return 1 ;;
-      esac
-      WARM=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$1-d$depth-warm.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
-      HIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1)
-      echo "- $1 d$depth: cold ${COLD:-?}s (its witness: $COLDHIT — honest), warm ${WARM}s" >> "$P"
-      echo "- $1 d$depth warm hit witness: $HIT — the SKIP FIRED only if cached == prompt == $depth; cached == floor($depth/512)*512 = the page resume, not the skip" >> "$P"
-    done
-    req_file "$OUT/wk-$1-greedy-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-    chat "$OUT/wk-$1-greedy-req.json" > "$OUT/wk-$1-greedy.json" || true
-    echo "- $1 the greedy content sha: $(content_sha "$OUT/wk-$1-greedy.json")" >> "$P"
-    echo "- $1 the same-bits witness: $([ "$(content_sha "$OUT/wk-$1-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
-    return 0
-  }
-  echo "## the OFF arm (the 18-patch image: the standing engine, no 023)" >> "$P"
-  # the OFF arm's PATCHES: the config default minus 023 (the restart env pair carries it —
-  # start.sh sources config.sh fresh and ${PATCHES-...} honors the set env over the default)
-  OFF_PATCHES=$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh || true)
-  run_arm off "$OFF_PATCHES" || true
-  echo "## the ON arm (the 19-patch image: the fork mechanism)" >> "$P"
-  run_arm on "$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh)" || true
-  echo "- VERDICT: the arms' warm TTFTs decide the value gate — the ON arm's warm reading at d8192 moving from ~930 ms toward production's ~212 ms skip CROSSES the gate (the anchors' warm-TTFT row moves; the adoption branch lands in the engine patch or the upstream note); the arms' greedy shas must be IDENTICAL to each other and to 80cc3802… (the deterministic probes unmoved); a warm PARITY or a sha move voids the branch" >> "$P"
-  touch "$OUT/.warmkeep.done"
-fi
+# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141 review): the
+# stub pattern only — no launchable path exists; a stray 'warmkeep' launch now refuses
+# at the launcher's phase-name gate. The receipts: results/campaign-20261112-023109
+# and the arc's record in docs/LAUNCH.md round 141 cont. 33-43.
+WARMKEEP_RETIRED=1
 # ---------------------------------------------------------------------------
 # phase: regresswatch (SESSION-SPECIFIC; retires with the receipt). The
 # concurrent-resume regression watch on v1.2.6: the round-133 adoption
@@ -1815,83 +1682,12 @@ PRODCOLD_RETIRED=1
 # (inert at our KV_SHARE=16) and #2557's router_tile-only router — the
 # bench row records what they move on our shape.
 # ---------------------------------------------------------------------------
-if want v127val && ! phase_done v127val; then
-  log "=== v127val (the v1.2.7 bump: gates + battery + vision + the wall)"
-  P="$OUT/29-v127val.md"; : > "$P"
-  echo "# v127val (v1.2.7 93a2e93 + the 16-patch stack, the request-starts/router_tile re-anchors; 021+022 mainlined)" >> "$P"
-  log "v127val: explicit prepare (the fingerprint moved)"
-  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v127val: the image rebuild (prepare) failed - see the log"; fi
-  echo "## the standing restart (the v1.2.7 engine + the adopted defaults)" >> "$P"
-  S=$(date +%s)
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
-    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
-    echo "- the serve line: $(serve_line)" >> "$P"
-    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
-    echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
-    req_file "$OUT/v127-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-    chat "$OUT/v127-req.json" > "$OUT/v127-greedy.json" || true
-    echo "- the greedy content sha: $(content_sha "$OUT/v127-greedy.json")" >> "$P"
-    echo "- the same-bits witness: $([ "$(content_sha "$OUT/v127-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
-  else
-    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-  fi
-  echo "## the section-2 content gates" >> "$P"
-  run_gates v127 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
-  echo "## the regression watch (the release carries #2557's router_tile-only router natively)" >> "$P"
-  bench_perf v127 "$OUT/v127-bench" 4 >> "$P" 2>&1 || true
-  bf=$(mktemp /tmp/v127d.XXXXXX.json)
-  python3 -c "
-import json, sys
-print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
-  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")' 2>/dev/null) || model=""
-  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
-  S=$(date +%s)
-  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v127-decode.json" || true
-  W=$(( $(date +%s) - S )); rm -f "$bf"
-  python3 -c "
-import json
-try:
-    d = json.load(open('$OUT/v127-decode.json'))
-    ct = d['usage']['completion_tokens']
-    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
-except Exception as e:
-    print('- the decode probe FAILED: ' + repr(e))
-" >> "$P"
-  echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" >> "$P"
-  mkdir -p "$OUT/v127hm"
-  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")' 2>/dev/null) || model=""
-  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
-    --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "v127val" --output-dir "$OUT/v127hm" --parallel 2 \
-    --json-file "$OUT/v127hm/hm.json" > "$OUT/v127hm/hm.log" 2>&1 || true
-  grep -o '"final_score": [0-9]*' "$OUT/v127hm/hm.json" >> "$P" 2>/dev/null || true
-  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/v127hm/hm.log" >> "$P" 2>/dev/null || true
-  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/v127hm/hm.log" >> "$P" 2>/dev/null || true
-  echo "## the vision suite (4/4 must hold; #2744's fix is mainlined now — the suite is the witness)" >> "$P"
-  mkdir -p "$OUT/v127vision"
-  if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v127vision/vision.json" > "$OUT/v127vision/vision.log" 2>&1 || true
-    tail -6 "$OUT/v127vision/vision.log" >> "$P" 2>/dev/null || true
-  else
-    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
-  fi
-  echo "## the timed load walls (the loading row's re-take on the v1.2.7 engine)" >> "$P"
-  for r in a b; do
-    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-    S=$(date +%s)
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
-    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
-  done
-  echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls = the v1.2.7 bump qualifies (the digest re-pairs the anchors and moves the pin); any FAIL holds the pin at v1.2.6 until understood" >> "$P"
-  touch "$OUT/.v127val.done"
-fi
+# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141 review):
+# the v1.2.7 qualification battery: QUALIFIED and PROMOTED (window 51 — the witness
+# IDENTICAL, §2 ALL PASS, hardmode 95, the vision 4/4, the walls; production serves
+# v1.2.7 since). The receipts: campaign-20261111-191641; the record: LAUNCH.md
+# round 141 cont. 28-29.
+V127VAL_RETIRED=1
 
 # ---------------------------------------------------------------------------
 
