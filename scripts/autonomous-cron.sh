@@ -15,6 +15,16 @@ flock -n 9 || exit 0
 STATE=/tmp/autonomous-testing.flag
 LOG="$HOME/autonomous-cron.log"
 PROD="$HOME/$PROD_REPO"
+# the maintenance pause (the (user) maintenance window, round 141): while this
+# file exists the crash-net HANDS OFF — no restarts, no log noise — so planned
+# reboots (both hosts) do not fight the net. It lives in /tmp so the pause is
+# SELF-CLEARING: the reboot that ends maintenance removes it too, and the net
+# re-arms on the next tick without anyone remembering to re-enable anything.
+PAUSE=/tmp/autonomous-maintenance.pause
+if [ -f "$PAUSE" ]; then
+  echo "[$(date '+%F %T')] maintenance pause present — hands off (rm $PAUSE to re-arm; the reboot clears it)" >> "$LOG"
+  exit 0
+fi
 if ! docker ps --format "{{.Names}}" | grep -qx glm53-native-tf; then
   if [ ! -f "$STATE" ]; then
     echo "[$(date '+%F %T')] production down with no active window — restarting via the production repo's start.sh" >> "$LOG"
