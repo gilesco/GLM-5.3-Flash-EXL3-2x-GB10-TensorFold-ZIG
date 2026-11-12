@@ -554,7 +554,9 @@ if the line ever pins below v1.2.2. -->
   resume at depth moving from ~930 ms toward production's ~212 ms full-hit
   skip.
 - THE TEN-WINDOW ARC (windows 52-61, campaigns 20261111-232645 through
-  20261112-023109): six instrument voids then two valid readings. The void
+  20261112-023109): NINE instrument voids (windows 52-60) then the one valid
+  value reading (window 61; w52 additionally banked the v1.2.7 warm row as a
+  calibration datum while void as a value instrument). The void
   trail is the instrument's own history — the page-aligned probe requirement
   fought the tokenizer at every turn (v2 image-pair A/B; v3 page-aligned
   probes; v4 char-trim diverged +4/round; v5 the 1-token assumption died,

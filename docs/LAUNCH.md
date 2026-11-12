@@ -3240,7 +3240,12 @@ patches/glm-full-hit-skip-v2.patch (the -v2 keeps it clear of the
 production store's glm-full-hit-skip.patch — the promotion-sync intact:
 production never carried it, its store is 18 active patches on the
 served v1.2.7 engine). The ledger's OPEN warm-resume item CLOSES with
-the ten-window trail (six voids, two valid readings).
+the ten-window trail: NINE voids (windows 52-60) then the one valid value
+reading (window 61) — the count reconciliation (the (user) review catch):
+w52's entry called its A/A a banking of the v1.2.7 warm row and w58's
+"sixth consecutive void" counted the then-running w53-w58 streak; the
+arc total is nine, and w61 is the only reading that answered the value
+gate.
 
 **The upstream-data fact the arc bought**: the WHY is unobservable on
 our engine — the GLM native family never wires the radix report() line

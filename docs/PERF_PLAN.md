@@ -6,7 +6,7 @@
 > inside the band — solo 100.7%, c2 101.0%, c4 101.8%, ITL ~flat, overhead
 > 99.5%; the c4 198.0 the highest ever recorded; the anchors re-dated on
 > the third pair — production-vs-us is now measured v1.2.7-vs-v1.2.7 at
-> every row)**, and the warmkeep arc is CLOSED (windows 52-61: six voids,
+> every row)**, and the warmkeep arc is CLOSED (windows 52-61: NINE voids,
 > then the first VALID A/B — the end state never admitted on the GLM
 > native serving path; 023 retired). The re-ground closes the re-pair
 > item. What remains: the upstream watch (#2852 EXL3 whole-pass routing,
@@ -15,7 +15,7 @@
 > LIVE_HALF composition. The next sitting opens with the ECOSYSTEM read
 > and a stage brief naming a user-visible number — no launch without one.
 > The board behind it: the warmkeep arc CLOSED
-> (windows 52-61: six instrument voids, then the first VALID A/B — window
+> (windows 52-61: NINE instrument voids, then the first VALID A/B — window
 > 61's page-aligned fills on both arms, the colds honest, the greedy shas
 > IDENTICAL, and the ON arm's warm `cached=2048/6144` IDENTICAL to the OFF
 > arm: the end state is never admitted on the GLM native serving path; the

@@ -1431,8 +1431,8 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   cached=2048) on the adopted engine — ~3.1× the row's old 302 ms receipt,
   ~4.5× production's full-hit skip (~212 ms). The root cause was READ (the
   fork-era end-state keep + skip, ported as 023-warmkeep onto v1.2.7); the
-  instrument fought the page-aligned probe requirement for six voids
-  (windows 52-58: the tokenizer's word cost table measured completely —
+  instrument fought the page-aligned probe requirement for NINE voids
+  (windows 52-60: the tokenizer's word cost table measured completely —
   pw=2, the tail 17, every digit 1 token at word 1, a digit pair 3);
   v9/v10 (windows 59-61) closed it: v10 deleted the probe entirely, the
   buster riding inside the fill (k zeros + one digit + the odd tail =

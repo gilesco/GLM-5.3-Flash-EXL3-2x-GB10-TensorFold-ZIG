@@ -124,5 +124,32 @@ fi
 # (PROMPT_CACHE_GIB=4 etc.) must appear in start.sh's flag-mapping lines.
 grep -n 'PROMPT_CACHE_GIB' scripts/start.sh > /dev/null || { say "FIND: PROMPT_CACHE_GIB has no mapping in scripts/start.sh"; fails=$((fails + 1)); }
 
+# (d) arm-distinctness (the w52 burn, round 141): an A/B phase whose two arms'
+# staged inputs are IDENTICAL is an A/A — the value gate cannot answer, and
+# the window burns before the manual review catches it. Static form: the
+# `run_arm <label> "<expr>"` call sites where two consecutive DIFFERENT-LABEL
+# arms carry the SAME expression. The honest static catch is narrow (the
+# variable-based forms are not provable statically) — the dynamic half is the
+# phase's own duty (the aligned-probe-oracle skill's step 0: name each arm's
+# distinguishing input and verify it reaches the binary).
+lint_arms() {
+  python3 - "$TARGET" <<'PYL'
+import re, sys
+src = open(sys.argv[1], encoding="utf-8").read()
+calls = re.findall(r'\brun_arm\s+(\w+)\s+"([^"]*)"', src)
+for i in range(len(calls) - 1):
+    (l1, e1), (l2, e2) = calls[i], calls[i + 1]
+    if l1 != l2 and e1 == e2:
+        print(f"FIND (A/B arms stage IDENTICAL inputs — an A/A; the value gate cannot answer) run_arm {l1} == run_arm {l2}: {e1[:80]}")
+sys.exit(0)
+PYL
+}
+lint_armout=$(lint_arms)
+if [ -n "$lint_armout" ]; then
+  say "$lint_armout"; fails=$((fails + 1))
+else
+  say "PASS: no trivially-equal A/B arm staging found"
+fi
+
 say "== phase-lint: $fails failing class(es) =="
 exit "$fails"
