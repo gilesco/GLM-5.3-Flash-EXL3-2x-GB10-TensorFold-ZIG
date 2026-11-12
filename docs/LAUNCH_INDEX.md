@@ -393,3 +393,4 @@
 | [round 141 cont. 47] (round 141, cont. 47) THE MAINTENANCE PAUSE + THE PUSH CREDENTIAL LAPSE (2026-11-12) | docs/LAUNCH.md | — | — |
 | [round 141 cont. 48] (round 141, cont. 48) THE WORKFLOW REVIEW LANDED — THE DISCIPLINE'S FIRST PRE-LAUNCH SEMANTIC GUARD; THE DE… | docs/LAUNCH.md | — | void (body) |
 | [round 141 cont. 49] (round 141, cont. 49) THE HORIZON REVIEW — #2856 CROSSED ITS TRIGGER; THE STAGE BRIEF IS WRITTEN (2026-11-12) | docs/LAUNCH.md | — | qualified |
+| [round 141 cont. 50] (round 141, cont. 50) THE (USER) DECISION: WAIT FOR THE NEXT RELEASE; THE RELEASE WATCH ARMED (2026-11-12) | docs/LAUNCH.md | — | — |

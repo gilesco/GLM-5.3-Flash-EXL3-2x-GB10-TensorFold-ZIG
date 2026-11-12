@@ -3503,3 +3503,38 @@ section. The decision-relevant facts:**
 **The loop re-arms**: the stand-down from cont. 45 is lifted — a
 stage brief now names a user-visible number. The launch is the LAST
 action of the staging sitting, per the discipline.
+
+## (round 141, cont. 50) THE (USER) DECISION: WAIT FOR THE NEXT RELEASE; THE RELEASE WATCH ARMED (2026-11-12)
+
+**The decision** ((user), responding to the horizon review): we wait
+for the next TensorFold release at this stage — the #2856 stage brief
+is SHELVED, not discarded; the port stages when the release lands
+(either carried free in the release, or staged against it by the bump
+protocol's rebase).
+
+**The watch is armed**: `scripts/upstream-release-watch.sh` — the deep
+cron every 30 min, the proven durable-inbox poke vector (the
+autonomous-poke shape: the marker dedup, the session discovery, the
+POST), the maintenance-pause guard. It reads upstream's latest release
+tag through the authenticated gh path (the unauthenticated API
+rate-limits within one research sitting); the moment a tag newer than
+the promoted v1.2.7 pin lands, the session wakes with the release
+notes and the bump protocol (the round-141 v1.2.7 shape: the scratch
+round-trip verify, the vNNNval battery, the launch last).
+
+**The dry-runs passed**: the no-release path exits silently (the
+pin equals the latest); the marker-dedup branch verified adversarially
+(a seeded v1.2.8 marker suppresses the re-poke); the maintenance-pause
+guard is in place.
+
+**What the next rebase is expected to carry** (main's current Unreleased
+trail, 137 commits past v1.2.7): #2843's EXL3 grouped-experts decode-grid
+fix (merged today — three quarters of the shared decode grid exited at
+once), possibly #2856's batched shared MTP (clean, one device check from
+landing), possibly #3064's paged FP8 KV (our adopted mode as a first-
+class path; qualification open). The bump protocol's battery will name
+each in its stage brief when the tag lands.
+
+**The loop state**: production healthy; no window; the launch waits on
+the release. This sitting launches nothing — the watch wakes the agent
+when the horizon moves.
