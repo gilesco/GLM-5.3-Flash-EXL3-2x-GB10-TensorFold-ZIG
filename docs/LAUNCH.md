@@ -3008,3 +3008,43 @@ with one adjustment round). The window relaunches this sitting.
 
 phase-lint 0 failing classes (one unguarded grep caught and guarded on the
 way in); the launcher's bogus-phase replay refuses as designed.
+
+## (round 141, cont. 35) WINDOW 53 RAN THE WARMKEEP V2 — VOID AGAIN AS A VALUE INSTRUMENT; THE INSTRUMENT ITSELF MIS-SHAPED TWICE; THE V3 DESIGN PASS LANDED (2026-11-12)
+
+**The receipt** (campaign-20261112-000243): the image-pair A/B worked
+(the OFF arm the 18-patch image, the ON arm the 19-patch — the arm plumbing
+held), but the INSTRUMENT voided the reading again:
+
+1. **The calibration never landed page-aligned**: rounds 2 and 3 both read
+   prompt=4,106 (the target 4,096) and 8,200 (vs 8,192) — the word-granularity
+   ratio loop rounded to the same word count and never honed the last ~10
+   tokens. The skip needs `at == len` EXACTLY on the page boundary; at
+   4,106/8,200 the radix holds floor-to-page states only (the hit witnesses
+   read cached=4096/8192, never the full length) — the end state had nothing
+   to keep, on EITHER arm.
+2. **The cold shots were cache hits**: the calibration rounds sent the SAME
+   request text the probe then re-sent, so the store was already warm — the
+   "cold" TTFTs read 0.086–0.091 s (the engine log's done lines carry the
+   proof: prompt=4106 cached=4096 ttft=0.090 on the very first probe).
+
+The arms read identical warm TTFTs (0.091/0.086 both arms) — an honest A/A
+on a mis-shaped instrument, NOT a mechanism verdict.
+
+**The hit-rate watch**: two voids on the same instrument in a row — the
+design pass before a third run (the discipline rule). The v3 design, each
+fix mapped to its void's root cause:
+- **Exact alignment**: after the word-level pass closes within 64 tokens,
+  single-token "0" words pad one token at a time until the engine's own
+  `prompt=` line reads the target exactly; over-runs drop trailing words.
+  The calibration FAILS the arm (its rows VOID) if it never lands — no
+  near-miss rows enter the receipt.
+- **Cache-buster**: the probe flips ONE word's digit suffix (the same
+  token count — suffixes are digits), so the radix MISSES the calibration's
+  keeps on the cold shot and the warm re-send of the probe hits its own.
+- **The skip's signature stated**: the warm hit witness must read
+  `cached == prompt == 4096/8192` exactly; `cached == floor(len/512)*512`
+  is the page resume, not the skip. The receipt prints both the cold
+  witness (cached must be 0 for an honest cold) and the warm witness with
+  the signature check inline.
+
+phase-lint 0 failing classes. The window relaunches this sitting.
