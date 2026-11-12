@@ -2946,3 +2946,65 @@ native build RC=0 (fatbins sm_121 + the binary).
   or the greedy witness moving off 80cc3802… — either voids the branch and
   the patch retires with its receipt.
 - **Phase list**: `preflight warmkeep summary`.
+
+## (round 141, cont. 33) WINDOW 52 RAN THE WARMKEEP A/B — VOID AS A VALUE INSTRUMENT; TWO STAGING FLAWS NAMED; THE A/A STILL BANKED THE V1.2.7 WARM ROW (2026-11-11)
+
+**The receipt** (campaign-20261111-232645, the 19-patch image on 93a2e93 —
+the preflight's prepared-marker line predates the 023 commit and reads 18,
+but prepare staged all 19 and the image tag landed before the first serve;
+the arms DID run the 023 binary). The verdict: **VOID as a value
+instrument** — the value gate is UNDECIDED — for two independent reasons,
+both the sitting's work, both named:
+
+1. **The A/B was structurally an A/A**: the port carries no env gate — the
+   mechanism is unconditional in the patch, so `TF_GLM_KEEP_AT_END=1` was a
+   no-op label and both arms ran the SAME binary. The wrong-instrument
+   class of window 40, self-inflicted at staging. (The right shape: the
+   patch itself IS the mechanism; the OFF arm should have been the 18-patch
+   image, the ON arm the 19-patch image — an IMAGE-pair A/B, not an env
+   pair.)
+2. **The probes can never engage the mechanism**: the d4096/d8192 fills
+   tokenize to 3,719 and 7,424 tokens — NOT page-aligned (135 and 256 past
+   a 512 page). The radix cannot hold an end state for an unaligned prompt
+   (the end state's key is the plain prompt's pages; the marks emit page
+   multiples only) — the warm hit resumed from cached=6,144 of 7,424 and
+   re-prefilled the tail, exactly the old behavior. The fork-era skipqual
+   instrument used page-aligned prompts; this phase inherited the
+   warmttft probe shape instead. (The right instrument: pad the fill so
+   the TOKENIZED length lands exactly on 512-token page multiples — a
+   two-shot calibration in the phase.)
+
+**What the void still banked**:
+- **The v1.2.7 warm row re-dated on the same binary twice** (an A/A): warm
+  d8192 **0.930/0.917 s**, d4096 **1.336/1.327 s** — a hair better than
+  window 50's 0.945/1.347 (the drift band), the greedy witness IDENTICAL
+  both arms (80cc3802…), zero strict-TF_ refusals. The 023 patch is
+  bit-safe on the deterministic probes.
+- **The mechanism-engagement path verified from the logs**: the hit
+  witness cached=6144 at d8192 proves the store holds page-multiple
+  states and the resume works; the skip simply has nothing to hit until
+  the prompt lands on a page boundary.
+
+**The phase fix** (the warmkeep phase rewritten in place): the OFF arm =
+the 18-patch image (the standing engine), the ON arm = the 19-patch image
+(the fork mechanism); the probes pad to page-aligned token lengths
+(4,096 and 8,192 exact, calibrated against the engine's own prompt= line
+with one adjustment round). The window relaunches this sitting.
+
+## (round 141, cont. 34) THE WARMKEEP PHASE REWRITTEN (v2) — THE TWO FLAWS FIXED; THE WINDOW RELAUNCHES (2026-11-12)
+
+**The phase fix lands the same sitting** (the void's rule: fix before re-run):
+1. **The image-pair A/B** — the OFF arm's restarts carry `PATCHES` = the
+   config default minus `023-warmkeep.patch` (the restart env pair passes it
+   through; `start.sh` sources config.sh fresh and `${PATCHES-…}` honors a
+   set env over the default — the round-139 cont. 8 gotcha's mirror), the
+   ON arm the full 19-patch list. Each arm's restart re-prepares (the patch
+   layer invalidates the build cache — ~8 min per arm, the honest cost).
+2. **Page-aligned probes** — the phase pads the fill and calibrates against
+   the engine's own `prompt=` done line (up to 3 rounds) until the
+   tokenized length lands exactly on 4,096 / 8,192 — the page boundary the
+   radix end state needs. The hit witness line now prints `cached=` and the
+   receipt names the skip's signature (cached = the FULL aligned length).
+
+phase-lint 0 failing classes (one unguarded grep caught and guarded on the
+way in); the launcher's bogus-phase replay refuses as designed.

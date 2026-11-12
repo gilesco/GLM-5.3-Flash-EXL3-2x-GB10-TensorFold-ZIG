@@ -376,3 +376,5 @@
 | [round 141 cont. 29] (round 141, cont. 29) THE OUTAGE CATCH — PRODUCTION DOWN ~3 H ON A STALE PATCH STORE (2026-11-11, (user) re… | docs/LAUNCH.md | — | — |
 | [round 141 cont. 30] (round 141, cont. 30) THE RESTORE RECEIPT — PRODUCTION SERVES V1.2.7 (2026-11-11, the (user) wake) | docs/LAUNCH.md | — | — |
 | [(round 141, cont. 31-32) THE WARM-RESUME] (round 141, cont. 31-32) THE WARM-RESUME SOURCE READ + THE 023-WARMKEEP PORT STAGED — THE WINDOW LAUNCHES (… | docs/LAUNCH.md | — | void (body) |
+| [round 141 cont. 33] (round 141, cont. 33) WINDOW 52 RAN THE WARMKEEP A/B — VOID AS A VALUE INSTRUMENT; TWO STAGING FLAWS NAMED;… | docs/LAUNCH.md | campaign-20261111-232645 | VOID |
+| [round 141 cont. 34] (round 141, cont. 34) THE WARMKEEP PHASE REWRITTEN (v2) — THE TWO FLAWS FIXED; THE WINDOW RELAUNCHES (2026-… | docs/LAUNCH.md | — | void (body) |

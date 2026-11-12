@@ -1510,50 +1510,74 @@ DRIFTMAP_RETIRED=1
 WARMTTFT_RETIRED=1
 # ---------------------------------------------------------------------------
 # phase: warmkeep (SESSION-SPECIFIC; retires with the receipt). The
-# warm-resume cost decomposition, leg 2: the END-STATE keep A/B. The
-# source read (round 141 cont. 31, on v1.2.7 800b5ce) traced the warm-hit
-# path end to end: the share store's radix hit ADOPTS the kept pages
-# (tree.take retains the ids — no KV copy), the state restore is
-# per-page-piece DtoD over the NON-page state only (heldPages excludes
-# the share-held pages), and keeps fire at the pass's chunk-start MARKS
-# (Keeps.at) — never at the pass's end. So a warm resume at d8192 with
-# cached=6144 re-prefills the last ~2,048 rows (~1.3 s at the adopted
-# engine's prefill rate) — the same order as the measured 945/1,347 ms
-# warm readings (campaign-20261111-174642). Production's ~212 ms
-# full-hit skip restores the state and skips the prefill entirely.
-# THE QUESTION: does the end-state keep close the gap? The A/B flips a
-# TF_GLM_KEEP_AT_END probe arm (the ON arm keeps the state at the pass's
-# last row too — the store's end entry names the full length, the
-# resume hits it and skips toward the skip; the OFF arm is the standing
-# engine). The value-if-yes: the anchors' warm-TTFT row moves from ~945
-# ms toward ~212 ms — the opencode multi-turn interaction's resume
-# latency, the row the stale-receipt catch opened (window 50). The
-# mechanism must not move the deterministic probes: the greedy witness
-# (80cc3802…) and the §2 gates run on the ON arm too.
+# warm-resume cost decomposition, leg 2: the END-STATE keep A/B, v2. The
+# first run (window 52, campaign-20261111-232645) was VOID as a value
+# instrument: the A/B was structurally an A/A (the port has no env gate —
+# both arms ran the same binary) AND the probes tokenized to 3,719/7,424
+# tokens — never page-aligned, so the radix could not hold an end state
+# and the skip had nothing to hit. This rewrite fixes both: the OFF arm
+# runs the 18-patch image (PATCHES minus 023), the ON arm the 19-patch
+# image (the fork mechanism) — an IMAGE-pair A/B, the round-139
+# native-vs-native duel's shape; the probes PAD the fill until the
+# engine's own prompt= line reads exactly page-aligned lengths (4,096
+# and 8,192 tokens, one calibration round per probe against the done
+# line). The value-if-yes unchanged: the anchors' warm-TTFT row moves
+# from ~945 ms toward production's ~212 ms full-hit skip. The greedy
+# witness (80cc3802…) runs on both arms.
 # ---------------------------------------------------------------------------
 if want warmkeep && ! phase_done warmkeep; then
-  log "=== warmkeep (the end-state keep A/B: does keeping at the pass's end turn the warm resume into a skip?)"
+  log "=== warmkeep v2 (the end-state keep A/B: the image pair + the page-aligned probes)"
   P="$OUT/13-warmkeep.md"; : > "$P"
-  echo "# warmkeep (the end-state keep A/B on the v1.2.7 engine; the OFF arm the standing engine, the ON arm TF_GLM_KEEP_AT_END=1 — the last-row state keep)" >> "$P"
-  run_arm() { # $1 = arm label, $2 = extra env
-    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $2; then
+  echo "# warmkeep v2 (the end-state keep A/B on v1.2.7; the OFF arm the 18-patch image, the ON arm the 19-patch image + 023-warmkeep; the probes page-aligned at 4096/8192 tokens)" >> "$P"
+  # the page-aligned probe builder: append filler tokens until the engine's prompt= lands on the target
+  aligned_probe() { # $1 = target token length, $2 = out file
+    local target=$1 bf=$2 pad=0 n=0
+    FILL_WORDS="$FILL_WORDS" PAD_TOKENS=0 python3 -c "
+import json, os, sys
+words = os.environ['FILL_WORDS'].split()
+n_words = int(sys.argv[1])
+fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, words[i % len(words)]) for i in range(n_words)))
+json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
+" "$(( $target / 5 ))" "$bf" 2>/dev/null
+    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+    # calibrate: send once, read the engine's prompt= count, adjust the word count, resend
+    for attempt in 1 2 3; do
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-cal-$target-a$attempt.json" >/dev/null 2>&1 || true
+      n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
+      echo "- the calibration round $attempt: the engine counted prompt=$n (the target $target)" >> "$P"
+      [ "$n" = "$target" ] && break
+      # adjust: ~4.8 chars/token in the filler; scale the word count by the ratio
+      FILL_WORDS="$FILL_WORDS" python3 - "$bf" "$target" "${n:-1}" << 'PYCAL' >> "$P" 2>&1 || true
+import json, sys
+bf, target, got = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+b = json.load(open(bf))
+fill = b["messages"][0]["content"]
+words = fill.split()
+ratio = target / max(got, 1)
+n_words = max(1, int(len(words) * ratio))
+import os
+base = os.environ['FILL_WORDS'].split()
+fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, base[i % len(base)]) for i in range(n_words)))
+b["messages"][0]["content"] = fill + ' Name three colors.'
+json.dump(b, open(bf, 'w'))
+print(f"- the calibration adjusted the word count to {n_words}")
+PYCAL
+    done
+    echo "- the probe locked: prompt=$n tokens" >> "$P"
+  }
+  run_arm() { # $1 = arm label, $2 = the arm's PATCHES value ("" = the config default)
+    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="$2"; then
       echo "- the $1 arm's serve REFUSED (the refusal is the receipt):" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"; return 1
     fi
     echo "- the $1 arm's serve line: $(serve_line | grep -oE "of [0-9.]+ GiB left after")" >> "$P"
     for depth in 4096 8192; do
       bf="$OUT/wk-d$depth.json"
-      FILL_WORDS="$FILL_WORDS" python3 -c "
-import json, os, sys
-words = os.environ['FILL_WORDS'].split()
-fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, words[i % len(words)]) for i in range($depth // 4)))
-json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[1], 'w'))
-" "$bf"
-      python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
+      aligned_probe "$depth" "$bf" || true
       COLD=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$1-d$depth-cold.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
       WARM=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-$1-d$depth-warm.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
       echo "- $1 d$depth: cold ${COLD}s, warm ${WARM}s" >> "$P"
-      HIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -1)
-      echo "- $1 d$depth warm hit witness: $HIT" >> "$P"
+      HIT=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+ cached=[0-9]+" | tail -1)
+      echo "- $1 d$depth warm hit witness: $HIT (cached must read the FULL aligned length for the skip)" >> "$P"
     done
     req_file "$OUT/wk-$1-greedy-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
     chat "$OUT/wk-$1-greedy-req.json" > "$OUT/wk-$1-greedy.json" || true
@@ -1561,11 +1585,14 @@ json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role'
     echo "- $1 the same-bits witness: $([ "$(content_sha "$OUT/wk-$1-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
     return 0
   }
-  echo "## the OFF arm (the standing engine)" >> "$P"
-  run_arm off "" || true
-  echo "## the ON arm (TF_GLM_KEEP_AT_END=1)" >> "$P"
-  run_arm on "TF_GLM_KEEP_AT_END=1" || true
-  echo "- VERDICT: the arms' warm TTFTs decide the value gate — the ON arm's warm reading at d8192 moving from ~945 ms toward production's ~212 ms skip CROSSES the gate (the anchors' warm-TTFT row moves; the adoption branch lands in the engine patch or the upstream note); the arms' greedy shas must be IDENTICAL to each other and to 80cc3802… (the deterministic probes unmoved); a warm PARITY or a sha move voids the branch" >> "$P"
+  echo "## the OFF arm (the 18-patch image: the standing engine, no 023)" >> "$P"
+  # the OFF arm's PATCHES: the config default minus 023 (the restart env pair carries it —
+  # start.sh sources config.sh fresh and ${PATCHES-...} honors the set env over the default)
+  OFF_PATCHES=$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh | sed 's/ 023-warmkeep.patch//')
+  run_arm off "$OFF_PATCHES" || true
+  echo "## the ON arm (the 19-patch image: the fork mechanism)" >> "$P"
+  run_arm on "$(grep -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh)" || true
+  echo "- VERDICT: the arms' warm TTFTs decide the value gate — the ON arm's warm reading at d8192 moving from ~930 ms toward production's ~212 ms skip CROSSES the gate (the anchors' warm-TTFT row moves; the adoption branch lands in the engine patch or the upstream note); the arms' greedy shas must be IDENTICAL to each other and to 80cc3802… (the deterministic probes unmoved); a warm PARITY or a sha move voids the branch" >> "$P"
   touch "$OUT/.warmkeep.done"
 fi
 # ---------------------------------------------------------------------------
