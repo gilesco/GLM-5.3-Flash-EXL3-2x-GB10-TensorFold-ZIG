@@ -3256,3 +3256,41 @@ upstream-gated on the GLM native path.
 **The perf plan continues**: the duel re-pairs on the v1.2.7 engine
 (the 18-patch promoted stack), re-grounding the decode rows after the
 warmkeep arc. Next sitting opens with the duel's stage brief.
+
+## (round 141, cont. 44) WINDOW 62 RAN THE DUEL — THE V1.2.7 A/A RE-GROUND: ALL FIVE INSTRUMENTS FLAT; THE C4 198.0 IS THE HIGHEST EVER RECORDED (2026-11-12)
+
+**The receipt** (campaign-20261112-030105): the round-139 native-vs-native
+duel re-paired on the v1.2.7 engine — the baseline arm IS this repo's
+promoted 18-patch config on 8001, the ours arm the same stack (an A/A by
+design; the pair's delta IS the instruments' noise floor). All five
+instruments flat inside the band:
+
+| instrument | baseline | ours | delta |
+| --- | --- | --- | --- |
+| solo decode | 69.8/69.5 | 70.2/70.3 | **100.7%** (the best-of readings) |
+| c2 aggregate | 120.3 | 121.5 | **101.0%** |
+| c4 aggregate | 194.5 | 198.0 | **101.8%** |
+| ITL/chunk | 58.4 ms | 58.1 ms | 14.6 vs 14.5 ms/token |
+| TTFT overhead | 184 ms | 185 ms | 99.5% (slope 0.440 vs 0.442 ms/tok) |
+
+**The anchors re-grounded on the third pair** (the five duel rows +
+the chart re-rendered): the c4 198.0 is the highest c4 ever recorded on
+this line (the window-drift map's tenth data point: 170.0 → 182.0 →
+185.1 → 195.8 → 198.0 across w45→w61 while solo/c2/ITL/overhead stay
+flat — host-state drift, order-matched comparisons only). The c2 121.5
+continues its climb (139.9% of the retired recipe's floor). The
+stability deltas (solo 0.4%/0.1%) are the tightest yet — the v1.2.7
+engine's instrument floor.
+
+**The value gate held trivially (an A/A's job)**: the promoted stack's
+own readings re-anchor the scoreboard's floor on the promoted engine —
+production-vs-us is now measured v1.2.7-vs-v1.2.7 at every row. No
+qualified fact moved beyond the re-dating; the quality bar untouched
+(hardmode 95 ×33 stands).
+
+**The perf plan's next step**: the re-ground closes the re-pair item;
+the remaining levers are the upstream watch (#2852 EXL3 whole-pass
+routing, #2856 batched shared MTP — both OPEN with no numbers; the next
+release may mainline them), the user-parked 0110 KV-SHARD port, and the
+DRAFTS=0+LIVE_HALF composition. The next sitting opens with the
+ECOSYSTEM read and a stage brief naming a user-visible number.
