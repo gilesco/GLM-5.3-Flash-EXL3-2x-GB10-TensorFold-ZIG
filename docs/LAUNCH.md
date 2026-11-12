@@ -3069,3 +3069,24 @@ the fine path starts close; the round cap rises to 8. The self-void guard
 stands unchanged — no near-miss rows, ever.
 
 phase-lint 0 failing classes. The window relaunches this sitting.
+
+## (round 141, cont. 37) WINDOW 55 RAN THE WARMKEEP V4 — THE TRIM PATH DIVERGED (+4/ROUND); THE V5 DESIGN IS ARITHMETIC, NOT ITERATION (2026-11-12)
+
+**The receipt** (campaign-20261112-003122): the self-void guard worked
+again (both arms VOID before any near-miss row), but the trim path
+**diverged**: each round the count went UP by exactly 4 (4,112 → 4,116 →
+4,120 → ... → 4,136). The root cause is structural: trimming CHARACTERS
+off a word never reduces its token count below one — each word is ≥1
+token regardless of its length, so character surgery cannot subtract
+tokens, and the fill's own drift made the deficit grow.
+
+**The v5 design abandons iteration for arithmetic**: measure the fixed
+tail (" Name three colors." plus the chat template) ONCE with a prompt of
+16 single-token "0" words (the same round verifies each "0" is exactly
+one token), then build the fill as exactly `(target − tail_tokens)`
+single-token words. The total is exact by construction — ONE measurement
+round, no whack-a-mole. The probe keeps the cache-buster: its first word
+flips "0" → "1" (the same token count, a different radix key), so the
+cold shot misses the calibration's keeps. The self-void guard stands.
+
+phase-lint 0 failing classes. The window relaunches this sitting.

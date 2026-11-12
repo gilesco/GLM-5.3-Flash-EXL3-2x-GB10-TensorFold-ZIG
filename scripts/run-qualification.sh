@@ -1531,85 +1531,46 @@ if want warmkeep && ! phase_done warmkeep; then
   echo "# warmkeep v2 (the end-state keep A/B on v1.2.7; the OFF arm the 18-patch image, the ON arm the 19-patch image + 023-warmkeep; the probes page-aligned at 4096/8192 tokens)" >> "$P"
   # the page-aligned probe builder: append filler tokens until the engine's prompt= lands on the target
   aligned_probe() { # $1 = target token length, $2 = out file
-    local target=$1 bf=$2 n=0
-    # v3: (a) the calibration lands EXACTLY page-aligned — after the word-level pass closes
-    # within ~64 tokens, a single-token word ("0") is appended one at a time until the engine's
-    # own prompt= count hits the target exactly (each "0" verified one token by the engine);
-    # (b) the probe DIFFERS from the calibration prompt by one word's digit suffix (the same
-    # token count — the suffix is digits), so the radix MISSES the calibration's keeps on the
-    # cold shot and the warm re-send of the probe hits its own.
-    FILL_WORDS="$FILL_WORDS" python3 -c "
-import json, os, sys
-words = os.environ['FILL_WORDS'].split()
-n_words = int(sys.argv[1])
-fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, words[i % len(words)]) for i in range(n_words)))
-json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': fill + ' Name three colors.'}]}, open(sys.argv[2], 'w'))
-" "$(( $target / 5 ))" "$bf" 2>/dev/null
-    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
-    for attempt in 1 2 3 4 5 6 7 8; do
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-cal-$target-a$attempt.json" >/dev/null 2>&1 || true
-      n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
-      echo "- the calibration round $attempt: the engine counted prompt=$n (the target $target)" >> "$P"
-      [ "$n" = "$target" ] && break
-      FILL_WORDS="$FILL_WORDS" python3 - "$bf" "$target" "${n:-1}" << 'PYCAL' >> "$P" 2>&1 || true
-import json, sys
-bf, target, got = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
-b = json.load(open(bf))
-fill = b["messages"][0]["content"]
-words = fill.split()
-if got < target:
-    deficit = target - got
-    if deficit > 64: # coarse: scale the word count
-        import os
-        base = os.environ['FILL_WORDS'].split()
-        n_words = max(1, int(len(words) * target / max(got, 1)))
-        fill = ' '.join(w if i % 11 == 0 else w + f'-{(i + 3) % 89}' for i, w in ((i, base[i % len(base)]) for i in range(n_words)))
-        fill = fill + " 0" * (deficit % 5) # the coarse round leaves a small residue: pad it now
-    else: # fine: single-token "0" words
-        fill = fill + " 0" * deficit
-else: # over: trim CHARACTERS off the last word's digit suffix (digits tokenize near 1:1), then whole "0" words off the tail
-    over = got - target
-    m = 0
-    while over > 0 and m < len(words):
-        w = words[-1 - m]
-        d = 0
-        for ch in reversed(w):
-            if ch.isdigit(): d += 1
-            else: break
-        if d == 0: break
-        cut = min(d, over)
-        words[-1 - m] = w[: len(w) - cut]
-        over -= cut
-        m += 1
-    while over > 0 and words and words[-1] == "0": # trailing pads: drop whole words
-        words.pop(); over -= 1
-    fill = " ".join(words)
-b["messages"][0]["content"] = fill + ' Name three colors.'
-json.dump(b, open(bf, 'w'))
-print(f"- the calibration adjusted ({'pad' if got < target else 'trim'} {abs(target - got)} tokens)")
-PYCAL
-    done
+    local target=$1 bf=$2 n=0 t=0
+    # v5: EXACT BY ARITHMETIC, no iteration. The tokenizer fights back against
+    # word-level tuning (v3's word drop re-indexed suffix digits; v4's char trim
+    # never reduced a word below 1 token and diverged +4/round). Instead: measure
+    # the fixed tail's token count ONCE with a prompt of K single-token words,
+    # then build the fill as exactly (target - tail_tokens) single-token words.
+    # Single-token words are verified by the same measurement (the engine counts
+    # every token); the tail is fixed text so its count is constant.
+    # (a) the tail measurement: 16 words of "0" + " Name three colors."
+    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 16))" > "$bf"
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-tailprobe-$target.json" >/dev/null 2>&1 || true
+    local m
+    m=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
+    if [ -z "$m" ]; then echo "- the tail measurement failed (no done line) — the arm VOIDs" >> "$P"; return 1; fi
+    # the tail's count t = m - 16 (each "0" verified a single token by this very round)
+    t=$((m - 16))
+    if [ "$t" -lt 1 ] || [ "$t" -ge "$target" ]; then echo "- the tail measured $t tokens (m=$m) — nonsensical; the arm VOIDs" >> "$P"; return 1; fi
+    echo "- the tail measured: $t tokens (the probe $m with 16 single-token words)" >> "$P"
+    # (b) the fill: exactly (target - t) single-token "0" words + the tail
+    local k=$((target - t))
+    printf '{"model": "%s", "temperature": 0, "max_tokens": 1, "messages": [{"role": "user", "content": "%s Name three colors."}]}' "$SERVED_NAME" "$(printf '0 %.0s' $(seq 1 "$k"))" > "$bf"
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/wk-cal-$target-check.json" >/dev/null 2>&1 || true
+    n=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ prompt=[0-9]+" | tail -1 | grep -oE "[0-9]+$" || true)
+    echo "- the calibrated fill: $k single-token words + the tail = the engine counted prompt=$n (the target $target)" >> "$P"
     if [ "$n" != "$target" ]; then
-      echo "- the calibration FAILED to land exactly ($n vs $target) — the arm's rows are VOID" >> "$P"
-      return 1
+      echo "- the arithmetic calibration MISSED ($n vs $target) — the arm VOIDs" >> "$P"; return 1
     fi
-    # the probe: the same length, one digit-suffix word differs (the radix misses the calibration's keeps)
-    FILL_WORDS="$FILL_WORDS" python3 - "$bf" << 'PYPROBE' >> "$P" 2>&1 || true
+    # (c) the probe: the same length, the LAST word's value differs ("0" -> "1"), so the
+    # radix MISSES the calibration keep's key on the cold shot; the warm re-send hits its own
+    python3 - "$bf" << 'PYPROBE' >> "$P" 2>&1 || true
 import json, sys
 bf = sys.argv[1]
 b = json.load(open(bf))
 fill = b["messages"][0]["content"]
 words = fill.split()
-# flip the LAST word's digit suffix (e.g. "-37" -> "-38"): the token count holds, the radix key differs
-import re
-w = words[0]
-m = re.search(r"-(\d+)$", w)
-words[0] = w[: m.start()] + f"-{(int(m.group(1)) + 1) % 89}" if m else w
+words[0] = "1" # the first "0" word flips: the same token count, a different radix key
 b["messages"][0]["content"] = " ".join(words)
 json.dump(b, open(bf, 'w'))
-print("- the probe built: the same token length, one word's suffix flipped (the store misses the calibration)")
+print("- the probe built: the first word 0->1 (the same token length, a different store key)")
 PYPROBE
-    python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$SERVED_NAME"
     echo "- the probe locked: prompt=$n tokens, page-aligned ($(( n / 512 )) pages exactly)" >> "$P"
   }
   run_arm() { # $1 = arm label, $2 = the arm's PATCHES value ("" = the config default)
