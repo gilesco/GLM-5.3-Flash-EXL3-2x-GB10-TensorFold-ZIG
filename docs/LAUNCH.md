@@ -3294,3 +3294,29 @@ routing, #2856 batched shared MTP — both OPEN with no numbers; the next
 release may mainline them), the user-parked 0110 KV-SHARD port, and the
 DRAFTS=0+LIVE_HALF composition. The next sitting opens with the
 ECOSYSTEM read and a stage brief naming a user-visible number.
+
+## (round 141, cont. 45) THE ECOSYSTEM READ — NO STAGED CANDIDATE; THE QUEUE IS UPSTREAM-GATED; NOTHING TO TEST, NOTHING LAUNCHED (2026-11-12)
+
+**The read** (the read-only subagent sweep, completed before any state
+mutation): v1.2.7 is still the newest tag — our promotion is current
+with upstream; main moved ~15 commits since the last check, all
+non-inference (#2750, cortheon search parsing). **#2852 stays open,
+mergeable-clean, upstream's device receipts queued; #2856 open and now
+DIRTY (conflicts with main), its receipts queued too.** Neither crosses
+a staging trigger: the value-gate discipline demands a claimed number
+to test before a port window is spent — the round-141 cont. 15
+decision stands (staging them now would measure an upstream
+hypothesis, not a claim).
+
+**The watch state updated in ECOSYSTEM.md** (the recheck header + the
+two PR rows' state). The queue: upstream-gated (#2852/#2856 — the
+device receipts, or a release mainlining them), user-parked (the 0110
+KV-SHARD port), or priced-and-retired (the DRAFTS=0+LIVE_HALF
+composition retired on the decode trade, w48's receipt; the warmkeep
+arc closed on the valid negative, w61).
+
+**The sitting's verdict**: no stage brief can name a user-visible
+number from this state — the window discipline says a sitting with
+nothing to test launches nothing. Production is healthy on the
+promoted v1.2.7/18-patch engine; the loop stands down until the
+upstream receipts land or the (user) opens a lever.

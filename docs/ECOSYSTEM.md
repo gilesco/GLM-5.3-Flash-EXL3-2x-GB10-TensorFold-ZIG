@@ -138,7 +138,19 @@ menu launcher to this repo.
 | prefill/decode fairness knobs | if our cliff phase shows deep-prefill stalls | campaign verdict |
 | head idle spin behavior | GB10 shared power budget | TF_GLM_PROF window |
 
-## Upstream PRs that bear on our fronts (rechecked 2026-10-24 evening; perf-gated policy: nothing to bump to)
+## Upstream PRs that bear on our fronts (rechecked 2026-11-12, round 141 cont. 45; perf-gated policy: nothing to bump to)
+
+**The 2026-11-12 read (the subagent sweep, read-only)**: v1.2.7 is STILL the
+newest tag (published 2026-11-11 17:18 UTC, target `93a2e93` — our promoted
+pin is current); main moved only ~15 commits past it since our check, all
+non-inference (#2750 cortheon search/registry parsing — its own changelog
+line says "does not reach inference: no lane, sampler, precision or
+prompt-processing change"). **#2852 (EXL3 whole-pass routing): still open,
+mergeable-clean, but upstream's own device receipts remain queued** ("tf-cuda-test
+glm-exl3 on a GB10 with fresh records, then a TP=2 A/B on two GB10s" — the PR
+body's own words). **#2856 (batched shared MTP): still open and now DIRTY**
+(conflicts with main); its receipts are pending too (and its body tests
+NVFP4, not EXL3). Neither crosses a staging trigger — the watch stands.
 
 The releases: v1.1.3 (2026-10-23) remains the newest and carries **no glm/cuda perf
 content** (round 13's verdict stands); `main` is 136 commits ahead of our pin —
