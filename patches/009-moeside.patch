@@ -50,116 +50,14 @@ REBASE (2026-11-07, onto v1.2.4 267c5af6a): the pieces init carries pair now; th
 Forward constructions carry l2pf - the side field, sideStream/freeSide, the
 constructor, deinit and both Forward call sites re-anchored around them.
 
-diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 33955ff71..5ca01fb2e 100644
---- a/zig/src/families/glm/cuda_engine.zig
-+++ b/zig/src/families/glm/cuda_engine.zig
-@@ -70,6 +70,7 @@ pub const Engine = struct {
-     m: fw.Modules,
-     stream: cuda.Stream,
-     pieces: fw.Pieces,
-+    side: ?@import("cuda_moe.zig").Side = null, // decode windows' shared expert stream and events (TF_GLM_SHARED_SIDE=0: none)
-     w: weights.Weights,
-     bp: fw.Buffers, // prompt chunks
-     pair: ?prompt_pair.Pair = null, // TF_GLM_PROMPT_PAIR: a paired prompt step's second chunk
-@@ -150,10 +151,12 @@ pub const Engine = struct {
-         const pair = prompt_pair.wanted(o.settings.pair, o.settings.solo, world);
-         var pieces = try fw.Pieces.init(d, o.settings.pieces, pair);
-         errdefer pieces.deinit();
-+        var side = try sideStream(d);
-+        errdefer if (side) |*x| freeSide(x);
-         if (o.settings.layers > c.layers) return error.BadLayers;
-         const layers = try a.alloc(u32, if (o.settings.layers > 0) o.settings.layers else c.layers);
-         for (layers, 0..) |*l, i| l.* = @intCast(i);
--        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
-+        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .side = side, .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
-         const has_packs = o.settings.dense_bits != 16 or o.settings.head_bits != 16;
-         if (has_packs and !o.settings.tiled) return error.PackedNeedsGlmMm;
-         const Tile = struct {
-@@ -218,12 +221,14 @@ pub const Engine = struct {
-         e.shared_buf = try cuda.DeviceBuffer.alloc(d, 8);
-         errdefer e.shared_buf.free();
-         errdefer @import("cuda_load_owner.zig").drain(stream, d);
-+        errdefer if (e.side) |x| @import("cuda_load_owner.zig").drain(x.s, d); // before the buffers it reads go
-         try e.stream.synchronize();
-         return e;
-     }
- 
-     pub fn deinit(e: *Engine) void {
-         e.stream.synchronize() catch {};
-+        if (e.side) |x| x.s.synchronize() catch {}; // shared-expert work still in flight reads buffers and weights freed below
-         e.gpa.free(e.packs.ptrs);
-         e.gpa.free(e.packs.bits);
-         if (e.drafter) |dr| dr.deinit();
-@@ -249,6 +254,7 @@ pub const Engine = struct {
-         if (e.l2pf) |*p| p.deinit();
-         e.w.deinit();
-         e.pieces.deinit();
-+        if (e.side) |*x| freeSide(x);
-         e.m.deinit();
-         e.stream.deinit();
-         e.gpa.free(e.spans);
-@@ -272,7 +278,24 @@ pub const Engine = struct {
-     pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
-         out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
-         const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
--        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null };
-+        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side };
-+    }
-+
-+    /// The decode windows' side stream for the MoE shared expert, unless TF_GLM_SHARED_SIDE=0.
-+    fn sideStream(d: *const cuda.Driver) !?@import("cuda_moe.zig").Side {
-+        if (std.c.getenv("TF_GLM_SHARED_SIDE")) |v| if (std.mem.eql(u8, std.mem.span(v), "0")) return null;
-+        var s = try cuda.Stream.init(d, false);
-+        errdefer s.deinit();
-+        var fork = try cuda.Event.init(d, false);
-+        errdefer fork.deinit();
-+        return .{ .s = s, .fork = fork, .join = try cuda.Event.init(d, false) };
-+    }
-+
-+    fn freeSide(x: *@import("cuda_moe.zig").Side) void {
-+        x.s.synchronize() catch {};
-+        x.join.deinit();
-+        x.fork.deinit();
-+        x.s.deinit();
-     }
- 
-     /// Binds slot `slot`'s sequence for the steps that follow, making it (a zeroed state) on first use.
-@@ -469,7 +492,7 @@ pub const Engine = struct {
-             rows += p.ids.len;
-         }
-         var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
--        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null };
-+        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = e.side };
-         try f.run(@ptrCast(ids[0..rows]));
-         if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
-         for (parts, segs[0..parts.len]) |p, g| {
-diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
-index d2956520b..77e152cec 100644
---- a/zig/src/families/glm/cuda_forward.zig
-+++ b/zig/src/families/glm/cuda_forward.zig
-@@ -207,6 +207,7 @@ pub const Forward = struct {
-     prof: ?*prof_mod.Prof = null, // TF_GLM_PROF=1: events between the sections
-     taps: ?taps_mod.Taps = null, // DFlash2 (--drafter): the tapped layers' rows, after each such layer
-     index_split: bool = false, // TF_GLM_INDEX_SPLIT: this prompt chunk's indexer rows split across the ranks (rank 0's choice)
-+    side: ?moe.Side = null, // a decode window's MoE shared expert on a second stream (TF_GLM_SHARED_SIDE, default on)
-     absorb_mma: bool = false, // TF_GLM_ABSORB_MMA=1: a prompt pass's absorb_q and expand_v on tensor cores
-     l2pf: ?*const l2pf_mod.L2pf = null, // TF_GLM_L2PF: a decode window's sites read their next weights into L2
- 
-@@ -322,7 +323,7 @@ pub const Forward = struct {
-     }
- 
-     fn moeKernels(f: *const Forward) moe.Kernels {
--        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof };
-+        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof, .side = if (f.ranks[0].b.prefill) null else f.side };
-     }
- 
-     pub const Site = enum { mixer, ffn };
+
+REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
+
 diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
-index 1f21c3881..308ddd7e7 100644
+index 1f21c3881..c90d771ef 100644
 --- a/zig/src/families/glm/cuda_moe.zig
 +++ b/zig/src/families/glm/cuda_moe.zig
-@@ -41,7 +41,18 @@ pub const Scratch = struct {
+@@ -41,7 +41,26 @@ pub const Scratch = struct {
  };
  
  /// The kernels the block runs: the captured Triton set, the grouped NVFP4 experts, the plan, and glm_ops.
@@ -170,7 +68,15 @@ index 1f21c3881..308ddd7e7 100644
 +
 +/// The kernels the block runs: the captured Triton set, the grouped NVFP4 experts, the plan, and glm_ops.
 +/// `side`: a decode window's shared expert on its own stream (null: on the block's stream, as before).
-+pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null, side: ?Side = null };
++/// `fuse`: a decode window's EXL3 experts take the grouped path (TF_GLM_MOE_FUSE=0: off), the same bits.
++pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null, side: ?Side = null, fuse: bool = false };
++
++/// Whether a decode window's EXL3 experts take the grouped path: the fused select writes their compact picks and
++/// grouping (tf_glm_topk_group: no copy, no group launch) and fill sums the routed slots with the shared expert's row
++/// in the down epilogue (no slot rows, no put_slot, no glue.combine), in glue.combine's own order.
++fn grouped(k: Kernels, l: Layer, rows: usize, prompt: bool) bool {
++    return k.fuse and l.exl3 != null and !prompt and rows >= 1 and rows <= glue.select_group_rows and l.top_k == exl3.top_k;
++}
 +
 +/// Whether this call forks the shared expert: decode windows with a side stream (prompt chunks fill by row pieces).
 +fn forks(k: Kernels, prompt: bool) bool {
@@ -179,7 +85,7 @@ index 1f21c3881..308ddd7e7 100644
  
  /// forward.moe_block: out [rows][dims] fp32 partial; `prompt`: 64-pair items, the prompt kernels, bf16 slot rows.
  pub fn block(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, prompt: bool, out: u64) !void {
-@@ -54,6 +65,16 @@ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
+@@ -54,15 +73,32 @@ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
      const d = l.routed.dims;
      const slots = l.top_k + 1;
      const shared_id: i32 = @intCast(l.count);
@@ -190,22 +96,46 @@ index 1f21c3881..308ddd7e7 100644
 +        const sd = k.side.?;
 +        try sd.fork.record(stream);
 +        try sd.s.wait(sd.fork);
-+        try sharedRows(k, sd.s, l, s, x, x_stride, 0, rows, prompt);
++        try sharedRows(k, sd.s, l, s, x, x_stride, 0, rows, prompt, !grouped(k, l, rows, prompt));
 +        try sd.join.record(sd.s);
 +    }
      var stamp = prof_mod.span(k.prof, stream, .router);
      try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
-     try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
-@@ -78,6 +99,17 @@ pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
+-    try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
++    const g = grouped(k, l, rows, prompt);
++    if (g) {
++        const sc = (try exl3.decodeScratch(l.exl3.?, s.x3, rows, l.count, d, l.routed.width, l.routed.limit)) orelse return error.BadWindow;
++        try glue.selectGroup(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, s.x3.picks, sc.ids, sc.count, sc.members);
++    } else try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
+     stamp.end();
+     stamp = prof_mod.span(k.prof, stream, .experts);
+     defer stamp.end();
+     if (k.prof) |p| p.mark(stream, .router);
+     defer if (k.prof) |p| p.mark(stream, .routed);
+-    if (l.exl3) |w| return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
++    if (l.exl3) |w| {
++        if (g) return exl3.runGrouped(k.exl3, stream, w, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
++        return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
++    }
+     const plan: experts.Plan = .{ .route = s.plan, .slots = slots, .experts = l.count + 1, .prompt = prompt, .fact = !prompt and k.experts.fact and l.routed.format == .nvfp4 };
+     try experts.route(k.experts, stream, s.pick, rows * slots, plan);
+     try experts.run(k.experts, stream, .gate_up, l.routed, plan, x, x_stride, rows, s.eact, shared_id);
+@@ -78,13 +114,30 @@ pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
      const n = hi - lo;
      const bf16_slots = prompt and l.exl3 == null; // the slot rows: bf16 in an NVFP4 prompt chunk, else fp32
      const eb: usize = if (bf16_slots) 2 else 4;
-+    if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, lo, hi, prompt);
++    if (grouped(k, l, hi, prompt)) { // body ran the grouped path on rows 0..hi: one fill of them all
++        if (lo != 0) return error.BadFill;
++        if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, 0, hi, prompt, false);
++        return exl3.combineDecode(k.exl3, stream, l.exl3.?, s.x3, hi, l.count, d, l.routed.width, l.routed.limit, s.wts, s.sy, out);
++    }
++    if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, lo, hi, prompt, true);
 +    try glue.combine(k.set, stream, s.ey + lo * slots * d * eb, !bf16_slots, s.wts + lo * slots * 4, out, n, d, slots);
 +}
 +
-+/// The shared expert of rows lo..hi on `stream`: [gate | up], SwiGLU, down, then its rows into the last slot of `ey`.
-+fn sharedRows(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool) !void {
++/// The shared expert of rows lo..hi on `stream`: [gate | up], SwiGLU, down into `sy`, then with `slot` its rows into the
++/// last slot of `ey` (the grouped decode path reads `sy` itself).
++fn sharedRows(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool, slot: bool) !void {
 +    const d = l.routed.dims;
 +    const slots = l.top_k + 1;
 +    const n = hi - lo;
@@ -214,16 +144,11 @@ index 1f21c3881..308ddd7e7 100644
      try projection.matmul(k.set, stream, l.shared_gu, x + lo * x_stride * 2, x_stride, s.sgu + lo * 2 * l.shared * 2, s.mm_part, n, 2 * l.shared, d, false);
      try glue.swiglu(k.set, stream, s.sgu + lo * 2 * l.shared * 2, s.sact + lo * l.shared * 2, s.sxs + lo * (l.shared / 64) * 4, l.routed.limit, n, l.shared);
      try projection.matmul(k.set, stream, l.shared_down, s.sact + lo * l.shared * 2, l.shared, s.sy + lo * d * 4, s.mm_part, n, d, l.shared, true);
-@@ -86,5 +118,4 @@ pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
++    if (!slot) return;
+     var a: cuda.Args = .{};
+     a.add(s.sy + lo * d * 4);
      a.add(s.ey + lo * slots * d * eb);
      for ([_]usize{ n, d, slots, l.top_k, @intFromBool(bf16_slots) }) |v| a.add(@as(c_int, @intCast(v)));
      try cuda.launch.launch(k.put_slot, .{ .grid = .{ .x = @intCast((n * d + 255) / 256) }, .block = .{ .x = 256 } }, stream, &a);
 -    try glue.combine(k.set, stream, s.ey + lo * slots * d * eb, !bf16_slots, s.wts + lo * slots * 4, out, n, d, slots);
  }
-
-REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
-release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
-took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
-windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
-into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
-were re-cut onto the new anchors; the content is unchanged.

@@ -17,6 +17,9 @@ No arithmetic changes: the tensors' bytes are the same either way - the content
 gate covers it. OWNER: this line; STATUS: EXPERIMENTAL, judged by the v124val
 window (the content gate + the loading wall's re-take, the timed wall protocol).
 
+
+REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
+
 diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cuda_load_ahead.zig
 index f777c7e2e..1c255dd94 100644
 --- a/zig/src/families/glm/cuda_load_ahead.zig
