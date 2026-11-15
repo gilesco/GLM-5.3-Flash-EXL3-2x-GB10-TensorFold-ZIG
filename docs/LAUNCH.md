@@ -3609,3 +3609,23 @@ instrument's shape; the closest prior: campaign-20261111-191641):
 (with the rebase note), the launcher's DRY_RUN + phase-lint green. The
 launch follows as this sitting's last action: `preflight v129val
 summary`.
+
+## (round 142, cont.) THE FIRST V129VAL WINDOW VOIDED ON THE BUILD — THE MARKER-SHAPE LESSON LANDED (2026-11-15)
+
+**The void** (campaign-20261115-212523, rc=1): the window's prepare died
+at `git apply 005-pagerows-fix.patch` — `No valid patches in input`.
+The store's eight empty-body provenance markers are legitimate shapes in
+the replay (which skips them), but the image build applies every patch
+file individually and refuses an empty input. Production was never at
+risk: the build failed BEFORE any serve swap, the window's EXIT path
+restored the v1.2.7 serve healthy (80 s wall, the same engine).
+
+**The fix landed this sitting**: `image/build-native.sh` skips a patch
+file with no `diff --git` body — the marker is the store's record, the
+content rides another member. The pre-flight gap is also recorded: the
+launcher's phase-lint checks the phase code and the arm staging, not the
+patch store's shapes; the replay-vs-build divergence is now closed by
+construction (the build and the replay share the skip rule).
+
+**The re-launch**: immediate — the store, the pin and the phase are
+unchanged; the build fix is the only delta.

@@ -42,6 +42,12 @@ if compgen -G "/build/patches/*.patch" >/dev/null; then
   echo "== applying local patches =="
   for p in /build/patches/*.patch; do
     echo "git apply $(basename "$p")"
+    # An empty-body patch (the rebase's provenance markers: the content is carried by
+    # another member of the stack) applies as a no-op - skip it, the store is the record.
+    if ! grep -q '^diff --git' "$p"; then
+      echo "  (empty body - the provenance marker; the content rides another member: skipped)"
+      continue
+    fi
     git -C /src/TensorFold apply --whitespace=nowarn "$p" || { echo "PATCH FAILED: $p" >&2; exit 1; }
   done
   git -C /src/TensorFold diff --stat || true
