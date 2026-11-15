@@ -1691,6 +1691,122 @@ V127VAL_RETIRED=1
 
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# phase: v129val (SESSION-SPECIFIC; retires with the receipt). The v1.2.9
+# bump validation: the engine is v1.2.9 (6b9de69) + the 18-patch stack
+# re-anchored (the compositions: #2852's one-call prompt ground under 002's
+# drafter guards, #2843's caller-tile signatures under 012's kernels,
+# #2814's kept-tool-calls under 010/011/018's parse behavior, DSEL and
+# INDEX_CUDA mainlined under the decode-kernel stack; 013's stale contract
+# records NOT re-applied — #2852's rewrite holds the two prompt kernels
+# PENDING upstream and the v129val battery re-measures them on the new
+# source). The stage brief:
+# - *The question*: does the v1.2.9 engine + the re-anchored stack hold
+#   every standing gate — the same-bits greedy witness (the 80cc3802…
+#   sha; the bump must not move the deterministic probes), the §2 content
+#   gates, hardmode 95, the vision 4/4, the load walls — and what do
+#   v1.2.9's own defaults (TF_GLM_DSEL on by default, the #3159/#2722
+#   long-prompt and decode-round work) move on our shape?
+# - *Value-if-yes*: the line rides upstream's release (v1.2.8+v1.2.9 carry
+#   GLM-5.3-Flash CUDA decode-round and long-prompt gains; #2852/#2843
+#   mainline two of our ports so the stack stops carrying their risk);
+#   production moves to the newest engine and the README's numbers re-date.
+# - *Cost*: one window (~40 min: prepare + restart + the battery legs) +
+#   the promotion sync on qualification.
+# - *Alternatives rejected*: staying at v1.2.7 (the release watch is armed
+#   and the user's directive is to rebase and promote on parity); staging
+#   the v1.2.9 skip-param rewrite of the exl3 prompt kernels as our own
+#   port instead of taking #2852's shape (the contract-records ownership
+#   would fight upstream's pending registry).
+# - *The closest prior instrument*: the v127val battery (campaign-
+#   20261111-191641, the round-141 v1.2.7 promotion) — same shape: the
+#   greedy witness, the §2 gates, one bench pass + the steady-state decode
+#   probe, ONE hardmode run at --parallel 2, the vision suite, TWO timed
+#   load walls. Diff against it: the v1.2.9-specific expectations named
+#   above; the witness sha stays the standing constant.
+# - *Kill criterion*: any §2 gate FAIL, the greedy witness moving, or
+#   hardmode < 95 holds the pin at v1.2.7 until understood. Production is
+#   NOT touched until the battery qualifies; the promotion sync is a
+#   separate step after the receipt.
+# ---------------------------------------------------------------------------
+if want v129val && ! phase_done v129val; then
+  log "=== v129val (the v1.2.9 bump: gates + battery + vision + the wall)"
+  P="$OUT/29-v129val.md"; : > "$P"
+  echo "# v129val (v1.2.9 6b9de69 + the 18-patch re-anchored stack; #2852/#2843/#2814 mainlined under the stack; DSEL+INDEX_CUDA defaults on)" >> "$P"
+  log "v129val: explicit prepare (the fingerprint moved: TF_COMMIT + the patch bodies)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v129val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.2.9 engine + the adopted defaults)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
+    req_file "$OUT/v129-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v129-req.json" > "$OUT/v129-greedy.json" || true
+    echo "- the greedy content sha: $(content_sha "$OUT/v129-greedy.json")" >> "$P"
+    echo "- the same-bits witness: $([ "$(content_sha "$OUT/v129-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v129 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  echo "## the bench pass + the steady-state decode probe (the DSEL default and #2722's decode rounds on our shape)" >> "$P"
+  bench_perf v129 "$OUT/v129-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/v129d.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v129-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v129-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" >> "$P"
+  mkdir -p "$OUT/v129hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "v129val" --output-dir "$OUT/v129hm" --parallel 2 \
+    --json-file "$OUT/v129hm/hm.json" > "$OUT/v129hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/v129hm/hm.json" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v129vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v129vision/vision.json" > "$OUT/v129vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/v129vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on the v1.2.9 engine)" >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls = the v1.2.9 bump qualifies (the digest re-dates the anchors and the promotion sync moves production); any FAIL holds the pin at v1.2.7 until understood" >> "$P"
+  touch "$OUT/.v129val.done"
+fi
+
+# ---------------------------------------------------------------------------
+
 if want summary; then
   log "=== summary"
   S="$OUT/CAMPAIGN.md"
