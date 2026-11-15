@@ -3538,3 +3538,74 @@ each in its stage brief when the tag lands.
 **The loop state**: production healthy; no window; the launch waits on
 the release. This sitting launches nothing — the watch wakes the agent
 when the horizon moves.
+
+## (round 142) THE RELEASE WATCH FIRED — V1.2.8 + V1.2.9; THE REBASE QUALIFIED ITS COMPILE GATES; THE V129VAL WINDOW STAGED (2026-11-15)
+
+**The releases**: upstream shipped TWO tags since the v1.2.7 pin — v1.2.8
+(2026-11-13) and v1.2.9 (2026-11-15, the watch fired the same day). The
+GLM-relevant headlines: v1.2.9 carries #3159's long-prompt TTFT gains and
+#2722's decode-round reductions; DSEL and INDEX_CUDA mainline on by
+default; v1.2.8 mainlined #2852 (the EXL3 prompt experts' one-call
+rewrite — the same intent as our 002's first half) and #2843 (the
+grouped experts' caller-tile sizing). #3064 (fp8-on-pages first-class)
+did NOT land — our 003-fp8-pages marriage stays load-bearing.
+
+**The Mia chronology check**: the fork moved repos (the old one banners
+the DGX-Sparks-1104 as the live one); pulled its current head — every
+patch we ported is last-touched 2026-11-04 (our port snapshot), so the
+ports stand on their sources. Their post-Nov-4 items (0110 KV_SHARD,
+0112/0113 EXTRA_EOS/THINK_OFF_SPLIT, the L2PF candidate) are parked for
+their own stage briefs after this bump; none block it.
+
+**The rebase (no patch mainlined wholesale — all 18 survive)**: the
+composed tree = pristine v1.2.9 (6b9de6951) + the 18-patch stack, built
+commit-by-commit with the v1.2.7 reference end-state as the oracle for
+every conflict. The composition points: #2852's skip-param shape under
+002's drafter guards and 013's loop rewrite; #2843's caller-tile
+signatures under 012's kernels; #2814's kept-tool-calls structure under
+010/011/018's parse behavior; CudaRanks.layout 20→21→22 (both sides
+independently bumped it — RoCE's roce_wide and our numerics); DSEL's
+selectLs beside our decode-kernel stack. 013's stale contract records
+(122/123 regs) NOT re-applied — #2852's rewrite holds the two prompt
+kernels PENDING upstream (the contract's own test asserts it); the
+v129val battery re-measures them on the new source.
+
+**The verification chain (receipted on the composed tree)**: the
+round-trip byte-identical (pristine v1.2.9 + the full-tree diff = the
+tree, re-proven after each repair); the five GLM host suites RC=0
+(test-tool-parse, test-glm-kv-pages, test-glm-snapshots,
+test-glm-request-starts, test-glm-prompt-settings); the 234 kernel
+fatbins RC=0 and the native binary RC=0 (sm_121, nvcr
+26.07-py3, zig 0.17.0); the store's interleaved replay reproduces the
+verified tree BYTE-EXACT (11 real bodies + 8 empty-body markers whose
+content rides the owner patches of the bundled commits).
+
+**The stumbles, recorded honestly**: three composition artifacts caught
+by the gates and repaired before any window (the 004/014 duplicate
+ground, the tool-parse stray semicolon and list binding, the
+cuda_pages_test missing brace); one nvcc error (the composed down
+kernel's signature lost (ys, yrow)); one launch.Args comptime_int
+typing error. Every one caught by the compile gates — none by a window.
+
+**The stage brief — the v129val battery window** (the v127val
+instrument's shape; the closest prior: campaign-20261111-191641):
+- *The question*: does the v1.2.9 engine + the re-anchored stack hold
+  every standing gate (the same-bits greedy witness 80cc3802…, the §2
+  content gates, hardmode 95, the vision 4/4, the load walls) and what
+  do DSEL-on-default and #2722/#3159 move on our shape?
+- *Value-if-yes*: production moves to the newest engine; the stack
+  stops carrying #2852/#2843's risk; the README's numbers re-date; the
+  user's directive (rebase to the released version, promote on parity
+  or better) completes.
+- *Cost*: one window (~40 min) + the promotion sync after.
+- *Alternatives rejected*: staying at v1.2.7 (the directive says
+  rebase); staging Mia's post-Nov-4 knobs in the same window (one
+  window, one question — they stage after).
+- *Kill criterion*: any §2 gate FAIL, the greedy witness moving, or
+  hardmode < 95 holds the pin at v1.2.7 until understood; production is
+  NOT touched until the battery qualifies.
+
+**The state**: the head's checkout at 8250186, the pin at 6b9de6951
+(with the rebase note), the launcher's DRY_RUN + phase-lint green. The
+launch follows as this sitting's last action: `preflight v129val
+summary`.
