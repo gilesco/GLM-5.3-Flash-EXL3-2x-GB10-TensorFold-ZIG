@@ -65,22 +65,21 @@ this patch reproduces the verified tree byte-identically (4b8d7c91...);
 the tool-parse host suite 51/51 and compile RC=0 (fatbins + native, sm_121)
 receipted on that tree.
 
+
+REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
+
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
-index 90e9b79a0..e67e63caa 100644
+index e20d136ad..5241f47b6 100644
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
-@@ -74,9 +74,10 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
+@@ -78,6 +78,7 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
      const snapshots_run = b.addRunArtifact(b.addTest(.{ .root_module = snapshots }));
      b.step("test-glm-snapshots-host", "Prompt-sized GLM state copies, page budgets and rank ordering without devices").dependOn(&snapshots_run.step);
      step.dependOn(&snapshots_run.step);
--    b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
 +    b.step("test-glm-kv-pages-host", "TF_KV_PAGES for bf16 and E4M3, the page layouts, admission and refusals, on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{ "TF_KV_PAGES", "capacity keeps", "the plan's window" } })).step);
-+    b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
+     b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
      const request_starts = b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"glm request starts:"} }));
      b.step("test-glm-request-starts-host", "GLM message-start prompt cuts and the shared-KV startup refusal without devices").dependOn(&request_starts.step);
-     const mm_record = b.createModule(.{ .root_source_file = b.path("zig/test_support/glm_mm_cuda.zig"), .target = host, .optimize = .debug });
-     const mm_actual = b.createModule(.{ .root_source_file = b.path("zig/src/families/glm/cuda_mm.zig"), .target = host, .optimize = .debug, .imports = &.{.{ .name = "cuda", .module = mm_record }} });
-     const mm_policy = b.createModule(.{ .root_source_file = b.path("zig/glm_mm_policy_host.zig"), .target = host, .optimize = .debug, .imports = &.{ .{ .name = "cuda", .module = mm_record }, .{ .name = "mm", .module = mm_actual } } });
 diff --git a/zig/glm_snapshot_host.zig b/zig/glm_snapshot_host.zig
 index b4e538db4..1a2c9925c 100644
 --- a/zig/glm_snapshot_host.zig
@@ -232,12 +231,18 @@ index b4e538db4..1a2c9925c 100644
 +}
 \ No newline at end of file
 diff --git a/zig/kernels/cuda/common/mla.cuh b/zig/kernels/cuda/common/mla.cuh
-index 782884202..807df8635 100644
+index 782884202..4efe0e5ea 100644
 --- a/zig/kernels/cuda/common/mla.cuh
 +++ b/zig/kernels/cuda/common/mla.cuh
-@@ -44,7 +44,9 @@ constexpr int wide_smem() {
+@@ -43,8 +43,15 @@ constexpr int wide_smem() {
+   return (HB * (LW + RW) + 2 * KT * (LW + RW) + HB * KT) * 2 + (HB * 4 + 2 * HB) * 4;
  }
  
++// chunks_wide's block: its 8 warps' (key group, head block) split and the FP8 tiles' units a thread both assume it;
++// cuda_latent.chunk_threads launches it, and a launch of any other width traps instead of leaving keys unloaded.
++constexpr int CHUNK_THREADS = 256;
++static_assert(KT * (LW / 8) % CHUNK_THREADS == 0, "an FP8 tile's 8-code units split evenly over the block");
++
  // RW roped columns (Ling's 64) follow the latent in q and keys; SPLIT: block z is chunk z * sw + sr, keys page z.
 -template <int HB, bool FP8 = false, int RW = 0, bool SPLIT = false>
 +// PAGED8: an E4M3 cache on KV pages (pt, pstep bytes apart): a dense chunk is one page, a sparse key's logical token goes
@@ -246,7 +251,15 @@ index 782884202..807df8635 100644
  __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, const int* pos, const int* tok,
                              const int* cnt, float* po, float* pm, float* pl, int64_t rows, int64_t heads, int64_t w,
                              float scale, int sparse, const int* pt, int64_t pstep, const float* scales = nullptr,
-@@ -67,6 +69,17 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+@@ -58,6 +65,7 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+   __nv_bfloat16* ps = kvs + 2 * KT * KW;
+   float* red = reinterpret_cast<float*>(ps + HB * KT);
+   float* stat = red + HB * 4;
++  if (blockDim.x != CHUNK_THREADS) __trap();  // the launch contract above, not a tuning knob
+   const int t = threadIdx.x, lane = t & 31, warp = t >> 5, g = lane >> 2, q = lane & 3;
+   const int kg = warp & 3, hh = warp >> 2;
+   const int64_t r = blockIdx.x, h0 = (int64_t)blockIdx.y * HB, c = blockIdx.z;
+@@ -67,7 +75,59 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
    // a dense chunk's 512 keys are one page, its rows from that page's; a sparse key's row comes as the token list has it
    const __nv_bfloat16* paged = !FP8 && pt && !sparse && live ? lc + ((int64_t)pt[c] * (pstep / 2) - start * KW) : lc;
    const __nv_bfloat16* keys_at = SPLIT ? lc + (c * CH - start) * KW : paged;
@@ -261,29 +274,123 @@ index 782884202..807df8635 100644
 +      scales8 = reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(scales) + page) - start;
 +    }
 +  }
++  // E4M3 tiles: each thread's 8-code units in one 8-byte load apiece, all issued before any is converted (fetch8),
++  // then converted value for value as before (store8); the loop fetches tile + 2 before its math and stores it after.
++  constexpr int UPT = KT * (LW / 8) / CHUNK_THREADS;  // units a thread moves a tile
++  uint2 raw[FP8 ? UPT : 1];
++  float rsc[FP8 ? UPT : 1];
++  auto fetch8 = [&](int tile) {
++    const int64_t first = start + tile * KT;
++#pragma unroll
++    for (int i = 0; i < UPT; ++i) {
++      const int idx = t + i * CHUNK_THREADS, key = idx / (LW / 8), u = idx % (LW / 8);
++      const int64_t ki = first + key;
++      const bool ok = sparse ? ki < n : ki <= limit;
++      const int64_t src = ok ? (sparse ? (int64_t)tok[r * w + ki] : ki) : 0;
++      // dense on pages: the window's arithmetic on the bases moved once; a sparse key's logical
++      // token goes through the table to its page (CH = 512 rows a page)
++      const int64_t page = PAGED8 && sparse ? (ok ? (int64_t)pt[src / CH] * pstep : 0) : 0;
++      const int64_t row = PAGED8 && sparse ? src % CH : src;
++      raw[i] = ok ? __ldg(reinterpret_cast<const uint2*>(codes8 + page + row * LW + u * 8)) : make_uint2(0u, 0u);
++      rsc[i] = ok ? reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(scales8) + page)[row] : 1.0f;
++    }
++  };
++  auto store8 = [&](int tile) {
++    __nv_bfloat16* dst = kvs + (tile & 1) * KT * KW;
++#pragma unroll
++    for (int i = 0; i < UPT; ++i) {
++      const int idx = t + i * CHUNK_THREADS, key = idx / (LW / 8), u = idx % (LW / 8);
++      const uint32_t wv[2] = {raw[i].x, raw[i].y};
++#pragma unroll
++      for (int j = 0; j < 8; j += 2) {
++        const uint16_t bits = (uint16_t)((wv[j / 4] >> (8 * (j % 4))) & 0xffffu);  // codes j, j + 1 (little-endian)
++        const float2 v = __half22float2(__half2(__nv_cvt_fp8x2_to_halfraw2(bits, __NV_E4M3)));
++        dst[wide(key, u) + j] = __float2bfloat16_rn(__fmul_rn(v.x, rsc[i]));
++        dst[wide(key, u) + j + 1] = __float2bfloat16_rn(__fmul_rn(v.y, rsc[i]));
++      }
++    }
++  };
    auto load_kv = [&](int tile) {
++    if constexpr (FP8) {
++      fetch8(tile);
++      store8(tile);
++      return;
++    }
      __nv_bfloat16* dst = kvs + (tile & 1) * KT * KW;
      const int64_t first = start + tile * KT;
-@@ -76,12 +89,15 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+     for (int idx = t; idx < KT * (KW / 8); idx += blockDim.x) {
+@@ -75,20 +135,7 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+       const int64_t ki = first + key;
        const bool ok = sparse ? ki < n : ki <= limit;
        const int64_t src = ok ? (sparse ? (int64_t)tok[r * w + ki] : ki) : 0;
-       if constexpr (FP8) {
+-      if constexpr (FP8) {
 -        const unsigned char* codes = reinterpret_cast<const unsigned char*>(lc);
 -        const float row_scale = ok ? scales[src] : 1.0f;
-+        // dense on pages: the window's arithmetic on the bases moved once; a sparse key's logical
-+        // token goes through the table to its page (CH = 512 rows a page)
-+        const int64_t page = PAGED8 && sparse ? (ok ? (int64_t)pt[src / CH] * pstep : 0) : 0;
-+        const int64_t row = PAGED8 && sparse ? src % CH : src;
-+        const float row_scale = ok ? reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(scales8) + page)[row] : 1.0f;
- #pragma unroll
-         for (int j = 0; j < 8; j += 2) {
+-#pragma unroll
+-        for (int j = 0; j < 8; j += 2) {
 -          const uint16_t bits = ok ? (uint16_t)codes[src * LW + u * 8 + j] |
 -                                        ((uint16_t)codes[src * LW + u * 8 + j + 1] << 8) : 0;
-+          const uint16_t bits = ok ? (uint16_t)codes8[page + row * LW + u * 8 + j] |
-+                                        ((uint16_t)codes8[page + row * LW + u * 8 + j + 1] << 8) : 0;
-           const float2 v = __half22float2(__half2(__nv_cvt_fp8x2_to_halfraw2(bits, __NV_E4M3)));
-           dst[wide(key, u) + j] = __float2bfloat16_rn(__fmul_rn(v.x, row_scale));
-           dst[wide(key, u) + j + 1] = __float2bfloat16_rn(__fmul_rn(v.y, row_scale));
+-          const float2 v = __half22float2(__half2(__nv_cvt_fp8x2_to_halfraw2(bits, __NV_E4M3)));
+-          dst[wide(key, u) + j] = __float2bfloat16_rn(__fmul_rn(v.x, row_scale));
+-          dst[wide(key, u) + j + 1] = __float2bfloat16_rn(__fmul_rn(v.y, row_scale));
+-        }
+-      } else {
+-        cp16(dst + wide<KW>(key, u), keys_at + src * KW + u * 8, ok);
+-      }
++      cp16(dst + wide<KW>(key, u), keys_at + src * KW + u * 8, ok);
+     }
+   };
+   float m[MT][2], l[MT][2], o[MT][8][4];
+@@ -119,6 +166,9 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+         wait<0>();
+     }
+     __syncthreads();
++    if constexpr (FP8) {
++      if (tile + 2 < tiles) fetch8(tile + 2);  // in flight during this tile's math
++    }
+     const __nv_bfloat16* kv = kvs + (tile & 1) * KT * KW;
+     const int64_t first = start + tile * KT;
+     float sc[4];
+@@ -200,7 +250,11 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+     __syncthreads();
+     for (int i = 0; i < MT; ++i)
+       for (int hf = 0; hf < 2; ++hf) l[i][hf] = __fmaf_rn(l[i][hf], alpha[i][hf], stat[HB + i * 16 + hf * 8 + g]);
+-    if (tile + 2 < tiles) load_kv(tile + 2);
++    if constexpr (FP8) {
++      if (tile + 2 < tiles) store8(tile + 2);
++    } else if (tile + 2 < tiles) {
++      load_kv(tile + 2);
++    }
+     commit();
+   }
+   for (int i = 0; i < MT; ++i)
+diff --git a/zig/kernels/cuda/glm_glue_attn.cuh b/zig/kernels/cuda/glm_glue_attn.cuh
+index 6f5cf97db..d2314250c 100644
+--- a/zig/kernels/cuda/glm_glue_attn.cuh
++++ b/zig/kernels/cuda/glm_glue_attn.cuh
+@@ -37,6 +37,22 @@ extern "C" __global__ void __launch_bounds__(256)
+ }
+ 
+ // latent._merge, block (row, head), 128 threads: chunks merged in order, o / l by div.full; skips sparse count-0 rows.
++// The E4M3 variants on KV pages: the stream's table `pt`, its pages `pstep` bytes apart (codes and scales in each).
++extern "C" __global__ void __launch_bounds__(256)
++    tf_glm_chunks_16_fp8_paged(const __nv_bfloat16* qa, const unsigned char* lc, const float* scales, const int* pos,
++                               const int* tok, const int* cnt, float* po, float* pm, float* pl, int64_t rows,
++                               int64_t heads, int64_t w, float scale, int sparse, const int* pt, int64_t pstep) {
++  glm_attn::chunks_wide<16, true, true>(qa, reinterpret_cast<const __nv_bfloat16*>(lc), pos, tok, cnt,
++                                       po, pm, pl, rows, heads, w, scale, sparse, pt, pstep, scales);
++}
++extern "C" __global__ void __launch_bounds__(256)
++    tf_glm_chunks_32_fp8_paged(const __nv_bfloat16* qa, const unsigned char* lc, const float* scales, const int* pos,
++                               const int* tok, const int* cnt, float* po, float* pm, float* pl, int64_t rows,
++                               int64_t heads, int64_t w, float scale, int sparse, const int* pt, int64_t pstep) {
++  glm_attn::chunks_wide<32, true, true>(qa, reinterpret_cast<const __nv_bfloat16*>(lc), pos, tok, cnt,
++                                       po, pm, pl, rows, heads, w, scale, sparse, pt, pstep, scales);
++}
++
+ extern "C" __global__ void __launch_bounds__(128)
+     tf_glm_merge(const float* po, const float* pm, const float* pl, __nv_bfloat16* out, const int* cnt, int64_t rows,
+                  int64_t heads, int nch, int sparse) {
 diff --git a/zig/kernels/cuda/glm_glue_latent.cuh b/zig/kernels/cuda/glm_glue_latent.cuh
 index 2abdd9610..ba91db6f9 100644
 --- a/zig/kernels/cuda/glm_glue_latent.cuh
@@ -380,11 +487,11 @@ index c89f89827..24a525173 100644
      .{ .name = "norms tf_slerp_rows", .usage = .{ .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 } } },
      .{ .name = "qk_rows tf_qk_rows at dim 256", .usage = .{ .{ .regs = 30, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 } } },
 diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry.zig
-index 198350086..e77543345 100644
+index dd1d431b5..b43d38806 100644
 --- a/zig/src/core/contract/registry.zig
 +++ b/zig/src/core/contract/registry.zig
-@@ -590,6 +590,7 @@ test {
-     _ = @import("glm_l2pf_pending.zig");
+@@ -588,6 +588,7 @@ test {
+     _ = @import("exl3_prompt_pending.zig");
      _ = @import("registry_pending_test.zig");
      _ = @import("flashnext_pages_pending.zig");
 +    _ = @import("glm_kv_paged_records.zig");
@@ -392,10 +499,10 @@ index 198350086..e77543345 100644
  }
  test "unmeasured CUDA records cannot pass a compiled resource check" {
 diff --git a/zig/src/core/contract/registry_joins.zig b/zig/src/core/contract/registry_joins.zig
-index 7b19de3d6..ccb24cc45 100644
+index 4cdbc7a7b..20e56c982 100644
 --- a/zig/src/core/contract/registry_joins.zig
 +++ b/zig/src/core/contract/registry_joins.zig
-@@ -39,8 +39,9 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
+@@ -48,7 +48,8 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
      @import("cuda_lane_pending.zig").records ++
      @import("weight_only_records.zig").cuda ++
      @import("hc_activation_records.zig").cuda ++
@@ -405,9 +512,8 @@ index 7b19de3d6..ccb24cc45 100644
  pub const metal_before = @import("fsr_records.zig").metal ++
      @import("scale_index_records.zig").metal ++
      @import("lfm3_records.zig").metal;
- pub const all_metal = @import("lane_q8_records.zig").records ++
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
-index d40e88e6d..464bfc818 100644
+index d11094d05..0673584ac 100644
 --- a/zig/src/families/glm/cuda.zig
 +++ b/zig/src/families/glm/cuda.zig
 @@ -22,6 +22,7 @@ pub const shard = @import("cuda_shard.zig");
@@ -419,21 +525,23 @@ index d40e88e6d..464bfc818 100644
  pub const config = @import("config.zig");
  pub const quant = @import("cuda_quant.zig");
 diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
-index 57c8c5d20..2bbe864f0 100644
+index 57c8c5d20..ba0a6b247 100644
 --- a/zig/src/families/glm/cuda_dsa_block.zig
 +++ b/zig/src/families/glm/cuda_dsa_block.zig
-@@ -235,7 +235,8 @@ fn denseAttention(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scrat
+@@ -235,8 +235,9 @@ fn denseAttention(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scrat
  /// A cache's tables: latent rows `t`, and pooled keys `tk` (on their own device pages under TF_GLM_KV_HOST).
  fn tables(l: Layer, c: Caches) !struct { latent.Table, latent.Table } {
      if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
 -    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2) };
+-    return .{ t, .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows } };
 +    // an E4M3 cache's sparse lists stay positions (its chunks take each key through the table); BF16's are page rows
-+    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = c.ps / (l.lw * 2), .logical = c.ls != 0 };
-     return .{ t, .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows } };
++    const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = if (c.ls != 0) latent.chunk else c.ps / (l.lw * 2), .logical = c.ls != 0 };
++    return .{ t, .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows, .logical = c.ls != 0 } };
  }
  
+ fn writeKeys(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, rows: usize, pos: u64) !void {
 diff --git a/zig/src/families/glm/cuda_kv8_test.zig b/zig/src/families/glm/cuda_kv8_test.zig
-index 33b586407..ac942dbcb 100644
+index 143483948..629bc4251 100644
 --- a/zig/src/families/glm/cuda_kv8_test.zig
 +++ b/zig/src/families/glm/cuda_kv8_test.zig
 @@ -136,22 +136,222 @@ test "GLM FP8 KV: real launchers preserve BF16 ABI and pass FP8 scale pointers f
@@ -669,10 +777,10 @@ index 33b586407..ac942dbcb 100644
  
  const Ops = struct {
 diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
-index 93fbbed0a..c1e5d844a 100644
+index 08436c4d0..b4ad788e6 100644
 --- a/zig/src/families/glm/cuda_lanes.zig
 +++ b/zig/src/families/glm/cuda_lanes.zig
-@@ -351,7 +351,7 @@ pub const Lanes = struct {
+@@ -352,7 +352,7 @@ pub const Lanes = struct {
  
      /// The lane host's admission: with a pool, a paged sequence and the request's pages are free.
      pub fn fits(self: *const Lanes, prompt: usize, max_tokens: usize) bool {
@@ -681,73 +789,11 @@ index 93fbbed0a..c1e5d844a 100644
          return p.fits(prompt, max_tokens);
      }
  
-diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
-index d04bdaae5..7b6d7d59f 100644
---- a/zig/src/families/glm/cuda_latent.zig
-+++ b/zig/src/families/glm/cuda_latent.zig
-@@ -72,16 +72,23 @@ pub fn cacheBytes(capacity: usize, lw: usize, kv8: bool) !usize {
- }
- 
- /// On pages: the stream's table (i32 page ids) and the step from page to page in bytes and latent rows; 0: in order.
--pub const Table = struct { pt: u64 = 0, ps: u64 = 0, page_rows: u64 = 0 };
-+/// `logical`: the sparse token lists stay positions (an E4M3 cache, whose chunks take each key through `pt`, its codes
-+/// and scales being different units); otherwise tf_glm_dsa_tokens writes each token's BF16 row on the pages.
-+pub const Table = struct { pt: u64 = 0, ps: u64 = 0, page_rows: u64 = 0, logical: bool = false };
- 
--/// BF16 rows through `t`, or E4M3 rows and their scales (scales nonzero), which take no pages.
-+/// BF16 rows through `t`, or E4M3 rows and their scales (scales nonzero): in order, or on pages through `t`, where
-+/// `cache` and `scales` are this cache's codes and scales in page 0 and pages lie `t.ps` bytes apart.
- pub fn latentWriteFormat(set: glue.Set, stream: cuda.Stream, lat: u64, lat_stride: usize, cache: u64, scales: u64, t: Table, pos: u64, rows: usize, lw: usize) !void {
-     if (scales == 0) return latentWrite(set, stream, lat, lat_stride, cache, t, pos, rows, lw);
-     if (lw != 512) return error.LatentShape;
--    if (t.pt != 0) return error.Fp8OnPages;
-     var a: cuda.Args = .{};
-     inline for (.{ lat, @as(i64, @intCast(lat_stride)), cache, scales, pos }) |v| a.add(v);
--    try cuda.launch.launch(set.glue.lat_write_fp8, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 512 } }, stream, &a);
-+    if (t.pt != 0) {
-+        a.add(t.pt);
-+        a.add(@as(i64, @intCast(t.ps)));
-+    }
-+    const f = if (t.pt != 0) set.glue.lat_write_fp8_paged else set.glue.lat_write_fp8;
-+    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 512 } }, stream, &a);
- }
- 
- /// latent.latent_write: rows of `lat` (stride `lat_stride`) into slots pos .. pos + rows - 1 (pos an i32 on device).
-@@ -105,20 +112,24 @@ pub fn attentionFormat(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64,
- }
- 
- /// latent._dense_chunks (sparse false: keys through pos + r) and _sparse_chunks (row r's `counts` tokens of `tokens`).
-+/// BF16 takes the table always (pt 0: in order); E4M3 on pages its _paged kernels, the window's arguments then the table.
- fn chunks(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64, scales: u64, t: Table, pos: u64, tokens: u64, counts: u64, p: Partials, rows: usize, heads: usize, lw: usize, nch: usize, w: usize, scale: f32, hb: usize, sparse: bool) !void {
-     if (lw != 512) return error.LatentShape;
--    if (scales != 0 and t.pt != 0) return error.Fp8OnPages;
-+    const kv8 = scales != 0;
-+    const paged8 = kv8 and t.pt != 0;
-+    // a paged sparse list's units are the kernel's: positions for E4M3 (Table.logical), the BF16 rows otherwise
-+    if (sparse and t.pt != 0 and t.logical != paged8) return error.TokenUnits;
-     const f = switch (hb) {
--        heads_tile => if (scales == 0) set.glue.chunks_16 else set.glue.chunks_16_fp8,
--        heads_tile_wide => if (scales == 0) set.glue.chunks_32 else set.glue.chunks_32_fp8,
-+        heads_tile => if (!kv8) set.glue.chunks_16 else if (paged8) set.glue.chunks_16_fp8_paged else set.glue.chunks_16_fp8,
-+        heads_tile_wide => if (!kv8) set.glue.chunks_32 else if (paged8) set.glue.chunks_32_fp8_paged else set.glue.chunks_32_fp8,
-         else => return error.HeadBlock,
-     };
-     var a: cuda.Args = .{};
-     a.add(qa);
-     a.add(cache);
--    if (scales != 0) a.add(scales);
-+    if (kv8) a.add(scales);
-     inline for (.{ pos, tokens, counts, p.po, p.pm, p.pl, @as(i64, @intCast(rows)), @as(i64, @intCast(heads)), @as(i64, @intCast(w)), scale, @as(c_int, @intFromBool(sparse)) }) |v| a.add(v);
--    if (scales == 0) {
-+    if (!kv8 or paged8) {
-         a.add(t.pt);
-         a.add(@as(i64, @intCast(t.ps)));
-     }
 diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_native.zig
-index 61125fb72..98d40a299 100644
+index 97f13ae1d..a939fbcf2 100644
 --- a/zig/src/families/glm/cuda_native.zig
 +++ b/zig/src/families/glm/cuda_native.zig
-@@ -502,8 +502,10 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
+@@ -514,6 +514,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
          error.NoCommId => "GLM-5.3-Flash's ranks meet over NCCL: with TF_GLM_WORLD 2 or more, set NCCL_COMM_ID to rank 0's address:port on every host",
          error.RankMismatch => "the ranks' settings differ (each rank's log names the one): start them alike",
          error.Fp8OnPages => "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to auto or off",
@@ -756,9 +802,7 @@ index 61125fb72..98d40a299 100644
          error.BadKvShare => "TF_KV_SHARE: give how many states the prompt store over the KV pages keeps, or 0 or unset for off",
          error.GlmKvShareMoved => "TF_GLM_KV_SHARE is now TF_KV_SHARE, the prompt store every family on the KV pool shares: set that instead",
          error.GlmRequestStartsWithSharedKv => "TF_GLM_REQUEST_STARTS=1 cannot be used with TF_KV_SHARE above 0: unset request starts or disable shared KV",
-         error.GlmRequestStartsWithLearnConversations => "TF_GLM_REQUEST_STARTS=1 cannot be used with --learn-conversations: unset request starts or serve without it",
-         error.GlmShareNeedsPages => "TF_KV_SHARE keeps prompts as KV pool pages: set TF_KV_PAGES=on as well",
-@@ -547,18 +549,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
+@@ -561,18 +563,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
          try std.testing.expect(!try paging("off", w, false));
          try std.testing.expect(!try paging("0", w, false));
          try std.testing.expect(try paging("all", w, false));
@@ -897,7 +941,7 @@ index ee798111c..4e2156c07 100644
          const page = p.page;
          if (p.poison) for (ids[kept..]) |id| try p.e.d.check(p.e.d.api.cuMemsetD32Async(p.base() + id * page, 0xFFFF_FFFF, page / 4, p.e.stream.handle), "cuMemsetD32Async");
 diff --git a/zig/src/families/glm/cuda_pages_test.zig b/zig/src/families/glm/cuda_pages_test.zig
-index 7fdfc60b6..cebe1d27e 100644
+index a84a95863..b07885098 100644
 --- a/zig/src/families/glm/cuda_pages_test.zig
 +++ b/zig/src/families/glm/cuda_pages_test.zig
 @@ -90,6 +90,7 @@ const Fake = struct {
@@ -908,9 +952,9 @@ index 7fdfc60b6..cebe1d27e 100644
          f.e.w = undefined;
          f.e.w.config = .{};
          f.e.w.share = try shard.Share.of(&f.e.w.config, 0, 2);
-@@ -530,3 +531,40 @@ test "every host allocation failure while making the pages leaves no device buff
-         }
-     }.run, .{});
+@@ -536,3 +537,40 @@ test "capacity keeps a verify window past the context and a multiple of 64" {
+     try expectEqual(@as(usize, 330624), native.capacity(330529));
+     try expect(native.capacity(330529) % 64 == 0);
  }
 +
 +test "E4M3 pages beside DFlash2: a page holds each DSA layer's codes, scales and pooled keys, no MTP part" {
@@ -950,10 +994,10 @@ index 7fdfc60b6..cebe1d27e 100644
 +    try expect(p.fits(600, 100));
 +}
 diff --git a/zig/src/families/glm/cuda_snapshot_layout.zig b/zig/src/families/glm/cuda_snapshot_layout.zig
-index e3561520c..3fd6d77d8 100644
+index c7f08765e..2183246fe 100644
 --- a/zig/src/families/glm/cuda_snapshot_layout.zig
 +++ b/zig/src/families/glm/cuda_snapshot_layout.zig
-@@ -82,11 +82,13 @@ pub const Plan = struct {
+@@ -84,11 +84,13 @@ pub const Plan = struct {
      }
  
      fn rows(p: *Plan, st: *const State, c: *const Config, x: cache.Caches, j: usize, at: usize) !void {
@@ -971,10 +1015,10 @@ index e3561520c..3fd6d77d8 100644
          try p.add(st, st.rings[2 * j + 1], ring);
          try p.addCache(st, x, x.pk, pooled, page_rows / sparse.pool * @as(usize, c.i_dim) * 2, if (x.pks != 0) x.pks else x.ps);
 diff --git a/zig/src/families/glm/cuda_sparse.zig b/zig/src/families/glm/cuda_sparse.zig
-index 29521924a..e35d8aa61 100644
+index 218f53670..db83f0d54 100644
 --- a/zig/src/families/glm/cuda_sparse.zig
 +++ b/zig/src/families/glm/cuda_sparse.zig
-@@ -65,7 +65,8 @@ pub fn splitAt(start: usize, from: usize, world: usize) bool {
+@@ -119,7 +119,8 @@ pub fn splitAt(start: usize, from: usize, world: usize) bool {
      return from > 0 and world > 1 and start >= from;
  }
  
@@ -984,7 +1028,7 @@ index 29521924a..e35d8aa61 100644
  pub fn selectTokens(set: glue.Set, ops: cuda.Module, stream: cuda.Stream, qi: u64, wts: u64, w_stride: usize, pk: u64, t: latent.Table, pos: u64, host_pos: usize, rows: usize, heads: usize, d: usize, np_max_cap: usize, s: Scratch, tokens: u64, counts: u64) !void {
      return selectTokensProfile(set, ops, stream, qi, wts, w_stride, pk, t, pos, host_pos, rows, heads, d, np_max_cap, s, tokens, counts, null, null);
  }
-@@ -126,7 +127,7 @@ pub fn selectTokensProfile(set: glue.Set, ops: cuda.Module, stream: cuda.Stream,
+@@ -185,7 +186,7 @@ pub fn selectTokensProfile(set: glue.Set, ops: cuda.Module, stream: cuda.Stream,
      args.add(@as(c_int, topk_pools));
      args.add(tokens);
      args.add(counts);
@@ -1056,7 +1100,7 @@ index 3b7fff9f2..54341b9f0 100644
          try std.testing.expect(w.connected[0]);
          try std.testing.expect(w.constructed[0]);
 diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_state.zig
-index 11bf6d59c..10552a4d8 100644
+index 5a5c8919a..5b5021480 100644
 --- a/zig/src/families/glm/cuda_state.zig
 +++ b/zig/src/families/glm/cuda_state.zig
 @@ -65,9 +65,10 @@ pub fn mlaLayers(w: *const weights.Weights) usize {
@@ -1098,7 +1142,7 @@ index 11bf6d59c..10552a4d8 100644
      x.pks = p.pk_page;
      x.pt = table;
      x.ps = p.page_bytes;
-@@ -375,6 +383,8 @@ pub const State = struct {
+@@ -397,6 +405,8 @@ pub const State = struct {
      mtp_base: usize = 0,
      prompt_hidden: u64, // first-draft row owned and charged by this sequence arena
      table: u64 = 0, // on pages: its page table (i32, `pages` entries), else 0
@@ -1107,7 +1151,7 @@ index 11bf6d59c..10552a4d8 100644
      pages: []const u32 = &.{}, // on pages: the page ids its table holds, in row order (none while no stream holds it)
  
      pub fn init(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize) !State {
-@@ -382,16 +392,29 @@ pub const State = struct {
+@@ -404,16 +414,29 @@ pub const State = struct {
      }
  
      pub fn initFormat(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize, kv8: bool) !State {
@@ -1139,7 +1183,7 @@ index 11bf6d59c..10552a4d8 100644
          const sizes = try stateSizes(gpa, w, capacity, false, pages);
          defer gpa.free(sizes);
          var total: usize = 0;
-@@ -399,7 +422,7 @@ pub const State = struct {
+@@ -421,7 +444,7 @@ pub const State = struct {
          return total;
      }
  
@@ -1148,7 +1192,7 @@ index 11bf6d59c..10552a4d8 100644
          const c = &w.config;
          const s = &w.share;
          const nk = w.layers.len - mlaLayers(w);
-@@ -422,7 +445,7 @@ pub const State = struct {
+@@ -444,7 +467,7 @@ pub const State = struct {
          const rings = try gpa.alloc(u64, 2 * (nd + 1));
          for (0..nd + 1) |j| rings[2 * j ..][0..2].* = .{ p[9 + 4 * j], p[10 + 4 * j] };
          const ring_rows = @min(capacity, index_ring);
@@ -1157,7 +1201,7 @@ index 11bf6d59c..10552a4d8 100644
          if (paged) |q| {
              st.table = p[14 + 4 * nd];
              st.capacity = 0; // no rows until a stream's pages are mapped
-@@ -433,8 +456,8 @@ pub const State = struct {
+@@ -455,8 +478,8 @@ pub const State = struct {
  
      /// A paged sequence's caches on the pages of `p` (the engine's own, made before its pool, placed when it is made).
      pub fn place(st: *State, w: *const weights.Weights, p: Paged) void {
@@ -1168,67 +1212,3 @@ index 11bf6d59c..10552a4d8 100644
      }
  
      pub fn deinit(st: *State) void {
-diff --git a/zig/kernels/cuda/glm_glue_attn.cuh b/zig/kernels/cuda/glm_glue_attn.cuh
-index 6f5cf97db..d2314250c 100644
---- a/zig/kernels/cuda/glm_glue_attn.cuh
-+++ b/zig/kernels/cuda/glm_glue_attn.cuh
-@@ -37,6 +37,22 @@ extern "C" __global__ void __launch_bounds__(256)
- }
- 
- // latent._merge, block (row, head), 128 threads: chunks merged in order, o / l by div.full; skips sparse count-0 rows.
-+// The E4M3 variants on KV pages: the stream's table `pt`, its pages `pstep` bytes apart (codes and scales in each).
-+extern "C" __global__ void __launch_bounds__(256)
-+    tf_glm_chunks_16_fp8_paged(const __nv_bfloat16* qa, const unsigned char* lc, const float* scales, const int* pos,
-+                               const int* tok, const int* cnt, float* po, float* pm, float* pl, int64_t rows,
-+                               int64_t heads, int64_t w, float scale, int sparse, const int* pt, int64_t pstep) {
-+  glm_attn::chunks_wide<16, true, true>(qa, reinterpret_cast<const __nv_bfloat16*>(lc), pos, tok, cnt,
-+                                       po, pm, pl, rows, heads, w, scale, sparse, pt, pstep, scales);
-+}
-+extern "C" __global__ void __launch_bounds__(256)
-+    tf_glm_chunks_32_fp8_paged(const __nv_bfloat16* qa, const unsigned char* lc, const float* scales, const int* pos,
-+                               const int* tok, const int* cnt, float* po, float* pm, float* pl, int64_t rows,
-+                               int64_t heads, int64_t w, float scale, int sparse, const int* pt, int64_t pstep) {
-+  glm_attn::chunks_wide<32, true, true>(qa, reinterpret_cast<const __nv_bfloat16*>(lc), pos, tok, cnt,
-+                                       po, pm, pl, rows, heads, w, scale, sparse, pt, pstep, scales);
-+}
-+
- extern "C" __global__ void __launch_bounds__(128)
-     tf_glm_merge(const float* po, const float* pm, const float* pl, __nv_bfloat16* out, const int* cnt, int64_t rows,
-                  int64_t heads, int nch, int sparse) {
-diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 4babd26ac..0ef3873fc 100644
---- a/zig/src/families/glm/cuda_glue.zig
-+++ b/zig/src/families/glm/cuda_glue.zig
-@@ -43,6 +43,7 @@ pub const Kernels = struct {
-     expand_v: cuda.Function,
-     lat_write: cuda.Function,
-     lat_write_fp8: cuda.Function,
-+    lat_write_fp8_paged: cuda.Function,
-     index_write: cuda.Function,
-     pool_keys: cuda.Function,
-     select_rows: cuda.Function,
-@@ -59,6 +60,8 @@ pub const Kernels = struct {
-     chunks_32: cuda.Function,
-     chunks_16_fp8: cuda.Function,
-     chunks_32_fp8: cuda.Function,
-+    chunks_16_fp8_paged: cuda.Function,
-+    chunks_32_fp8_paged: cuda.Function,
-     merge: cuda.Function,
-     scores: cuda.Function,
-     latent_mma_kn: cuda.Function, // TF_GLM_ABSORB_MMA (glm_glue_num.cuh): absorb_q's head-batched GEMM, B as [K][N]
-@@ -71,6 +74,8 @@ pub const Kernels = struct {
-         try k.chunks_32.allowDynamicShared(chunksSmem(32));
-         try k.chunks_16_fp8.allowDynamicShared(chunksSmem(16));
-         try k.chunks_32_fp8.allowDynamicShared(chunksSmem(32));
-+        try k.chunks_16_fp8_paged.allowDynamicShared(chunksSmem(16));
-+        try k.chunks_32_fp8_paged.allowDynamicShared(chunksSmem(32));
-         try k.latent_mma_kn.allowDynamicShared(latent_mma_smem[0]);
-         try k.latent_mma_nk.allowDynamicShared(latent_mma_smem[1]);
-         return k;
-
-REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
-release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
-took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
-windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
-into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
-were re-cut onto the new anchors; the content is unchanged.
