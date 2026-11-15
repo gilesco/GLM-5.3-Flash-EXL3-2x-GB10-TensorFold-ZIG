@@ -37,9 +37,120 @@ Content-Transfer-Encoding: 8bit
  zig/src/cuda/exl3_prompt.zig               |  12 +-
  4 files changed, 419 insertions(+), 12 deletions(-)
 
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
-
+diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
+index df39420a0..5f39208db 100644
+--- a/zig/kernels/cuda/exl3_experts.cu
++++ b/zig/kernels/cuda/exl3_experts.cu
+@@ -260,6 +260,7 @@ extern "C" __global__ void tf_exl3_prompt_rotate(const __nv_bfloat16* __restrict
+     for (int j = 0; j < 4; ++j) o[j] = __float2half_rn(v[j] * HAD_SCALE);
+ }
+ 
++// The exl3p prompt kernels (the fork 0078): TF_GLM_EXL3P=0 resolves the _cl twins below (the classic loop).
+ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const half* __restrict__ Xg, const half* __restrict__ Xu,
+         const uint64_t* __restrict__ Tg, const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts,
+         const int* __restrict__ members, const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d,
+@@ -267,8 +268,50 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const hal
+ 
+     __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];   // one buffer for either instantiation
+     __shared__ int rows_sh[TPM];
+-    if (xdiv > 1) tgateup<TPM>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
+-    else tgateup<2 * TPM>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
++    if (xdiv > 1) tgateup<TPM, 8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
++    else tgateup<2 * TPM, 8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
++}
++
++// Block (256 model-width columns, item): y[row][slot][:] = the down epilogue of the item's pairs (this rank's share).
++// The item's main loop and epilogue compiled for its 8-member column blocks (exl3_prompt.cuh TF_EXL3_PROMPT_NBA).
++template <int K2, int NBA>
++__device__ __forceinline__ void prompt_down_n(const half* __restrict__ Xd, const uint64_t* __restrict__ Td, const half* __restrict__ svh_d,
++        float* __restrict__ y, int K, int D, int ys, int yrow, unsigned char* smem_raw, const int* rows_sh, int cb, int e, int cnt, int warp,
++        int lane) {
++    float acc[TMT][NBA][4];
++    tmain<1, TPM, K2, NBA, 4>(Xd, Xd, Td, Td, rows_sh, e, K, D >> 4, cb, 1, smem_raw, acc);
++    float* Ed = reinterpret_cast<float*>(smem_raw);
++    for (int hf = 0; hf < 2 && hf * TPH < cnt; ++hf) {
++        if (hf) __syncthreads();
++        tspill<NBA>(Ed, DN_ES, warp * TMT * 16, acc, hf);
++        __syncthreads();
++        for (int i = warp; i < TPH && hf * TPH + i < cnt; i += TNW) {
++            const int p = rows_sh[hf * TPH + i];
++#pragma unroll
++            for (int blk = 0; blk < 2; ++blk) {
++                const int n = cb * 256 + blk * 128 + 4 * lane;
++                float v[4];
++#pragma unroll
++                for (int j = 0; j < 4; ++j) v[j] = Ed[(size_t)i * DN_ES + blk * 128 + 4 * lane + j];
++                fwht128f(v, lane);
++                // yrow 0: y [pairs][D]; else pair p = row * ys + slot lands in y [rows][yrow][D] (the MoE slot rows, no copy)
++                const size_t at = yrow ? (size_t)(p / ys) * yrow + p % ys : (size_t)p;
++                float o[4];
++#pragma unroll
++                for (int j = 0; j < 4; ++j) o[j] = v[j] * HAD_SCALE * __half2float(svh_d[(size_t)e * D + n + j]);
++                // one 16-byte store (y rows and n are 16-byte aligned: Kernels.run checks y)
++                *reinterpret_cast<float4*>(y + at * D + n) = make_float4(o[0], o[1], o[2], o[3]);
++            }
++        }
++    }
++}
++template <int K2>
++__device__ __forceinline__ void prompt_down(const half* __restrict__ Xd, const uint64_t* __restrict__ Td, const half* __restrict__ svh_d,
++        float* __restrict__ y, int K, int D, int ys, int yrow, unsigned char* smem_raw, const int* rows_sh, int cb, int e, int cnt, int warp,
++        int lane) {
++#define TF_EXL3_PROMPT_DN(NBA) prompt_down_n<K2, NBA>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane)
++    TF_EXL3_PROMPT_NBA(cnt, TF_EXL3_PROMPT_DN)
++#undef TF_EXL3_PROMPT_DN
+ }
+ 
+ // Block (256 model-width columns, item): y[row][slot][:] = the down epilogue of the item's pairs (this rank's share).
+@@ -276,6 +319,34 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
+         const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
+         float* __restrict__ y, int K, int D, int ys, int yrow) {
+ 
++    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];
++    __shared__ int rows_sh[TPM];
++    const int cb = blockIdx.x, item = blockIdx.y;
++    if (item >= counts[0]) return;
++    const int e = items[3 * item], first = items[3 * item + 1], cnt = items[3 * item + 2];
++    if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
++    __syncthreads();
++    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
++    prompt_down<8>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
++}
++
++// The classic twins (pre-exl3p): TF_GLM_EXL3P=0 runs these, the same bits as before the port.
++extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu_cl(const half* __restrict__ Xg, const half* __restrict__ Xu,
++        const uint64_t* __restrict__ Tg, const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts,
++        const int* __restrict__ members, const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d,
++        half* __restrict__ xd, int K, int N, int xdiv, float limit, int act_mode) {
++
++    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];   // one buffer for either instantiation
++    __shared__ int rows_sh[TPM];
++    if (xdiv > 1) tgateup_cl<TPM>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
++    else tgateup_cl<2 * TPM>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
++}
++
++// Block (256 model-width columns, item): y[row][slot][:] = the down epilogue of the item's pairs (this rank's share).
++extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_cl(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
++        const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
++        float* __restrict__ y, int K, int D, int ys, int yrow) {
++
+     __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes()];
+     __shared__ int rows_sh[TPM];
+     const int cb = blockIdx.x, item = blockIdx.y;
+@@ -285,11 +356,11 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const h
+     __syncthreads();
+     const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
+     float acc[TMT][TNB][4];
+-    tmain<1, TPM>(Xd, Xd, Td, Td, rows_sh, cnt, e, K, D >> 4, cb, 1, reinterpret_cast<half*>(smem_raw), acc);
++    tmain_cl<1, TPM>(Xd, Xd, Td, Td, rows_sh, cnt, e, K, D >> 4, cb, 1, reinterpret_cast<half*>(smem_raw), acc);
+     float* Ed = reinterpret_cast<float*>(smem_raw);
+     for (int hf = 0; hf < 2 && hf * TPH < cnt; ++hf) {
+         if (hf) __syncthreads();
+-        tspill(Ed, DN_ES, warp * TMT * 16, acc, hf);
++        tspill_cl(Ed, DN_ES, warp * TMT * 16, acc, hf);
+         __syncthreads();
+         for (int i = warp; i < TPH && hf * TPH + i < cnt; i += TNW) {
+             const int p = rows_sh[hf * TPH + i];
 diff --git a/zig/kernels/cuda/exl3_prompt.cuh b/zig/kernels/cuda/exl3_prompt.cuh
 index 9f93e2766..273c656f8 100644
 --- a/zig/kernels/cuda/exl3_prompt.cuh
@@ -417,3 +528,49 @@ index 9f93e2766..273c656f8 100644
          __syncthreads();
          for (int i = warp; i < TPH && hf * TPH + i < cnt; i += TNW) {
              const int p = rows_sh[hf * TPH + i];
+diff --git a/zig/src/core/contract/nvcc_133_records.zig b/zig/src/core/contract/nvcc_133_records.zig
+index bd166c1ec..38a756172 100644
+--- a/zig/src/core/contract/nvcc_133_records.zig
++++ b/zig/src/core/contract/nvcc_133_records.zig
+@@ -87,7 +87,8 @@ pub const cuda_133 = [_]registry.Override{
+     .{ .name = "dsv41_x3ld_epi dsv41_x3ld_epi_gu_2_2_12", .usage = .{ .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 168, .static = 32848, .bound = 128 } } },
+     .{ .name = "dsv41_x3pf _ZN10dsv41_x3pf9pf_kernelILi2ELi4ELi4ELi2ELi12EEEvPK6__halfS3_PKlS5_PKiS7_S7_S7_S7_Pfiiiiii", .usage = .{ .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 0, .static = 0, .bound = 0 }, .{ .regs = 240, .static = 16640, .bound = 128 } } },
+     .{ .name = "exl3_candidate tf_exl3_prompt_2", .usage = .{ .{ .regs = 80, .static = 32768, .bound = 256 }, .{ .regs = 80, .static = 32768, .bound = 256 }, .{ .regs = 80, .static = 32768, .bound = 256 }, .{ .regs = 79, .static = 32768, .bound = 256 }, .{ .regs = 79, .static = 32768, .bound = 256 } } },
+-    .{ .name = "exl3_experts tf_exl3_prompt_gu", .usage = .{ .{ .regs = 128, .static = 43264, .bound = 256 }, .{ .regs = 126, .static = 43264, .bound = 256 }, .{ .regs = 126, .static = 43264, .bound = 256 }, .{ .regs = 128, .static = 43264, .bound = 256 }, .{ .regs = 128, .static = 43264, .bound = 256 } } },
++    .{ .name = "exl3_experts tf_exl3_prompt_gu", .usage = .{ .{ .regs = 122, .static = 43264, .bound = 256 }, .{ .regs = 125, .static = 43264, .bound = 256 }, .{ .regs = 125, .static = 43264, .bound = 256 }, .{ .regs = 122, .static = 43264, .bound = 256 }, .{ .regs = 122, .static = 43264, .bound = 256 } } },
++    .{ .name = "exl3_experts tf_exl3_prompt_down", .usage = .{ .{ .regs = 123, .static = 43264, .bound = 256 }, .{ .regs = 125, .static = 43264, .bound = 256 }, .{ .regs = 125, .static = 43264, .bound = 256 }, .{ .regs = 122, .static = 43264, .bound = 256 }, .{ .regs = 122, .static = 43264, .bound = 256 } } }, // the exl3p port (the fork 0079): re-measured nvcc 13.3 after 0078; sm_121 verified 122/122 on this tree's own cuobjdump; the _cl twins stay unlisted (unchecked)
+     .{ .name = "experts plan_rows", .usage = .{ .{ .regs = 32, .static = 12672, .bound = 1024 }, .{ .regs = 38, .static = 12672, .bound = 1024 }, .{ .regs = 38, .static = 12672, .bound = 1024 }, .{ .regs = 34, .static = 12672, .bound = 1024 }, .{ .regs = 34, .static = 12672, .bound = 1024 } } },
+     .{ .name = "experts3 decode split", .usage = .{ .{ .regs = 255, .static = 25600, .bound = 128 }, .{ .regs = 255, .static = 25600, .bound = 128 }, .{ .regs = 255, .static = 25600, .bound = 128 }, .{ .regs = 253, .static = 25600, .bound = 128 }, .{ .regs = 253, .static = 25600, .bound = 128 } } },
+     .{ .name = "flashnext_attn fn_attn_chunks_ahead_paged", .usage = .{ .{ .regs = 76, .static = 1280, .bound = 128 }, .{ .regs = 76, .static = 1280, .bound = 128 }, .{ .regs = 76, .static = 1280, .bound = 128 }, .{ .regs = 72, .static = 1280, .bound = 128 }, .{ .regs = 72, .static = 1280, .bound = 128 } } },
+diff --git a/zig/src/cuda/exl3_prompt.zig b/zig/src/cuda/exl3_prompt.zig
+index e4dab7bb9..aa81bf33b 100644
+--- a/zig/src/cuda/exl3_prompt.zig
++++ b/zig/src/cuda/exl3_prompt.zig
+@@ -61,16 +61,26 @@ fn go(f: Function, s: Stream, grid: [3]usize, threads: u32, values: anytype) !vo
+ fn i(n: usize) i32 {
+     return @intCast(n);
+ }
++/// An on-by-default switch: off only when `name` is "0".
++fn envOn(name: [*:0]const u8) bool {
++    const v = std.c.getenv(name) orelse return true;
++    return !std.mem.eql(u8, std.mem.span(v), "0");
++}
+ pub const Kernels = struct {
+     rotate: Function,
+     gateup: Function,
+     down: Function,
+     pub fn resolve(mod: Module) !Kernels {
+-        return .{ .rotate = try mod.function("tf_exl3_prompt_rotate"), .gateup = try mod.function("tf_exl3_prompt_gu"), .down = try mod.function("tf_exl3_prompt_down") };
++        // TF_GLM_EXL3P=0: the prompt experts' pre-exl3p main loop (the _cl kernels, the same bits either way).
++        if (envOn("TF_GLM_EXL3P")) {
++            return .{ .rotate = try mod.function("tf_exl3_prompt_rotate"), .gateup = try mod.function("tf_exl3_prompt_gu"), .down = try mod.function("tf_exl3_prompt_down") };
++        }
++        return .{ .rotate = try mod.function("tf_exl3_prompt_rotate"), .gateup = try mod.function("tf_exl3_prompt_gu_cl"), .down = try mod.function("tf_exl3_prompt_down_cl") };
+     }
+     pub fn run(k: Kernels, e: *const ex.Experts, router: grouped.Router, s: Stream, l: ex.Layer, x: u64, stride: usize, picks: u64, rows: usize, sc: Scratch, p: grouped.Plan) !void {
+         if (!eligible(l) or rows == 0 or rows > sc.rows or stride < l.dims or stride > std.math.maxInt(i32)) return error.Exl3Shape;
+         if (sc.y == 0 or (sc.yrow != 0 and sc.yrow < sc.slots)) return error.Exl3Shape;
++        if (sc.y % 16 != 0 or sc.xd % 8 != 0) return error.Exl3Shape; // the kernels' vector stores: 16-byte y, 8-byte xd rows
+         _ = try bytes(l, rows, sc.slots);
+         const pairs = rows * sc.slots;
+         try router.route(s, picks, pairs, l.experts, tile, p);

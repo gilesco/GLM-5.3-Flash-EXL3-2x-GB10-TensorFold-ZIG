@@ -48,6 +48,155 @@ decode rows, the definitive protocol).
 REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
 were re-cut by the rebase; the content is unchanged.
 
+diff --git a/zig/kernels/cuda/common/mla.cuh b/zig/kernels/cuda/common/mla.cuh
+index 807df8635..4efe0e5ea 100644
+--- a/zig/kernels/cuda/common/mla.cuh
++++ b/zig/kernels/cuda/common/mla.cuh
+@@ -43,6 +43,11 @@ constexpr int wide_smem() {
+   return (HB * (LW + RW) + 2 * KT * (LW + RW) + HB * KT) * 2 + (HB * 4 + 2 * HB) * 4;
+ }
+ 
++// chunks_wide's block: its 8 warps' (key group, head block) split and the FP8 tiles' units a thread both assume it;
++// cuda_latent.chunk_threads launches it, and a launch of any other width traps instead of leaving keys unloaded.
++constexpr int CHUNK_THREADS = 256;
++static_assert(KT * (LW / 8) % CHUNK_THREADS == 0, "an FP8 tile's 8-code units split evenly over the block");
++
+ // RW roped columns (Ling's 64) follow the latent in q and keys; SPLIT: block z is chunk z * sw + sr, keys page z.
+ // PAGED8: an E4M3 cache on KV pages (pt, pstep bytes apart): a dense chunk is one page, a sparse key's logical token goes
+ // through the table to its page; codes and scales then load as on a window, so the arithmetic is the window's.
+@@ -60,6 +65,7 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+   __nv_bfloat16* ps = kvs + 2 * KT * KW;
+   float* red = reinterpret_cast<float*>(ps + HB * KT);
+   float* stat = red + HB * 4;
++  if (blockDim.x != CHUNK_THREADS) __trap();  // the launch contract above, not a tuning knob
+   const int t = threadIdx.x, lane = t & 31, warp = t >> 5, g = lane >> 2, q = lane & 3;
+   const int kg = warp & 3, hh = warp >> 2;
+   const int64_t r = blockIdx.x, h0 = (int64_t)blockIdx.y * HB, c = blockIdx.z;
+@@ -80,7 +86,48 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+       scales8 = reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(scales) + page) - start;
+     }
+   }
++  // E4M3 tiles: each thread's 8-code units in one 8-byte load apiece, all issued before any is converted (fetch8),
++  // then converted value for value as before (store8); the loop fetches tile + 2 before its math and stores it after.
++  constexpr int UPT = KT * (LW / 8) / CHUNK_THREADS;  // units a thread moves a tile
++  uint2 raw[FP8 ? UPT : 1];
++  float rsc[FP8 ? UPT : 1];
++  auto fetch8 = [&](int tile) {
++    const int64_t first = start + tile * KT;
++#pragma unroll
++    for (int i = 0; i < UPT; ++i) {
++      const int idx = t + i * CHUNK_THREADS, key = idx / (LW / 8), u = idx % (LW / 8);
++      const int64_t ki = first + key;
++      const bool ok = sparse ? ki < n : ki <= limit;
++      const int64_t src = ok ? (sparse ? (int64_t)tok[r * w + ki] : ki) : 0;
++      // dense on pages: the window's arithmetic on the bases moved once; a sparse key's logical
++      // token goes through the table to its page (CH = 512 rows a page)
++      const int64_t page = PAGED8 && sparse ? (ok ? (int64_t)pt[src / CH] * pstep : 0) : 0;
++      const int64_t row = PAGED8 && sparse ? src % CH : src;
++      raw[i] = ok ? __ldg(reinterpret_cast<const uint2*>(codes8 + page + row * LW + u * 8)) : make_uint2(0u, 0u);
++      rsc[i] = ok ? reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(scales8) + page)[row] : 1.0f;
++    }
++  };
++  auto store8 = [&](int tile) {
++    __nv_bfloat16* dst = kvs + (tile & 1) * KT * KW;
++#pragma unroll
++    for (int i = 0; i < UPT; ++i) {
++      const int idx = t + i * CHUNK_THREADS, key = idx / (LW / 8), u = idx % (LW / 8);
++      const uint32_t wv[2] = {raw[i].x, raw[i].y};
++#pragma unroll
++      for (int j = 0; j < 8; j += 2) {
++        const uint16_t bits = (uint16_t)((wv[j / 4] >> (8 * (j % 4))) & 0xffffu);  // codes j, j + 1 (little-endian)
++        const float2 v = __half22float2(__half2(__nv_cvt_fp8x2_to_halfraw2(bits, __NV_E4M3)));
++        dst[wide(key, u) + j] = __float2bfloat16_rn(__fmul_rn(v.x, rsc[i]));
++        dst[wide(key, u) + j + 1] = __float2bfloat16_rn(__fmul_rn(v.y, rsc[i]));
++      }
++    }
++  };
+   auto load_kv = [&](int tile) {
++    if constexpr (FP8) {
++      fetch8(tile);
++      store8(tile);
++      return;
++    }
+     __nv_bfloat16* dst = kvs + (tile & 1) * KT * KW;
+     const int64_t first = start + tile * KT;
+     for (int idx = t; idx < KT * (KW / 8); idx += blockDim.x) {
+@@ -88,23 +135,7 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+       const int64_t ki = first + key;
+       const bool ok = sparse ? ki < n : ki <= limit;
+       const int64_t src = ok ? (sparse ? (int64_t)tok[r * w + ki] : ki) : 0;
+-      if constexpr (FP8) {
+-        // dense on pages: the window's arithmetic on the bases moved once; a sparse key's logical
+-        // token goes through the table to its page (CH = 512 rows a page)
+-        const int64_t page = PAGED8 && sparse ? (ok ? (int64_t)pt[src / CH] * pstep : 0) : 0;
+-        const int64_t row = PAGED8 && sparse ? src % CH : src;
+-        const float row_scale = ok ? reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(scales8) + page)[row] : 1.0f;
+-#pragma unroll
+-        for (int j = 0; j < 8; j += 2) {
+-          const uint16_t bits = ok ? (uint16_t)codes8[page + row * LW + u * 8 + j] |
+-                                        ((uint16_t)codes8[page + row * LW + u * 8 + j + 1] << 8) : 0;
+-          const float2 v = __half22float2(__half2(__nv_cvt_fp8x2_to_halfraw2(bits, __NV_E4M3)));
+-          dst[wide(key, u) + j] = __float2bfloat16_rn(__fmul_rn(v.x, row_scale));
+-          dst[wide(key, u) + j + 1] = __float2bfloat16_rn(__fmul_rn(v.y, row_scale));
+-        }
+-      } else {
+-        cp16(dst + wide<KW>(key, u), keys_at + src * KW + u * 8, ok);
+-      }
++      cp16(dst + wide<KW>(key, u), keys_at + src * KW + u * 8, ok);
+     }
+   };
+   float m[MT][2], l[MT][2], o[MT][8][4];
+@@ -135,6 +166,9 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+         wait<0>();
+     }
+     __syncthreads();
++    if constexpr (FP8) {
++      if (tile + 2 < tiles) fetch8(tile + 2);  // in flight during this tile's math
++    }
+     const __nv_bfloat16* kv = kvs + (tile & 1) * KT * KW;
+     const int64_t first = start + tile * KT;
+     float sc[4];
+@@ -216,7 +250,11 @@ __device__ void chunks_wide(const __nv_bfloat16* qa, const __nv_bfloat16* lc, co
+     __syncthreads();
+     for (int i = 0; i < MT; ++i)
+       for (int hf = 0; hf < 2; ++hf) l[i][hf] = __fmaf_rn(l[i][hf], alpha[i][hf], stat[HB + i * 16 + hf * 8 + g]);
+-    if (tile + 2 < tiles) load_kv(tile + 2);
++    if constexpr (FP8) {
++      if (tile + 2 < tiles) store8(tile + 2);
++    } else if (tile + 2 < tiles) {
++      load_kv(tile + 2);
++    }
+     commit();
+   }
+   for (int i = 0; i < MT; ++i)
+diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
+index 7b6d7d59f..b193fab3e 100644
+--- a/zig/src/families/glm/cuda_latent.zig
++++ b/zig/src/families/glm/cuda_latent.zig
+@@ -12,6 +12,10 @@ pub const heads_tile_wide = 32;
+ pub const prompt_rows = 64;
+ pub const prompt_rb = 64;
+ 
++/// The chunk kernels' block (glm_glue_attn.cuh CHUNK_THREADS): their warp split and FP8 tile loads assume it, and they
++/// trap on any other width.
++pub const chunk_threads = 256;
++
+ /// latent.head_block: a rank's 32 heads a program in prompt chunks (each key read once), 16 in decode windows.
+ pub fn headBlock(rows: usize) usize {
+     return if (rows >= 64) heads_tile_wide else heads_tile;
+@@ -134,7 +138,7 @@ fn chunks(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64, scales: u64,
+         a.add(@as(i64, @intCast(t.ps)));
+     }
+     const shared = if (hb == heads_tile_wide) glue.chunksSmem(heads_tile_wide) else glue.chunksSmem(heads_tile);
+-    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(rows), .y = cdiv(heads, hb), .z = @intCast(nch) }, .block = .{ .x = 256 }, .shared = shared }, stream, &a);
++    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(rows), .y = cdiv(heads, hb), .z = @intCast(nch) }, .block = .{ .x = chunk_threads }, .shared = shared }, stream, &a);
+ }
+ 
+ /// latent.sparse_attention: rows with counts > 0 over their selected tokens (i32 [rows][w]); others left alone.
 
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body is EMPTY — this patch's content is fully carried by the member that lands its shared files in the composed stack; the end-state replay verifies byte-exact. The concern's record, receipts and original port provenance stay in this header and patches/README.md.
-
+REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
+release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
+took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
+windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
+into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
+were re-cut onto the new anchors; the content is unchanged.

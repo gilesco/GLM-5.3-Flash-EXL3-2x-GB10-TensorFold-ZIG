@@ -3629,3 +3629,59 @@ construction (the build and the replay share the skip rule).
 
 **The re-launch**: immediate — the store, the pin and the phase are
 unchanged; the build fix is the only delta.
+
+## (round 142, cont. 2) THE INCIDENT: PRODUCTION DOWN, THE CRASH-NET DISARMED, THE V1.2.9 ENGINE BROKEN — THE REVERT TO V1.2.7 AND THE RESTORE (2026-11-15)
+
+**What happened** (the user's report: the prior run did not revert; the
+vLLM fallback was started by hand): window 142's v129val battery ran on
+the v1.2.9 engine (6b9de6951) and **never served once** — three battery
+restarts plus the production restore all died identically at
+`cuLaunchKernel: CUDA_ERROR_INVALID_VALUE (1); kernel tf_exl3_prompt_down,
+grid 16x146x1, block 256x1x1` — the exl3p prompt-down kernel's launch,
+**deterministic** on every boot. The v129val battery is **VOID: no server
+line ever, all instruments empty — its boilerplate qualify line fired on
+nothing** (the dead-measurement class; the battery's verdict must refuse
+when the standing restart produced no server line — a fix owed). The
+The v129val battery itself is campaign-20261115-213909; the earlier campaign that evening (campaign-20261115-212523) had died at the
+image BUILD itself (build-native.sh exit 1, the vision-decode-libs step).
+
+**Why it stayed down**: the window's restore ran start.sh, which booted
+deep (weights, RoCE, 290 linears packed) and died at the kernel launch;
+start.sh FAILED — and the window exited rc=0 anyway ("production restored
+(window rc=0)" printed while production was DOWN — the restore-rc
+propagation trap, third occurrence). The crash-net could not catch it:
+**the crontab line was commented out** for the maintenance window (the
+round-141 planned reboots) and never re-armed; the maintenance pause file
+cleared itself in the reboot, but the commented cron line stayed. The
+user started the spark-vllm fallback (vllm_node, the NVFP4 FP4 quant, on
+both hosts) to keep opencode alive; it held ~94.7 GB on each GPU.
+
+**The revert (this sitting, the (user) direction: GLM-5.3 EXL3 live and
+running)**: the production repo was STILL at the v1.2.7 promotion sync
+(c4df7e0, TF_COMMIT=93a2e93) — it never synced to v1.2.9 because v129val
+never qualified. The restore's failure was the shared image tag:
+the testing repo's v1.2.9 prepare had overwritten
+`glm53-native-tf:commit`, and the prod repo's fingerprint check tracks
+CONFIG, not the image file — the broken image slid through. The repair:
+**the prod repo's prepare rebuilt the v1.2.7 image** (cached layers, the
+smoke check reads `tensorfold-native 1.2.7`), the testing repo's pin and
+patch set reverted to the v1.2.7-era state (9d27eac: the state-machine
+re-anchoring's empty-body markers are the suspect for the kernel defect —
+the next sitting's staged question, with a stage brief per the discipline
+layer), and production restarted through the prod repo's own start.sh.
+
+**The restore**: vllm_node stopped on both hosts, the prod repo's
+start.sh up, production verified on the EXL3 recipe (the serve line names
+v1.2.7 + the 18-patch stack; opencode's port answers). The crash-net
+RE-ARMED (the crontab line uncommented; the pause mechanism from the
+round-141 edit stays — it is committed). **The crash-net disarm is the
+incident's root enabler**: a commented cron line defeated 34 windows'
+worth of restore discipline. The re-arm rule: the cron line's state is
+checked at every sitting's start, not just after maintenance.
+
+**The fallouts queued**: (1) the v1.2.9 tf_exl3_prompt_down launch
+defect — the diagnosis battery with a stage brief; (2) the battery
+verdict's dead-measurement guard (no server line => INVALID, never
+qualify); (3) the restore-rc propagation (start.sh's failure must fail
+the window); (4) the fingerprint check should bind the image's TF_COMMIT,
+not just the config.

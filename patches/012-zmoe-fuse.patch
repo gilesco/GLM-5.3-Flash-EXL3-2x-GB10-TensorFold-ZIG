@@ -20,9 +20,142 @@ Subject: glm-cuda: a decode window's MoE glue fused, EXL3 decode tiles at one wi
  13 files changed, 480 insertions(+), 136 deletions(-)
  create mode 100644 zig/kernels/cuda/exl3_group.cuh
 
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
-
+diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
+index fa4cf145e..df39420a0 100644
+--- a/zig/kernels/cuda/exl3_experts.cu
++++ b/zig/kernels/cuda/exl3_experts.cu
+@@ -7,6 +7,7 @@
+ #include "exl3_decode.cuh"
+ #include "exl3_plan.cuh"
+ #include "exl3_grouped.cuh"
++#include "exl3_group.cuh"
+ 
+ // ---------------------------------------------------------------------------------------------------------------
+ 
+@@ -25,16 +26,27 @@ extern "C" __global__ void tf_exl3_grouped_1(tf_exl3::GroupedArgs a) {  // mcg,
+     tf_exl3::grouped_body<1, 8, 4, GROUPED_LOAD>(a, blockIdx.x, blockIdx.y, blockIdx.z);
+ }
+ 
++// mcg at 4 tiles a block: twice the blocks of tf_exl3_grouped_1 on the same k slices, each column's sum in the same warp
++// order, so the same bits (decode windows pick it where it measures faster: cuda/exl3_experts.zig ntFor).
++extern "C" __global__ void tf_exl3_grouped_1_nt4(tf_exl3::GroupedArgs a) {
++    tf_exl3::grouped_body<1, 4, 4, GROUPED_LOAD>(a, blockIdx.x, blockIdx.y, blockIdx.z);
++}
++
++// mcg decode windows of at most 8 rows on a projection of one width: 3-bit (K2 6) or 4-bit (K2 8), 4 tiles a block,
++// 8 reduction rows (cuda/exl3_experts.zig tilesFor; the same bits as tf_exl3_grouped_1).
++extern "C" __global__ void tf_exl3_grouped_1_k6r8(tf_exl3::GroupedArgs a) {
++    tf_exl3::grouped_body_v2<1, 4, 4, GROUPED_LOAD, 6, 8>(a, blockIdx.x, blockIdx.y, blockIdx.z);
++}
++extern "C" __global__ void tf_exl3_grouped_1_k8r8(tf_exl3::GroupedArgs a) {
++    tf_exl3::grouped_body_v2<1, 4, 4, GROUPED_LOAD, 8, 8>(a, blockIdx.x, blockIdx.y, blockIdx.z);
++}
++
+ extern "C" __global__ void tf_exl3_grouped_2(tf_exl3::GroupedArgs a) {  // mul1, any width (RED-SNOW's experts)
+     tf_exl3::grouped_body<2, 8, 4, GROUPED_LOAD>(a, blockIdx.x, blockIdx.y, blockIdx.z);
+ }
+ 
+ namespace tf_exl3 {
+ 
+-// Grouping in one block: distinct experts (< E) in id order, members row * 32 + slot in row order, -1 after the last.
+-constexpr int GROUP_THREADS = 1024;
+-constexpr int GROUP_PER_THREAD = 4;
+-
+ struct GroupArgs {
+     const int* pick; // int32 [rows * slots]
+     int* uids; // int32 [nexp_max]
+@@ -45,54 +57,10 @@ struct GroupArgs {
+ 
+ extern "C" __global__ void __launch_bounds__(GROUP_THREADS) tf_exl3_group(const GroupArgs a) {
+     extern __shared__ int sh_pick[];
+-    __shared__ int warp_tot[GROUP_THREADS / 32];
+     const int n = a.rows * a.slots;
+     for (int i = threadIdx.x; i < n; i += GROUP_THREADS) sh_pick[i] = a.pick[i];
+     __syncthreads();
+-    int cnt[GROUP_PER_THREAD];
+-    int used = 0;
+-#pragma unroll
+-    for (int q = 0; q < GROUP_PER_THREAD; ++q) {
+-        const int e = threadIdx.x * GROUP_PER_THREAD + q;
+-        int c = 0;
+-        if (e < a.experts)
+-            for (int i = 0; i < n; ++i) c += sh_pick[i] == e;
+-        cnt[q] = c;
+-        used += c > 0;
+-    }
+-    // exclusive scan of `used` over threads
+-    const int lane = threadIdx.x & 31, warp = threadIdx.x >> 5;
+-    int inc = used;
+-#pragma unroll
+-    for (int o = 1; o < 32; o <<= 1) {
+-        int v = __shfl_up_sync(0xffffffffu, inc, o);
+-        if (lane >= o) inc += v;
+-    }
+-    if (lane == 31) warp_tot[warp] = inc;
+-    __syncthreads();
+-    if (warp == 0) {
+-        int v = warp_tot[lane];
+-        int s = v;
+-        for (int o = 1; o < 32; o <<= 1) {
+-            int x = __shfl_up_sync(0xffffffffu, s, o);
+-            if (lane >= o) s += x;
+-        }
+-        warp_tot[lane] = s - v; // exclusive per warp
+-        if (lane == 31) a.ucount[0] = s;
+-    }
+-    __syncthreads();
+-    int place = warp_tot[warp] + inc - used;
+-#pragma unroll
+-    for (int q = 0; q < GROUP_PER_THREAD; ++q) {
+-        if (cnt[q] == 0) continue;
+-        const int e = threadIdx.x * GROUP_PER_THREAD + q;
+-        a.uids[place] = e;
+-        int j = 0;
+-        for (int i = 0; i < n && j < a.maxm; ++i)
+-            if (sh_pick[i] == e) a.members[place * a.maxm + j++] = (i / a.slots) * 32 + (i % a.slots);
+-        for (; j < a.maxm; ++j) a.members[place * a.maxm + j] = -1;
+-        ++place;
+-    }
++    group_rows(sh_pick, n, a.slots, a.experts, a.maxm, a.uids, a.ucount, a.members);
+ }
+ 
+ // Program (slot, 128-block of K, matrix): Xh = fp16((x * suh) @ H) for gate and up of every routed slot (pick < E).
+@@ -193,9 +161,11 @@ struct DownArgs {
+     const int* pick; // int32 [P]
+     const half* svh_d; // fp16 [E, D]
+     float* y; // fp32 [P, D]
+-    const float* wts; // fp32 [rows, slots]
++    const float* wts; // fp32 [rows, wslots]
+     float* out; // fp32 [rows, D]
+     int p, d, sk, experts, slots;
++    const float* extra; // fp32 [rows, D] or null: the row's slot `slots` (GLM's shared expert), weight wts[r][slots]
++    int wslots; // weights a row: slots (+ 1 with `extra`); the routed pairs stay compact, `slots` a row
+ };
+ 
+ extern "C" __global__ void tf_exl3_down_combine(const DownArgs a) {
+@@ -230,13 +200,21 @@ extern "C" __global__ void tf_exl3_down_combine(const DownArgs a) {
+     if (k != 0) return;
+     float acc[4] = {0.f, 0.f, 0.f, 0.f};
+     for (int q = 0; q < a.slots; ++q) {
+-        const float w = a.wts[r * a.slots + q];
++        const float w = a.wts[r * a.wslots + q];
+         const float4 u = part[q][lane];
+         acc[0] = fmaf(w, u.x, acc[0]);
+         acc[1] = fmaf(w, u.y, acc[1]);
+         acc[2] = fmaf(w, u.z, acc[2]);
+         acc[3] = fmaf(w, u.w, acc[3]);
+     }
++    if (a.extra) { // the slot after the routed ones, last in the sum as tf_glm_combine adds it
++        const float w = a.wts[r * a.wslots + a.slots];
++        const float4 u = *reinterpret_cast<const float4*>(a.extra + (size_t)r * a.d + n);
++        acc[0] = fmaf(w, u.x, acc[0]);
++        acc[1] = fmaf(w, u.y, acc[1]);
++        acc[2] = fmaf(w, u.z, acc[2]);
++        acc[3] = fmaf(w, u.w, acc[3]);
++    }
+ #pragma unroll
+     for (int j = 0; j < 4; ++j) a.out[(size_t)r * a.d + n + j] = acc[j];
+ }
 diff --git a/zig/kernels/cuda/exl3_group.cuh b/zig/kernels/cuda/exl3_group.cuh
 new file mode 100644
 index 000000000..b354caa33
@@ -90,168 +223,25 @@ index 000000000..b354caa33
 +
 +}  // namespace tf_exl3
 diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.cuh
-index 930700d96..88a39a6b2 100644
+index 930700d96..a414808d2 100644
 --- a/zig/kernels/cuda/exl3_grouped.cuh
 +++ b/zig/kernels/cuda/exl3_grouped.cuh
-@@ -23,8 +23,22 @@ struct GroupedArgs {
-     int k, n, p, sk, maxm, slots, nexp_max, mats, ns, standard, skip;
- };
- 
--// How a warp reads its k tiles: main's loop, or a tile ahead (sm_120 up); SKIP and STALE are the contract's faults.
--enum Load : int { PLAIN = 0, AHEAD = 1, SKIP = 2, STALE = 3 };
-+// How a warp reads its k tiles: main's loop, or a tile ahead (sm_120 up); SKIP and STALE are the contract's faults;
-+// SHFL every word once, a tile ahead (warp_tiles_shfl, sm_120 up); SHFL_SRC and SHFL_A its planted faults.
-+enum Load : int { PLAIN = 0, AHEAD = 1, SKIP = 2, STALE = 3, SHFL = 4, SHFL_SRC = 5, SHFL_A = 6, SHFL_PDL = 7 };
-+
-+// Dependent launches (sm_90 up; a no-op in a kernel not launched as a dependent): wait for the grids before this one
-+// (their outputs visible after it), and let the next dependent launch begin.
-+__device__ __forceinline__ void pdl_wait() {
-+#if __CUDA_ARCH__ >= 900
-+    asm volatile("griddepcontrol.wait;" ::: "memory");
-+#endif
-+}
-+__device__ __forceinline__ void pdl_trigger() {
-+#if __CUDA_ARCH__ >= 900
-+    asm volatile("griddepcontrol.launch_dependents;" ::: "memory");
-+#endif
-+}
- 
- // One warp's k tiles [kt0, kt0 + nkt) of an expert matrix into acc: per-lane loads and the shared decode (same bits).
- template <int CB, int K2, int NT, int LOAD>
-@@ -69,6 +83,107 @@ __device__ __forceinline__ void warp_tiles(const uint32_t* T, int ntiles, int kt
-     }
- }
- 
-+// lane_states<8>'s values (4-bit: windows at fixed nibble offsets): V = w0:w1 (w0 high), s[j] = (V >> (28 - 4 j)) & 0xffff.
-+__device__ __forceinline__ void lane_states8(uint32_t w0, uint32_t w1, uint32_t (&s)[8]) {
-+    s[0] = __funnelshift_r(w1, w0, 28) & 0xffffu;
-+    s[1] = __funnelshift_r(w1, w0, 24) & 0xffffu;
-+    s[2] = __funnelshift_r(w1, w0, 20) & 0xffffu;
-+    s[3] = w1 >> 16;
-+    s[4] = (w1 >> 12) & 0xffffu;
-+    s[5] = __byte_perm(w1, 0u, 0x4421);
-+    s[6] = (w1 >> 4) & 0xffffu;
-+    s[7] = w1 & 0xffffu;
-+}
-+
-+// decode2<CB_MCG> with its AND mask in a register `m` (0x8FFF8FFF): the same operations on the same values.
-+__device__ __forceinline__ uint32_t decode2_mcg(uint32_t s0, uint32_t s1, uint32_t m) {
-+    uint32_t x0 = s0 * 0xCBAC1FEDu, x1 = s1 * 0xCBAC1FEDu;
-+    x0 = (x0 & m) ^ 0x3B603B60u;
-+    x1 = (x1 & m) ^ 0x3B603B60u;
-+    const uint32_t lo = __byte_perm(x0, x1, 0x5410);
-+    const uint32_t hi = __byte_perm(x0, x1, 0x7632);
-+    const half2 r = __hadd2(*reinterpret_cast<const half2*>(&lo), *reinterpret_cast<const half2*>(&hi));
-+    return *reinterpret_cast<const uint32_t*>(&r);
-+}
-+
-+// warp_tiles with every trellis word read once: lane l loads word l of each tile (one 128-byte warp load a 4-bit tile,
-+// where the lane-window loads read each word twice) and the next tile's words and A fragment a tile ahead; each lane
-+// takes its windows' words from their owners by shuffle. The same words, A values, decode and MMA chain as warp_tiles,
-+// so the same bits. Planted faults (contract): SHFL_SRC takes the last tile's second word from the wrong lane, SHFL_A
-+// gives the last tile the A fragment of the tile before.
-+// 4-bit mcg decodes with lane_states8 and decode2_mcg; `opq` (any value below 256, the call's matrix count) builds the
-+// mask so that ptxas keeps it in a register rather than rebuilding it for every LOP3 (26 MOVs a k step).
-+template <int CB, int K2, int NT, int LOAD>
-+__device__ __forceinline__ void warp_tiles_shfl(const uint32_t* T, int ntiles, int kt0, int nkt, int nt0, const half* x0,
-+                                                const half* x1, bool ok0, bool ok1, int lane, float (&acc)[NT][2][4],
-+                                                int opq) {
-+    constexpr int TW = tile_words<K2>(), LW = lane_words<K2>();
-+    static_assert(TW <= 32, "a word a lane");
-+    const size_t kstride = (size_t)ntiles * TW;
-+    const uint32_t* tb = T + (size_t)kt0 * kstride + (size_t)nt0 * TW;
-+    int word, offset;
-+    lane_start<K2>(lane, word, offset);
-+    const bool own = TW == 32 || lane < TW;
-+    const uint32_t mask = 0x8FFF8FFFu | ((uint32_t)opq >> 8);  // exactly 0x8FFF8FFF (opq < 256), held in a register
-+    uint32_t nx[NT], na[4];  // the next tile's word `lane` of each tile and its A fragment, in flight while this decodes
-+    auto words = [&](int i) {  // the trellis: immutable, so it may stream in before a dependent launch's wait
-+        const uint32_t* t0 = tb + (size_t)i * kstride;
-+#pragma unroll
-+        for (int j = 0; j < NT; ++j) nx[j] = own ? ldg_stream_u32(t0 + j * TW + lane) : 0u;
-+    };
-+    auto rows = [&](int i) {  // the rows' inputs: the grid before this one's outputs
-+        const int k = (kt0 + i) * 16;
-+        na[0] = ok0 ? *reinterpret_cast<const uint32_t*>(x0 + k) : 0u;
-+        na[1] = ok1 ? *reinterpret_cast<const uint32_t*>(x1 + k) : 0u;
-+        na[2] = ok0 ? *reinterpret_cast<const uint32_t*>(x0 + k + 8) : 0u;
-+        na[3] = ok1 ? *reinterpret_cast<const uint32_t*>(x1 + k + 8) : 0u;
-+    };
-+    auto load = [&](int i) {
-+        words(i);
-+        rows(i);
-+    };
-+    if (nkt > 0) words(0);
-+    if constexpr (LOAD == SHFL_PDL) {  // a dependent launch: every input of this step and every write after the wait
-+        pdl_wait();
-+        pdl_trigger();
-+    }
-+    if (nkt > 0) rows(0);
-+    for (int i = 0; i < nkt; ++i) {
-+        uint32_t cur[NT], a[4];
-+#pragma unroll
-+        for (int j = 0; j < NT; ++j) cur[j] = nx[j];
-+#pragma unroll
-+        for (int c = 0; c < 4; ++c) a[c] = na[c];
-+        if (LOAD == SHFL_A && i == nkt - 1 && i > 0) {  // planted: the last tile keeps the tile before's A fragment
-+            const int k = (kt0 + i - 1) * 16;
-+            a[0] = ok0 ? *reinterpret_cast<const uint32_t*>(x0 + k) : 0u;
-+            a[2] = ok0 ? *reinterpret_cast<const uint32_t*>(x0 + k + 8) : 0u;
-+        }
-+        if (i + 1 < nkt) load(i + 1);
-+#pragma unroll
-+        for (int j = 0; j < NT; ++j) {
-+            uint32_t w[LW];
-+#pragma unroll
-+            for (int l = 0; l < LW; ++l) {
-+                const int src = (LOAD == SHFL_SRC && i == nkt - 1 && l == LW - 1 ? word + l + 1 : word + l) % TW;
-+                w[l] = __shfl_sync(0xffffffffu, cur[j], src);
-+            }
-+            uint32_t b0[2], b1[2];
-+            if constexpr (K2 == 8 && CB == CB_MCG) {
-+                uint32_t st[8];
-+                lane_states8(w[0], w[1], st);
-+                b0[0] = decode2_mcg(st[0], st[1], mask);
-+                b0[1] = decode2_mcg(st[2], st[3], mask);
-+                b1[0] = decode2_mcg(st[4], st[5], mask);
-+                b1[1] = decode2_mcg(st[6], st[7], mask);
-+            } else
-+                decode_lane<K2, CB>(w, lane, b0, b1);
-+            mma16816(acc[j][0], a, b0);
-+            mma16816(acc[j][1], a, b1);
-+        }
-+    }
-+}
-+
- // Program (expert u, n block, split, member tile): 16 members times W_q over the split's K range, summed in warp order.
- template <int CB, int NT, int W, int LOAD>
- __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nblock, int zz) {
-@@ -159,4 +274,120 @@ __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nbl
+@@ -159,4 +159,104 @@ __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nbl
      }
  }
  
 +// grouped_body at one trellis width K2F (no width switch: fewer registers) and RR reduction rows (a member tile of at
 +// most RR rows: decode windows); every column keeps its k slices and warp-order sum, so the bits are grouped_body's.
-+// SHFL_PDL (a dependent launch): before its wait a block reads only the plan (uids, count, members: from the router two
-+// launches back, done before the grid before this one passed its own wait) and the immutable trellis pointers, widths
-+// and first tile; every exit waits first, so every CTA waits.
 +template <int CB, int NT, int W, int LOAD, int K2F, int RR>
 +__device__ __forceinline__ void grouped_body_v2(const GroupedArgs a, int u, int nblock, int zz) {
-+    constexpr bool PDLW = LOAD == SHFL_PDL;
-+    if (u >= a.ucount[0]) {
-+        if constexpr (PDLW) pdl_wait();
-+        return;
-+    }
++    if (u >= a.ucount[0]) return;
 +    const int MT = (a.maxm + 15) / 16;
 +    const int mtile = zz % MT;
 +    const int split = (zz / MT) % a.sk;
 +    const int mat = zz / MT / a.sk;
 +    const half* X = mat ? a.x1 : a.x0;
 +    const int e = a.standard ? a.uids[3 * u] : a.uids[u];
-+    if (a.standard && e == a.skip) {
-+        if constexpr (PDLW) pdl_wait();
-+        return;
-+    }
++    if (a.standard && e == a.skip) return;
 +    const uint32_t* T = reinterpret_cast<const uint32_t*>(mat ? a.tp1[e] : a.tp0[e]);
 +    const int k2 = mat ? a.k2_1[e] : a.k2_0[e];
 +    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
@@ -267,10 +257,7 @@ index 930700d96..88a39a6b2 100644
 +        rows_sh[threadIdx.x] = a.standard ? code : (code >= 0 ? (code >> 5) * a.slots + (code & 31) : -1);
 +    }
 +    __syncthreads();
-+    if (rows_sh[0] < 0) { // members come first, so this tile is empty
-+        if constexpr (PDLW) pdl_wait();
-+        return;
-+    }
++    if (rows_sh[0] < 0) return; // members come first, so this tile is empty
 +    const int r0 = rows_sh[g], r1 = rows_sh[g + 8];
 +    const half* x0 = X + (size_t)(r0 < 0 ? 0 : r0) * a.k + 2 * t;
 +    const half* x1 = X + (size_t)(r1 < 0 ? 0 : r1) * a.k + 2 * t;
@@ -289,10 +276,7 @@ index 930700d96..88a39a6b2 100644
 +    __shared__ __align__(16) float red[W][RR][NT * 16];
 +    if constexpr (K2F > 0) {
 +        if (k2 != K2F) __trap();  // the launcher picks it for a projection whose every expert is K2F wide
-+        if constexpr (LOAD >= SHFL)
-+            warp_tiles_shfl<CB, K2F, NT, LOAD>(T, NTILES, kt0, per_warp, nt0, x0, x1, r0 >= 0, r1 >= 0, lane, acc, a.mats);
-+        else
-+            warp_tiles<CB, K2F, NT, LOAD>(T, NTILES, kt0, per_warp, nt0, x0, x1, r0 >= 0, r1 >= 0, lane, acc);
++        warp_tiles<CB, K2F, NT, LOAD>(T, NTILES, kt0, per_warp, nt0, x0, x1, r0 >= 0, r1 >= 0, lane, acc);
 +    } else {
 +    switch (k2) {
 +#define TF_EXL3X_CASE(K2_)                                                                                   \
@@ -412,11 +396,59 @@ index 682d5cf03..722d1188b 100644
 +  for (int i = threadIdx.x; i < n; i += tf_exl3::GROUP_THREADS) pick8[i] = sh_pick[i];
 +  tf_exl3::group_rows(sh_pick, n, top_k, ne, rows, uids, ucount, members);
 +}
+diff --git a/zig/kernels/cuda/glm_mm.cu b/zig/kernels/cuda/glm_mm.cu
+index d82cd3f5c..51b0c73d1 100644
+--- a/zig/kernels/cuda/glm_mm.cu
++++ b/zig/kernels/cuda/glm_mm.cu
+@@ -88,14 +88,14 @@ struct Tile {
+ template <int BITS, int BM, int WM, int STAGES, bool ROWS_FIRST = false>
+ __device__ __forceinline__ void mm_kernel(const __nv_bfloat16* __restrict__ x, long long ldx,
+         const uint32_t* __restrict__ w, const __half* __restrict__ s, void* __restrict__ out, float* __restrict__ part,
+-        int f32, int M, int N, int K, int SK) {
++        int f32, int M, int N, int K, int SK, int zslice = -1) {
+     using T = Tile<BITS, BM, WM, STAGES>;
+     extern __shared__ __align__(128) unsigned char buf[];
+     const int tid = threadIdx.x, lane = tid & 31, warp = tid >> 5;
+     const int wm = warp / T::WN, wn = warp % T::WN;
+     const int KG = K >> 6, per = KG / SK, N8 = N >> 3;
+     const int n0 = (ROWS_FIRST ? blockIdx.y : blockIdx.x) * T::BN, m0 = (ROWS_FIRST ? blockIdx.x : blockIdx.y) * BM;
+-    const int slice = blockIdx.z, g0 = slice * per;
++    const int slice = zslice >= 0 ? zslice : (int)blockIdx.z, g0 = slice * per;  // a pair launch's z is its problem
+     const int t0 = n0 >> 3;                                   // the block's first column tile
+     auto stage = [&](int st) { return buf + st * T::STAGE; };
+     auto loadX = [&](int st, int g) {
+@@ -261,6 +261,26 @@ GLM_MM_PROMPT2(4)
+ GLM_MM_PROMPT2(6)
+ GLM_MM_PROMPT2(8)
+ 
++// Two problems of one shape and one K slice in one launch (z picks the problem): the same blocks and sums as two
++// launches of glm_mm*_16 (GLM's KDA f_b and g_b projections of a decode window).
++struct MmPair {
++    const __nv_bfloat16* x[2];
++    long long ldx;
++    const uint32_t* w[2];
++    const __half* s[2];
++    void* out[2];
++    int f32, M, N, K;
++};
++#define GLM_MM_PAIR(B)                                                                                                  \
++    extern "C" __global__ void __launch_bounds__(128) glm_mm##B##_16x2(const MmPair p) {                              \
++        const int z = blockIdx.z;                                                                                      \
++        mm_kernel<B, 16, 1, 3>(p.x[z], p.ldx, p.w[z], p.s[z], p.out[z], nullptr, p.f32, p.M, p.N, p.K, 1, 0);           \
++    }
++GLM_MM_PAIR(4)
++GLM_MM_PAIR(6)
++GLM_MM_PAIR(8)
++GLM_MM_PAIR(16)
++
+ // -- tiling at load: ops.cu's packed rows and fp16 scales [N][K / 64] -> the tiled chunks and scales ---------------
+ template <int BITS>
+ __device__ __forceinline__ void tile_packed(const uint32_t* __restrict__ src, const __half* __restrict__ ss,
 diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
-index 005e007fd..3f125b6d3 100644
+index 005e007fd..d59ba636b 100644
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
-@@ -107,9 +107,15 @@ pub fn scratch(base: u64, l: Layer, rows: usize, slots: usize) !Scratch {
+@@ -107,9 +107,11 @@ pub fn scratch(base: u64, l: Layer, rows: usize, slots: usize) !Scratch {
  /// The loaded kernels.
  pub const Experts = struct {
      mod: Module,
@@ -426,14 +458,10 @@ index 005e007fd..3f125b6d3 100644
      grouped: [3]Function, // one per codebook
 +    grouped_nt4: Function, // mcg at 4 tiles a block (the same bits as grouped[1])
 +    grouped_r8: [2]Function, // mcg at one width (3-bit, 4-bit), 4 tiles, 8 reduction rows: windows of up to 8 rows
-+    grouped_s: [2]Function = undefined, // 4-bit mcg, every trellis word read once: 8 and 16 reduction rows (k8r8s, k8r16s)
-+    grouped_p: [2]Function = undefined, // the same as dependent launches (k8r8p, k8r16p: waits, triggers)
-+    shfl: bool = true, // TF_EXL3_SHFL=0: 4-bit windows keep the lane-window loads (k8r8, nt4); the same bits either way
-+    pdl: bool = true, // TF_EXL3_PDL=0: the read-once chain launches as ordinary launches; the same bits either way
      gateup: Function,
      down_combine: Function,
      prompt: prompt.Kernels = undefined,
-@@ -121,9 +127,11 @@ pub const Experts = struct {
+@@ -121,9 +123,11 @@ pub const Experts = struct {
          if (!kernels.available) return error.BuiltWithoutKernels;
          var e: Experts = .{
              .mod = try Module.load(d, kernels.exl3_experts),
@@ -446,7 +474,7 @@ index 005e007fd..3f125b6d3 100644
              .gateup = undefined,
              .down_combine = undefined,
          };
-@@ -132,14 +140,20 @@ pub const Experts = struct {
+@@ -132,14 +136,16 @@ pub const Experts = struct {
          e.plan_rotate = try e.mod.function("tf_exl3_plan_rotate");
          e.plan_finish = try e.mod.function("tf_exl3_plan_finish");
          e.plan_finish_after = try e.mod.function("tf_exl3_plan_finish_after");
@@ -462,14 +490,10 @@ index 005e007fd..3f125b6d3 100644
          };
 +        e.grouped_nt4 = try e.mod.function("tf_exl3_grouped_1_nt4");
 +        e.grouped_r8 = .{ try e.mod.function("tf_exl3_grouped_1_k6r8"), try e.mod.function("tf_exl3_grouped_1_k8r8") };
-+        e.grouped_s = .{ try e.mod.function("tf_exl3_grouped_1_k8r8s"), try e.mod.function("tf_exl3_grouped_1_k8r16s") };
-+        e.grouped_p = .{ try e.mod.function("tf_exl3_grouped_1_k8r8p"), try e.mod.function("tf_exl3_grouped_1_k8r16p") };
-+        e.shfl = envOn("TF_EXL3_SHFL");
-+        e.pdl = envOn("TF_EXL3_PDL");
          e.gateup = try e.mod.function("tf_exl3_gateup_epilogue");
          e.down_combine = try e.mod.function("tf_exl3_down_combine");
          return e;
-@@ -156,34 +170,36 @@ pub const Experts = struct {
+@@ -156,34 +162,31 @@ pub const Experts = struct {
  
      /// The routed experts of `rows` rows: group, rotate in, grouped gate/up, SwiGLU, grouped down, wts-weighted sum.
      pub fn run(e: *const Experts, s: Stream, l: Layer, x: u64, x_stride: usize, x_dtype: DType, pick: u64, wts: u64, rows: usize, out: u64, sc: Scratch) !void {
@@ -517,15 +541,10 @@ index 005e007fd..3f125b6d3 100644
 +    pub fn core(e: *const Experts, s: Stream, l: Layer, x: u64, x_stride: usize, x_dtype: DType, pick: u64, rows: usize, sc: Scratch) !void {
 +        const g = try Geometry.of(l, rows, sc);
 +        if (l.act_mode != 0 and l.act_mode != 1) return error.BadExperts; // SwiGLU-OAI runs through Grouped only (v1.2.4's check: core() gates the grouped path too)
-+        const gt = e.tilesFor(l, rows, .gate_up);
-+        const dt = e.tilesFor(l, rows, .down);
-+        // dependent launches when both projections take the kernels that wait (k8r8p/k8r16p): rot_in and the epilogue
-+        // wait first and trigger; the grouped kernels read the plan, trellis pointers and first tile before their wait
-+        const chain = gt.pdl and dt.pdl;
  
          var r: launch_.Args = .{};
          r.add(x);
-@@ -194,34 +210,34 @@ pub const Experts = struct {
+@@ -194,34 +197,35 @@ pub const Experts = struct {
          r.add(l.suh_u);
          r.add(sc.xg);
          r.add(sc.xu);
@@ -535,7 +554,7 @@ index 005e007fd..3f125b6d3 100644
 +        r.add(i32d(g.slots));
          r.add(i32d(l.experts));
 -        try launch_.launch(e.rot_in, .{ .grid = .{ .x = @intCast(p), .y = @intCast(d / 128), .z = 2 }, .block = .{ .x = 32, .y = 1, .z = 1 } }, s, &r);
-+        try launch_.launch(e.rot_in, .{ .grid = .{ .x = @intCast(g.p), .y = @intCast(g.d / 128), .z = 2 }, .block = .{ .x = 32, .y = 1, .z = 1 }, .pdl = chain }, s, &r);
++        try launch_.launch(e.rot_in, .{ .grid = .{ .x = @intCast(g.p), .y = @intCast(g.d / 128), .z = 2 }, .block = .{ .x = 32, .y = 1, .z = 1 } }, s, &r);
  
 -        var g: launch_.Args = .{};
 -        g.add(sc.xg);
@@ -582,11 +601,12 @@ index 005e007fd..3f125b6d3 100644
 +        gu.add(i32d(l.gu_stride));
 +        gu.add(@as(i32, 0));
 +        gu.add(@as(i32, -1));
-+        try launch_.launch(gt.f, .{ .grid = .{ .x = @intCast(g.maxu), .y = @intCast(g.w / (gt.nt * 16)), .z = @intCast(2 * g.g_sk * g.mt) }, .block = .{ .x = 128, .y = 1, .z = 1 }, .pdl = chain }, s, &gu);
++        const gt = e.tilesFor(l, rows, .gate_up);
++        try launch_.launch(gt.f, .{ .grid = .{ .x = @intCast(g.maxu), .y = @intCast(g.w / (gt.nt * 16)), .z = @intCast(2 * g.g_sk * g.mt) }, .block = .{ .x = 128, .y = 1, .z = 1 } }, s, &gu);
  
          var ep: launch_.Args = .{};
          ep.add(sc.z);
-@@ -230,13 +246,13 @@ pub const Experts = struct {
+@@ -230,13 +234,13 @@ pub const Experts = struct {
          ep.add(l.svh_u);
          ep.add(l.suh_d);
          ep.add(sc.xd);
@@ -600,11 +620,11 @@ index 005e007fd..3f125b6d3 100644
          ep.add(l.limit);
          ep.add(l.act_mode);
 -        try launch_.launch(e.gateup, .{ .grid = .{ .x = @intCast(p), .y = @intCast(w / 128), .z = 1 }, .block = .{ .x = 32, .y = 1, .z = 1 } }, s, &ep);
-+        try launch_.launch(e.gateup, .{ .grid = .{ .x = @intCast(g.p), .y = @intCast(g.w / 128), .z = 1 }, .block = .{ .x = 32, .y = 1, .z = 1 }, .pdl = chain }, s, &ep);
++        try launch_.launch(e.gateup, .{ .grid = .{ .x = @intCast(g.p), .y = @intCast(g.w / 128), .z = 1 }, .block = .{ .x = 32, .y = 1, .z = 1 } }, s, &ep);
  
          var dn: launch_.Args = .{};
          dn.add(sc.xd);
-@@ -249,19 +265,47 @@ pub const Experts = struct {
+@@ -249,19 +253,44 @@ pub const Experts = struct {
          dn.add(sc.count);
          dn.add(sc.members);
          dn.add(sc.z);
@@ -626,22 +646,19 @@ index 005e007fd..3f125b6d3 100644
          dn.add(@as(i32, 0));
          dn.add(@as(i32, -1));
 -        try launch_.launch(e.grouped[@backingInt(l.codebook)], .{ .grid = .{ .x = @intCast(maxu), .y = @intCast(d / 128), .z = @intCast(d_sk * mt) }, .block = .{ .x = 128, .y = 1, .z = 1 } }, s, &dn);
-+        try launch_.launch(dt.f, .{ .grid = .{ .x = @intCast(g.maxu), .y = @intCast(g.d / (dt.nt * 16)), .z = @intCast(g.d_sk * g.mt) }, .block = .{ .x = 128, .y = 1, .z = 1 }, .pdl = chain }, s, &dn);
++        const dt = e.tilesFor(l, rows, .down);
++        try launch_.launch(dt.f, .{ .grid = .{ .x = @intCast(g.maxu), .y = @intCast(g.d / (dt.nt * 16)), .z = @intCast(g.d_sk * g.mt) }, .block = .{ .x = 128, .y = 1, .z = 1 } }, s, &dn);
 +    }
- 
++
 +    /// The grouped kernel for a projection of `rows` rows and its tiles a block. Only the block's column span, the width
 +    /// dispatch and the unused reduction rows change (every column keeps its k slices and warp-order sum), so every form
 +    /// gives the same bits. Chosen where each measured faster on sm_120 (decode2_bench/results_exl3_*.txt, cold weights):
 +    /// windows of up to 8 rows on a projection whose every expert is 3- or 4-bit take the one-width, 8-row form; wider
 +    /// windows to 32 rows 4 tiles where it led (down at 1 or 8+ rows, gate/up from 3); else, and other codebooks, 8 tiles.
-+    /// A projection the loader verified 4-bit takes the read-once loads at every window to 32 rows (exl3r's cold-weight
-+    /// bench, sm_120, 400 W: gate/up -1, -5, -3, -10, -12% and down -2, -1, -7, -6, -14% at 1, 2, 4, 8, 16 rows).
-+    /// `pdl`: the kernel waits before it reads the grid before's outputs, so it may launch as a dependent.
-+    fn tilesFor(e: *const Experts, l: Layer, rows: usize, which: enum { gate_up, down }) struct { f: Function, nt: usize, pdl: bool = false } {
++    fn tilesFor(e: *const Experts, l: Layer, rows: usize, which: enum { gate_up, down }) struct { f: Function, nt: usize } {
 +        const n = if (which == .gate_up) l.width else l.dims;
 +        if (l.codebook != .mcg or rows > 32 or n % 64 != 0) return .{ .f = e.grouped[@backingInt(l.codebook)], .nt = 8 };
 +        const k2 = l.uniform_k2; // our Layer keeps one width field: the loader verified EVERY projection (the fork splits gate/up from down)
-+        if (e.shfl and k2 == 8) return .{ .f = (if (e.pdl) e.grouped_p else e.grouped_s)[@intFromBool(rows > 8)], .nt = 4, .pdl = e.pdl };
 +        if (rows <= 8 and (k2 == 6 or k2 == 8)) return .{ .f = e.grouped_r8[@intFromBool(k2 == 8)], .nt = 4 };
 +        const four = switch (which) {
 +            .gate_up => rows >= 3,
@@ -649,7 +666,7 @@ index 005e007fd..3f125b6d3 100644
 +        };
 +        return if (four) .{ .f = e.grouped_nt4, .nt = 4 } else .{ .f = e.grouped[@backingInt(l.codebook)], .nt = 8 };
 +    }
-+
+ 
 +    /// The down epilogue: each pair's FP32 output into sc.y, and with `wts` each row's sum over its slots into `out`.
 +    /// `wts` holds `wslots` weights a row: the `sc.slots` routed pairs' (compact in `pick`), then with `extra`
 +    /// (fp32 [rows][dims]) that row's weight for it, added last, as GLM's slot combine adds its shared expert.
@@ -659,7 +676,7 @@ index 005e007fd..3f125b6d3 100644
          var cb: launch_.Args = .{};
          cb.add(sc.z);
          cb.add(pick);
-@@ -269,15 +313,46 @@ pub const Experts = struct {
+@@ -269,15 +298,41 @@ pub const Experts = struct {
          cb.add(sc.y);
          cb.add(wts);
          cb.add(out);
@@ -703,14 +720,142 @@ index 005e007fd..3f125b6d3 100644
 +    return @intCast(v);
 +}
 +
-+fn envOn(name: [*:0]const u8) bool {
-+    const v = std.c.getenv(name) orelse return true;
-+    return !std.mem.eql(u8, std.mem.span(v), "0");
-+}
-+
  test "the plan matches experts.py's for known shapes" {
      try std.testing.expectEqual(@as(u32, 4), try plan(4096, 2048, true)); // GLM_GATEUP
      try std.testing.expectEqual(@as(u32, 1), try plan(2048, 4096, false)); // GLM_DOWN
+diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
+index 5ca01fb2e..ef0d28dad 100644
+--- a/zig/src/families/glm/cuda_engine.zig
++++ b/zig/src/families/glm/cuda_engine.zig
+@@ -70,6 +70,7 @@ pub const Engine = struct {
+     m: fw.Modules,
+     stream: cuda.Stream,
+     pieces: fw.Pieces,
++    moe_fuse: bool = true, // TF_GLM_MOE_FUSE=0: a decode window's EXL3 MoE glue unfused (the same bits either way)
+     side: ?@import("cuda_moe.zig").Side = null, // decode windows' shared expert stream and events (TF_GLM_SHARED_SIDE=0: none)
+     w: weights.Weights,
+     bp: fw.Buffers, // prompt chunks
+@@ -156,7 +157,7 @@ pub const Engine = struct {
+         if (o.settings.layers > c.layers) return error.BadLayers;
+         const layers = try a.alloc(u32, if (o.settings.layers > 0) o.settings.layers else c.layers);
+         for (layers, 0..) |*l, i| l.* = @intCast(i);
+-        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .side = side, .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
++        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .side = side, .moe_fuse = envOn("TF_GLM_MOE_FUSE"), .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
+         const has_packs = o.settings.dense_bits != 16 or o.settings.head_bits != 16;
+         if (has_packs and !o.settings.tiled) return error.PackedNeedsGlmMm;
+         const Tile = struct {
+@@ -278,7 +279,13 @@ pub const Engine = struct {
+     pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
+         out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
+         const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
+-        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side };
++        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side, .moe_fuse = e.moe_fuse };
++    }
++
++    /// An on-by-default switch: off only when `name` is "0".
++    fn envOn(name: [*:0]const u8) bool {
++        const v = std.c.getenv(name) orelse return true;
++        return !std.mem.eql(u8, std.mem.span(v), "0");
+     }
+ 
+     /// The decode windows' side stream for the MoE shared expert, unless TF_GLM_SHARED_SIDE=0.
+@@ -492,7 +499,7 @@ pub const Engine = struct {
+             rows += p.ids.len;
+         }
+         var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
+-        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = e.side };
++        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = e.side, .moe_fuse = e.moe_fuse };
+         try f.run(@ptrCast(ids[0..rows]));
+         if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
+         for (parts, segs[0..parts.len]) |p, g| {
+diff --git a/zig/src/families/glm/cuda_exl3.zig b/zig/src/families/glm/cuda_exl3.zig
+index c9aae5173..56818b097 100644
+--- a/zig/src/families/glm/cuda_exl3.zig
++++ b/zig/src/families/glm/cuda_exl3.zig
+@@ -181,6 +181,31 @@ pub fn run(k: *const Kernels, ek: *const experts.Kernels, stream: cuda.Stream, w
+     }
+ }
+ 
++/// A decode window's routed experts after a fused select (glue.selectGroup): the call's common scratch, whose ids,
++/// count and members the select fills and whose compact picks are sc.picks. Null when the window takes the old path.
++pub fn decodeScratch(w: Experts, sc: Scratch, rows: usize, count: usize, dims: usize, width: usize, limit: f32) !?common.Scratch {
++    if (rows == 0 or rows > chunk_rows) return null;
++    const l = layer(w, count, dims, width, limit);
++    return try common.scratch(sc.picks + picksBytes(rows), l, rows, top_k);
++}
++
++/// The grouped decode path's experts (picks compact in sc.picks, grouped by the fused select): the down partials only;
++/// `combineDecode` then writes the layer's output. No copies: the slot rows of `ey` are not used.
++pub fn runGrouped(k: *const Kernels, stream: cuda.Stream, w: Experts, sc: Scratch, x: u64, x_stride: usize, rows: usize, count: usize, dims: usize, width: usize, limit: f32) !void {
++    if (dims % 256 != 0 or width % 128 != 0) return error.UnreadableExl3;
++    const l = layer(w, count, dims, width, limit);
++    const scratch = (try decodeScratch(w, sc, rows, count, dims, width, limit)) orelse return error.BadWindow;
++    try k.core(stream, l, x, x_stride, .bf16, sc.picks, rows, scratch);
++}
++
++/// The grouped decode path's output: every row's routed slots (from the down partials) and its shared expert's row
++/// `shared` (fp32 [rows][dims]) summed with `wts` (`top_k` + 1 a row) in slot order, as glue.combine sums the slot rows.
++pub fn combineDecode(k: *const Kernels, stream: cuda.Stream, w: Experts, sc: Scratch, rows: usize, count: usize, dims: usize, width: usize, limit: f32, wts: u64, shared: u64, out: u64) !void {
++    const l = layer(w, count, dims, width, limit);
++    const scratch = (try decodeScratch(w, sc, rows, count, dims, width, limit)) orelse return error.BadWindow;
++    try k.combine(stream, l, sc.picks, rows, scratch, wts, top_k + 1, shared, out);
++}
++
+ test "EXL3 admission: Mia-AiLab's block passes; other widths and codebooks are refused by name" {
+     const gpa = std.testing.allocator;
+     const mia =
+diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
+index 77e152cec..d319e7dbe 100644
+--- a/zig/src/families/glm/cuda_forward.zig
++++ b/zig/src/families/glm/cuda_forward.zig
+@@ -208,6 +208,7 @@ pub const Forward = struct {
+     taps: ?taps_mod.Taps = null, // DFlash2 (--drafter): the tapped layers' rows, after each such layer
+     index_split: bool = false, // TF_GLM_INDEX_SPLIT: this prompt chunk's indexer rows split across the ranks (rank 0's choice)
+     side: ?moe.Side = null, // a decode window's MoE shared expert on a second stream (TF_GLM_SHARED_SIDE, default on)
++    moe_fuse: bool = false, // a decode window's EXL3 MoE glue fused (TF_GLM_MOE_FUSE, default on in the engine)
+     absorb_mma: bool = false, // TF_GLM_ABSORB_MMA=1: a prompt pass's absorb_q and expand_v on tensor cores
+     l2pf: ?*const l2pf_mod.L2pf = null, // TF_GLM_L2PF: a decode window's sites read their next weights into L2
+ 
+@@ -323,7 +324,7 @@ pub const Forward = struct {
+     }
+ 
+     fn moeKernels(f: *const Forward) moe.Kernels {
+-        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof, .side = if (f.ranks[0].b.prefill) null else f.side };
++        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof, .side = if (f.ranks[0].b.prefill) null else f.side, .fuse = f.moe_fuse };
+     }
+ 
+     pub const Site = enum { mixer, ffn };
+diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
+index 40fd01361..4babd26ac 100644
+--- a/zig/src/families/glm/cuda_glue.zig
++++ b/zig/src/families/glm/cuda_glue.zig
+@@ -33,5 +33,6 @@ pub const Kernels = struct {
+     swiglu_64: cuda.Function,
+     group_sums: cuda.Function,
+     topk: cuda.Function,
++    topk_group: cuda.Function,
+     router_tile: cuda.Function,
+     hc_partial: cuda.Function,
+@@ -187,6 +188,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,
+     try cuda.launch.launch(set.glue.topk, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 32 } }, stream, &a);
+ }
+ 
++/// The rows a fused select-and-group takes: a warp a row in one 1024-thread block (tf_glm_topk_group).
++pub const select_group_rows = 32;
++
++/// glue.select of a decode window (tf_glm_topk's code, a warp a row) and, for the EXL3 experts, the routed picks
++/// compact (`top_k` a row, in `pick8`) with tf_exl3_group's grouping into `ids`, `count` and `members` (`rows` each).
++pub fn selectGroup(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64, wts: u64, rows: usize, top_k: usize, experts: usize, scale: f32, norm: bool, pick8: u64, ids: u64, count: u64, members: u64) !void {
++    if (experts > 512 or top_k >= 32) return error.TopkTooWide;
++    if (rows == 0 or rows > select_group_rows or rows * top_k > 1024 or experts > 4096) return error.TooManyRows;
++    var a: cuda.Args = .{};
++    inline for (.{ logits, bias, pick, wts, scale, cint(experts), cint(top_k), @as(c_int, @intFromBool(norm)), cint(rows), pick8, ids, count, members }) |v| a.add(v);
++    try cuda.launch.launch(set.glue.topk_group, .{ .grid = .{ .x = 1 }, .block = .{ .x = 1024 } }, stream, &a);
++}
++
+ /// glue.combine: out [rows][d] fp32 = sum over slots in order of wts[r][k] y[r][k] (y fp32 in decode, bf16 in prefill).
+ pub fn combine(set: Set, stream: cuda.Stream, y: u64, y_f32: bool, wts: u64, out: u64, rows: usize, d: usize, slots: usize) !void {
+     var a: cuda.Args = .{};
 diff --git a/zig/src/families/glm/cuda_kda_block.zig b/zig/src/families/glm/cuda_kda_block.zig
 index 92e3bcdd8..297ad7864 100644
 --- a/zig/src/families/glm/cuda_kda_block.zig
@@ -728,3 +873,155 @@ index 92e3bcdd8..297ad7864 100644
      try b16.matmul(selected, stream, s.p + fa * 2, w, l.fb, s.ka, s.mm_part, rows, n, kda.dk, false);
      try b16.matmul(selected, stream, s.p + (fa + kda.dk) * 2, w, l.gb, s.kg, s.mm_part, rows, n, kda.dk, false);
  }
+diff --git a/zig/src/families/glm/cuda_mm.zig b/zig/src/families/glm/cuda_mm.zig
+index f7bb53854..0b6765dac 100644
+--- a/zig/src/families/glm/cuda_mm.zig
++++ b/zig/src/families/glm/cuda_mm.zig
+@@ -40,6 +40,7 @@ pub const Packed = struct {
+ pub const Kernels = struct {
+     by_rows: [4]cuda.Function, // bf16: 16, 32, 64, 128 rows a block
+     packed_rows: [3][4]cuda.Function, // 4, 6 and 8 bits, as by_rows
++    pair: [4]cuda.Function, // glm_mm{16,4,6,8}_16x2: two problems of one shape a launch, the 16-row blocks' sums
+     packed_prompt: [3]cuda.Function, // glm_mm4/6/8_128s2: packed prompts in two stages, two blocks an SM, the same sums
+     prompt: cuda.Function, // 128-row blocks, row blocks fastest: a prompt's blocks share each weight tile in L2
+     reduce: cuda.Function,
+@@ -49,7 +50,7 @@ pub const Kernels = struct {
+     pdl: bool, // dependent launches: a matmul's weights stream in while the kernel before it finishes
+ 
+     pub fn load(m: cuda.Module) !Kernels {
+-        var k: Kernels = .{ .by_rows = undefined, .packed_rows = undefined, .packed_prompt = undefined, .tile_packed = undefined, .prompt = try m.function("glm_mm16_rows"), .reduce = try m.function("glm_mm_reduce"), .tile = try m.function("glm_mm_tile16"), .pdl = true };
++        var k: Kernels = .{ .by_rows = undefined, .packed_rows = undefined, .packed_prompt = undefined, .pair = undefined, .tile_packed = undefined, .prompt = try m.function("glm_mm16_rows"), .reduce = try m.function("glm_mm_reduce"), .tile = try m.function("glm_mm_tile16"), .pdl = true };
+         inline for (.{ "glm_mm16_16", "glm_mm16_32", "glm_mm16_64", "glm_mm16_128" }, 0..) |name, i| {
+             k.by_rows[i] = try m.function(name);
+             try k.by_rows[i].allowDynamicShared(smem(bucket(i)));
+@@ -63,6 +64,10 @@ pub const Kernels = struct {
+             k.packed_prompt[wi] = try m.function(std.fmt.comptimePrint("glm_mm{d}_128s2", .{b}));
+             try k.packed_prompt[wi].allowDynamicShared(sharedBytesStages(b, 128, 2));
+         }
++        inline for (widths, 0..) |b, wi| {
++            k.pair[wi] = try m.function(std.fmt.comptimePrint("glm_mm{d}_16x2", .{b}));
++            try k.pair[wi].allowDynamicShared(sharedBytes(b, 16));
++        }
+         try k.prompt.allowDynamicShared(smem(128));
+         k.pdl = try @import("sys").environment.value(bool, "TF_GLM_PDL", @import("profile").lookup("TF_GLM_PDL"), true);
+         return k;
+@@ -152,6 +157,32 @@ pub fn matmul(k: *const Kernels, s: cuda.Stream, x: u64, ldx: usize, w: Tiled, o
+     }
+ }
+ 
++/// Two decode linears of one shape and width in one launch (z: the problem), when each would take one K slice and the
++/// 16-row blocks: the same blocks and sums as two `matmul` calls; false (nothing launched) when they would not.
++pub fn matmulPair(k: *const Kernels, s: cuda.Stream, x0: u64, x1: u64, ldx: usize, w0: Tiled, w1: Tiled, out0: u64, out1: u64, m: usize) !bool {
++    if (m == 0 or m > 16 or w0.n != w1.n or w0.k != w1.k or w0.bits != w1.bits) return false;
++    if (w0.k % 64 != 0 or w0.n % 8 != 0 or x0 % 16 != 0 or x1 % 16 != 0 or ldx % 8 != 0) return false;
++    if (splitK(w0.n, w0.k) != 1) return false;
++    const wi = widthIndex(w0.bits) catch return false;
++    var a: cuda.Args = .{};
++    a.add(x0);
++    a.add(x1);
++    a.add(@as(c_longlong, @intCast(ldx)));
++    a.add(w0.w);
++    a.add(w1.w);
++    a.add(w0.s);
++    a.add(w1.s);
++    a.add(out0);
++    a.add(out1);
++    a.add(@as(c_int, 0)); // bf16 out, as matmul's `wide` false
++    a.add(@as(c_int, @intCast(m)));
++    a.add(@as(c_int, @intCast(w0.n)));
++    a.add(@as(c_int, @intCast(w0.k)));
++    const cols: u32 = @intCast((w0.n + 63) / 64);
++    try cuda.launch.launch(k.pair[wi], .{ .grid = .{ .x = cols, .y = 1, .z = 2 }, .block = .{ .x = 128 }, .shared = sharedBytes(w0.bits, 16), .pdl = k.pdl }, s, &a);
++    return true;
++}
++
+ /// Packed rows (cuda_qpack's) and fp16 scales [n][k / 64] at `src`, `ss` tiled into `dst`, `ds` (`bits` 4/6/8).
+ pub fn tilePacked(k: *const Kernels, s: cuda.Stream, bits: u8, src: u64, ss: u64, dst: u64, ds: u64, n: usize, kk: usize) !void {
+     const wi = try widthIndex(bits);
+diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
+index 308ddd7e7..c90d771ef 100644
+--- a/zig/src/families/glm/cuda_moe.zig
++++ b/zig/src/families/glm/cuda_moe.zig
+@@ -47,7 +47,15 @@ pub const Side = struct { s: cuda.Stream, fork: cuda.Event, join: cuda.Event };
+ 
+ /// The kernels the block runs: the captured Triton set, the grouped NVFP4 experts, the plan, and glm_ops.
+ /// `side`: a decode window's shared expert on its own stream (null: on the block's stream, as before).
+-pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null, side: ?Side = null };
++/// `fuse`: a decode window's EXL3 experts take the grouped path (TF_GLM_MOE_FUSE=0: off), the same bits.
++pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null, side: ?Side = null, fuse: bool = false };
++
++/// Whether a decode window's EXL3 experts take the grouped path: the fused select writes their compact picks and
++/// grouping (tf_glm_topk_group: no copy, no group launch) and fill sums the routed slots with the shared expert's row
++/// in the down epilogue (no slot rows, no put_slot, no glue.combine), in glue.combine's own order.
++fn grouped(k: Kernels, l: Layer, rows: usize, prompt: bool) bool {
++    return k.fuse and l.exl3 != null and !prompt and rows >= 1 and rows <= glue.select_group_rows and l.top_k == exl3.top_k;
++}
+ 
+ /// Whether this call forks the shared expert: decode windows with a side stream (prompt chunks fill by row pieces).
+ fn forks(k: Kernels, prompt: bool) bool {
+@@ -72,18 +80,25 @@ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
+         const sd = k.side.?;
+         try sd.fork.record(stream);
+         try sd.s.wait(sd.fork);
+-        try sharedRows(k, sd.s, l, s, x, x_stride, 0, rows, prompt);
++        try sharedRows(k, sd.s, l, s, x, x_stride, 0, rows, prompt, !grouped(k, l, rows, prompt));
+         try sd.join.record(sd.s);
+     }
+     var stamp = prof_mod.span(k.prof, stream, .router);
+     try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
+-    try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
++    const g = grouped(k, l, rows, prompt);
++    if (g) {
++        const sc = (try exl3.decodeScratch(l.exl3.?, s.x3, rows, l.count, d, l.routed.width, l.routed.limit)) orelse return error.BadWindow;
++        try glue.selectGroup(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, s.x3.picks, sc.ids, sc.count, sc.members);
++    } else try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
+     stamp.end();
+     stamp = prof_mod.span(k.prof, stream, .experts);
+     defer stamp.end();
+     if (k.prof) |p| p.mark(stream, .router);
+     defer if (k.prof) |p| p.mark(stream, .routed);
+-    if (l.exl3) |w| return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
++    if (l.exl3) |w| {
++        if (g) return exl3.runGrouped(k.exl3, stream, w, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
++        return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
++    }
+     const plan: experts.Plan = .{ .route = s.plan, .slots = slots, .experts = l.count + 1, .prompt = prompt, .fact = !prompt and k.experts.fact and l.routed.format == .nvfp4 };
+     try experts.route(k.experts, stream, s.pick, rows * slots, plan);
+     try experts.run(k.experts, stream, .gate_up, l.routed, plan, x, x_stride, rows, s.eact, shared_id);
+@@ -99,12 +114,18 @@ pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
+     const n = hi - lo;
+     const bf16_slots = prompt and l.exl3 == null; // the slot rows: bf16 in an NVFP4 prompt chunk, else fp32
+     const eb: usize = if (bf16_slots) 2 else 4;
+-    if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, lo, hi, prompt);
++    if (grouped(k, l, hi, prompt)) { // body ran the grouped path on rows 0..hi: one fill of them all
++        if (lo != 0) return error.BadFill;
++        if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, 0, hi, prompt, false);
++        return exl3.combineDecode(k.exl3, stream, l.exl3.?, s.x3, hi, l.count, d, l.routed.width, l.routed.limit, s.wts, s.sy, out);
++    }
++    if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, lo, hi, prompt, true);
+     try glue.combine(k.set, stream, s.ey + lo * slots * d * eb, !bf16_slots, s.wts + lo * slots * 4, out, n, d, slots);
+ }
+ 
+-/// The shared expert of rows lo..hi on `stream`: [gate | up], SwiGLU, down, then its rows into the last slot of `ey`.
+-fn sharedRows(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool) !void {
++/// The shared expert of rows lo..hi on `stream`: [gate | up], SwiGLU, down into `sy`, then with `slot` its rows into the
++/// last slot of `ey` (the grouped decode path reads `sy` itself).
++fn sharedRows(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool, slot: bool) !void {
+     const d = l.routed.dims;
+     const slots = l.top_k + 1;
+     const n = hi - lo;
+@@ -113,6 +134,7 @@ fn sharedRows(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_s
+     try projection.matmul(k.set, stream, l.shared_gu, x + lo * x_stride * 2, x_stride, s.sgu + lo * 2 * l.shared * 2, s.mm_part, n, 2 * l.shared, d, false);
+     try glue.swiglu(k.set, stream, s.sgu + lo * 2 * l.shared * 2, s.sact + lo * l.shared * 2, s.sxs + lo * (l.shared / 64) * 4, l.routed.limit, n, l.shared);
+     try projection.matmul(k.set, stream, l.shared_down, s.sact + lo * l.shared * 2, l.shared, s.sy + lo * d * 4, s.mm_part, n, d, l.shared, true);
++    if (!slot) return;
+     var a: cuda.Args = .{};
+     a.add(s.sy + lo * d * 4);
+     a.add(s.ey + lo * slots * d * eb);
+
+REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
+release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
+took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
+windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
+into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
+were re-cut onto the new anchors; the content is unchanged.

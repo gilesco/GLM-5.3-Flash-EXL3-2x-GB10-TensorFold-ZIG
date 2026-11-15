@@ -525,3 +525,25 @@ and mirror its scope before porting.** Everything else is scope-unambiguous.
 Tests: +4 in tool_guard.zig (`usedTools`, Policy.guard whole+streamed,
 hideCalls); `test-tool-visibility-http-host` + `test-tool-parse-host` stay
 green.
+
+## Round 142 cont. (2026-11-15) — the incident: v1.2.9 broken, the revert to v1.2.7
+
+- [x] **The v1.2.9 engine is BROKEN on this config — the pin REVERTED to
+  v1.2.7 (93a2e93)**: every boot died at `cuLaunchKernel:
+  CUDA_ERROR_INVALID_VALUE (1); kernel tf_exl3_prompt_down, grid
+  16x146x1` — three battery restarts + the production restore,
+  deterministic. The v129val battery VOID (no server line ever; the
+  boilerplate qualify line fired on empty instruments). The suspect: the
+  state-machine re-anchoring's empty-body markers (the kernel's body
+  riding the wrong owner patch) — the next sitting's staged question.
+- [x] **Production RESTORED on the v1.2.7 image** (the prod repo's own
+  prepare + start.sh; the EXL3 recipe serves; opencode back). The user's
+  vLLM fallback (vllm_node, FP4) stopped on both hosts after the verify.
+- [x] **The crash-net RE-ARMED** — the crontab line commented for the
+  round-141 maintenance window was never re-enabled; that disarm is why
+  the incident persisted. Re-arm verified; the cron line's state joins
+  the sitting-start checklist.
+- [ ] **Queued**: the v1.2.9 kernel-defect diagnosis battery (stage
+  brief first); the battery verdict's dead-measurement guard; the
+  restore-rc propagation fix; the fingerprint check binding the image's
+  TF_COMMIT.

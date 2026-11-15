@@ -27,6 +27,23 @@ this line covers the MTP prompt-chunk path too (on v1.2.2 it rode t).
 REBASE (2026-11-07, onto v1.2.4 267c5af6a): applies verbatim - only the hunks' anchors
 were re-cut by the rebase; the content is unchanged.
 
+diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
+index 4ab08c370..ba0a6b247 100644
+--- a/zig/src/families/glm/cuda_dsa_block.zig
++++ b/zig/src/families/glm/cuda_dsa_block.zig
+@@ -237,7 +237,7 @@ fn tables(l: Layer, c: Caches) !struct { latent.Table, latent.Table } {
+     if (c.ps % (l.lw * 2) != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
+     // an E4M3 cache's sparse lists stay positions (its chunks take each key through the table); BF16's are page rows
+     const t: latent.Table = .{ .pt = c.pt, .ps = c.ps, .page_rows = if (c.ls != 0) latent.chunk else c.ps / (l.lw * 2), .logical = c.ls != 0 };
+-    return .{ t, .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows } };
++    return .{ t, .{ .pt = c.pt, .ps = if (c.pks != 0) c.pks else c.ps, .page_rows = t.page_rows, .logical = c.ls != 0 } };
+ }
+ 
+ fn writeKeys(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, rows: usize, pos: u64) !void {
 
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body is EMPTY — this patch's content is fully carried by the member that lands its shared files in the composed stack; the end-state replay verifies byte-exact. The concern's record, receipts and original port provenance stay in this header and patches/README.md.
-
+REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
+release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
+took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
+windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
+into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
+were re-cut onto the new anchors; the content is unchanged.

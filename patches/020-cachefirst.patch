@@ -27,9 +27,6 @@ A/B: the serve lines' own arithmetic — the streams' pages, the funded cache,
 the fund-report line — plus the §2 gates, hardmode 95, the vision 4/4, the
 greedy same-bits sha). The compile RC=0 (fatbins + native, sm_121) receipted on the ported tree. Adoption moves config.sh's env default.
 
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
-
 diff --git a/zig/src/core/kv_pool.zig b/zig/src/core/kv_pool.zig
 index a8941b77f..ba53d46d6 100644
 --- a/zig/src/core/kv_pool.zig
@@ -55,7 +52,7 @@ index a8941b77f..ba53d46d6 100644
  }
  
 diff --git a/zig/src/native/cuda_kv_pool.zig b/zig/src/native/cuda_kv_pool.zig
-index 5f0b16318..98442bf92 100644
+index e39a5001e..0913a025f 100644
 --- a/zig/src/native/cuda_kv_pool.zig
 +++ b/zig/src/native/cuda_kv_pool.zig
 @@ -156,7 +156,7 @@ fn cacheWanted(comptime F: type, o: api.Open) u64 {
@@ -76,7 +73,7 @@ index 5f0b16318..98442bf92 100644
      if (out.asked or host_mode or comptime keepsNoPrompts(F)) return out;
      var probe = out;
      probe.cache = std.math.maxInt(u64);
-@@ -181,13 +181,17 @@ pub fn budgetOf(comptime F: type, l: kv_pool.Layout, room: u64, o: api.Open, win
+@@ -171,13 +171,17 @@ pub fn budgetOf(comptime F: type, l: kv_pool.Layout, room: u64, o: api.Open, win
  /// The pool beside the engine's own sequence (in `model`: a window, or on pages its fixed part); null: see `problem`.
  pub fn plan(comptime F: type, a: Allocator, l: kv_pool.Layout, room: u64, o: api.Open, window: u64, problem: *[]const u8, host_mode: bool, engine_paged: bool, kept_ppm: u32, slots: ?usize) !?Plan {
      const rows: u64 = if (comptime @hasDecl(F, "window_rows")) F.window_rows else 0;
@@ -95,7 +92,7 @@ index 5f0b16318..98442bf92 100644
  }
  
  /// The planned streams' sequences and pages made now; false: `problem` says why they could not be.
-@@ -272,6 +276,13 @@ pub fn cacheText(a: Allocator, over_pages: bool, asked: ?usize, paged: ?Plan, l:
+@@ -262,6 +266,13 @@ pub fn cacheText(a: Allocator, over_pages: bool, asked: ?usize, paged: ?Plan, l:
      return std.fmt.allocPrint(a, ", {d} of TF_KV_SHARE={d} kept states' slots ({d:.1} GiB; {s}) and the prompt cache over the pool's pages", .{ snaps, n, toGib(snaps * slot), more });
  }
  
@@ -109,3 +106,10 @@ index 5f0b16318..98442bf92 100644
  fn named(o: api.Open) ?usize {
      return if (o.keep) |k| @intCast(@max(k, 0)) else null;
  }
+
+REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
+release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
+took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
+windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
+into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
+were re-cut onto the new anchors; the content is unchanged.

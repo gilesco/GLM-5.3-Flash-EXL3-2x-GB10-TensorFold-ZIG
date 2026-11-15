@@ -51,19 +51,15 @@ numerics field after bits; the Forward constructions carry l2pf and
 prompt_pair.piecesOf now - .absorb_mma re-inserted beside them; the numerics test
 appended at the new EOF (v1.2.4 added the KV_SHARE adapter test after the old one).
 
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
-
 diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
-index 27ec32eb9..b0183d9d2 100644
+index 06f2ba94c..e602795c6 100644
 --- a/zig/kernels/cuda/glm_glue.cu
 +++ b/zig/kernels/cuda/glm_glue.cu
-@@ -8,4 +8,5 @@
+@@ -8,3 +8,4 @@
  #include "glm_glue_index.cuh"
  #include "glm_glue_bmm.cuh"
  #include "glm_glue_attn.cuh"
 +#include "glm_glue_num.cuh"
- #include "glm_index_decode.cuh"
 diff --git a/zig/kernels/cuda/glm_glue_num.cuh b/zig/kernels/cuda/glm_glue_num.cuh
 new file mode 100644
 index 000000000..557fb16d4
@@ -227,33 +223,10 @@ index 000000000..557fb16d4
 +}
 +
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index 3cc2adec2..a38cff9d6 100644
+index 8c344899e..b281e23f2 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -76,6 +76,8 @@ pub const Engine = struct {
-     m: fw.Modules,
-     stream: cuda.Stream,
-     pieces: fw.Pieces,
-+    moe_fuse: bool = true, // TF_GLM_MOE_FUSE=0: a decode window's EXL3 MoE glue unfused (the same bits either way)
-+    side: ?@import("cuda_moe.zig").Side = null, // decode windows' shared expert stream and events (TF_GLM_SHARED_SIDE=0: none)
-     w: weights.Weights,
-     bp: fw.Buffers, // prompt chunks
-     pair: ?prompt_pair.Pair = null, // TF_GLM_PROMPT_PAIR: a paired prompt step's second chunk
-@@ -161,10 +163,12 @@ pub const Engine = struct {
-         const pair = prompt_pair.wanted(o.settings.pair, o.settings.solo, world);
-         var pieces = try fw.Pieces.init(d, o.settings.pieces, pair);
-         errdefer pieces.deinit();
-+        var side = try sideStream(d);
-+        errdefer if (side) |*x| freeSide(x);
-         if (o.settings.layers > c.layers) return error.BadLayers;
-         const layers = try a.alloc(u32, if (o.settings.layers > 0) o.settings.layers else c.layers);
-         for (layers, 0..) |*l, i| l.* = @intCast(i);
--        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .mesh = place, .backend = backend, .collective = backend.collective(), .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
-+        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .mesh = place, .backend = backend, .collective = backend.collective(), .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .side = side, .moe_fuse = envOn("TF_GLM_MOE_FUSE"), .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
-         const has_packs = o.settings.dense_bits != 16 or o.settings.head_bits != 16;
-         if (has_packs and !o.settings.tiled) return error.PackedNeedsGlmMm;
-         const Tile = struct {
-@@ -199,6 +203,7 @@ pub const Engine = struct {
+@@ -188,6 +188,7 @@ pub const Engine = struct {
          }
          e.bp = try fw.Buffers.init(d, &e.w, prompt_solo.bufferRows(o.settings.solo), true, o.capacity);
          errdefer e.bp.deinit();
@@ -261,32 +234,9 @@ index 3cc2adec2..a38cff9d6 100644
          if (o.settings.solo and rank == 0) std.log.info("glm: prompt passes of {d} rows, {d} while another stream decodes", .{ fw.solo_rows, fw.prefill_rows });
          if (world > 1 and rank == 0) std.log.info("glm: a prompt chunk's exchanges in {d} row pieces", .{o.settings.pieces});
          if (pair) e.pair = try prompt_pair.Pair.init(d, &e.w, &e.bp, &e.pieces, o.capacity);
-@@ -228,12 +233,14 @@ pub const Engine = struct {
-         e.shared_buf = try cuda.DeviceBuffer.alloc(d, 8);
-         errdefer e.shared_buf.free();
-         errdefer @import("cuda_load_owner.zig").drain(stream, d);
-+        errdefer if (e.side) |x| @import("cuda_load_owner.zig").drain(x.s, d); // before the buffers it reads go
-         try e.stream.synchronize();
-         return e;
-     }
+@@ -257,6 +258,13 @@ pub const Engine = struct {
  
-     pub fn deinit(e: *Engine) void {
-         e.stream.synchronize() catch {};
-+        if (e.side) |x| x.s.synchronize() catch {}; // shared-expert work still in flight reads buffers and weights freed below
-         e.gpa.free(e.packs.ptrs);
-         e.gpa.free(e.packs.bits);
-         if (e.drafter) |dr| dr.deinit();
-@@ -259,6 +266,7 @@ pub const Engine = struct {
-         if (e.l2pf) |*p| p.deinit();
-         e.w.deinit();
-         e.pieces.deinit();
-+        if (e.side) |*x| freeSide(x);
-         e.m.deinit();
-         e.stream.deinit();
-         e.gpa.free(e.spans);
-@@ -276,6 +284,13 @@ pub const Engine = struct {
-         std.log.info("[tensorfold] glm: rank {d} of {d} sums through the {t} collective (RoCE gathers {s})", .{ g.rank, g.world, e.collective.kind(), if (g.fast != null or g.multi != null) "on" else "off" });
-     }
+     const freeProfs = @import("cuda_engine_prof.zig").freeProfs;
  
 +    /// The opt-in numerics flags (cuda_ranks.Numerics), named once at startup.
 +    fn initNumerics(e: *Engine) void {
@@ -296,134 +246,63 @@ index 3cc2adec2..a38cff9d6 100644
 +    }
 +
      pub fn exchange(e: *const Engine) fw.Exchange {
-         return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .collective = e.collective } };
+         return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .group = e.group } };
      }
-@@ -283,7 +298,30 @@ pub const Engine = struct {
+@@ -264,7 +272,7 @@ pub const Engine = struct {
      pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
          out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
          const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
 -        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null };
-+        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side, .moe_fuse = e.moe_fuse };
-+    }
-+
-+    /// An on-by-default switch: off only when `name` is "0".
-+    fn envOn(name: [*:0]const u8) bool {
-+        const v = std.c.getenv(name) orelse return true;
-+        return !std.mem.eql(u8, std.mem.span(v), "0");
-+    }
-+
-+    /// The decode windows' side stream for the MoE shared expert, unless TF_GLM_SHARED_SIDE=0.
-+    fn sideStream(d: *const cuda.Driver) !?@import("cuda_moe.zig").Side {
-+        if (std.c.getenv("TF_GLM_SHARED_SIDE")) |v| if (std.mem.eql(u8, std.mem.span(v), "0")) return null;
-+        var s = try cuda.Stream.init(d, false);
-+        errdefer s.deinit();
-+        var fork = try cuda.Event.init(d, false);
-+        errdefer fork.deinit();
-+        return .{ .s = s, .fork = fork, .join = try cuda.Event.init(d, false) };
-+    }
-+
-+    fn freeSide(x: *@import("cuda_moe.zig").Side) void {
-+        x.s.synchronize() catch {};
-+        x.join.deinit();
-+        x.fork.deinit();
-+        x.s.deinit();
++        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null };
      }
  
      /// Binds slot `slot`'s sequence for the steps that follow, making it (a zeroed state) on first use.
-@@ -426,7 +464,9 @@ pub const Engine = struct {
-         if (f.prof) |p| p.mark(e.stream, .draw);
-         if (last) try e.holdPrompt(e.bp.fnormed + (rows - 1) * e.c.hidden * 2);
-         stamp = prof_mod.span(f.prof, e.stream, .mtp);
--        if (e.mtp) try prompt_solo.mtpRows(e, &f, as_i32);
-+        // With a drafter (DFlash2) every draft is its block's (cuda_lanes); the target MTP layer's caches are never
-+        // read, so the prompt does not absorb into them (mtp_len stays 0, as snapshots and the next prompt expect).
-+        if (e.mtp and e.drafter == null) try prompt_solo.mtpRows(e, &f, as_i32);
-         stamp.end();
-         if (f.prof) |p| p.mark(e.stream, .mtp);
-         stamp = prof_mod.span(f.prof, e.stream, .commit);
-@@ -481,7 +521,7 @@ pub const Engine = struct {
+@@ -459,7 +467,7 @@ pub const Engine = struct {
              rows += p.ids.len;
          }
          var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
 -        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null };
-+        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = e.side, .moe_fuse = e.moe_fuse };
++        const f: fw.Forward = .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = &one, .exchange = e.exchange(), .pieces = null, .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .taps = if (e.drafter) |dr| dr.taps(false) else null, .l2pf = if (e.l2pf) |*p| p else null };
          try f.run(@ptrCast(ids[0..rows]));
          if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
          for (parts, segs[0..parts.len]) |p, g| {
 diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
-index e18dc98be..43c0ecd2b 100644
+index ded6ee05c..d2956520b 100644
 --- a/zig/src/families/glm/cuda_forward.zig
 +++ b/zig/src/families/glm/cuda_forward.zig
-@@ -155,6 +155,9 @@ pub const Forward = struct {
+@@ -207,6 +207,7 @@ pub const Forward = struct {
      prof: ?*prof_mod.Prof = null, // TF_GLM_PROF=1: events between the sections
      taps: ?taps_mod.Taps = null, // DFlash2 (--drafter): the tapped layers' rows, after each such layer
      index_split: bool = false, // TF_GLM_INDEX_SPLIT: this prompt chunk's indexer rows split across the ranks (rank 0's choice)
-+    side: ?moe.Side = null, // a decode window's MoE shared expert on a second stream (TF_GLM_SHARED_SIDE, default on)
-+    moe_fuse: bool = false, // a decode window's EXL3 MoE glue fused (TF_GLM_MOE_FUSE, default on in the engine)
 +    absorb_mma: bool = false, // TF_GLM_ABSORB_MMA=1: a prompt pass's absorb_q and expand_v on tensor cores
      l2pf: ?*const l2pf_mod.L2pf = null, // TF_GLM_L2PF: a decode window's sites read their next weights into L2
  
      /// TF_GLM_L2PF on this forward: a decode window of this process's one rank (a prompt chunk reads at full rate).
-@@ -163,7 +166,7 @@ pub const Forward = struct {
+@@ -215,7 +216,7 @@ pub const Forward = struct {
      }
  
      pub fn set(f: *const Forward) glue.Set {
--        return .{ .glue = &f.m.glue, .index = if (f.m.index) |*x| x else null, .mm = if (f.m.tiled) &f.m.mm else null, .packs = f.m.packs, .prompt = f.ranks[0].b.prefill, .linear = .{ .lane = &f.m.lane }, .copy_rows = f.m.copy_rows, .dsel = f.m.dsel };
-+        return .{ .glue = &f.m.glue, .index = if (f.m.index) |*x| x else null, .mm = if (f.m.tiled) &f.m.mm else null, .packs = f.m.packs, .prompt = f.ranks[0].b.prefill, .linear = .{ .lane = &f.m.lane }, .copy_rows = f.m.copy_rows, .dsel = f.m.dsel, .absorb_mma = f.absorb_mma and f.ranks[0].b.prefill };
+-        return .{ .glue = &f.m.glue, .index = if (f.m.index) |*x| x else null, .mm = if (f.m.tiled) &f.m.mm else null, .packs = f.m.packs, .prompt = f.ranks[0].b.prefill, .linear = .{ .lane = &f.m.lane }, .copy_rows = f.m.copy_rows };
++        return .{ .glue = &f.m.glue, .index = if (f.m.index) |*x| x else null, .mm = if (f.m.tiled) &f.m.mm else null, .packs = f.m.packs, .prompt = f.ranks[0].b.prefill, .linear = .{ .lane = &f.m.lane }, .copy_rows = f.m.copy_rows, .absorb_mma = f.absorb_mma and f.ranks[0].b.prefill };
      }
  
-     /// The layer sums' boundary (cuda_boundary.zig): every rank's fp32 partial into every gathered buffer.
-@@ -253,7 +256,7 @@ pub const Forward = struct {
-     }
- 
-     fn moeKernels(f: *const Forward) moe.Kernels {
--        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof };
-+        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof, .side = if (f.ranks[0].b.prefill) null else f.side, .fuse = f.moe_fuse };
-     }
- 
-     pub const Site = enum { mixer, ffn };
+     /// reduce.sums' gather: every rank's partial of `rows` rows into every rank's gathered buffer, rank order.
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 777355de5..065a40c90 100644
+index 57acb6bc6..40fd01361 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
-@@ -6,6 +6,7 @@ const mm_mod = @import("cuda_mm.zig");
+@@ -6,7 +6,8 @@ const mm_mod = @import("cuda_mm.zig");
  const index_mod = @import("cuda_index.zig");
  
  /// What the forward's kernels launch from: our glue's, glm_mm's when tiled, qlinear's lane for FP8 kinds, copy_rows.
+-pub const Set = struct { glue: *const Kernels, index: ?*const index_mod.Kernels = null, mm: ?*const mm_mod.Kernels = null, packs: ?*const mm_mod.Packed = null, prompt: bool = false, linear: cuda.qlinear.Linear = .{}, copy_rows: ?cuda.Function = null };
 +/// `absorb_mma`: TF_GLM_ABSORB_MMA=1 on a prompt pass (absorb_q and expand_v on tensor cores, cuda_latent).
- pub const Set = struct {
-     glue: *const Kernels,
-     index: ?*const index_mod.Kernels = null,
-@@ -16,6 +17,7 @@ pub const Set = struct {
-     copy_rows: ?cuda.Function = null,
-     /// A decode window's DSA select on many CTAs (cuda_sparse.decodeSelect; TF_GLM_DSEL, default on).
-     dsel: bool = false,
-+    absorb_mma: bool = false,
- };
++pub const Set = struct { glue: *const Kernels, index: ?*const index_mod.Kernels = null, mm: ?*const mm_mod.Kernels = null, packs: ?*const mm_mod.Packed = null, prompt: bool = false, linear: cuda.qlinear.Linear = .{}, copy_rows: ?cuda.Function = null, absorb_mma: bool = false };
  
  /// A hidden-size norm's weight: bf16, or float32 (FP4-Local's) read as float32 by the _f32w kernels.
-@@ -42,6 +44,7 @@ pub const Kernels = struct {
-     swiglu_64: cuda.Function,
-     group_sums: cuda.Function,
-     topk: cuda.Function,
-+    topk_group: cuda.Function,
-     router_tile: cuda.Function,
-     hc_partial: cuda.Function,
-     hc_partial8: cuda.Function,
-@@ -51,6 +54,7 @@ pub const Kernels = struct {
-     expand_v: cuda.Function,
-     lat_write: cuda.Function,
-     lat_write_fp8: cuda.Function,
-+    lat_write_fp8_paged: cuda.Function,
-     index_write: cuda.Function,
-     pool_keys: cuda.Function,
-     select_rows: cuda.Function,
-@@ -69,8 +73,12 @@ pub const Kernels = struct {
-     chunks_32: cuda.Function,
-     chunks_16_fp8: cuda.Function,
+ pub const Norm = union(enum) { bf16: u64, f32: u64 };
+@@ -60,6 +61,8 @@ pub const Kernels = struct {
      chunks_32_fp8: cuda.Function,
-+    chunks_16_fp8_paged: cuda.Function,
-+    chunks_32_fp8_paged: cuda.Function,
      merge: cuda.Function,
      scores: cuda.Function,
 +    latent_mma_kn: cuda.Function, // TF_GLM_ABSORB_MMA (glm_glue_num.cuh): absorb_q's head-batched GEMM, B as [K][N]
@@ -431,38 +310,16 @@ index 777355de5..065a40c90 100644
  
      pub fn load(m: cuda.Module) !Kernels {
          var k: Kernels = undefined;
-@@ -81,6 +89,10 @@ pub const Kernels = struct {
+@@ -70,6 +73,8 @@ pub const Kernels = struct {
          try k.chunks_32.allowDynamicShared(chunksSmem(32));
          try k.chunks_16_fp8.allowDynamicShared(chunksSmem(16));
          try k.chunks_32_fp8.allowDynamicShared(chunksSmem(32));
-+        try k.chunks_16_fp8_paged.allowDynamicShared(chunksSmem(16));
-+        try k.chunks_32_fp8_paged.allowDynamicShared(chunksSmem(32));
 +        try k.latent_mma_kn.allowDynamicShared(latent_mma_smem[0]);
 +        try k.latent_mma_nk.allowDynamicShared(latent_mma_smem[1]);
          return k;
      }
  };
-@@ -194,6 +206,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,
-     try cuda.launch.launch(set.glue.topk, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 32 } }, stream, &a);
- }
- 
-+/// The rows a fused select-and-group takes: a warp a row in one 1024-thread block (tf_glm_topk_group).
-+pub const select_group_rows = 32;
-+
-+/// glue.select of a decode window (tf_glm_topk's code, a warp a row) and, for the EXL3 experts, the routed picks
-+/// compact (`top_k` a row, in `pick8`) with tf_exl3_group's grouping into `ids`, `count` and `members` (`rows` each).
-+pub fn selectGroup(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64, wts: u64, rows: usize, top_k: usize, experts: usize, scale: f32, norm: bool, pick8: u64, ids: u64, count: u64, members: u64) !void {
-+    if (experts > 512 or top_k >= 32) return error.TopkTooWide;
-+    if (rows == 0 or rows > select_group_rows or rows * top_k > 1024 or experts > 4096) return error.TooManyRows;
-+    var a: cuda.Args = .{};
-+    inline for (.{ logits, bias, pick, wts, scale, cint(experts), cint(top_k), @as(c_int, @intFromBool(norm)), cint(rows), pick8, ids, count, members }) |v| a.add(v);
-+    try cuda.launch.launch(set.glue.topk_group, .{ .grid = .{ .x = 1 }, .block = .{ .x = 1024 } }, stream, &a);
-+}
-+
- /// glue.combine: out [rows][d] fp32 = sum over slots in order of wts[r][k] y[r][k] (y fp32 in decode, bf16 in prefill).
- pub fn combine(set: Set, stream: cuda.Stream, y: u64, y_f32: bool, wts: u64, out: u64, rows: usize, d: usize, slots: usize) !void {
-     var a: cuda.Args = .{};
-@@ -238,6 +263,9 @@ pub fn hcPost(set: Set, stream: cuda.Stream, x: u64, xout: u64, g: u64, post: u6
+@@ -226,6 +231,9 @@ pub fn hcPost(set: Set, stream: cuda.Stream, x: u64, xout: u64, g: u64, post: u6
      try rows8Launch(set.glue.hc_post, stream, &a, rows, d, .{ x, xout, g });
  }
  
@@ -473,21 +330,10 @@ index 777355de5..065a40c90 100644
  pub fn rankSum(set: Set, stream: cuda.Stream, own: u64, peers: u64, peer_stride: usize, out: u64, me: usize, rows: usize, d: usize, world: usize) !void {
      var a: cuda.Args = .{};
 diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
-index 8cc7b2eeb..b193fab3e 100644
+index 8cc7b2eeb..d04bdaae5 100644
 --- a/zig/src/families/glm/cuda_latent.zig
 +++ b/zig/src/families/glm/cuda_latent.zig
-@@ -12,6 +12,10 @@ pub const heads_tile_wide = 32;
- pub const prompt_rows = 64;
- pub const prompt_rb = 64;
- 
-+/// The chunk kernels' block (glm_glue_attn.cuh CHUNK_THREADS): their warp split and FP8 tile loads assume it, and they
-+/// trap on any other width.
-+pub const chunk_threads = 256;
-+
- /// latent.head_block: a rank's 32 heads a program in prompt chunks (each key read once), 16 in decode windows.
- pub fn headBlock(rows: usize) usize {
-     return if (rows >= 64) heads_tile_wide else heads_tile;
-@@ -29,9 +33,26 @@ fn cdiv(a: usize, b: usize) u32 {
+@@ -29,9 +29,26 @@ fn cdiv(a: usize, b: usize) u32 {
  /// latent.absorb_q (BF16 kv_b): out [rows][heads][lw] bf16 = q [rows][heads][d] . wk [heads][d][lw], fp32 sums.
  pub fn absorbQ(set: glue.Set, stream: cuda.Stream, q: u64, wk: u64, out: u64, rows: usize, heads: usize, d: usize, lw: usize) !void {
      if (d != 256 or lw != 512) return error.LatentShape;
@@ -514,7 +360,7 @@ index 8cc7b2eeb..b193fab3e 100644
  /// The absorb and expand launches: rows in one block in decode windows, prompt_rb a block in prompt chunks.
  fn rowBlocks(f: cuda.Function, stream: cuda.Stream, in: u64, w: u64, out: u64, rows: usize, heads: usize, cols: usize) !void {
      const rb = if (rows >= prompt_rows) prompt_rb else rows;
-@@ -43,6 +64,7 @@ fn rowBlocks(f: cuda.Function, stream: cuda.Stream, in: u64, w: u64, out: u64, r
+@@ -43,6 +60,7 @@ fn rowBlocks(f: cuda.Function, stream: cuda.Stream, in: u64, w: u64, out: u64, r
  /// latent.expand_v (BF16 kv_b): out [rows][heads][dv] bf16 = o_lat [rows][heads][lw] . wv [heads][dv][lw].
  pub fn expandV(set: glue.Set, stream: cuda.Stream, ol: u64, wv: u64, out: u64, rows: usize, heads: usize, dv: usize, lw: usize) !void {
      if (dv != 256 or lw != 512) return error.LatentShape;
@@ -522,72 +368,8 @@ index 8cc7b2eeb..b193fab3e 100644
      try rowBlocks(set.glue.expand_v, stream, ol, wv, out, rows, heads, dv / 16);
  }
  
-@@ -54,16 +76,23 @@ pub fn cacheBytes(capacity: usize, lw: usize, kv8: bool) !usize {
- }
- 
- /// On pages: the stream's table (i32 page ids) and the step from page to page in bytes and latent rows; 0: in order.
--pub const Table = struct { pt: u64 = 0, ps: u64 = 0, page_rows: u64 = 0 };
-+/// `logical`: the sparse token lists stay positions (an E4M3 cache, whose chunks take each key through `pt`, its codes
-+/// and scales being different units); otherwise tf_glm_dsa_tokens writes each token's BF16 row on the pages.
-+pub const Table = struct { pt: u64 = 0, ps: u64 = 0, page_rows: u64 = 0, logical: bool = false };
- 
--/// BF16 rows through `t`, or E4M3 rows and their scales (scales nonzero), which take no pages.
-+/// BF16 rows through `t`, or E4M3 rows and their scales (scales nonzero): in order, or on pages through `t`, where
-+/// `cache` and `scales` are this cache's codes and scales in page 0 and pages lie `t.ps` bytes apart.
- pub fn latentWriteFormat(set: glue.Set, stream: cuda.Stream, lat: u64, lat_stride: usize, cache: u64, scales: u64, t: Table, pos: u64, rows: usize, lw: usize) !void {
-     if (scales == 0) return latentWrite(set, stream, lat, lat_stride, cache, t, pos, rows, lw);
-     if (lw != 512) return error.LatentShape;
--    if (t.pt != 0) return error.Fp8OnPages;
-     var a: cuda.Args = .{};
-     inline for (.{ lat, @as(i64, @intCast(lat_stride)), cache, scales, pos }) |v| a.add(v);
--    try cuda.launch.launch(set.glue.lat_write_fp8, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 512 } }, stream, &a);
-+    if (t.pt != 0) {
-+        a.add(t.pt);
-+        a.add(@as(i64, @intCast(t.ps)));
-+    }
-+    const f = if (t.pt != 0) set.glue.lat_write_fp8_paged else set.glue.lat_write_fp8;
-+    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 512 } }, stream, &a);
- }
- 
- /// latent.latent_write: rows of `lat` (stride `lat_stride`) into slots pos .. pos + rows - 1 (pos an i32 on device).
-@@ -87,25 +116,29 @@ pub fn attentionFormat(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64,
- }
- 
- /// latent._dense_chunks (sparse false: keys through pos + r) and _sparse_chunks (row r's `counts` tokens of `tokens`).
-+/// BF16 takes the table always (pt 0: in order); E4M3 on pages its _paged kernels, the window's arguments then the table.
- fn chunks(set: glue.Set, stream: cuda.Stream, qa: u64, cache: u64, scales: u64, t: Table, pos: u64, tokens: u64, counts: u64, p: Partials, rows: usize, heads: usize, lw: usize, nch: usize, w: usize, scale: f32, hb: usize, sparse: bool) !void {
-     if (lw != 512) return error.LatentShape;
--    if (scales != 0 and t.pt != 0) return error.Fp8OnPages;
-+    const kv8 = scales != 0;
-+    const paged8 = kv8 and t.pt != 0;
-+    // a paged sparse list's units are the kernel's: positions for E4M3 (Table.logical), the BF16 rows otherwise
-+    if (sparse and t.pt != 0 and t.logical != paged8) return error.TokenUnits;
-     const f = switch (hb) {
--        heads_tile => if (scales == 0) set.glue.chunks_16 else set.glue.chunks_16_fp8,
--        heads_tile_wide => if (scales == 0) set.glue.chunks_32 else set.glue.chunks_32_fp8,
-+        heads_tile => if (!kv8) set.glue.chunks_16 else if (paged8) set.glue.chunks_16_fp8_paged else set.glue.chunks_16_fp8,
-+        heads_tile_wide => if (!kv8) set.glue.chunks_32 else if (paged8) set.glue.chunks_32_fp8_paged else set.glue.chunks_32_fp8,
-         else => return error.HeadBlock,
-     };
-     var a: cuda.Args = .{};
-     a.add(qa);
-     a.add(cache);
--    if (scales != 0) a.add(scales);
-+    if (kv8) a.add(scales);
-     inline for (.{ pos, tokens, counts, p.po, p.pm, p.pl, @as(i64, @intCast(rows)), @as(i64, @intCast(heads)), @as(i64, @intCast(w)), scale, @as(c_int, @intFromBool(sparse)) }) |v| a.add(v);
--    if (scales == 0) {
-+    if (!kv8 or paged8) {
-         a.add(t.pt);
-         a.add(@as(i64, @intCast(t.ps)));
-     }
-     const shared = if (hb == heads_tile_wide) glue.chunksSmem(heads_tile_wide) else glue.chunksSmem(heads_tile);
--    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(rows), .y = cdiv(heads, hb), .z = @intCast(nch) }, .block = .{ .x = 256 }, .shared = shared }, stream, &a);
-+    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(rows), .y = cdiv(heads, hb), .z = @intCast(nch) }, .block = .{ .x = chunk_threads }, .shared = shared }, stream, &a);
- }
- 
- /// latent.sparse_attention: rows with counts > 0 over their selected tokens (i32 [rows][w]); others left alone.
 diff --git a/zig/src/families/glm/cuda_prompts.zig b/zig/src/families/glm/cuda_prompts.zig
-index b66392f44..d397bce71 100644
+index b66392f44..93031677e 100644
 --- a/zig/src/families/glm/cuda_prompts.zig
 +++ b/zig/src/families/glm/cuda_prompts.zig
 @@ -38,7 +38,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
@@ -599,17 +381,8 @@ index b66392f44..d397bce71 100644
      try f.run(@ptrCast(ids[0..rows]));
      if (e.drafter) |dr| for (parts, segs[0..parts.len]) |p, g|
          try dr.promptSegment(e, p.slot, 0, g.rows, p.ids.len, g.row0);
-@@ -53,7 +53,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
-     for (parts, segs[0..parts.len]) |p, g| {
-         one[0] = .{ .w = &e.w, .st = g.st, .b = &e.bp };
-         // decode._absorb_rows; the head's pass writes final-norm row 0, which the hold rows above already copied
--        if (e.mtp and g.rows > 1) {
-+        if (e.mtp and e.drafter == null and g.rows > 1) { // with a drafter the target MTP caches are never read (cuda_engine)
-             try f.mtp(@ptrCast(p.ids[1..]), &.{e.bp.fnormed + g.row0 * D * 2});
-             try g.st.setMtpLen(e.stream, g.st.mtp_len + g.rows - 1);
-         }
 diff --git a/zig/src/families/glm/cuda_ranks.zig b/zig/src/families/glm/cuda_ranks.zig
-index e60f789e5..813fae014 100644
+index ad0fb76fb..a07b391d1 100644
 --- a/zig/src/families/glm/cuda_ranks.zig
 +++ b/zig/src/families/glm/cuda_ranks.zig
 @@ -24,6 +24,7 @@ pub const Settings = struct {
@@ -618,9 +391,9 @@ index e60f789e5..813fae014 100644
      head_bits: u8 = 16, // TF_GLM_HEAD_BITS: the head, likewise
 +    numerics: Numerics = .{}, // opt-in prompt kernels that round differently (each off by default)
      roce_multi: bool = false, // TF_GLM_ROCE_MULTI: 1 (three ranks or more: small all-gathers on fabric/tp's multirank RoCE beside NCCL) or 0
-     roce_wide: bool = false, // TF_ROCE=1: at three ranks or more the RoCE gather and the drafter MLP split (two ranks: always)
      kv_host: u8 = 0, // TF_GLM_KV_HOST=1: KV pages in host memory (1); with TF_GLM_KV_HOST_SHARED=1, one copy a host (2)
-@@ -140,6 +141,12 @@ pub const Settings = struct {
+     kv_host_gib: f64 = 0, // TF_GLM_KV_HOST_GIB: the host pages' GiB (0: one full window)
+@@ -138,6 +139,12 @@ pub const Settings = struct {
                  },
              };
          };
@@ -633,7 +406,7 @@ index e60f789e5..813fae014 100644
          s.heat = heat.bandsFrom(get("TF_HEAT_HIGH"), get("TF_HEAT_LOW")) catch {
              problem.* = "TF_HEAT_HIGH and TF_HEAT_LOW: both or neither, in degrees, with low at or under high";
              return error.BadSetting;
-@@ -186,6 +193,16 @@ pub const Settings = struct {
+@@ -184,6 +191,16 @@ pub const Settings = struct {
      }
  };
  
@@ -650,16 +423,16 @@ index e60f789e5..813fae014 100644
  /// The most ranks a world holds: rank 0's greedy pick gathers every rank's top-1 into one host array of this size.
  pub const max_world = 16;
  
-@@ -207,7 +224,7 @@ fn wireOpens(get: *const fn ([:0]const u8) ?[]const u8) bool {
+@@ -200,7 +217,7 @@ fn wireOpens(get: *const fn ([:0]const u8) ?[]const u8) bool {
  
  /// What every rank must agree on, as bytes the communicator carries.
  pub const Fingerprint = extern struct {
--    layout: u32 = 21, // this struct's version (20, main's kv_live_half, plus roce_wide)
-+    layout: u32 = 22, // this struct's version (21, main's roce_wide, plus numerics)
+-    layout: u32 = 20, // this struct's version (19, main's prompt pair, plus kv_live_half)
++    layout: u32 = 21, // this struct's version (20 plus numerics)
      world: u32,
      rank: u32,
      kv8: u32 = 0,
-@@ -233,6 +250,7 @@ pub const Fingerprint = extern struct {
+@@ -225,6 +242,7 @@ pub const Fingerprint = extern struct {
      solo: u32 = 0, // TF_GLM_CHUNK_SOLO: rank 0's solo passes need the wider prompt buffers on every rank
      l2pf: [4]u32 = @splat(0), // TF_GLM_L2PF's words: every rank prefetches alike, so none waits on a slower one's windows
      bits: u32 = 16 << 8 | 16, // TF_GLM_DENSE_BITS << 8 | TF_GLM_HEAD_BITS: every rank's matmuls read the same codes
@@ -667,7 +440,7 @@ index e60f789e5..813fae014 100644
      capacity: u64, // tokens a sequence holds
      heat_high: f64, // the heat bands in degrees (0 and 0: off): every rank must wait alike
      heat_low: f64,
-@@ -268,6 +286,7 @@ pub const Fingerprint = extern struct {
+@@ -259,6 +277,7 @@ pub const Fingerprint = extern struct {
          solo,
          l2pf,
          bits,
@@ -675,7 +448,7 @@ index e60f789e5..813fae014 100644
          capacity,
          heat_high,
          heat_low,
-@@ -309,6 +328,7 @@ pub const Fingerprint = extern struct {
+@@ -299,6 +318,7 @@ pub const Fingerprint = extern struct {
              .solo = @intFromBool(s.solo),
              .l2pf = s.l2pf.words(),
              .bits = @as(u32, s.dense_bits) << 8 | s.head_bits,
@@ -683,7 +456,7 @@ index e60f789e5..813fae014 100644
              .capacity = capacity,
              .heat_high = if (s.heat) |b| b.high_c else 0,
              .heat_low = if (s.heat) |b| b.low_c else 0,
-@@ -352,6 +372,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
+@@ -341,6 +361,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
              "solo",
              "l2pf",
              "bits",
@@ -691,7 +464,7 @@ index e60f789e5..813fae014 100644
              "capacity",
              "heat_high",
              "heat_low",
-@@ -477,6 +498,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
+@@ -465,6 +486,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
          .solo => "TF_GLM_CHUNK_SOLO",
          .l2pf => "TF_GLM_L2PF, _MB, _CTAS or _PACE_GBPS",
          .bits => "TF_GLM_DENSE_BITS or TF_GLM_HEAD_BITS",
@@ -700,15 +473,22 @@ index e60f789e5..813fae014 100644
          .heat_high => "TF_HEAT_HIGH",
          .heat_low => "TF_HEAT_LOW",
 diff --git a/zig/src/families/glm/cuda_ranks_test.zig b/zig/src/families/glm/cuda_ranks_test.zig
-index 5ef4b8275..ecb3f0a39 100644
+index b07769490..186d3d2bd 100644
 --- a/zig/src/families/glm/cuda_ranks_test.zig
 +++ b/zig/src/families/glm/cuda_ranks_test.zig
 @@ -190,7 +190,7 @@ test "every media limit is part of the ranks' agreement" {
  test "every scheduling and identity field that differs stops the ranks" {
      const zero = Fingerprint.of(2, 0, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
      const one = Fingerprint.of(2, 1, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
--    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "roce_wide", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
-+    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "roce_wide", "numerics", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
+-    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
++    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "numerics", "roce_multi", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
          var all = [_]Fingerprint{ zero, one };
          @field(all[1], name) += 1;
          try std.testing.expectEqual(@field(Fingerprint.Field, name), mismatch(&all).?.field);
+
+REBASE (2026-11-10, onto v1.2.6 6e9af9302): re-anchored by this line. The v1.2.6
+release moved this patch.s ground: the shared MLA image (#850 step 3, 42735f94f)
+took the chunks_wide template into common/mla.cuh; #2257 (the GLM TP=2 decode-32
+windows, 6d4191a95) reworked the engine files; #2699 reworked the kv_pool budget
+into budgetOf(); the SwiGLU rows moved to glm_swiglu.cuh (88267c063). The hunks
+were re-cut onto the new anchors; the content is unchanged.
