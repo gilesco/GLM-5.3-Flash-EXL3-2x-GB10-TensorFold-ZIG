@@ -584,8 +584,10 @@ green.
 - [x] **The pool plan moved in our favor** (the #3125/#2852-era
   arithmetic): FOUR full 512K windows funded (v1.2.7: three), 11 of the
   16 kept-states slots. The anchors re-dated; the chart regenerated.
-- [ ] **The promotion sync** (this sitting): the production repo takes
-  the v1.2.9 store; its serve restarts through the promotion path.
+- [x] **The promotion sync DONE**: the production repo took the v1.2.9
+  store (a9edf9b) and its serve restarted on it — both ranks Up, the
+  binary reads tensorfold-native 1.2.9, the greedy probe answers (wall
+  3.1 s). Production IS the v1.2.9 engine now.
 - [ ] **Queued**: the drop-verify A/B for 002's 0007-half (vs #2852);
   the 020/#3125 overlap check; the residual stage briefs (0114
   KV-shard, the PDL decode family, 0120 EXTRA_EOS).
