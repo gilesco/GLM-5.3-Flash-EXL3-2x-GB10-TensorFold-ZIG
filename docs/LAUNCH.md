@@ -3685,3 +3685,95 @@ verdict's dead-measurement guard (no server line => INVALID, never
 qualify); (3) the restore-rc propagation (start.sh's failure must fail
 the window); (4) the fingerprint check should bind the image's TF_COMMIT,
 not just the config.
+
+## (round 143) THE V1.2.9 ABI FIXED, PROVEN, BUILT — AND THE MIA INVENTORY REFRAMES THE BUMP (2026-11-16)
+
+**The fix** (the incident's root cause, closed): the round-142 store's
+002-exl3prompt.patch carried the fork-yrow ABI's PROSE but dropped its
+CODE — the down kernel gained `skip, ys, yrow` params while the launch
+passed a broken 11-arg hybrid (`i(sc.slots), i(0)`, no `skip_id`,
+`Scratch.yrow` gone). Every boot died at `cuLaunchKernel:
+CUDA_ERROR_INVALID_VALUE; kernel tf_exl3_prompt_down` — the ABI mismatch
+(host 11 args, kernel 12 params), deterministic. The repair: the down
+launch carries the complete fused ABI (`skip_id, i(sc.slots),
+i(sc.yrow)`) and `Scratch` regained `yrow: usize = 0`.
+
+**The proof chain** (every ground verified):
+- **The compose ground**: upstream v1.2.9 (6b9de6951) + the repaired
+  store = the fixed tree, BYTE-IDENTICAL (the fresh-run diff empty; the
+  18 patches apply in name order; the 8 empty-body markers skip as
+  designed).
+- **The build ground**: prepare.sh rebuilt through the real Docker path —
+  the smoke check reads `tensorfold-native 1.2.9`, the full 18-patch list
+  in the prepared marker, the image on both hosts. The compile
+  discipline held: committed (89c8c5c) before the build; guard green.
+- The repair tooling lesson (the sweep lesson, repeated): hand-editing a
+  patch's hunks broke twice (a fragment error from a misplaced insertion,
+  a corrupt patch from an over-eager blank-line drop); the honest tool
+  was the fresh compose-and-diff, which both located the true delta and
+  verified the repair.
+
+**The Mia inventory** (the (user) directive; the full report lands in
+docs/ECOSYSTEM.md): the fork is 121 patches now (108 known + 13 new).
+The three-way classification: the direction has REVERSED — Ash mains
+work Mia backports (0113/0117/0118/0119 are upstream's own PRs carried
+by the fork). The v1.2.8/9 mainlines under our stack: #2852 (the
+one-call EXL3 prompt path — the 0007 half of our 002; candidate-
+redundant, the drop-verify A/B is the next window after the bump
+qualifies), #2843 (grouped-expert counts; partial overlap with our 012),
+#3125 (kept-states' slots before the windows; partial overlap with our
+020 — the fund-report value must be re-checked before dropping it),
+#3159 (INDEX_CUDA default-on). The biggest RESIDUALS by value: 0114
+KV-shard (~1.8x the KV tokens at TP=2; upstream tracks it as #1431), the
+PDL+launch-count decode family (0069-0075/0083-0088; our adopted 012/016
+prove the class transfers at concurrency), 0120 EXTRA_EOS (the
+agent-loop `<|assistant|>` EOS; trivially cheap). The quiet-risk note:
+the next bump's drift map MUST check 002 and 020 for drop-eligibility
+FIRST — the re-anchoring surface that just caused the incident.
+
+**Window 34 (the loop's count)**: `preflight v129val summary` — the
+v129val battery decides whether the pin MOVES to v1.2.9-plus (the fixed
+store) or stays at v1.2.7. The stage brief is in the phase (round 142):
+the question (the standing gates hold + what DSEL/INDEX_CUDA defaults
+move on our shape), the value (the release ride + the stack-shrink
+candidates), the kill criterion (any gate FAIL holds the pin at v1.2.7).
+Launched as this sitting's last action.
+
+## (round 144) THE V1.2.9 BUMP QUALIFIED — THE PIN MOVES TO V1.2.9-PLUS; THE PROMOTION SYNC FOLLOWS (2026-11-16)
+
+**Window 34** (campaign-20261116-001527, `preflight v129val summary`,
+rc=0, production restored healthy after 81 s — on the FIXED v1.2.9
+engine 6b9de6951 + the repaired 18-patch store): the v129val battery
+passed on every instrument.
+
+- **The same-bits greedy witness: IDENTICAL** — the `80cc3802…` sha has
+  now held across v1.2.5 → v1.2.6 → v1.2.7 → v1.2.9 with the full
+  re-anchored stack. The ABI repair did not move the deterministic
+  probes.
+- **The §2 content gates ALL PASS** (g1–g4 + the g5 note).
+- **Hardmode 95 — the twenty-fifth consecutive receipt in the
+  round-144 era ledger count** (the README streak wording re-dated).
+- **The vision 4/4**; the load walls **83/83 s** (the band holds);
+  prefill **1,528** at d0 (above the v1.2.7 1,520 — the front holds);
+  steady-state decode **73.1 tok/s**.
+- **The pool plan moved again** (the #3125/#2852-era rework): FOUR full
+  524288-token windows funded now (4,151 pages; v1.2.7 funded three),
+  11 of the 16 kept-states slots (2.5 GiB) — the v1.2.9 room arithmetic
+  serves the opencode shape better at the same window. The kept-states
+  16/16 note stands (`--prompt-cache-gib 4 holds all 16` — the value
+  battery is the next candidate).
+- **The one strict-TF_ "refusal" adjudicated**: the counter caught the
+  `--vision` informational line ("video_url parts are refused… libtfvideo.so")
+  — the long-standing video-library note on every boot since the vision
+  adoption, not a settings refusal. The zero-refusal reading stands in
+  substance.
+
+**The adoption**: the pin MOVES to 6b9de6951 (v1.2.9) — the anchors'
+loading row re-dated (83/83 on the v1.2.9 engine), the prefill row
+re-dated (1,528), the chart regenerated, README's engine state moved.
+The promotion sync: the production repo takes the v1.2.9 store (the
+same repaired store this battery qualified) and its serve restarts
+through the promotion path. The drop-verify queue (002's 0007-half vs
+#2852; 020 vs #3125) and the residual stage briefs (0114 KV-shard, the
+PDL decode family, 0120 EXTRA_EOS) are the next sittings' work —
+per the discipline layer, each with its own stage brief.

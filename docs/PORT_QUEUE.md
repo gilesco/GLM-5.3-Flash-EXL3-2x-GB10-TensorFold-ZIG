@@ -547,3 +547,45 @@ green.
   brief first); the battery verdict's dead-measurement guard; the
   restore-rc propagation fix; the fingerprint check binding the image's
   TF_COMMIT.
+
+## Round 143 (2026-11-16) — the v1.2.9 ABI repaired; the bump re-staged
+
+- [x] **The v1.2.9 tf_exl3_prompt_down launch defect ROOT-CAUSED and
+  FIXED**: the round-142 store's 002 carried the fork-yrow ABI's prose
+  but dropped its code (the down kernel 12 params vs the launch's 11
+  args, no skip_id, Scratch.yrow gone). The repair: the fused ABI
+  (skip_id, i(sc.slots), i(sc.yrow)) + Scratch.yrow: usize = 0. PROVEN:
+  upstream 6b9de6951 + the repaired store = the fixed tree byte-identical;
+  the image rebuilt (tensorfold-native 1.2.9, the 18-patch marker).
+- [x] **The Mia fork inventory landed** (docs/ECOSYSTEM.md): 121 fork
+  patches classified three ways against upstream + our stack; the
+  direction has reversed (Ash mains, Mia backports); the v1.2.8/9
+  mainlines make 002's 0007-half and 020's overlap drop-eligible AFTER
+  the bump qualifies; the residual big three: 0114 KV-shard, the PDL
+  decode family, 0120 EXTRA_EOS.
+- [ ] **The v129val battery re-run** (window 34, launched this sitting):
+  QUALIFIED = the pin MOVES to v1.2.9-plus and the promotion sync
+  follows; any FAIL = the pin holds at v1.2.7 and the defect question
+  reopens with the receipt.
+- [ ] **Queued after the verdict**: the drop-verify A/B for 002's
+  0007-half (the #2852 redundancy); the 020/#3125 overlap check; the
+  residual stage briefs (0114 KV-shard first — the biggest memory-shape
+  lever; the discipline layer gates each with a stage brief).
+
+## Round 144 (2026-11-16) — the v1.2.9 bump QUALIFIED
+
+- [x] **The v129val battery PASSED on every instrument** (window 34,
+  campaign-20261116-001527): the same-bits greedy witness IDENTICAL (the
+  80cc3802… sha holds across the bump), the §2 gates ALL PASS, hardmode
+  95, the vision 4/4, the walls 83/83 s, prefill 1,528, steady-state
+  decode 73.1 tok/s. **The pin MOVES to v1.2.9 (6b9de6951) + the
+  repaired store.** The one boot "refusal" adjudicated: the --vision
+  video-library note, not a settings refusal.
+- [x] **The pool plan moved in our favor** (the #3125/#2852-era
+  arithmetic): FOUR full 512K windows funded (v1.2.7: three), 11 of the
+  16 kept-states slots. The anchors re-dated; the chart regenerated.
+- [ ] **The promotion sync** (this sitting): the production repo takes
+  the v1.2.9 store; its serve restarts through the promotion path.
+- [ ] **Queued**: the drop-verify A/B for 002's 0007-half (vs #2852);
+  the 020/#3125 overlap check; the residual stage briefs (0114
+  KV-shard, the PDL decode family, 0120 EXTRA_EOS).
