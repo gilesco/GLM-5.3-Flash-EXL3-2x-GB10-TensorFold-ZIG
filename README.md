@@ -22,9 +22,10 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Engine**: TensorFold **v1.2.9** + **the adopted 18-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
   the v1.2.9 rebase's round-trip is proven byte-identical — pristine v1.2.9 + the
-  18 patches = the rebase tree; the v127val battery QUALIFIED the pin —
-  campaign-20261111-191641, the round-141 cont. 28 receipt; 021-vision2744 and
-  022-shared-budgets mainlined upstream (#2744/#2793) and dropped from the stack).
+  18 patches = the rebase tree; the v129val battery QUALIFIED the pin —
+  campaign-20261116-001527, the round-142 receipt; #2852/#2843/#2814 mainlined
+  upstream and ride the engine — 002/012/018 carry their unmainlined residue;
+  021-vision2744 and 022-shared-budgets mainlined at v1.2.7 and dropped).
 - **Testing runs from this same repo**: a start FOR OPENCODE serves 8000; a start FOR
   TESTING serves 8001 (intent-keyed ports). Opencode never touches 8001; the quality
   gates never touch 8000. The lifecycle is autonomous — see *The autonomous loop*.
@@ -50,7 +51,7 @@ nothing but docker, ssh and the NVIDIA driver.
 | --- | --- |
 | Quality | **Tool-eval-bench Hard Mode: Quality 95/100 (197/208 points), Deployability 76/100** on the shipping config — receipted thirty-five consecutive times (every one Quality 95, byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261116-001527 (the v1.2.9 v129val battery; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
-| Speed | All three (user) fronts **CROSSED** against the retired Python recipe — loading 112.9%, solo decode 116.8% (the standing high), prefill 100.1%; the first **native-vs-native calibration pair** (both arms the promoted config) reads flat inside the ±2% band on every instrument: solo 99.1%, c2 99.4%, c4 99.3%, overhead 98.9%, cold depth 100.3%, ITL 100% (campaign-20261108-162810). Future candidate duels measure against that floor — the pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv), the scoreboard: [docs/DELTAS.md](docs/DELTAS.md) |
+| Speed | The v1.2.9 engine's own numbers (campaign-20261116-001527, the v129val battery): load wall **83 s**, steady-state decode **73.1 tok/s** (2048-token probe), prefill **1,528 tok/s** (pp d0), hardmode **95** with the vision suite 4/4 and the §2 gates ALL PASS. The chart pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
 | Vision | **Enabled as the standing default** at the 524,288 window; the test assets and runner: `assets/vision/` via `scripts/vision-suite-probe.py` |
 
