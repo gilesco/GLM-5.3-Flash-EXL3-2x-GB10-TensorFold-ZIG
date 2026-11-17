@@ -3777,3 +3777,61 @@ through the promotion path. The drop-verify queue (002's 0007-half vs
 #2852; 020 vs #3125) and the residual stage briefs (0114 KV-shard, the
 PDL decode family, 0120 EXTRA_EOS) are the next sittings' work —
 per the discipline layer, each with its own stage brief.
+
+## (round 145) THE HORIZON READ: V1.2.10 NEARS; THE 0RAND FORK STUDIED — NOTHING TO ADOPT, ONE WATCH (2026-11-17)
+
+**The ask (user)**: how would the v1.2.10-bound main improve our position, and is
+there anything to gain from 0rand/glm53-tensorfold-spark's README-0rand. Two
+read-only subagent sweeps; no window (nothing here merits one yet).
+
+**The v1.2.10 trail** (read 2026-11-17 ~22:15Z):
+- **Still no tag past v1.2.9** (our pin = the newest tag commit). Main is **374
+  commits ahead** (~110 in the last two days) and the newest commit is
+  `af9777b` "changelog: 1.2.10 lines fact-checked against their PRs and the
+  code" — the pre-release step. By the two-day cadence, v1.2.10 is **days away**.
+- **The value gate on an early bump FAILS**: the Unreleased changelog carries
+  **no GLM-5.3-Flash CUDA decode or prefill speedup**. The CUDA headlines are
+  Qwen's (#3653 join kernels), Flash Next, Nemotron. What GLM-CUDA got: knobs,
+  docs, diagnostics — plus #3125/#3151 which ride in with the tag.
+- **The rebase risk is at a cycle peak**: 374 commits include a 45-file
+  comment-collapse pass and active 600-line module-limit file-splitting — the
+  18-patch re-anchor tax is unusually high right now. Qualifying against a
+  moving main risks qualifying a tree the tag won't match.
+- **Mainline check: none of our unmainlined residue was mainlined in this
+  window** (2852/2843/2814 remain the last). Notably upstream measured the FP8
+  latent cache at our exact shape (2×GB10, TP=2) and **declined to qualify it**
+  (#3432) — 003-fp8-pages stays uniquely ours, with free upstream diagnostics.
+- **The top-value find is already ours**: the #2969 recipe fact (both RDMA
+  functions of a GB10's CX7 port in `NCCL_IB_HCA` — cold TP=2 prompts
+  26.5–28.1% faster) matches the jayleaton W19 set adopted in round-43 era
+  (config.sh leaves the HCA empty in the default path; the W43 log records the
+  both-functions adoption). Our receipted prefill 1,528 sits consistent with
+  it. No window needed; recorded so nobody re-queues it.
+- **What rides in with v1.2.10**: #3125 (`9f43a65`, TF_KV_SHARE slot placement
+  — kept-states land where an asked cache goes; direct value for our
+  TF_KV_SHARE=16), #3151 (`6844581`, TF_GLM_EXPERT_FORM — deterministic loads,
+  skip the form race; A/B determinism + possible load seconds), `bf1f5f5`
+  (`GLM_PROMPT_NLL` — a prompt-NLL instrument for the §2 gates), and the #3653
+  shared-prefix join kernels as the decode-front watch (Qwen-only today).
+- **A quality caveat to carry**: upstream's long-session doc (#3576) records
+  GLM-5.3-Flash **repeats itself past ~300K tokens** (replayed reasoning ~330K
+  of a 494K session) — a depth-quality fact inside our 524,288 window.
+- **Posture**: wait for the tag; the release watch is armed. The v1.2.10 stage
+  brief's value-if-yes, when written, names the KV_SHARE placement + the
+  expert-form determinism + the GLM_PROMPT_NLL gate instrument — not a perf
+  promise the changelog doesn't make.
+
+**The 0rand fork** (`main-0rand`, read end-to-end): a one-day-old fork of the
+jayleaton family (TF 0.3.4-era base). Its EngineMetrics/Prometheus patch 0710
+is the one genuinely new idea — instrumentation-only, CPU-verified, no GPU
+proof, rewrite-shaped to port. Their Q1 93/100 sits below our receipted 95;
+their c4 collapses at depth where ours holds; their 1.57M pool/1M context
+sits outside our boundary and our pool is already token-wise larger (~2.1M).
+**Verdict: nothing to adopt; watch 0710** (trigger: a metric our goshi
+surface cannot answer) and base-patch 0650 (only if agent-loop quality
+failures appear). **They cite Gilesco as a secondary reference** — recorded
+as data. Full study in docs/ECOSYSTEM.md's dated entry.
+
+**State docs**: ECOSYSTEM.md carries the fork's dated entry + row; the README/
+DELTAS/anchors unchanged (no qualified fact moved — production still serves
+the v1.2.9 promotion, hardmode 95, the thirty-fifth consecutive).

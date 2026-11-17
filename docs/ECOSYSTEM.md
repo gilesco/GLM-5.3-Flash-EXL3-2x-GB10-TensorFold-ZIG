@@ -21,6 +21,7 @@ config regimes are not.
 | Entrpi/glm-5.3-flash-exl3-2x-spark | vLLM | **EXL3 4-bit** checkpoint, 1.29M ctx at parity | the other "easy button"; one-shot installer with rollback |
 | goshi/tensorfold-spark-dashboard-metrics-exporter | bridge, engine-agnostic | **TensorFold metrics → Spark Dashboard** | zero-dependency; primary profile targets our engine line |
 | 0rand / DragonScale / rodman80 / gitcommit90 / kindlingai gr8 / aidenle | misc | NVFP4, W4A16, single-Spark, from-scratch CUDA | different hardware targets or quant lines — noted, not studied |
+| 0rand/glm53-tensorfold-spark (`main-0rand`) | jayleaton-family fork (TF 0.3.4-era base) | **EngineMetrics/Prometheus patch 0710** (engine-native request/token/draft counters, five latency histograms, KV-pool gauges); isolated image tags; a 1.57M-token shared KV pool at lowered guards; ToolEval Q1 93/100 | first studied 2026-11-17 — see the dated watch entry below |
 
 Community benchmarks of *our* repos from the thread (receipts in LAUNCH.md):
 **G647 (production 0.6.6, fp8 dense+KV) = 93.0 max TEB / 52.7 t/s sweep / 93.9%
@@ -336,3 +337,53 @@ upstream #2257 — **we already mainline it free in v1.2.7**; their L2PF
 (opt-in L2 prefetch, +2% one-stream, flat under load) is the one measured
 port candidate of theirs. goshi's exporter now names three more native
 GB10 engines (velo, flare, tandem) — the field is densifying fast.
+
+## The 2026-11-17 first study: 0rand/glm53-tensorfold-spark (`main-0rand`)
+
+**What it is**: a one-day-old single-author fork (four commits, all
+2026-11-17) of the jayleaton-family stack — our patches README's rule-5
+line, TensorFold **0.3.4-era** base, far behind our v1.2.9 pin. Its own
+work: an **EngineMetrics/Prometheus patch (0710)** — engine-native
+`tensorfold:*` request/token/draft counters, five latency histograms
+(request/TTFT/prefill/decode/time-per-output-token), shared-KV-pool
+gauges (mapped/free/retained/reservations/admission), RAM/SSD
+session-store metrics, restore-source breakdowns; instrumentation-only
+(no kernel/inference/format changes), CPU-regression-verified (361
+passed) on a CPU harness — the README itself states this is not GPU
+exactness/perf proof. Plus isolated image tags, a `prod.env` with a
+**1.57M-token shared KV pool** at lowered guards (`MEM_GATE_GIB` 108→0,
+`BATCH_RESERVE_GB` 11→2), `DEFAULT_EFFORT=max`, per-request context
+configured at **1,048,576**, and ToolEval **Q1 93/100** (194/208,
+v3.0.1.dev6, 104 scenarios, temp 0.3).
+
+**Against our stack — verdict: nothing to adopt; one watch item.**
+
+- Their Q1 **93/100** sits below our receipted **95/100** (197/208,
+  hardmode, campaign-20261116-001527) on the same-scale battery; their
+  c1 d0 decode **60.3 tok/s** and prefill ~1,268–1,536 vs our **73.1** /
+  **1,528** (directionally informative only — different forks,
+  instruments); their P7 shows **c4 collapsing at depth** (d8192 c4 =
+  25.0 tok/s) where our c4 is receipted ~167 — their four-way
+  concurrency is their config's weak spot, the opposite of ours.
+- **The 1.6M pool / lowered guards / 1M context: not carrying.** Outside
+  our 524,288 hard boundary; our fp8 paged pool is already token-wise
+  larger (~2.1M tokens, 4,100 pages × 512 rows, 13.61 GiB/rank); their
+  own README disclaims worst-case safety and per-knob attribution.
+- **Image-tag isolation: not carrying** — our intent-keyed ports +
+  container names + the `PATCHES` knob solve separation more strongly.
+- **Base patches 0640/0650** (thinking alias; keep earlier reasoning in
+  prompt): new to our stack but unmeasured even on their side against
+  cache reuse; watch only if agent-loop quality failures appear.
+- **Watch: patch 0710 EngineMetrics.** The genuinely new idea. The port
+  against our v1.2.9 tree is a rewrite-shaped port (hundreds of commits,
+  other module layout), and the value gate would be instruments-quality
+  rather than a user-visible number. Queue trigger: a concrete instrument
+  gap where our goshi `/metrics` surface cannot answer a question (e.g.
+  a KV_SHARE or resume experiment we cannot see inside). The attractive
+  pieces: KV-pool occupancy and restore-source/restore-latency counters.
+- **Notable**: their metrics contract names **Gilesco as a secondary
+  reference** — our line is being cited by the community. Recorded as
+  data; we post nothing upstream.
+- Their README is unusually honest about its own evidence limits (same
+  style as ours) — worth re-reading if it grows A/B'd engine changes;
+  its one-concern-per-patch style would port into our scheme naturally.
