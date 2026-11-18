@@ -3835,3 +3835,58 @@ as data. Full study in docs/ECOSYSTEM.md's dated entry.
 **State docs**: ECOSYSTEM.md carries the fork's dated entry + row; the README/
 DELTAS/anchors unchanged (no qualified fact moved — production still serves
 the v1.2.9 promotion, hardmode 95, the thirty-fifth consecutive).
+
+## (round 146) THE PORT-IDENTITY INCIDENT: THE PROMOTION SYNC MISCONFIGURED PRODUCTION'S CONFIG — THE REBOOT EXPOSED IT — THE REPAIR + THE GUARD QUESTION (2026-11-18)
+
+**The symptom (user)**: after last night's head reboot, opencode landed on
+**8001** (the TESTING port) instead of production's 8000. The crash-net had
+"restored" production — faithfully — into the wrong arm.
+
+**The root cause**: the v1.2.9 promotion sync commit (a9edf9b, round 142)
+carried the TESTING identity lines into the PRODUCTION repo's config.sh —
+`PORT="${PORT:-8001}"` and `CONTAINER_NAME=glm53-native-tf-test` replaced the
+production identity (`PORT=8000`, the unsuffixed `glm53-native-tf`). The
+mechanism: the sync mirrored config.sh from the testing repo, where round-138's
+separation work had flipped those lines for the TESTING stack; the "production
+owns the unsuffixed name on 8000" half of the same round-138 change was not
+re-applied on the production side. Production stayed up from before the sync,
+so nothing noticed for two days — the exposure needed a restart.
+
+**The compound failure**: the reboot's crash-net ran `start.sh` from the
+production repo and booted the -test arm on 8001. The crash-net then retry-'
+looped harmlessly-but-wrongly: its guard greps the unsuffixed name
+(`glm53-native-tf`), the -test container didn't match, production looked down
+forever — and the retry's port guard refused to double-start. Worse, **the
+agent session itself is served by that engine**: stopping the wrong arm from
+inside the sitting would cut the session mid-task (hit once — the session
+survived on the still-running container).
+
+**The repair (the order mattered, the user directed it)**:
+1. `touch /tmp/autonomous-maintenance.pause` — the crash-net hands off during
+   the surgery (round 141's mechanism, self-clearing).
+2. The config restored from the pre-sync commit (c4df7e0) — the exact lines:
+   unsuffixed name + `PORT="${PORT:-8000}"` + the round-128/138 intent-keying
+   comments. Committed **33cc9ca** on the production repo.
+3. `DRY_RUN=1 ./scripts/start.sh` verified the identity before any container
+   moved: both ranks `--name glm53-native-tf`, rank 0 `--port 8000`.
+4. The swap ran **detached on the head** (`/tmp/swap-test-to-prod.sh`,
+   nohup): stop.sh (both ranks, logs saved) → start.sh → /health verify →
+   `SWAP-DONE state=PROD-UP-8000 rc=0` marker on every exit path; on a
+   failed-health exit it removes the pause so the crash-net takes over.
+5. The pause removed after the marker verified — the crash-net re-armed.
+
+**The restored state (verified)**: both ranks `glm53-native-tf` Up
+(head + worker), **8000 healthy serving v1.2.9** (`GLM-5.3-Flash-EXL3`),
+**8001 dark** (nothing listens), the cron log quiet, the crash-net armed.
+
+**The lesson, recorded**: an intent-keyed pair of configs is only as good as
+the sync that mirrors it — a promotion sync that copies config wholesale
+carries the *identity* along with the *settings*. The promotion sync should
+have either ported the settings onto the production identity or asserted the
+identity lines before committing. The guard question for the next sitting
+(the cheap, mechanical form): a pre-flight line in the promotion path (and/or
+the autonomous-launcher's phase-lint) that **asserts the production repo's
+config.sh names the unsuffixed container and PORT=8000 before any sync lands
+or any start.sh runs from it** — the same guard-masked-failure class the
+phase-lint already catches for test phases. Nothing launched this sitting;
+the release watch stays armed for the v1.2.10 tag.
