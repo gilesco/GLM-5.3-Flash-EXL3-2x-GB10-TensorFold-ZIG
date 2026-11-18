@@ -3935,3 +3935,15 @@ host's checkout by mistake (the launcher started a window process locally);
 killed within seconds, nothing touched (the window's guards need the head's
 environment), production never blipped — and the real launch went through
 the head ssh as the standing rule requires.
+
+**Round 147 cont. — the promotion restart completed (11:11:55)**: the
+detached swap (the round-146 pattern: the maintenance pause armed, the
+repo's own stop/start, the health wait, the done-marker on every exit path)
+brought production back serving the adopted default — **the live serve line
+reads 4,352 pages (14.44 GiB) at 288 MiB fixed each**; the freed room is
+serving opencode on 8000 now. The marker verified PROD-UP-8000, the pause
+removed, the crash-net re-armed. The production repo's adoption commit:
+e21d0d2 (the DRY_RUN witness: `--vision-video-tokens 64` in the serve line).
+The window's total user-visible gain: **+152 pool pages ≈ 0.75 GiB/rank of
+KV room on the same hardware, zero output change** (the same-bits sha held
+end to end).
