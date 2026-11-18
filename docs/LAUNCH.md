@@ -3890,3 +3890,48 @@ config.sh names the unsuffixed container and PORT=8000 before any sync lands
 or any start.sh runs from it** — the same guard-masked-failure class the
 phase-lint already catches for test phases. Nothing launched this sitting;
 the release watch stays armed for the v1.2.10 tag.
+
+## (round 147) THE VIDEOROWS WINDOW QUALIFIED — THE DEAD VIDEO RESERVATION FREED INTO THE POOL BY CONFIG ALONE (2026-11-18)
+
+**The stage brief**: docs/STAGE_BRIEF_videorows.md (written before the window;
+the value gate: the freed pool pages — a user-visible number). The desk
+calibration priced the engine's standing video-token reservation
+(`vision_video_tokens` default 16384, reserved per stream whenever the
+checkpoint carries video ids, even with no `libtfvideo.so`) at
+(16384−64)×4096×2 B = **127.5 MiB a stream** — traced in the v1.2.9 source
+(cli.zig, cuda_images.zig rowLimit/streamBytes, cuda_native.zig:373) and
+confirmed against production's own boot line (415 MiB fixed each) before any
+GPU work.
+
+**The window** (campaign-20261118-102606, `preflight videorows summary`):
+
+| Instrument | Desk prediction | Measured | Verdict |
+|---|---|---|---|
+| The ON arm's pool pages | ~4,373 (+~150) | **4,361** (+152 vs the window's own OFF arm 4,209) | HELD — near-exact |
+| Fixed each | ~288 MiB | **288 MiB** (vs 415) | HELD — exact |
+| The greedy same-bits sha | `80cc3802…` | **IDENTICAL** | HELD |
+| §2 content gates | ALL PASS | **ALL PASS** (g1–g4 + the g5 note) | HELD |
+| Hardmode | 95 | **95** — the THIRTY-SIXTH consecutive | HELD |
+| The vision suite | 4/4 | **4/4** — the image path untouched by the video cut | HELD |
+| The load walls | 83 s band | **83/83 s** | HELD |
+
+The OFF arm re-measured 4,209 pages this window (vs production's standing
+4,223 receipted — the small drift is the room arithmetic's own jitter; the
+A/A guard held: the arms' lines differ ONLY in the pages/fixed fields).
+
+**THE ADOPTION** (per the brief's rule): `VISION_VIDEO_TOKENS` defaults to
+**64** in config.sh's serve_args with the receipt cited — the freed room
+(152 pages ≈ 0.75 GiB/rank of user-visible pool) is the room a 5th stream or
+a bigger kept-states set needs later. Production takes the default on its
+next restart through the promotion path (a config-only mirror; no pin move —
+the engine is unchanged).
+
+**The state docs**: README's Quality row re-dated to the thirty-sixth
+consecutive. No anchors/chart change (the pool-pages number is a capacity
+line, not one of the chart's speed metrics).
+
+**The window's one process note**: the launch was first fired from the agent
+host's checkout by mistake (the launcher started a window process locally);
+killed within seconds, nothing touched (the window's guards need the head's
+environment), production never blipped — and the real launch went through
+the head ssh as the standing rule requires.

@@ -331,10 +331,17 @@ serve_args() {
   # VISION_VIDEO_TOKENS (round 147, the videorows stage brief): --vision-video-tokens
   # on the server — the visual rows a request's VIDEOS may hold. The engine reserves
   # them per stream whenever the checkpoint carries video ids EVEN WITH NO VIDEO
-  # RUNTIME (no libtfvideo.so): the desk calibration prices the standing default
-  # 16384 at 127.5 MiB a stream of dead rows on this line (the vrid receipt cites
-  # the measured pages gain). 64 is the CLI's floor; empty: the engine default.
-  VISION_VIDEO_TOKENS="${VISION_VIDEO_TOKENS:-}"
+  # RUNTIME (no libtfvideo.so): the desk calibration priced the standing default
+  # 16384 at 127.5 MiB a stream of dead rows on this line. THE VIDEOROWS QUALIFICATION
+  # (campaign-20261118-102606): the arm's serve line matched the desk arithmetic
+  # almost exactly — 4,361 pages (14.45 GiB) vs the OFF arm's 4,209 (13.97 GiB)
+  # = +152 pages of user-visible pool room, fixed each 288 MiB (down from 415); the
+  # greedy content sha IDENTICAL (80cc3802…), the §2 gates ALL PASS, hardmode 95
+  # (the THIRTY-SIXTH consecutive), the vision suite 4/4 — the image path untouched
+  # by the video cut — the walls 83/83 s. ADOPTED as the default: 64 frees the
+  # reservation into the fp8 paged pool; the room is the room a 5th stream or a
+  # bigger kept-states set needs later.
+  VISION_VIDEO_TOKENS="${VISION_VIDEO_TOKENS:-64}"
   [[ -z "$VISION_VIDEO_TOKENS" ]] || args+=(--vision-video-tokens "$VISION_VIDEO_TOKENS")
   if [[ "$DRAFTS" == 1 ]]; then
     local dflash="/root/.cache/huggingface/hub/models--${DFLASH2_ID//\//--}/snapshots/$DFLASH2_REVISION"
