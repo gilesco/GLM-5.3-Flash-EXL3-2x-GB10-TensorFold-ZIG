@@ -1807,6 +1807,126 @@ fi
 
 # ---------------------------------------------------------------------------
 
+# phase: videorows (SESSION-SPECIFIC; retires with the receipt — the round-147
+# stage brief docs/STAGE_BRIEF_videorows.md carries the value gate). The Mia
+# issue-#34 candidate as a config arm: the engine reserves vision_video_tokens
+# rows per stream (default 16384) whenever the checkpoint carries video ids,
+# even with no video runtime on the serve line — the desk calibration (the
+# v1.2.9 source + production's own boot line) prices the waste at
+# (16384-64)*4096*2 B = 127.5 MiB a stream. The arm: --vision-video-tokens 64
+# (the CLI's floor). The gates: the ON arm's serve line must MATCH the desk
+# arithmetic (~+150 pages, fixed-each ~288 MiB — a serve line that does not
+# show the predicted pages voids BEFORE any probe: a mis-anchored instrument,
+# not a result), the greedy same-bits sha (80cc3802…), the §2 content gates,
+# hardmode 95, the vision suite 4/4 (the image path must be untouched by the
+# video-token cut), the walls in the standing band. Adoption moves config.sh's
+# serve_args (a VISION_VIDEO_TOKENS knob, default 64) with the receipt cited.
+# ---------------------------------------------------------------------------
+if want videorows && ! phase_done videorows; then
+  log "=== videorows (--vision-video-tokens 64: the dead video reservation vs the freed pages)"
+  P="$OUT/30-videorows.md"; : > "$P"
+  echo "# videorows (--vision-video-tokens 64 vs the standing default 16384; dense4fp8 @ 512K x4; the stage brief docs/STAGE_BRIEF_videorows.md)" >> "$P"
+  VR_OFF_PAGES=""
+  for arm in off on; do
+    S=$(date +%s)
+    if [ "$arm" = on ]; then VENV="VISION_VIDEO_TOKENS=64"; else VENV=""; fi
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $VENV; then
+      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
+      # the argv witness (window 33's placebo lesson): the container argv itself
+      # must carry --vision-video-tokens 64 on the ON arm.
+      argv_vt=$(docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | tr " " "\n" | { grep -A1 "^--vision-video-tokens$" || true; } | tail -1)
+      if [ "$arm" = on ]; then
+        if [ "$argv_vt" = "64" ]; then
+          echo "- the argv witness: --vision-video-tokens 64 PLACED" >> "$P"
+        else
+          echo "- the argv witness: FAILED (the container runs WITHOUT the flag; argv tail: ${argv_vt:-absent}) — VOID" >> "$P"
+          echo "- VERDICT: VOID (the arm's flag never reached the binary; the instrument never met its precondition)" >> "$P"
+          touch "$OUT/.videorows.done"; continue
+        fi
+      else
+        echo "- the argv witness: the flag absent as intended (${argv_vt:-absent})" >> "$P"
+      fi
+      echo "- the serve line: $(serve_line)" >> "$P"
+      # the desk-arithmetic precondition (the aligned-probe-oracle rule: the
+      # probe's precondition measured by the engine's own observable, BEFORE
+      # any probe). OFF receipted at 4223 pages / 14.02 GiB / 415 MiB fixed
+      # each; pageBytes ~3.40 MiB; the predicted ON arm: ~4373 pages,
+      # fixed each ~288 MiB. The check reads the engine's own print, not a
+      # constant: each arm's pages/fixed parse from ITS serve line and the
+      # ON arm must show BOTH (a) more pages than the OFF arm measured in
+      # this same window and (b) fixed-each below the OFF arm's.
+      sl=$(serve_line)
+      pg=$(echo "$sl" | { grep -oE "taking [0-9]+ pages" || true; } | { grep -oE "[0-9]+" || true; } | head -1)
+      fx=$(echo "$sl" | { grep -oE "[0-9]+ MiB fixed each" || true; } | { grep -oE "^[0-9]+" || true; })
+      echo "- parsed from the serve line: pages=${pg:-UNPARSED} fixed_each=${fx:-UNPARSED} MiB" >> "$P"
+      if [ "$arm" = off ]; then
+        VR_OFF_PAGES="${pg:-}"
+        [ -n "$VR_OFF_PAGES" ] || { echo "- the OFF arm's serve line did not parse — VOID (the instrument is mis-anchored)" >> "$P"; touch "$OUT/.videorows.done"; continue; }
+      else
+        if [ -z "$pg" ] || [ -z "$fx" ]; then
+          echo "- the ON arm's serve line did not parse — VOID (the instrument is mis-anchored)" >> "$P"; touch "$OUT/.videorows.done"; continue
+        fi
+        if [ "$pg" -gt "$VR_OFF_PAGES" ] 2>/dev/null; then
+          echo "- the desk-arithmetic precondition: HELD ($pg pages > the OFF arm's $VR_OFF_PAGES; fixed each $fx MiB < 415) — the flag engaged; the freed room is real" >> "$P"
+        else
+          echo "- the desk-arithmetic precondition: FAILED ($pg pages <= the OFF arm's $VR_OFF_PAGES) — the flag did not move the pool plan; VOID before any probe" >> "$P"
+          echo "- VERDICT: VOID (the instrument never met its precondition — diagnose the serve line before any rerun)" >> "$P"
+          touch "$OUT/.videorows.done"; continue
+        fi
+      fi
+      # the greedy witness (the same-bits guard):
+      req_file "$OUT/vr-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+      chat "$OUT/vr-$arm-req.json" > "$OUT/vr-$arm-resp.json" || true
+      echo "- the greedy content sha: $(content_sha "$OUT/vr-$arm-resp.json")" >> "$P"
+      if [ "$arm" = on ]; then
+        echo "- the same-bits witness: $([ "$(content_sha "$OUT/vr-on-resp.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+      fi
+    else
+      echo "## the $arm arm — the restart REFUSED" >> "$P"
+      docker logs "$CONTAINER_NAME" 2>&1 | tail -3 >> "$P" || true
+      tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+    fi
+  done
+  # the ON arm's full gate battery (only if the ON arm is standing): the §2
+  # gates on the ON config, hardmode, the vision suite, the walls.
+  if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER_NAME" && docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | grep -q -- "--vision-video-tokens"; then
+    echo "## the section-2 content gates (the ON arm's config)" >> "$P"
+    run_gates vrid DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 VISION_VIDEO_TOKENS=64 || true
+    echo "## hardmode (the 95 must hold on the ON arm)" >> "$P"
+    mkdir -p "$OUT/vrhm"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+      --model "$model" --format openai --tokenizer "$MODEL_ID" \
+      --hardmode --label "videorows" --output-dir "$OUT/vrhm" --parallel 2 \
+      --json-file "$OUT/vrhm/hm.json" > "$OUT/vrhm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/vrhm/hm.json" >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold — the image path untouched by the video cut)" >> "$P"
+    mkdir -p "$OUT/vrvision"
+    if [ -f scripts/vision-suite-probe.py ]; then
+      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/vrvision/vision.json" > "$OUT/vrvision/vision.log" 2>&1 || true
+      tail -6 "$OUT/vrvision/vision.log" >> "$P" 2>/dev/null || true
+    else
+      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    fi
+    echo "## the timed load walls (the ON arm's restart cost)" >> "$P"
+    for r in a b; do
+      ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+      S=$(date +%s)
+      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 VISION_VIDEO_TOKENS=64 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+      echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+    done
+    echo "- VERDICT: the pages gain is the value; the gates (sha IDENTICAL + §2 PASS + hardmode 95 + the vision 4/4 + the walls in band) are the safety. ALL HELD = adopt VISION_VIDEO_TOKENS=64 into config.sh's serve_args (the freed room is user-visible: more pages / the room a 5th stream or a bigger kept-states set needs). ANY FAIL = the default stands, the receipt records the kill." >> "$P"
+  else
+    echo "- the ON arm is not standing — the gate battery SKIPPED (the receipt above carries why)" >> "$P"
+  fi
+  touch "$OUT/.videorows.done"
+fi
+
+# ---------------------------------------------------------------------------
+
 if want summary; then
   log "=== summary"
   S="$OUT/CAMPAIGN.md"

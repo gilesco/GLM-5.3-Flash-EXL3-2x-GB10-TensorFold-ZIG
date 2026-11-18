@@ -328,6 +328,14 @@ serve_args() {
   # PERF_PLAN's vision section carries the plan.
   [[ "$VISION" != 1 ]] || args+=(--vision)
   [[ -z "$VISION_IMAGE_TOKENS" ]] || args+=(--vision-image-tokens "$VISION_IMAGE_TOKENS")
+  # VISION_VIDEO_TOKENS (round 147, the videorows stage brief): --vision-video-tokens
+  # on the server — the visual rows a request's VIDEOS may hold. The engine reserves
+  # them per stream whenever the checkpoint carries video ids EVEN WITH NO VIDEO
+  # RUNTIME (no libtfvideo.so): the desk calibration prices the standing default
+  # 16384 at 127.5 MiB a stream of dead rows on this line (the vrid receipt cites
+  # the measured pages gain). 64 is the CLI's floor; empty: the engine default.
+  VISION_VIDEO_TOKENS="${VISION_VIDEO_TOKENS:-}"
+  [[ -z "$VISION_VIDEO_TOKENS" ]] || args+=(--vision-video-tokens "$VISION_VIDEO_TOKENS")
   if [[ "$DRAFTS" == 1 ]]; then
     local dflash="/root/.cache/huggingface/hub/models--${DFLASH2_ID//\//--}/snapshots/$DFLASH2_REVISION"
     if [[ -e "$HF_CACHE/hub/models--${DFLASH2_ID//\//--}/snapshots/$DFLASH2_REVISION/config.json" ]]; then
