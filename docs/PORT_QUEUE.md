@@ -591,3 +591,82 @@ green.
 - [ ] **Queued**: the drop-verify A/B for 002's 0007-half (vs #2852);
   the 020/#3125 overlap check; the residual stage briefs (0114
   KV-shard, the PDL decode family, 0120 EXTRA_EOS).
+
+## Round 145 cont. (2026-11-18) — the Mia 1104 re-inventory (the user's ask, the wait-window work): the patch tree holds nothing new; the PR stack and issues carry six items — desk-checked against our v1.2.9 tree the same sitting
+
+**The renumbering (their 2026-11-11 change)**: their former 0107–0117 are now
+**0111–0121** (the four TP=4 patches took 0107–0110). Every crosswalk in our
+docs citing their old numbers needs the translation; their next PR merge
+renumbers again (the open stack runs to 0140).
+
+**The patch tree (121 engine patches on TF 1.1.9 @ f350cd3e)**: nothing
+genuinely new — everything maps to our adopted/assessed/queued/parked set.
+Their genuinely new work is the UNMERGED PR stack (0122–0140) and the issues.
+
+**The six items, with the desk-checks run against our v1.2.9 tree
+(6b9de6951) the same sitting**:
+
+1. **The `--vision-video-tokens` reservation (their issue #34) — the one
+   CONFIG candidate; the desk-check CONFIRMS it applies to us.**
+   The v1.2.9 source: `cli.zig` defaults `vision_video_tokens: u32 = 16384`;
+   `cuda_images.zig` rowLimit() reserves `image_tokens + video_tokens` rows
+   whenever the checkpoint carries video ids (theirs does), and
+   `streamBytes()` (= rowLimit × out_hidden 4096 × 2 B) feeds the pool plan
+   via `extra` (cuda_native.zig:373-374). **Our own boot line carries the
+   cost: 415 MiB fixed each — of which 16384×4096×2 = 128 MiB/stream is the
+   video reservation (with image 2048's 16 MiB, 144 MiB of the 415)**, and
+   `--vision-video-tokens 64` frees ~127 MiB/stream ≈ **0.5 GiB/rank at c4**
+   into the fp8 paged pool. No output byte moves (video is never served on
+   our line; `libtfvideo.so` absent — the boot line says so). **Value
+   question for the brief**: does the freed room admit more pages / a
+   5th stream at the 524,288 window, or a larger TF_KV_SHARE kept-states
+   set, measured by the pool-pages line + the §2 battery as guard? Cheapest
+   arm: flip the flag in config.sh's serve_args, one window alongside an
+   existing battery. NOTE: their issue flags "planning no video rows at all
+   would be an engine change, for upstream" — the flag is the config-only
+   path; the engine change is a line for docs/ECOSYSTEM.md, not a patch.
+2. **L2PF — RE-LABELED from port candidate to config A/B; expected value
+   ~zero on our shape.** The desk-check: `TF_GLM_L2PF` exists natively in
+   our v1.2.9 tree (cuda_l2pf.zig; "on unless 0" for the knobs, `named`
+   false by default) AND our production boot log already prints the L2PF
+   line ("134 rows, 932 MiB a decode window, 2 CTAs a site, 150 GB/s") —
+   **it is already active at GB10 defaults on our serve**. Their measured
+   value: +2% one-stream, flat at 4/8 streams; our production is 4 streams
+   at the 524,288 window. Nothing to port, nothing to flip; the round-141
+   "port candidate" note is resolved by the fingerprint mainline.
+3. **`TF_DSV41_PREFILL_SHARE` (their PREFILL_SHARE=0.68) — the env exists
+   in our tree but is DSV41-scoped** (environment.zig: `.scope = .dsv41`),
+   not GLM — the mixed-traffic knob their chat-beside-prefill receipt uses
+   does NOT exist on our line. Watch: if mixed-traffic value ever justifies
+   it, it is an upstream-request line, not a port. (Their receipt: a chat
+   beside a long prefill keeps 12.9 tok/s, first token ~47% later.)
+4. **The KV-shard brief's hazard list (their PR #42–45 defect receipts)**:
+   the seating defect (a cold pass seated away from its held prefix → every
+   keep refused, 207 s re-prefills), the recall-home defect (a state's home
+   ≠ its pages' part → a 7-hour hang), their guard counters
+   (`kv_shard_keeps_refused_total` / `kv_shard_carries_total`) and the
+   `TF_GLM_DISK_FAULT=n` drill as the fault instrument; their pool
+   datapoint: 8,704 pages (4.46M tokens) with share+shard at reserve 5 —
+   the number our brief can aim at. Feeds the queued 0114 brief; no new
+   window.
+5. **`StagingFull` long-state skips (their #49) — CHECKED, CLEAN on our
+   side**: zero `StagingFull` lines in production's logs and no receipt
+   hits; our native #1411 tier does not carry their staging-permit defect.
+   No action.
+6. **The #1779 caution recorded**: upstream itself turned OFF the shared
+   draft reservation for DFlash2 (`cc2fa8d23`/their #2720) because a cut
+   chance left a stream at zero drafts while its peers decoded — never
+   adopt shared draft reservations for DFlash2 from upstream main.
+
+**Also noted**: their block-FP8 cells decode 31–52% slower than EXL3 at
+equal prefill — independent confirmation the EXL3-only line is the fast
+line; their community complaints run against their OWN old Python recipe,
+not against our native-vs-native discipline; their repo health is active
+but their engine base (1.1.9) is ~1,059 commits behind our v1.2.9 pin.
+
+**Posture: the v1.2.10-wait posture is REINFORCED, with one actionable**:
+the vision-video-rows flag (item 1) is the only candidate that could move a
+user-visible number, it needs no release, and its brief is the cheapest
+window shape we run (a config arm beside an existing battery). Stage brief
+next sitting if the value question stands: "more pages / more admitted
+streams at 524,288 from the freed video reservation, zero output change."
