@@ -4100,3 +4100,48 @@ pin holds at v1.2.10 regardless.
   failure mode — phase-lint gained class (c), `local` outside a function
   body, replayed against the broken tree from git (both lines flagged) and
   the fixed tree (clean). Relaunch follows as the sitting's last action.
+
+## (round 151) THE 020 DROP QUALIFIED — THE STORE'S DEFAULT IS 17 PATCHES; THE OUTAGE ROOT-CAUSED AND REPAIRED; PRODUCTION RESTORED ON THE QUALIFIED BITS (2026-11-19)
+
+**Window 38** (campaign-20261119-124951, `preflight drop020val summary`,
+rc=0): the 17-patch store passed every instrument —
+- **The same-bits greedy witness: IDENTICAL** (`80cc3802…` — the sha holds
+  across the store change, as the desk ground predicted).
+- **The §2 content gates ALL PASS** (g1–g4 + the g5 note).
+- **Hardmode 95 — the thirty-eighth consecutive.** The vision **4/4**.
+- **The walls 84/83 s** (in band). Steady-state decode **70.6 tok/s**
+  (the v1210 18-patch receipt read 73.1 — inside the arm spread).
+- **No cache-first line at boot** (the live hunks confirmed dead, exactly
+  as the desk ground said).
+- The bench pp d0 1,524; the c4 aggregate 1,477.
+
+**ADOPTED: the store's default is 17 patches.** The file stays on disk;
+the production store drops 020 at the next promotion sync behind the
+round-146 identity guard. The anchors re-dated on the d020 receipt (the
+walls 84/83, decode 70.6, prefill 1,524); the chart regenerated; the
+streak at thirty-eight.
+
+**The outage the window's restore path exposed — ROOT-CAUSED and
+REPAIRED**: production's `image/build-native.sh` predated the
+empty-body-marker skip (the round-144 marker store's seven bodyless
+provenance patches apply as no-ops on the testing repo's script; production's
+old copy tried to `git apply` the first one — 005-pagerows-fix — and the
+build died). Every crash-net retry hit the same wall; the user moved
+production onto the spark-vllm-docker fallback meanwhile. The repair
+(production commit `d5416a2`): the testing repo's build-native.sh synced
+over (the 6-line skip), the PATCHES default dropped to 17 with the
+receipt cited, and the dead TF_PROMPT_CACHE_FIRST export removed with its
+consumer. The user restarted production from the d020 window's own image
+(built 12:57:38 by the window's prepare): the engine reads
+**tensorfold-native 1.2.10**, the serve line carries the d020 arithmetic
+(4,060 pages at 17.9 GiB room — the boot-state wobble; the v1210 receipt
+read "enough for 4" at 18.1 GiB room, the d020 window 3 at 17.5 — the
+room figure moves the funded-windows count exactly as the round-149
+adjudication priced: ~1 window per ~1.2 GiB of room). Verified live: the
+greedy probe answers, no cache-first lines, no vLLM containers on either
+host, the worker rank up.
+
+**The windows voided / run this round**: window 37 voided on the
+round-150 phase's own `local`-outside-a-function staging bug (the
+phase-lint class-(c) catch now guards it); window 38 qualified. 1/2 —
+below the half-void watch line.

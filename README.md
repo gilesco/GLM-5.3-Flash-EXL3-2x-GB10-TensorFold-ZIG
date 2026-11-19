@@ -21,11 +21,13 @@ nothing but docker, ssh and the NVIDIA driver.
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
 - **Engine**: TensorFold **v1.2.10** + **the adopted 17-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
-  020-cachefirst DROP-GATED by the drop020val window — its live hunks are
-  gated off at our bare serve (the TF_PROMPT_CACHE_FIRST env never reached the
-  container through env_args()'s forwarding prefixes; the fund-report hunks
-  need an asked --prompt-cache-gib our serve never sets); the battery gates
-  the drop,
+  020-cachefirst RETIRED from the default — the drop020val battery qualified
+  the drop (campaign-20261119-124951: the witness 80cc3802… IDENTICAL, the
+  §2 gates ALL PASS, hardmode 95 — the thirty-eighth consecutive, the vision
+  4/4, the walls 84/83 s); its live hunks were gated off at our bare serve
+  (the TF_PROMPT_CACHE_FIRST env never reached the container through
+  env_args()'s forwarding prefixes; the fund-report hunks need an asked
+  --prompt-cache-gib our serve never sets); the store keeps the file on disk,
   the v1.2.10 rebase's store replay is proven byte-exact — pristine v1.2.10 + the
   18 patches = the composed tree; the v1210val battery QUALIFIED the pin —
   campaign-20261119-100642, the round-148 receipt: the greedy witness
@@ -58,7 +60,7 @@ nothing but docker, ssh and the NVIDIA driver.
 
 | question | answer |
 | --- | --- |
-| Quality | **Tool-eval-bench Hard Mode: Quality 95/100 (197/208 points), Deployability 76/100** on the shipping config — receipted thirty-seven consecutive times (every one Quality 95, byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261119-100642 (the v1.2.10 v1210val battery; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
+| Quality | **Tool-eval-bench Hard Mode: Quality 95/100 (197/208 points), Deployability 76/100** on the shipping config — receipted thirty-eight consecutive times (every one Quality 95, byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261119-100642 (the v1.2.10 v1210val battery; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
 | Speed | The v1.2.10 engine's own numbers (campaign-20261119-100642, the v1210val battery): load wall **83 s**, steady-state decode **73.1 tok/s** (2048-token probe — bit-identical to v1.2.9's receipt), prefill **1,514 tok/s** (pp d0), hardmode **95** with the vision suite 4/4 and the §2 gates ALL PASS. The chart pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
@@ -191,7 +193,7 @@ port takes the next free number). What each does:
 | `015-zshfl` | the 4-bit grouped experts read every trellis word once (`TF_EXL3_SHFL=0`) |
 | `016-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
 | `018-callquote` | a call after prose that quotes its opener is still a call — the envelope closer scans value-aware (server-layer; no knob) |
-| `020-cachefirst` | DROP-GATED by the drop020val window (the desk ground: live hunks gated off at our bare serve — the TF_PROMPT_CACHE_FIRST env never reached the container, the fund-report hunks need an asked --prompt-cache-gib; any gate FAIL reverts the default to the 18-patch stack); the file stays on disk |
+| `020-cachefirst` | RETIRED from the default (the drop020val receipt campaign-20261119-124951 QUALIFIED the drop: the witness 80cc3802… IDENTICAL, the §2 gates ALL PASS, hardmode 95 — the thirty-eighth, the vision 4/4, the walls 84/83 s; the live hunks were gated off at our bare serve); the file stays on disk |
 | `022-shared-budgets` | DFlash2's shared draft rounds keep the budgets rule — a blocked lane (the pool's `fits()` refusing at the 524,288 window) stops pricing shared drafts, so its peers keep their grant (`TF_GLM_`-free; the upstream #2793 fix; the room-matched c4 +6.1%, campaign-20261111-094017) |
 
 Every patch's provenance, port receipts and knobs: [patches/README.md](patches/README.md).

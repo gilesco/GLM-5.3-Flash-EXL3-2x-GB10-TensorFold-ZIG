@@ -1416,11 +1416,17 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       campaign-20261109-140604): the four-arm OFF/ON plan A/B — the ON arms' streams ceded
       pages to the reserve (3110/3115 -> 3103/3083), the fund-report never fired at our
       3 GiB ask, the §2 gates ALL PASS, hardmode 95 — the TWENTY-FIRST consecutive — the
-      vision 4/4. ADOPTED: the env default TF_PROMPT_CACHE_FIRST=1 + the 020 patch in
-      config.sh's PATCHES; the promoted repo follows on its next promotion sync.
-      (Instrument note: the battery's own greedy probe returned EMPTY content at
-      max_tokens 64 — the thinking model ate the budget; the gates' probes carried the
-      real content witness. The battery's probe needs a larger budget next revision.)
+      vision 4/4. ADOPTED then — and RETIRED (round 151): the drop020val desk
+      work found the adoption was never live (the TF_PROMPT_CACHE_FIRST env
+      never reached the container through env_args()'s forwarding prefixes;
+      the ON-arm page deltas sat inside the round-149 boot-wobble band), and
+      the drop020val battery qualified the drop from the default
+      (campaign-20261119-124951: the witness 80cc3802… IDENTICAL, the §2
+      gates ALL PASS, hardmode 95 — the thirty-eighth, the vision 4/4, the
+      walls 84/83 s). The store's default is 17 patches; the 020 file stays
+      on disk. (Instrument note: the battery's own greedy probe returned
+      EMPTY content at max_tokens 64 — the thinking model ate the budget;
+      the gates' probes carried the real content witness.)
 
 ## Open items
 

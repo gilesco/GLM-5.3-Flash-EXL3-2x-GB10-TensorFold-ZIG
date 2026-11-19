@@ -390,7 +390,20 @@ quoted-example class (a call quoted inside prose parses whole; the engine
 describing its own tool-call format round-trips) — the same-bits claim held,
 so the behavior is the only change.
 
-## 020-cachefirst.patch — DROP-GATED by the drop020val window (adopted 2026-11-09 as the twenty-first patch; the fork 0108 port)
+## 020-cachefirst.patch — RETIRED from the default by the drop020val battery (adopted 2026-11-09 as the twenty-first patch; the fork 0108 port)
+
+**The drop QUALIFIED (window 38, campaign-20261119-124951, the round-151
+receipt)**: the 17-patch store passed every instrument — the same-bits
+greedy witness `80cc3802…` IDENTICAL, the §2 content gates ALL PASS,
+hardmode **95** (the thirty-eighth consecutive), the vision **4/4**, the
+walls **84/83 s** (in band), the pool line at the boot-state arithmetic,
+and **no cache-first line at boot** (the live hunks confirmed dead). The
+desk ground held exactly as staged: the TF_PROMPT_CACHE_FIRST env never
+reached the container through env_args()'s forwarding prefixes; the
+fund-report hunks need an asked --prompt-cache-gib our serve never sets;
+the byte-exact store-minus-020 replay differed from the qualified composed
+tree in exactly the two kv_pool files. The default is 17 patches; the file
+stays on disk.
 
 **The drop ground (the round-150 desk work; the battery gates the drop — any
 gate FAIL reverts the PATCHES default to the 18-patch stack)**: every live
