@@ -4145,3 +4145,12 @@ host, the worker rank up.
 round-150 phase's own `local`-outside-a-function staging bug (the
 phase-lint class-(c) catch now guards it); window 38 qualified. 1/2 —
 below the half-void watch line.
+
+**The loop's posture**: the release watch re-armed with the pin's own tag
+(its PIN_TAG had held v1.2.7 — the round-141 promotion's value; updated to
+v1.2.10, the watch exits quietly until a tag NEWER than v1.2.10 lands).
+Upstream main is 295 commits past the tag; #2852 (EXL3 whole-pass routing)
+and #2856 (batched shared MTP) are still NOT mainlined (checked against
+main's log this sitting) — the next release remains the ride for them.
+The user-parked 0110 KV-shard port stays parked. The queued stage briefs
+await the discipline layer's launches.
