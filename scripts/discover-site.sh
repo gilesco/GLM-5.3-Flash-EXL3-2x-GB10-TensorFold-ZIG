@@ -4,7 +4,8 @@
 # kept and every other entry is left alone). prepare.sh runs this automatically
 # when local.sh is missing; it can also be run on its own:
 #   ./scripts/discover-site.sh               # generate local.sh if missing
-#   REDISCOVER=1 ./scripts/discover-site.sh  # re-detect and update the site keys
+#   REDISCOVER=1 ./scripts/discover-site.sh  # re-detect and update the site
+#   keys
 # What it detects:
 #   - the cabled CX7 HCAs and their netdevs (only links that are actually up),
 #   - the rails' IPv4 addresses; unassigned rails are reported with the exact
@@ -33,8 +34,10 @@ if [[ -f $LOCAL_SH ]]; then
   log "backed up the previous $LOCAL_SH"
 fi
 
-# --- 1. the cabled rails here (HCA + netdev pairs with carrier up), sorted so the
-#        head's and worker's first rail are picked the same way on both hosts ------
+# --- 1. the cabled rails here (HCA + netdev pairs with carrier up), sorted so
+# the
+#        head's and worker's first rail are picked the same way on both hosts
+#        ------
 cabled() {
   local ibdev netdev
   for ibdev in /sys/class/infiniband/*; do
@@ -51,8 +54,10 @@ HCAS=(); NETDEVS=()
 for p in "${LOCAL_PAIRS[@]}"; do HCAS+=("${p%% *}"); NETDEVS+=("${p##* }"); done
 log "cabled rails here: ${NETDEVS[*]} (HCAs: ${HCAS[*]})"
 
-# --- 2. the rails' addresses -----------------------------------------------------
-addr_of() { ip -4 -o addr show dev "$1" scope global 2>/dev/null | awk 'NR==1{print $4}' | cut -d/ -f1; }
+# --- 2. the rails' addresses
+# -----------------------------------------------------
+addr_of() { ip -4 -o addr show dev "$1" scope global 2>/dev/null | awk \
+  'NR==1{print $4}' | cut -d/ -f1; }
 HEAD1=$(addr_of "${NETDEVS[0]}")
 if [[ -z $HEAD1 ]]; then
   cat >&2 <<EOF
@@ -68,7 +73,8 @@ WORKER_TARGET=${WORKER_TARGET:-}
 if [[ -z $WORKER_TARGET && $UPDATING == 1 ]]; then
   WORKER_TARGET=$(grep -m1 '^WORKER=' "$LOCAL_SH" | cut -d= -f2- || true)
 fi
-if [[ -n $WORKER_TARGET ]] && ! ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER_TARGET" true 2>/dev/null; then
+if [[ -n $WORKER_TARGET ]] && ! ssh -o BatchMode=yes -o ConnectTimeout=5 \
+  "$WORKER_TARGET" true 2>/dev/null; then
   log "the existing WORKER=$WORKER_TARGET does not answer; falling back to detection"
   WORKER_TARGET=""
 fi
@@ -80,13 +86,17 @@ ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
     "$WORKER_TARGET" '[[ -d /sys/class/infiniband ]]' 2>/dev/null \
   || die "cannot ssh to $WORKER_TARGET (key-based). Set up the key, or write scripts/local.sh by hand (local.sh.example) and re-run ./scripts/prepare.sh."
 
-# --- 3. the worker's rails (same platform: expect the same cabled netdev names) ---
-mapfile -t WORKER_PAIRS < <(ssh -o BatchMode=yes "$WORKER_TARGET" 'bash -s' < <(declare -f cabled; echo cabled))
+# --- 3. the worker's rails (same platform: expect the same cabled netdev names)
+# ---
+mapfile -t WORKER_PAIRS < <(ssh -o BatchMode=yes "$WORKER_TARGET" 'bash -s' < \
+  <(declare -f cabled; echo cabled))
 ((${#WORKER_PAIRS[@]})) || die "could not detect the worker's cabled rails over ssh (rdma tools missing there?)"
 [[ "${WORKER_PAIRS[0]##* }" == "${NETDEVS[0]}" ]] \
   || die "the worker's first cabled netdev is '${WORKER_PAIRS[0]##* }' but the head's is '${NETDEVS[0]}' — the rails' naming should match on two GB10s; wire the config by hand (local.sh.example)."
 worker_addr_of() {
-  ssh -o BatchMode=yes "$WORKER_TARGET" "ip -4 -o addr show dev '$1' scope global 2>/dev/null" | awk 'NR==1{print $4}' | cut -d/ -f1
+  ssh -o BatchMode=yes "$WORKER_TARGET" \
+    "ip -4 -o addr show dev '$1' scope global 2>/dev/null" | awk \
+    'NR==1{print $4}' | cut -d/ -f1
 }
 WORKER1=$(worker_addr_of "${NETDEVS[0]}")
 [[ -n $WORKER1 ]] || { cat >&2 <<EOF
@@ -96,11 +106,13 @@ WORKER1=$(worker_addr_of "${NETDEVS[0]}")
 EOF
   exit 2; }
 
-# --- 4. the checks ---------------------------------------------------------------
+# --- 4. the checks
+# ---------------------------------------------------------------
 ping -c1 -W2 "$WORKER1" >/dev/null 2>&1 \
   || log "WARN: the worker's rail address $WORKER1 does not answer ping — if ICMP is filtered this is fine (ssh reached it); prepare's preflight re-checks the link either way"
 
-# --- 5. write the five keys ------------------------------------------------------
+# --- 5. write the five keys
+# ------------------------------------------------------
 if ((UPDATING)); then
   write() { local k=$1 v=$2
     if grep -qE "^$k=" "$LOCAL_SH"; then sed -i "s|^$k=.*|$k=$v|" "$LOCAL_SH"

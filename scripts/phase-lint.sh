@@ -17,9 +17,12 @@ say() { printf '%s\n' "$*"; }
 
 say "== phase-lint: $TARGET =="
 
-# (a) unguarded greps in ASSIGNMENT command substitutions: `VAR=$( ... | grep ... )`
-# where the substitution's last command is a grep (incl. `grep -c`, which exits 1
-# on a zero count). An assignment's status IS the substitution's, so set -e kills
+# (a) unguarded greps in ASSIGNMENT command substitutions: `VAR=$( ... | grep
+# ... )`
+# where the substitution's last command is a grep (incl. `grep -c`, which exits
+# 1
+# on a zero count). An assignment's status IS the substitution's, so set -e
+# kills
 # the script (window 34). Echo-embedded substitutions are status-discarded and
 # are NOT flagged (empirically safe across every window; e.g. the serve-line
 # echoes). Parsing is paren-depth-aware and quote-aware so a grep pattern

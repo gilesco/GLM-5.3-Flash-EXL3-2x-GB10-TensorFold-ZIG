@@ -2,7 +2,8 @@
 # scripts/autonomous-window.sh — the self-contained window (round 90; production
 # lifecycle corrected round 92: it now stops and starts production through the
 # production repo's own stop.sh/start.sh, which handle BOTH ranks — the head and
-# the worker — and save each rank's log; the raw docker stop/start this script used
+# the worker — and save each rank's log; the raw docker stop/start this script
+# used
 # before only touched the head rank, which is why the early autonomous attempts
 # did not work). (user): the agent may stop/restart production for a staged
 # window, and THIS script is the only thing allowed to. Run detached from the
@@ -13,7 +14,8 @@
 # here depends on a live agent session; the head's cron crash net
 # (scripts/autonomous-cron.sh) and the agent host's poke (scripts/autonomous-
 # poke.sh) cover the aftermath.
-#   setsid nohup scripts/autonomous-window.sh "preflight ncurouter summary" </dev/null >/tmp/autonomous-launch.log 2>&1 &
+#   setsid nohup scripts/autonomous-window.sh "preflight ncurouter summary"
+#   </dev/null >/tmp/autonomous-launch.log 2>&1 &
 set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f scripts/local.sh ] && source scripts/local.sh
@@ -30,7 +32,8 @@ WID="$$"
 note() { echo "[$(date '+%F %T')] [w$WID] $*" >> "$CONSOLE"; }
 STARTED=0
 restore() {
-  # a refused double-launch never touched production — restore only what we stopped
+  # a refused double-launch never touched production — restore only what we
+  # stopped
   [ "$STARTED" = 1 ] || return 0
   note "production restore: the production repo's start.sh (both ranks, waits for the API)"
   if ! "$PROD/scripts/start.sh" >>"$CONSOLE" 2>&1; then
@@ -40,7 +43,8 @@ restore() {
   note "production restored (window rc=${1:-?})"
 }
 trap 'restore $?' EXIT
-[ -f "$STATE" ] && { note "a window is already running ($STATE exists) — refusing"; exit 1; }
+[ -f "$STATE" ] && { note \
+  "a window is already running ($STATE exists) — refusing"; exit 1; }
 touch "$STATE"
 STARTED=1
 sleep 30   # let the launching ssh detach and the agent's closing message flush

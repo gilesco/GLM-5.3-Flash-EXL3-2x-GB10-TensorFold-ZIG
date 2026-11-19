@@ -33,8 +33,10 @@ fi
 if ! docker ps --format "{{.Names}}" | grep -qx glm53-native-tf; then
   if [ ! -f "$STATE" ]; then
     echo "[$(date '+%F %T')] production down with no active window — restarting via the production repo's start.sh" >> "$LOG"
-    "$PROD/scripts/start.sh" >> "$LOG" 2>&1 || echo "[$(date '+%F %T')] start.sh rc=$? — will retry next tick" >> "$LOG"
+    "$PROD/scripts/start.sh" >> "$LOG" 2>&1 || echo \
+      "[$(date '+%F %T')] start.sh rc=$? — will retry next tick" >> "$LOG"
   else
-    echo "[$(date '+%F %T')] production down, window in flight — hands off" >> "$LOG"
+    echo "[$(date '+%F %T')] production down, window in flight — hands off" >> \
+      "$LOG"
   fi
 fi

@@ -7,10 +7,13 @@
 #
 #   Launch detached (survives everything, incl. the agent's session):
 #     cd ~/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-v1.1-testing
-#     setsid nohup scripts/run-window-block.sh </dev/null >/tmp/window-block.console 2>&1 &
+#     setsid nohup scripts/run-window-block.sh </dev/null
+#     >/tmp/window-block.console 2>&1 &
 #
-#   Console:  /tmp/window-block.console  (+ the campaign's receipts under results/)
-#   Override the phases:  PHASES="preflight top4qual summary" scripts/run-window-block.sh
+#   Console:  /tmp/window-block.console  (+ the campaign's receipts under
+#   results/)
+#   Override the phases:  PHASES="preflight top4qual summary"
+#   scripts/run-window-block.sh
 set -uo pipefail
 cd "$(dirname "$0")/.."
 # export is the load-bearing word: without it PHASES stays a shell variable and
@@ -20,13 +23,18 @@ export PHASES="${PHASES:-preflight top4qual focusqual summary}"
 STEPS="${STEPS:-900}"   # 15 s per step: ~3.75 h ceiling for the production stop
 
 echo "=== window block $(date): PHASES=$PHASES — waiting for production (the promoted glm53-native-tf) to stop ==="
-# the window wrapper (autonomous-window.sh) already stopped production through the production
-# repo's own scripts before calling this block; this wait is the hand-off's witness. Round 138:
-# the promoted stack is glm53-native-tf; the round-139 (user) retirement removed the old tip
-# recipe entirely — no glm53-flash-tf container exists anymore (the duel's baseline arm is
+# the window wrapper (autonomous-window.sh) already stopped production through
+# the production
+# repo's own scripts before calling this block; this wait is the hand-off's
+# witness. Round 138:
+# the promoted stack is glm53-native-tf; the round-139 (user) retirement removed
+# the old tip
+# recipe entirely — no glm53-flash-tf container exists anymore (the duel's
+# baseline arm is
 # THIS repo's own config on the testing stack's own name).
 for _ in $(seq 1 "$STEPS"); do
-  docker ps --format '{{.Names}}' 2>/dev/null | grep -qx glm53-native-tf || break
+  docker ps --format '{{.Names}}' 2>/dev/null | grep -qx glm53-native-tf || \
+    break
   sleep 15
 done
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx glm53-native-tf; then

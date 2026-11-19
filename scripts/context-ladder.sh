@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# Climb the context ladder on the head Spark: for each window size, restart the server at
-# PARALLEL=1 with the long-context memory knobs, probe long-context retrieval with the
-# bench's needle test, and record the engine's own memory accounting. A rung the admission
+# Climb the context ladder on the head Spark: for each window size, restart the
+# server at
+# PARALLEL=1 with the long-context memory knobs, probe long-context retrieval
+# with the
+# bench's needle test, and record the engine's own memory accounting. A rung the
+# admission
 # refuses is a recorded outcome, not a failure (docs/CONTEXT_512K_PLAN.md).
 #
 #   scripts/context-ladder.sh                          # 131072 262144 524288
 #   scripts/context-ladder.sh 524288                   # one rung
-#   RESERVE_GIB=8 PROMPT_CACHE_GIB=1.5 PARALLEL=1 ...  # the knobs the plan computes
+#   RESERVE_GIB=8 PROMPT_CACHE_GIB=1.5 PARALLEL=1 ...  # the knobs the plan
+#   computes
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 source ./config.sh
-command -v docker >/dev/null || die "docker is required (run this on the head Spark)"
+command -v docker >/dev/null || die \
+  "docker is required (run this on the head Spark)"
 BENCH="$HOME/tool-eval-bench/.venv/bin/tool-eval-bench"
 [[ -x "$BENCH" ]] || die "tool-eval-bench not found at $BENCH"
 
@@ -32,17 +37,20 @@ for ctx in "${RUNGS[@]}"; do
   if ! CONTEXT="$ctx" PARALLEL="$LADDER_PARALLEL" \
        TENSORFOLD_MEMORY_RESERVE_GIB="$RESERVE_GIB" PROMPT_CACHE_GIB="$PROMPT_CACHE_GIB" \
        ./scripts/start.sh < /dev/null; then
-    echo "## $ctx" >> "$SUMMARY"; echo "- REFUSED by admission (see /tmp or the start log)" >> "$SUMMARY"
+    echo "## $ctx" >> "$SUMMARY"; echo \
+      "- REFUSED by admission (see /tmp or the start log)" >> "$SUMMARY"
     continue
   fi
   sleep 5
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "CUDA sm_121" > "$OUT/$ctx.server.log" || true
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "CUDA sm_121" > \
+    "$OUT/$ctx.server.log" || true
   HEALTH=$(curl -s -m 5 "http://127.0.0.1:$PORT/health")
   echo "## $ctx" >> "$SUMMARY"
   echo "- server: $(cat "$OUT/$ctx.server.log")" >> "$SUMMARY"
   echo "- health: $HEALTH" >> "$SUMMARY"
 
-  # Long-context retrieval + decode rate at this window: one needle buried at ~half depth.
+  # Long-context retrieval + decode rate at this window: one needle buried at
+  # ~half depth.
   "$BENCH" run --needle-only --base-url "http://127.0.0.1:$PORT/v1" --model "$SERVED_NAME" \
     --format openai --seed 42 --needle-lengths "$ctx" --needle-depths 2 --no-live \
     --timeout 600 --label "ctx-$ctx" --output-dir "$OUT/needle-$ctx" \

@@ -15,13 +15,15 @@ LOG="$HOME/upstream-release-watch.log"
 MARKER="$HOME/.upstream-release-last-poked"
 PIN_TAG="v1.2.10"  # the promoted pin (the round-151 promotion: v1.2.10 + the 17-patch store; the rebase target when a newer tag lands)
 PW=$(grep -oP 'OPENCODE_SERVER_PASSWORD=\K.*' "$OPENCODE_UNIT" 2>/dev/null | tr -d '"')
-[ -n "$PW" ] || { echo "$(date '+%F %T') no web password — cannot poke" >> "$LOG"; exit 1; }
+[ -n "$PW" ] || { echo "$(date '+%F %T') no web password — cannot poke" >> \
+  "$LOG"; exit 1; }
 AUTH="opencode:$PW"
 # 1. the newest release tag upstream (gh: the authenticated path — the
 # unauthenticated API rate-limits within a single sitting's research; a cron
 # running every 30 min would exhaust it in a day. gh's stored token carries
 # repo scope; gh auth status verifies it on every call)
-LATEST=$(timeout 30 gh api repos/ashhart/TensorFold/releases/latest --jq '.tag_name' 2>/dev/null) || LATEST=""
+LATEST=$(timeout 30 gh api repos/ashhart/TensorFold/releases/latest --jq \
+  '.tag_name' 2>/dev/null) || LATEST=""
 [ -n "$LATEST" ] || exit 0   # the API hiccuped or rate-limited: retry next tick
 [ "$LATEST" = "$PIN_TAG" ] && exit 0   # no new release yet
 # 2. not already poked about this one
@@ -29,7 +31,8 @@ LATEST=$(timeout 30 gh api repos/ashhart/TensorFold/releases/latest --jq '.tag_n
 # 3. the agent's session in this project (newest first)
 SID=$(curl -s -m 10 -u "$AUTH" "$API/session?directory=$PWD&order=desc" \
       | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('data') or []; print(r[0]['id'] if r else '')" 2>/dev/null) || true
-[ -n "$SID" ] || { echo "$(date '+%F %T') no session found in $PWD" >> "$LOG"; exit 1; }
+[ -n "$SID" ] || { echo "$(date '+%F %T') no session found in $PWD" >> "$LOG"; \
+  exit 1; }
 # 4. the poke
 MSG="[upstream release poke] TensorFold $LATEST is out (the promoted pin is $PIN_TAG). The (user) decision (round 141 cont. 50): we WAIT for the release, then rebase. Read the release notes and the Unreleased-to-tag changelog (the GH releases page), name what the release carries for our line — the expected headline is #2843's EXL3 grouped-experts decode-grid fix, possibly #2856's batched shared MTP, possibly #3064's paged FP8 KV — then stage the rebase per the bump protocol (the round-141 v1.2.7 shape: the scratch round-trip verify, the vNNNval battery, the launch last)."
 RC=$(curl -s -m 20 -u "$AUTH" -X POST "$API/session/$SID/prompt" -H 'Content-Type: application/json' \

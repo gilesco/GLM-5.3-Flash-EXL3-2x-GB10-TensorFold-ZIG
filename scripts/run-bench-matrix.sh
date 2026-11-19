@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
 # Run the tool-eval-bench matrix against this stack (on the head host).
 #
-# Each configuration restarts the server (interrupting clients), waits for /health, then runs
-# the bench with IDENTICAL options every time (docs/TOOL_EVAL_TESTING.md). Results land in
+# Each configuration restarts the server (interrupting clients), waits for
+# /health, then runs
+# the bench with IDENTICAL options every time (docs/TOOL_EVAL_TESTING.md).
+# Results land in
 # results/<run-id>/<label>/. Usage:
 #
-#   scripts/run-bench-matrix.sh                    # the current search set (six configurations)
+#   scripts/run-bench-matrix.sh                    # the current search set (six
+#   configurations)
 #   scripts/run-bench-matrix.sh baseline recall    # a subset (any label below)
-#   NO_BENCH=1 scripts/run-bench-matrix.sh recall6 # restart + serve only (a manual bench run follows)
+#   NO_BENCH=1 scripts/run-bench-matrix.sh recall6 # restart + serve only (a
+#   manual bench run follows)
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 source ./config.sh
-command -v docker >/dev/null || die "docker is required (run this on the head Spark)"
+command -v docker >/dev/null || die \
+  "docker is required (run this on the head Spark)"
 BENCH="$HOME/tool-eval-bench/.venv/bin/tool-eval-bench"
 [[ -x "$BENCH" ]] || die "tool-eval-bench not found at $BENCH"
 
@@ -21,8 +26,10 @@ OUT="results/$RUN_ID"; mkdir -p "$OUT"
 echo "# tool-eval-bench matrix $RUN_ID" >> "$OUT/SUMMARY.md"
 echo "bench options are fixed across every configuration; the server configuration is the variable." >> "$OUT/SUMMARY.md"
 
-# The configurations: label = the optimization under test (one variable changed per config).
-# The bench options never change. $4 (optional) is extra env for the restart, space-separated
+# The configurations: label = the optimization under test (one variable changed
+# per config).
+# The bench options never change. $4 (optional) is extra env for the restart,
+# space-separated
 # KEY=VALUE pairs (see config.sh's knobs: DENSE_BITS, HEAD_BITS, PDL).
 declare -A CFG_PARALLEL CFG_RECALL CFG_ENV
 set_config() { CFG_PARALLEL[$1]=$2; CFG_RECALL[$1]=$3; CFG_ENV[$1]=${4:-}; }
@@ -57,27 +64,42 @@ set_config fp8         4 0 "KV_CACHE=fp8"
 #   + v1.1.2's prepared fp8 latent cache: halves KV bytes (memory model, big windows) —
 #   speed unknown on EXL3, quality unqualified upstream: bench-only until gated.
 set_config dense4fp8   4 0 "DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288"
-#   the leader + fp8 caches at the goal window — the ladder candidate: dense4's speed with
-#   fp8's halved per-token KV. The 2026-10-23 campaign ran exactly this (its shell happened
-#   to export CONTEXT=524288); now explicit so the cell can't silently run at 40960.
+#   the leader + fp8 caches at the goal window — the ladder candidate: dense4's
+#   speed with
+#   fp8's halved per-token KV. The 2026-10-23 campaign ran exactly this (its
+#   shell happened
+#   to export CONTEXT=524288); now explicit so the cell can't silently run at
+#   40960.
 
-# --- production-parity cells (the real-world anchor) ----------------------------------------
-# Production is the -tip fork on the head (this site's path: docs/SITE.md, not in git):
-# Python engine 0.6.6, same EXL3 checkpoint, DENSE=fp8 (dense linears fp8), KV=fp8 (DSA latent
-# e4m3), COMM=roce, CONTEXT=524288, DFlash2 drafter, TP=2; admission 87.45/101.21 GiB, cache
-# slots 524304. These cells mirror it knob-for-knob on the native engine so the bench numbers
+# --- production-parity cells (the real-world anchor)
+# ----------------------------------------
+# Production is the -tip fork on the head (this site's path: docs/SITE.md, not
+# in git):
+# Python engine 0.6.6, same EXL3 checkpoint, DENSE=fp8 (dense linears fp8),
+# KV=fp8 (DSA latent
+# e4m3), COMM=roce, CONTEXT=524288, DFlash2 drafter, TP=2; admission
+# 87.45/101.21 GiB, cache
+# slots 524304. These cells mirror it knob-for-knob on the native engine so the
+# bench numbers
 # compare like with like (bf16-KV 40K cells are NOT production parity).
 set_config parity      4 0 "DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288"
-#   the knob-for-knob mirror of production: fp8-dense-equivalent bits, fp8 latent cache,
+#   the knob-for-knob mirror of production: fp8-dense-equivalent bits, fp8
+#   latent cache,
 #   the 512K window, same drafter. The real-world comparison cell.
-set_config parity4fp8  4 0 "DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288"
-#   parity's window with the dense4 compression — the ladder candidate at full window.
-set_config nodraft     4 0 "DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 DRAFTS=0"
-#   parity minus the drafter — quantifies what DFlash2 buys on the native engine (the
-#   forum's spec-decode thread claims it is the difference between 14 and 23 tok/s).
+set_config parity4fp8 4 0 \
+  "DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288"
+#   parity's window with the dense4 compression — the ladder candidate at full
+#   window.
+set_config nodraft 4 0 \
+  "DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 DRAFTS=0"
+#   parity minus the drafter — quantifies what DFlash2 buys on the native engine
+#   (the
+#   forum's spec-decode thread claims it is the difference between 14 and 23
+#   tok/s).
 
 SELECTED=("$@")
-(( ${#SELECTED[@]} )) || SELECTED=(roce0 chan4 dense4pdl dense4chan4 dense4h8 fp8)
+(( ${#SELECTED[@]} )) || SELECTED=(roce0 chan4 dense4pdl dense4chan4 dense4h8 \
+  fp8)
 
 for label in "${SELECTED[@]}"; do
   [[ -n "${CFG_PARALLEL[$label]:-}" ]] || die "unknown configuration: $label (baseline | pdl | dense4 | dense6 | dense8 | parallel6 | parallel8 | recall | recall6 | roce0 | chan4 | dense4pdl | dense4chan4 | dense4h8 | fp8 | dense4fp8 | parity | parity4fp8 | nodraft)"
@@ -87,7 +109,8 @@ for label in "${SELECTED[@]}"; do
   env "${_envpairs[@]}" PARALLEL="${CFG_PARALLEL[$label]}" RECALL="${CFG_RECALL[$label]}" \
     ./scripts/start.sh < /dev/null
 
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "CUDA sm_121" > "$OUT/$label.server.log" || true
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "CUDA sm_121" > \
+    "$OUT/$label.server.log" || true
   echo "## $label" >> "$OUT/SUMMARY.md"
   echo "- server: $(cat "$OUT/$label.server.log")" >> "$OUT/SUMMARY.md"
 
@@ -97,8 +120,10 @@ for label in "${SELECTED[@]}"; do
   fi
 
   echo "=== [$label] bench: $(date) ==="
-  # Phased (docs/TOOL_EVAL_TESTING.md): quick performance first; the scenario suites run
-  # only on the configuration the quick phase validates. Options otherwise identical.
+  # Phased (docs/TOOL_EVAL_TESTING.md): quick performance first; the scenario
+  # suites run
+  # only on the configuration the quick phase validates. Options otherwise
+  # identical.
   BENCH_ARGS=(run
     --base-url "http://127.0.0.1:$PORT/v1"
     --model "$SERVED_NAME"

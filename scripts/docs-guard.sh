@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
-# The documentation guard — runs after every change (the committed pre-commit hook
+# The documentation guard — runs after every change (the committed pre-commit
+# hook
 # executes it; activate with: git config core.hooksPath scripts/hooks).
 #
 # Checks, each failing with its own fix line:
 #   1. bash -n on every scripts/*.sh
-#   2. site identifiers in tracked files: real hostnames / ssh targets / the site's
+#   2. site identifiers in tracked files: real hostnames / ssh targets / the
+#   site's
 #      rail IPs anywhere; platform-generic device names outside local.sh.example
-#   3. the perf chart matches docs/perf-anchors.tsv (render-perf-chart.sh --check)
-#   4. the README's PHASES example only names phases the campaign script knows, and
-#      its default phase list is complete (checked against the script's PHASES default)
-#   5. config.sh's defaults (CONTEXT, PARALLEL, KV_CACHE, DENSE_BITS/HEAD_BITS) appear
+#   3. the perf chart matches docs/perf-anchors.tsv (render-perf-chart.sh
+#   --check)
+#   4. the README's PHASES example only names phases the campaign script knows,
+#   and
+#      its default phase list is complete (checked against the script's PHASES
+#      default)
+#   5. config.sh's defaults (CONTEXT, PARALLEL, KV_CACHE, DENSE_BITS/HEAD_BITS)
+#   appear
 #      in the README's configuration table
-#   6. on the head (where results/ exists): every campaign dir cited in the docs exists,
+#   6. on the head (where results/ exists): every campaign dir cited in the docs
+#   exists,
 #      and the newest campaign dir is mentioned in LAUNCH.md or the ledger
 #   7. every local file link/img src in README, AGENTS.md and docs/*.md resolves
 #      (relative to the containing file, as GitHub resolves them)
@@ -22,15 +29,19 @@ FAILS=0
 fail() { printf 'GUARD FAIL: %s\n' "$*" >&2; FAILS=$((FAILS + 1)); }
 pass() { printf 'GUARD PASS: %s\n' "$*"; }
 
-# --- 1. syntax -------------------------------------------------------------------
+# --- 1. syntax
+# -------------------------------------------------------------------
 _bad=""
 for f in scripts/*.sh; do bash -n "$f" 2>/dev/null || _bad+=" $f"; done
-[[ -z $_bad ]] && pass "scripts/*.sh syntax" || fail "syntax errors in:$_bad — run bash -n scripts/<file>"
+[[ -z $_bad ]] && pass "scripts/*.sh syntax" || fail \
+  "syntax errors in:$_bad — run bash -n scripts/<file>"
 
-# --- 2. site identifiers ---------------------------------------------------------
+# --- 2. site identifiers
+# ---------------------------------------------------------
 # (the guard's own file is excluded: it must carry the patterns to detect them)
 # The forbidden values come from THIS clone's git-ignored site files (local.sh,
-# SITE.md) — every address, ssh target, hostname, and netdev they carry. The guard
+# SITE.md) — every address, ssh target, hostname, and netdev they carry. The
+# guard
 # embeds no site value itself (its old check pattern carried the site's subnet —
 # round 109 removed that).
 _forbid=$(sed -nE '
@@ -42,11 +53,14 @@ _forbid=$(sed -nE '
 _site=""
 if [ -n "$_forbid" ]; then
   _pat=$(printf '%s\n' $_forbid | sed 's/\./\\./g' | paste -sd '|' -)
-  _site=$(git grep -inE "\b($_pat)\b" -- . ':!scripts/docs-guard.sh' ':!scripts/local.sh.example' ':!scripts/discover-site.sh' 2>/dev/null | head -5 || true)
+  _site=$(git grep -inE "\b($_pat)\b" -- . ':!scripts/docs-guard.sh' \
+    ':!scripts/local.sh.example' ':!scripts/discover-site.sh' 2>/dev/null | \
+    head -5 || true)
 fi
 [[ -z $_site ]] || fail "site identifiers committed (hostnames/ssh/IPs/netdevs) — see AGENTS.md:$_site"
 
-# --- 3. the charts ----------------------------------------------------------------
+# --- 3. the charts
+# ----------------------------------------------------------------
 for tsv in docs/*-anchors.tsv; do
   [[ -e $tsv ]] || continue
   if ./scripts/render-perf-chart.sh "$tsv" --check >/dev/null 2>&1; then
@@ -56,42 +70,55 @@ for tsv in docs/*-anchors.tsv; do
   fi
 done
 
-# --- 4. the phase lists ----------------------------------------------------------
-script_default=$(grep -m1 -oP 'PHASES="\$\{PHASES:-\K[^}]+' scripts/run-qualification.sh | tr ' ' '\n' | sort -u)
+# --- 4. the phase lists
+# ----------------------------------------------------------
+script_default=$(grep -m1 -oP 'PHASES="\$\{PHASES:-\K[^}]+' \
+  scripts/run-qualification.sh | tr ' ' '\n' | sort -u)
 [[ -n $script_default ]] || fail "cannot read the script's default PHASES list"
-readme_phases=$(grep -m1 -oP 'PHASES="\K[^"]+' README.md | tr ' ' '\n' | sort -u)
+readme_phases=$(grep -m1 -oP 'PHASES="\K[^"]+' README.md | tr ' ' '\n' | sort \
+  -u)
 [[ -n $readme_phases ]] || fail "README's quick start lost its PHASES example"
-_unknown=$(comm -23 <(printf '%s\n' "$readme_phases") <(printf '%s\n' "$script_default") | tr '\n' ' ')
+_unknown=$(comm -23 <(printf '%s\n' "$readme_phases") <(printf '%s\n' \
+  "$script_default") | tr '\n' ' ')
 [[ -z $_unknown ]] && pass "README's PHASES example names known phases" \
   || fail "README's PHASES example names unknown phases: $_unknown"
 
-# --- 4b. the patch names (round 139: NNN-name.patch, the number IS the order) -----
-_pfiles=$(ls patches/*.patch 2>/dev/null | xargs -n1 basename | grep -E '^[0-9]{3}-.*\.patch$' | sort)
-[[ -n $_pfiles ]] || fail "no NNN-name.patch files in patches/ (the round-139 scheme)"
+# --- 4b. the patch names (round 139: NNN-name.patch, the number IS the order)
+# -----
+_pfiles=$(ls patches/*.patch 2>/dev/null | xargs -n1 basename | grep -E \
+  '^[0-9]{3}-.*\.patch$' | sort)
+[[ -n $_pfiles ]] || fail \
+  "no NNN-name.patch files in patches/ (the round-139 scheme)"
 _pnums=$(printf '%s\n' $_pfiles | cut -d- -f1)
 _pdup=$(printf '%s\n' $_pnums | sort | uniq -d)
 [[ -z $_pdup ]] || fail "duplicate patch numbers:$_pdup — renumber"
 _pmax=$(printf '%s\n' "$_pfiles" | tail -1 | cut -d- -f1)
 _pmax=$((10#$_pmax))
-# every number 1..max present (no gaps: the next port takes the next free number,
-# and a retired one compacts only with a round entry — gaps would suggest reuse mistakes)
+# every number 1..max present (no gaps: the next port takes the next free
+# number,
+# and a retired one compacts only with a round entry — gaps would suggest reuse
+# mistakes)
 _gap=""
 for n in $(seq 1 "$_pmax"); do
   printf '%03d\n' "$n" | grep -qxF "$_pnums" || _gap+=" $n"
 done
 [[ -z $_gap ]] || fail "patch numbers gap:$_gap — renumber or record the freed number in a round entry"
-_cfg=$(grep -m1 -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh | tr ' ' '\n' | grep '.patch$')
+_cfg=$(grep -m1 -oP '^PATCHES="\$\{PATCHES-\K[^}]+' config.sh | tr ' ' '\n' | \
+  grep '.patch$')
 _for_cfg=""
 for f in $_cfg; do
   printf '%s\n' "$_pfiles" | grep -qxF "$f" || _for+=" $f"
 done
-[[ -z $_for_cfg ]] || fail "config.sh's PATCHES names files that are not in patches/:$_for_cfg"
+[[ -z $_for_cfg ]] || fail \
+  "config.sh's PATCHES names files that are not in patches/:$_for_cfg"
 grep -q "^PATCHES=" config.sh || fail "config.sh lost its PATCHES line"
 pass "patch names are NNN-name, numbered 1..$_pmax with no gaps; the PATCHES default resolves"
 
-# --- 5. config defaults in the README table --------------------------------------
+# --- 5. config defaults in the README table
+# --------------------------------------
 
-# --- 5. config defaults in the README table --------------------------------------
+# --- 5. config defaults in the README table
+# --------------------------------------
 check_default() {  # $1 config var, $2 README grep pattern, $3 what must appear
   local d
   d=$(grep -m1 -oP "^$1=\"\\\$\\{$1:?-?\\K[^}]+" config.sh || true)
@@ -107,7 +134,10 @@ check_default KV_CACHE  '| `KV_CACHE`'              "$(grep -m1 -oP '^KV_CACHE="
 check_default DENSE_BITS '| `DENSE_BITS`' "$(grep -m1 -oP '^DENSE_BITS="\$\{DENSE_BITS:-\K[^}]+' config.sh)"
 
 # --- 6. receipt existence (the head only — results/ is not in git) ---------------
-if [[ -d results ]]; then
+# the receipts live on the head's checkout; an agent-host clone's
+# results/ is empty, so an empty dir skips the check (a non-empty one
+# runs it — the phantom and newest-campaign gates)
+if [[ -d results && -n $(ls results 2>/dev/null) ]]; then
   _phantom=""
   for c in $(grep -hoE 'campaign-[0-9]{8}-[0-9]{6}' docs/*.md | sort -u); do
     [[ -d "results/$c" ]] || _phantom+=" $c"
@@ -126,16 +156,19 @@ fi
 # The index is generated from the split log (LAUNCH.md + docs/log/); regenerate it
 # in the same sitting a log append lands, or this fails the commit. The check
 # diffs a fresh render against the committed file (the chart's --check pattern):
-# content must be identical, so a stale index fails no matter how the counts drift.
+# content must be identical, so a stale index fails no matter how the counts
+# drift.
 _tmp=$(mktemp)
-if OUT="$_tmp" ./scripts/render-launch-index.sh >/dev/null 2>&1 && diff -q "$_tmp" docs/LAUNCH_INDEX.md >/dev/null 2>&1; then
+if OUT="$_tmp" ./scripts/render-launch-index.sh >/dev/null 2>&1 && diff -q \
+  "$_tmp" docs/LAUNCH_INDEX.md >/dev/null 2>&1; then
   pass "LAUNCH_INDEX.md matches the log ($(grep -c '^\| \[' docs/LAUNCH_INDEX.md) round entries)"
 else
   fail "LAUNCH_INDEX.md is stale vs the split log (LAUNCH.md + docs/log/) — ./scripts/render-launch-index.sh then commit both"
 fi
 rm -f "$_tmp"
 
-# --- 7. links resolve ------------------------------------------------------------
+# --- 7. links resolve
+# ------------------------------------------------------------
 _badlinks=""
 for f in README.md AGENTS.md docs/*.md; do
   d=$(dirname "$f")
@@ -146,9 +179,11 @@ for f in README.md AGENTS.md docs/*.md; do
   done < <(grep -oE '\]\([^)]+\)|src="[^"]+"' "$f" 2>/dev/null \
     | sed -E 's/^\]\(|^src="//; s/\)$|"$//')
 done
-[[ -z $_badlinks ]] && pass "all local links resolve" || fail "broken local links:$_badlinks"
+[[ -z $_badlinks ]] && pass "all local links resolve" || fail \
+  "broken local links:$_badlinks"
 
-# --- 8. the 80-column rule for programming files (the ratchet) -------------------
+# --- 8. the 80-column rule for programming files (the ratchet)
+# -------------------
 # NEW long lines block the commit; the pre-existing ones are grandfathered
 # through a count baseline (the rule lands 2026-11-19: mass-rewrapping live
 # loop scripts and byte-exact store members is churn the repo avoids — the
@@ -170,6 +205,11 @@ PYL
 _prog_files=$( { ls scripts/*.sh config.sh scripts/local.sh.example; \
                  find . -maxdepth 2 -name '*.py' -not -path './results/*' \
                    -not -path './.git/*'; } 2>/dev/null )
+# git-ignored files carry no baseline (their long lines are site
+# content, never committed): drop them from the check
+_prog_files=$(for f in $_prog_files; do
+  git check-ignore -q "$f" 2>/dev/null || echo "$f"
+done)
 _now=$(lint_lengths $_prog_files | LC_ALL=C sort)
 _base=""
 [ -f "$LONG_BASELINE_FILE" ] && _base=$(LC_ALL=C sort "$LONG_BASELINE_FILE")
@@ -203,7 +243,8 @@ else
   fi
 fi
 
-# --- summary ---------------------------------------------------------------------
+# --- summary
+# ---------------------------------------------------------------------
 if [[ $FAILS -gt 0 ]]; then
   printf 'GUARD: %d failure(s)\n' "$FAILS" >&2
   exit 1

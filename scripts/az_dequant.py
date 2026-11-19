@@ -16,14 +16,18 @@ import glob, json, os, struct, sys
 import torch
 from safetensors.torch import load_file, save_file
 
-SRC = sorted(glob.glob("/home/<user>/.cache/huggingface/hub/models--azampatti--GLM-5.3-Flash-AZ/snapshots/*/"))[0]
+SRC = sorted(glob.glob(
+    "/home/<user>/.cache/huggingface/hub/"
+    "models--azampatti--GLM-5.3-Flash-AZ/snapshots/*/"))[0]
 OUT = sys.argv[1] if len(sys.argv) > 1 else "/home/<user>/az-az-bf16"
 GROUP = 128
 FLUSH_BYTES = 4 << 30
 
 os.makedirs(OUT, exist_ok=True)
 
-def unpack_i4(t, axis):  # expand the packed axis by 8 (qweight packs the IN axis = 0; qzeros packs OUT = -1)
+def unpack_i4(t, axis):
+    # expand the packed axis by 8 (qweight packs the IN axis = 0;
+    # qzeros packs OUT = -1)
     sh = list(t.shape)
     sh[axis] = sh[axis] * 8
     out = torch.empty(sh, dtype=torch.int32, device=t.device)
@@ -47,7 +51,9 @@ def flush():
     for k, v in acc.items():
         weight_map[k] = (name, list(v.shape), str(v.dtype).upper())
     total += acc_bytes
-    print(f"  {name}: {len(acc)} tensors, {acc_bytes >> 30} GiB (running {total >> 30} GiB)", flush=True)
+    print(
+        f"  {name}: {len(acc)} tensors, {acc_bytes >> 30} GiB"
+        f" (running {total >> 30} GiB)", flush=True)
     acc, acc_bytes = {}, 0
 
 def dequant(qw, qz, sc):
@@ -60,10 +66,13 @@ def dequant(qw, qz, sc):
     w = (q - z) * s                                    # [groups, GROUP, out]
     if CONVENTION == "plus1":
         w = w - s
-    return w.reshape(-1, w.shape[-1]).t().contiguous().to(torch.bfloat16)  # [out, in]
+    # [out, in]
+    return w.reshape(-1, w.shape[-1]).t().contiguous()\
+        .to(torch.bfloat16)
 
-# EVERY safetensors shard: the numbered ones AND the extra files (model_extra_conv,
-# model_extra_tensors — the AZ repack splits special tensors out; a "model-*" glob
+# EVERY safetensors shard: the numbered ones AND the extra files
+# (model_extra_conv, model_extra_tensors — the AZ repack splits special
+# tensors out; a "model-*" glob
 # misses both and the converter then fails on the first k_conv1d it can't find)
 files = sorted(glob.glob(SRC + "model*.safetensors"))
 print(f"source: {SRC} ({len(files)} shards)", flush=True)
@@ -77,7 +86,8 @@ for f in files:
             base = k[: -len(".qweight")]
             qw, qz, sc = v, tensors[base + ".qzeros"], tensors[base + ".scales"]
             if CONVENTION is None:
-                # decisive check on this tensor: mean |w| under each convention —
+                # decisive check on this tensor: mean |w| under each
+                # convention —
                 # the wrong one leaves every weight offset by one scale step
                 q = unpack_i4(qw, 0).float().reshape(-1, GROUP, qw.shape[1])
                 z = unpack_i4(qz, -1).float()[:, None, :]
@@ -85,7 +95,8 @@ for f in files:
                 mp = float(((q - z) * s).abs().mean())
                 m1 = float((((q - z) * s) - s).abs().mean())
                 CONVENTION = "plain" if mp <= m1 else "plus1"
-                print(f"convention: {CONVENTION} (mean|w| plain {mp:.4g} vs plus1 {m1:.4g})", flush=True)
+                print(f"convention: {CONVENTION} (mean|w| plain {mp:.4g}"
+                      f" vs plus1 {m1:.4g})", flush=True)
             w = dequant(qw, qz, sc)
             acc[base + ".weight"] = w
             acc_bytes += w.numel() * 2
@@ -93,8 +104,9 @@ for f in files:
         elif k.endswith(".qzeros") or k.endswith(".scales"):
             continue
         else:
-            # conv1d: drop the non-canonical F32 mixed leftovers; keep the bf16 splits
-            # in their original [c, 1, K] form (exllamav3's split-cat + squeeze expects it)
+            # conv1d: drop the non-canonical F32 mixed leftovers; keep the
+            # bf16 splits in their original [c, 1, K] form (exllamav3's
+            # split-cat + squeeze expects it)
             if "conv1d" in k and v.dtype == torch.float32:
                 continue
             acc[k] = v
@@ -122,7 +134,9 @@ cfg = json.load(open(SRC + "config.json"))
 cfg.pop("quantization_config", None)
 cfg.setdefault("text_config", {})["dtype"] = "bfloat16"
 json.dump(cfg, open(os.path.join(OUT, "config.json"), "w"), indent=2)
-for extra in ("generation_config.json", "tokenizer_config.json", "tokenizer.json", "chat_template.jinja", "processor_config.json"):
+for extra in ("generation_config.json", "tokenizer_config.json",
+              "tokenizer.json", "chat_template.jinja",
+              "processor_config.json"):
     src = os.path.join(SRC, extra)
     if os.path.exists(src):
         os.system(f"cp '{src}' '{OUT}/'")

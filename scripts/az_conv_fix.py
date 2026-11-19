@@ -23,14 +23,17 @@ for f in sorted(glob.glob(OUT + "/*.safetensors")):
         if t[k].dtype == torch.float32:
             del t[k]; changed = True; dropped += 1
         elif t[k].dim() == 2:
-            t[k] = t[k].unsqueeze(1).contiguous(); changed = True; unsqueezed += 1
+            t[k] = t[k].unsqueeze(1).contiguous()
+            changed = True; unsqueezed += 1
     if changed:
         tmp = f + ".tmp"
         save_file(t, tmp)
         os.replace(tmp, f)
-print(f"dropped {dropped} F32 mixed convs, unsqueezed {unsqueezed} bf16 splits", flush=True)
+print(f"dropped {dropped} F32 mixed convs, unsqueezed"
+      f" {unsqueezed} bf16 splits", flush=True)
 
-# the index: rebuilt from the shards as they now stand (everything is 2-byte here)
+# the index: rebuilt from the shards as they now stand (everything is
+# 2-byte here)
 names, sizes = {}, 0
 for f in sorted(glob.glob(OUT + "/*.safetensors")):
     fh = open(f, "rb"); n = struct.unpack("<Q", fh.read(8))[0]
@@ -44,5 +47,6 @@ idx = json.load(open(ip))
 idx["weight_map"] = names
 idx["metadata"]["total_size"] = sizes
 json.dump(idx, open(ip, "w"))
-print("index rewritten:", len(names), "tensors,", sizes >> 30, "GiB", flush=True)
+print("index rewritten:", len(names), "tensors,", sizes >> 30,
+      "GiB", flush=True)
 

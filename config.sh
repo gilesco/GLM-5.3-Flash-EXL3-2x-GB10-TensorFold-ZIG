@@ -1,29 +1,40 @@
 #!/usr/bin/env bash
-# shellcheck shell=bash disable=SC2034  # a config file: several vars are consumed by the scripts that source it
-# Shared settings for start.sh, stop.sh, status.sh and scripts/*.sh. A setting's value comes from
+# shellcheck shell=bash disable=SC2034  # a config file: several vars are
+# consumed by the scripts that source it
+# Shared settings for start.sh, stop.sh, status.sh and scripts/*.sh. A setting's
+# value comes from
 # the first of these that sets it:
 #   1. the environment: `PORT=9000 ./scripts/start.sh`
-#   2. scripts/local.sh (this setup's own values; sourced as bash), then ./.env (KEY=value lines,
-#      read, never run): both are yours, not the repository's; where both set a key, local.sh wins
+#   2. scripts/local.sh (this setup's own values; sourced as bash), then ./.env
+#   (KEY=value lines,
+#      read, never run): both are yours, not the repository's; where both set a
+#      key, local.sh wins
 #   3. the defaults below
 #
-# This recipe serves GLM-5.3-Flash on the native TensorFold CUDA engine ("tensorfold-native")
-# at tensor parallel over two GB10 hosts, from the EXL3 checkpoint line — the AZ-Focus
-# variant by default (the (user) hardmode-bar call, 2026-10-27), with the DFlash2 drafter —
+# This recipe serves GLM-5.3-Flash on the native TensorFold CUDA engine
+# ("tensorfold-native")
+# at tensor parallel over two GB10 hosts, from the EXL3 checkpoint line — the
+# AZ-Focus
+# variant by default (the (user) hardmode-bar call, 2026-10-27), with the
+# DFlash2 drafter —
 # the two-rank path upstream measured for 1.1.0 and onwards. This line is EXL3
-# only: the NVFP4 route has its own repo (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing).
+# only: the NVFP4 route has its own repo
+# (GLM-5.3-Flash-NVFP4-2x-GB10-TensorFold-v1-testing).
 # Everything runs in Docker; no Python engine and no patch stack.
 _cfg_root=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if [[ -f "$_cfg_root/scripts/local.sh" ]]; then
   declare -A _cfg_env=()
   while IFS= read -r _n; do _cfg_env[$_n]=${!_n}; done < <(compgen -e)
   source "$_cfg_root/scripts/local.sh"
-  for _n in "${!_cfg_env[@]}"; do [[ "${!_n-}" == "${_cfg_env[$_n]}" ]] || export "$_n=${_cfg_env[$_n]}"; done
+  for _n in "${!_cfg_env[@]}"; do [[ "${!_n-}" == "${_cfg_env[$_n]}" ]] || \
+    export "$_n=${_cfg_env[$_n]}"; done
   unset _cfg_env
 fi
 if [[ -f "$_cfg_root/.env" ]]; then
   while IFS= read -r _line || [[ -n "$_line" ]]; do
-    [[ "$_line" =~ ^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] || continue
+    [[ "$_line" =~ \
+      ^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] || \
+      continue
     _key=${BASH_REMATCH[2]}; _value=${BASH_REMATCH[3]}
     if [[ "$_value" =~ ^\"([^\"]*)\"[[:space:]]*(#.*)?$ || "$_value" =~ ^\'([^\']*)\'[[:space:]]*(#.*)?$ ]]; then
       _value=${BASH_REMATCH[1]}
@@ -384,30 +395,43 @@ case "$PROMPT_K" in ""|shape) ;; *) die "PROMPT_K must be empty (v1.1.1 default)
 # decode/d0 unchanged. ADOPTED as the standing default (round 49); unset to compare.
 export TF_GLM_INDEX_CUDA="${TF_GLM_INDEX_CUDA:-1}"
 # ABSORB_MMA (the qualified optimum, 2026-11-04, round 133 cont. 16): a prompt pass's
-# absorb_q and expand_v MLA matmuls run as head-batched bf16 tensor-core GEMMs with fp32
-# sums (the Mia-1104 0041 port; the SIMT kernels keep decode windows). Receipts: the deep
-# fills -6.8/-7.0/-6.9% (0.735/0.727/0.738 vs the standing 0.788/0.782/0.793 ms/tok at
-# 43.7k/87.4k/174.8k — campaign-20261104-213422 deepfills; the fill-rate drop is itself
-# the proof the MMA kernels ran), the small-prompt front clean (the resumecost rows on
-# the patches-staged serve), greedy byte-identical (sha 9e04a49e5786), 93.9 s warm-cache
-# boot, 13.9 GiB left. The fp32 summation ORDER differs from SIMT, hence the opt-out:
-# TF_GLM_ABSORB_MMA=0. The numerics ride every rank fingerprint (layout 17): ranks that
-# disagree refuse to start. Needs PATCHES (below) — the kernels ship in the overlay.
+# absorb_q and expand_v MLA matmuls run as head-batched bf16 tensor-core GEMMs
+# with fp32
+# sums (the Mia-1104 0041 port; the SIMT kernels keep decode windows). Receipts:
+# the deep
+# fills -6.8/-7.0/-6.9% (0.735/0.727/0.738 vs the standing 0.788/0.782/0.793
+# ms/tok at
+# 43.7k/87.4k/174.8k — campaign-20261104-213422 deepfills; the fill-rate drop is
+# itself
+# the proof the MMA kernels ran), the small-prompt front clean (the resumecost
+# rows on
+# the patches-staged serve), greedy byte-identical (sha 9e04a49e5786), 93.9 s
+# warm-cache
+# boot, 13.9 GiB left. The fp32 summation ORDER differs from SIMT, hence the
+# opt-out:
+# TF_GLM_ABSORB_MMA=0. The numerics ride every rank fingerprint (layout 17):
+# ranks that
+# disagree refuse to start. Needs PATCHES (below) — the kernels ship in the
+# overlay.
 export TF_GLM_ABSORB_MMA="${TF_GLM_ABSORB_MMA:-1}"
 # PROMPT_STEPS=0 (the qualified default, 2026-11-08, round 139 cont. 9): prompt
-# passes run whole instead of stepping — the confirm receipt (campaign-20261108-214221,
+# passes run whole instead of stepping — the confirm receipt
+# (campaign-20261108-214221,
 # two independent restarts): c2 @ d8192 48.2/37.0 t/s vs the 17.3 baseline (the
 # original knob-sweep lead was 33.1; the criterion "near 33 reproduces, near 17
 # retires" is exceeded); d0 58.1/56.8 vs 49.9; d4096 c2 31.0/31.3 vs 24.0. The
 # callquotequal bench on the same campaign (no steps0) read d8192 c2 23.8 — the
 # delta attributes to the knob. Bit-safe: the port is a work-splitting change.
 export TF_GLM_PROMPT_STEPS="${TF_GLM_PROMPT_STEPS:-0}"
-# CACHE_FIRST (the qualified default, 2026-11-09, round 139 cont. 17): the prompt
+# CACHE_FIRST (the qualified default, 2026-11-09, round 139 cont. 17): the
+# prompt
 # cache is set aside before the room is counted in the streams' windows — the
 # cachefirstqual receipt (campaign-20261109-140604): the ON arms' streams ceded
-# pages to the cache-first reserve (3110/3115 -> 3103/3083), the fund-report line
+# pages to the cache-first reserve (3110/3115 -> 3103/3083), the fund-report
+# line
 # never fired at our 3 GiB ask (the drift never reached the cache's need), the
-# §2 gates ALL PASS, hardmode 95 — the TWENTY-FIRST consecutive — the vision 4/4;
+# §2 gates ALL PASS, hardmode 95 — the TWENTY-FIRST consecutive — the vision
+# 4/4;
 # the room drift the warmturnsqual battery caught is now VISIBLE at boot if it
 # ever reaches the cache's need.
 # TF_PROMPT_CACHE_FIRST was exported here since round 139 — but env_args()
@@ -420,8 +444,10 @@ export TF_GLM_PROMPT_STEPS="${TF_GLM_PROMPT_STEPS:-0}"
 # the env name inside env_args()'s forwarding list.
 case "$TEMPERATURE" in ""|*) [[ -z "$TEMPERATURE" ]] || [[ "$TEMPERATURE" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "TEMPERATURE must be a number (0 enables DFlash2 drafts on every request; empty: the engine default 1.0)" ;; esac
 
-# --- site identity must be set (scripts/local.sh) -------------------------------------------
-# Fail loudly rather than guessing a worker or a fabric address: a wrong guess rank-1s into
+# --- site identity must be set (scripts/local.sh)
+# -------------------------------------------
+# Fail loudly rather than guessing a worker or a fabric address: a wrong guess
+# rank-1s into
 # nothing, or worse, onto the wrong host.
 for _req in WORKER HEAD_FABRIC_ADDR WORKER_FABRIC_ADDR NCCL_SOCKET_IFNAME; do
   [[ -n "${!_req}" ]] || die "site setting $_req is empty — copy scripts/local.sh.example to

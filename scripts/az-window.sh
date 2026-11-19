@@ -5,7 +5,8 @@
 # worker (retry-wrapped), then run the battery + the probes (azqual).
 #
 # Why -cb mcg: the native engine's admit() (families/glm/cuda_exl3.zig) reads
-# 4-bit routed experts on the "mcg" codebook only, with `bits` as a JSON INTEGER.
+# 4-bit routed experts on the "mcg" codebook only, with `bits` as a JSON
+# INTEGER.
 # The 1.6.4 convert defaults to mul1 + float bits — campaign-20261026-010238's
 # azqual refusal receipt. The mul1 output stays parked at az-az-exl3 until the
 # mcg verdict.
@@ -15,7 +16,8 @@ cd "$(dirname "$(readlink -f "$0")")/.."
 source ./config.sh
 V=~/.venv-exl3/bin/python
 export PATH="$HOME/.venv-exl3/bin:$PATH"   # torch's JIT build finds the venv's ninja via PATH
-AZSRC=$(echo ~/.cache/huggingface/hub/models--azampatti--GLM-5.3-Flash-AZ/snapshots/*/)
+AZSRC=$(echo \
+  ~/.cache/huggingface/hub/models--azampatti--GLM-5.3-Flash-AZ/snapshots/*/)
 OUTDIR=/home/<user>/az-az-fp16              # the fp16 intermediate (dequant done; az_conv_fix is idempotent on it)
 WORK=/home/<user>/az-az-work-mcg            # fresh: the mul1 qtensors are invalid for a mcg convert
 EXLOUT=/home/<user>/az-az-exl3-mcg          # fresh output dir
@@ -39,11 +41,15 @@ if [[ ! -f "$EXLOUT/model.safetensors.index.json" ]]; then
     rm -rf "$WORK"; mkdir -p "$WORK" "$EXLOUT"
     CVARG=""
   fi
-  # convert_model.py uses package-relative imports — run it as a module, never as a file.
-  # -cb mcg: the engine's admit() contract (see header). -vb 16: the vision tower
-  # stays unquantized (the AZ checkpoint keeps it bf16; the validated-tower default
+  # convert_model.py uses package-relative imports — run it as a module, never
+  # as a file.
+  # -cb mcg: the engine's admit() contract (see header). -vb 16: the vision
+  # tower
+  # stays unquantized (the AZ checkpoint keeps it bf16; the validated-tower
+  # default
   # would silently quantize it to 6bpw).
-  $V -m exllamav3.conversion.convert_model $CVARG -i "$OUTDIR" -w "$WORK" -o "$EXLOUT" -cb mcg -b 4 -hb 16 -eb 16 -vb 16
+  $V -m exllamav3.conversion.convert_model $CVARG -i "$OUTDIR" -w "$WORK" -o \
+    "$EXLOUT" -cb mcg -b 4 -hb 16 -eb 16 -vb 16
 else
   echo "[az] 2/4 convert already done (index present)"
 fi
@@ -54,14 +60,19 @@ echo "[az] 3/4 place as the local model + sync the worker (retry-wrapped)"
 mkdir -p "$LOCAL"
 find "$LOCAL" -mindepth 1 -delete          # fresh placement: the mcg bytes replace the refused mul1 wholesale
 rsync -a "$EXLOUT"/ "$LOCAL"/
-# The worker sync: 6 attempts, file-granular resume, ssh keepalives. The 4 silent
+# The worker sync: 6 attempts, file-granular resume, ssh keepalives. The 4
+# silent
 # single-invocation deaths of the 2026-10-26 night are beaten by retry+resume.
 SC=/tmp/az-worker-sync.console; : > "$SC"
-# Wipe the worker's stale destination FIRST: same-named stale files put rsync into
+# Wipe the worker's stale destination FIRST: same-named stale files put rsync
+# into
 # delta mode (the 2026-10-26 diagnosis: sender pegged at 97% one core, receiver
-# asleep at 4.7%, 60 MB/s vs 320 on a fresh target; the rail itself does >1 GB/s).
-# A fresh destination streams whole files. -W keeps the loop out of delta entirely.
-ssh -o BatchMode=yes "$WORKER" "mkdir -p $LOCAL && find $LOCAL -mindepth 1 -delete"
+# asleep at 4.7%, 60 MB/s vs 320 on a fresh target; the rail itself does >1
+# GB/s).
+# A fresh destination streams whole files. -W keeps the loop out of delta
+# entirely.
+ssh -o BatchMode=yes "$WORKER" \
+  "mkdir -p $LOCAL && find $LOCAL -mindepth 1 -delete"
 rc=1
 for a in 1 2 3 4 5 6; do
   echo "[sync] attempt $a start $(date +%H:%M:%S)" >> "$SC"
@@ -73,7 +84,8 @@ for a in 1 2 3 4 5 6; do
   [ "$rc" -eq 0 ] && break
   sleep 15
 done
-if [ "$rc" -ne 0 ]; then echo "[az] the worker sync failed after 6 attempts — see $SC"; exit 1; fi
+if [ "$rc" -ne 0 ]; then echo \
+  "[az] the worker sync failed after 6 attempts — see $SC"; exit 1; fi
 
 echo "[az] 4/4 the battery + the probes (the campaign: azqual)"
 exec env PHASES="azqual summary" ./scripts/run-qualification.sh

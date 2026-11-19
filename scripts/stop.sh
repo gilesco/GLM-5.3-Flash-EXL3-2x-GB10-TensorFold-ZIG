@@ -1,34 +1,45 @@
 #!/usr/bin/env bash
-# Stop both ranks and save each one's log to $LOG_DIR (gzipped, the newest $LOG_KEEP kept),
-# as the EXL3 recipe's stop.sh did: docker rm throws a container's log away, so without this a
-# crash's log is gone at the next start. Stops the worker's rank first, then the head's, so a
-# dying rank never leaves its peer waiting (either rank ending takes the other down anyway).
+# Stop both ranks and save each one's log to $LOG_DIR (gzipped, the newest
+# $LOG_KEEP kept),
+# as the EXL3 recipe's stop.sh did: docker rm throws a container's log away, so
+# without this a
+# crash's log is gone at the next start. Stops the worker's rank first, then the
+# head's, so a
+# dying rank never leaves its peer waiting (either rank ending takes the other
+# down anyway).
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 source ./config.sh
-command -v docker >/dev/null || die "docker is required here (this script runs on the head Spark)"
+command -v docker >/dev/null || die \
+  "docker is required here (this script runs on the head Spark)"
 mkdir -p "$LOG_DIR"
 
 save_log() { # $1 host ("local" or ssh target), $2 rank id, $3 label: writes a timestamped log
              # plus the stable rank-<id>.log.gz alias keep_newest rotates on
   local out
   out="$LOG_DIR/$(date +%Y%m%d-%H%M%S)-rank$2.log.gz"
-  if [[ "$1" == local ]]; then docker logs "$CONTAINER_NAME" 2>&1 | gzip > "$out" || return 0
-  else ssh -o BatchMode=yes "$1" "docker logs $CONTAINER_NAME 2>&1" | gzip > "$out" || return 0; fi
+  if [[ "$1" == local ]]; then docker logs "$CONTAINER_NAME" 2>&1 | gzip > \
+    "$out" || return 0
+  else ssh -o BatchMode=yes "$1" "docker logs $CONTAINER_NAME 2>&1" | gzip > \
+    "$out" || return 0; fi
   cp -f "$out" "$LOG_DIR/rank-$2.log.gz"
   echo "$3 log saved: $out"
 }
 keep_newest() { # housekeeping must never block a stop
-  ls -t "$LOG_DIR"/\*-rank"$1".log.gz 2>/dev/null | tail -n +$(( LOG_KEEP + 1 )) | xargs -r rm -f || true
+  ls -t "$LOG_DIR"/\*-rank"$1".log.gz 2>/dev/null | tail -n +$(( LOG_KEEP + 1 \
+    )) | xargs -r rm -f || true
 }
 
-if ssh -o BatchMode=yes "$WORKER" "docker ps -q --filter name=^/${CONTAINER_NAME}\$ | grep -q ." ; then
+if ssh -o BatchMode=yes "$WORKER" \
+  "docker ps -q --filter name=^/${CONTAINER_NAME}\$ | grep -q ." ; then
   save_log "$WORKER" 1 "rank 1 ($WORKER)"; keep_newest 1
-  if ssh -o BatchMode=yes "$WORKER" "docker rm -f $CONTAINER_NAME" >/dev/null 2>&1; then
+  if ssh -o BatchMode=yes "$WORKER" "docker rm -f $CONTAINER_NAME" >/dev/null \
+    2>&1; then
     # the wedge guard (Mia 1104's restart race): rm -f can return with the old
     # task still dying on a ~85 GiB container — poll, then warn if it lingers
     for _i in $(seq 1 15); do
-      ssh -o BatchMode=yes "$WORKER" "docker inspect $CONTAINER_NAME >/dev/null 2>&1" 2>/dev/null || break
+      ssh -o BatchMode=yes "$WORKER" \
+        "docker inspect $CONTAINER_NAME >/dev/null 2>&1" 2>/dev/null || break
       sleep 2
     done
     ssh -o BatchMode=yes "$WORKER" "docker inspect $CONTAINER_NAME >/dev/null 2>&1" 2>/dev/null && warn "rank 1's container name still present on $WORKER after 30 s (the task may be dying — the next start's wedge guard will wait)"

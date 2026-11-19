@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Squeeze the conv1d weights in the dequantized fp16 dir: HF-style [dim, 1, K]
 -> exllamav3's expected [dim, K]. Only rewrites the shards that hold conv1d
-tensors; everything else is untouched (the convert's checkpointed work survives).
-"""
+tensors; everything else is untouched (the convert's checkpointed work
+survives)."""
 import glob, json, os, sys
 import torch
 from safetensors.torch import load_file, save_file
@@ -21,5 +21,6 @@ for f in sorted(glob.glob(OUT + "/*.safetensors")):
     tmp = f + ".tmp"
     save_file(t, tmp)
     os.replace(tmp, f)
-    print(f"  {os.path.basename(f)}: squeezed {len(hits)} conv1d tensors", flush=True)
+    print(f"  {os.path.basename(f)}: squeezed {len(hits)} conv1d tensors",
+    flush=True)
 print(f"done: {fixed} tensors across {files} files", flush=True)

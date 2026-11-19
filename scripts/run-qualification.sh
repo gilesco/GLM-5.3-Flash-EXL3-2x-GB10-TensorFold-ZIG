@@ -10,11 +10,13 @@
 #   preflight  guards (production untouched), marker, RoCE, CPU clocks, disk
 #   reference  one greedy probe captured from production if it is still up
 #              (read-only, a single request) — the cross-engine output reference
-#              (the prodqual phase retired round 132 (user): metrics on the clean
+#              (the prodqual phase retired round 132 (user): metrics on the
+#              clean
 #              testing port 8001 only — the duel's baseline arm on 8001 is the
 #              native-vs-native instrument) + the same-harness tool-eval
 #              and perf runs, giving the native engine's 92 its like-for-like
-#              production baseline. Prompts to stop production only if GPU phases
+#              production baseline. Prompts to stop production only if GPU
+#              phases
 #              are also selected.
 #   parity     the knob-for-knob mirror of production on this engine:
 #              DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 + DFlash2,
@@ -22,20 +24,29 @@
 #   candidate  dense4fp8 at the same window — the ladder candidate's cell
 #   kvqual     VALIDATION §2 gates on dense8+fp8 KV at 512K, content form
 #              (determinism, drafted=plain, resumed=fresh, concurrent=solo,
-#              sampled-seed determinism; the native engine is byte-nondeterministic,
+#              sampled-seed determinism; the native engine is
+#              byte-nondeterministic,
 #              so gates compare normalized content — VALIDATION §2 receipt)
-#   kvqual4    the same gates on the ladder candidate dense4fp8 (its own receipt)
-#   throughput perf-only bench tables (llama-benchy pp/tg) for parity + dense4fp8
-#   kvqual4P   the gates on PAGED bf16 KV (TF_KV_PAGES=on): the KV-pages branch pages the
-#              bf16 KV path ONLY — fp8 KV and paging are mutually exclusive there (the
-#              engine exits on the combination; 87e4417e receipt, campaign-20261023-165319)
+#   kvqual4    the same gates on the ladder candidate dense4fp8 (its own
+#   receipt)
+#   throughput perf-only bench tables (llama-benchy pp/tg) for parity +
+#   dense4fp8
+#   kvqual4P   the gates on PAGED bf16 KV (TF_KV_PAGES=on): the KV-pages branch
+#   pages the
+#              bf16 KV path ONLY — fp8 KV and paging are mutually exclusive
+#              there (the
+#              engine exits on the combination; 87e4417e receipt,
+#              campaign-20261023-165319)
 #   throughputP the perf-only bench on paged bf16 KV (dense4, 512K window)
-#              at 512K — the speed numbers the first campaign's full-eval cells lack
-#   (climb/climbP retired round 132 (user): PARALLEL caps at 4 on the 2-node pair —
+#              at 512K — the speed numbers the first campaign's full-eval cells
+#              lack
+#   (climb/climbP retired round 132 (user): PARALLEL caps at 4 on the 2-node
+#   pair —
 #   no 5/6/8 tests anywhere; the 5/6/8 refusals at 512K stand receipted in
 #   campaign-20261102-081320)
 #   depth      the depth gate the forum thread taught us: seeded fact+needle
-#              probes at 8k/64k/192k/384k on the fp8-KV 512K config (production's
+#              probes at 8k/64k/192k/384k on the fp8-KV 512K config
+#              (production's
 #              93.9% Cyrillic score is the community bar)
 #   cliff      the concurrency cliff: 4-stream decode with vs without one
 #              structured-output request in the batch (the draft-truncation
@@ -44,17 +55,21 @@
 #   rung       the 524288x1 ladder rung: admission line + a depth probe
 #   summary    CAMPAIGN.md: verdict per gate + the way-forward recommendations
 #
-# Safety: this script never touches production (glm53-native-tf, the promoted stack — round 138). If production is
+# Safety: this script never touches production (glm53-native-tf, the promoted
+# stack — round 138). If production is
 # running it captures the reference probe and then STOPS and asks you to stop
 # production yourself; with PROMPT=0 it refuses and exits instead.
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 source ./config.sh
-# THE METRICS PORT LOCK (user, round 132): every quality/perf instrument runs on the
-# clean testing port 8001 — never against the live production on 8000. One guard here
+# THE METRICS PORT LOCK (user, round 132): every quality/perf instrument runs on
+# the
+# clean testing port 8001 — never against the live production on 8000. One guard
+# here
 # covers every load arm and probe the script contains.
 [[ "$PORT" == "8001" ]] || { echo " !! metrics run on the testing port 8001 only (user, round 132); PORT is '$PORT' — refusing"; exit 1; }
-command -v docker >/dev/null || die "docker is required (run this on the head Spark)"
+command -v docker >/dev/null || die \
+  "docker is required (run this on the head Spark)"
 command -v python3 >/dev/null || die "python3 is required"
 BENCH="$HOME/tool-eval-bench/.venv/bin/tool-eval-bench"
 [[ -x "$BENCH" ]] || die "tool-eval-bench not found at $BENCH"
@@ -67,8 +82,10 @@ phase_done() { [[ -f "$OUT/.$1.done" ]] && [[ "${FORCE:-0}" != 1 ]]; }
 
 PHASES="${PHASES:-preflight reference parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung summary}"
 want() { case " $PHASES " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
-# Do the selected phases need the testing stack on the GPUs? (everything except the
-# read-only production passes and the summary — those run against production AS IS)
+# Do the selected phases need the testing stack on the GPUs? (everything except
+# the
+# read-only production passes and the summary — those run against production AS
+# IS)
 NEEDS_GPU=0
 for _p in parity candidate kvqual kvqual4 throughput kvqual4P throughputP knobs duel confirm depth cliff prefill rung; do
   want "$_p" && NEEDS_GPU=1
@@ -78,13 +95,17 @@ done
 # shared helpers
 # ---------------------------------------------------------------------------
 prod_running() {   # the PROMOTED production up here and on the worker? (round 138: the name-shared
-                   # testing stack is glm53-native-tf-test (the -test suffix, the round-138 fix) — never
-                   # trips this; the round-139 (user) directive retired the old tip recipe — the
-                   # baseline arm of a duel is THIS repo's own config on the testing stack's own
+                   # testing stack is glm53-native-tf-test (the -test suffix,
+                   # the round-138 fix) — never
+                   # trips this; the round-139 (user) directive retired the old
+                   # tip recipe — the
+                   # baseline arm of a duel is THIS repo's own config on the
+                   # testing stack's own
                    # name, also never trips this)
   docker ps --format '{{.Names}}' | grep -qx '^glm53-native-tf$' && return 0
   ssh -o BatchMode=yes -o ConnectTimeout=5 "$WORKER" \
-    'docker ps --format "{{.Names}}" | grep -qx "^glm53-native-tf$"' 2>/dev/null && return 0
+    'docker ps --format "{{.Names}}" | grep -qx "^glm53-native-tf$"' \
+      2>/dev/null && return 0
   return 1
 }
 
@@ -113,7 +134,8 @@ restart_fb() {     # restart with PARALLEL=4, falling back to PARALLEL=2 on refu
 }
 
 roce_state() {     # did the RoCE gather come up on this launch?
-  if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "VerbsUnavailable\|NCCL carries every gather"; then
+  if docker logs "$CONTAINER_NAME" 2>&1 | grep -q \
+    "VerbsUnavailable\|NCCL carries every gather"; then
     echo "RoCE DOWN (fallback warning present)"
   elif docker logs "$CONTAINER_NAME" 2>&1 | grep -q "RoCE all-gather"; then
     echo "RoCE up: $(docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 'RoCE all-gather' | sed 's/^info: //')"
@@ -124,7 +146,8 @@ roce_state() {     # did the RoCE gather come up on this launch?
 
 # The duel's five-probe arm, shared by the duel phase and the session phases
 # (prof4/top4) so every instrument reads the same way everywhere.
-DUEL_PROMPT="Write a 300-word technical summary of a harbor crane's maintenance cycle. Do not use any formatting."
+DUEL_PROMPT="Write a 300-word technical summary of a harbor crane's"
+DUEL_PROMPT+=" maintenance cycle. Do not use any formatting."
 
 duel_arm() {   # $1 engine tag ("prod"|"ours"|<cell>), $2 the model id to address
   local tag="$1" model="$2" H
@@ -147,11 +170,13 @@ for d in (0, 4096, 8192):
     json.dump(dict(body, max_tokens=1),   open(f"{out}/duel-{tag}-d{d}-1.json", "w"))
 PYEOF
     curl -s -m 10 "$H/health" > "$OUT/duel-$tag-health-before.json" || true
-    # instrument 1+5: the solo twins (twice — stability), then c2 and c4 concurrently
+    # instrument 1+5: the solo twins (twice — stability), then c2 and c4
+    # concurrently
     for r in a b; do
       S=$(date +%s.%N)
       curl -s -m 300 "$H/v1/chat/completions" -H 'Content-Type: application/json' \
-        --data @"$OUT/duel-$tag-d0-2048.json" > "$OUT/duel-$tag-solo-$r.json" || true
+        --data @"$OUT/duel-$tag-d0-2048.json" > "$OUT/duel-$tag-solo-$r.json" \
+          || true
       E=$(date +%s.%N); echo "$r $S $E" >> "$OUT/duel-$tag-walls.txt"
     done
     for c in 2 4; do
@@ -192,7 +217,8 @@ PYEOF
     for d in 0 4096 8192; do
       S=$(date +%s.%N)
       curl -s -m 300 "$H/v1/chat/completions" -H 'Content-Type: application/json' \
-        --data @"$OUT/duel-$tag-d$d-1.json" > "$OUT/duel-$tag-prefill-$d.json" || true
+        --data @"$OUT/duel-$tag-d$d-1.json" > "$OUT/duel-$tag-prefill-$d.json" \
+          || true
       E=$(date +%s.%N); echo "p$d $S $E" >> "$OUT/duel-$tag-walls.txt"
     done
     curl -s -m 10 "$H/health" > "$OUT/duel-$tag-health-after.json" || true
@@ -239,8 +265,10 @@ PYEOF
 }
 
 c4_reprobe() {     # $1 tag: 4 fresh concurrent 2048-token generations on the d0 body;
-                   # prints the aggregate and leaves the engine's last 64-call prof
-                   # window = this probe, so a following prof-line extraction reads c4
+                   # prints the aggregate and leaves the engine's last 64-call
+                   # prof
+                   # window = this probe, so a following prof-line extraction
+                   # reads c4
   local tag="$1" S E
   [[ -s "$OUT/duel-$tag-d0-2048.json" ]] || { echo "- c4 re-probe skipped: $OUT/duel-$tag-d0-2048.json missing (the duel arm did not run under this tag)"; return 0; }
   S=$(date +%s.%N)
@@ -276,7 +304,8 @@ EOF
 }
 
 serve_line() {     # the sm_121 admission line of the running server, verbatim
-  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "CUDA sm_121" || echo "(no server line)"
+  docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 "CUDA sm_121" || echo \
+    "(no server line)"
 }
 
 bench_cell() {     # the fixed matrix bench options against the running server
@@ -284,12 +313,18 @@ bench_cell() {     # the fixed matrix bench options against the running server
                    # metrics-port lock at the script's start is the one guard)
   local label="$1" dest="$2" rc=0
   mkdir -p "$dest"
-  # --hardmode (user, round 132): hardmode is THE quality instrument and it INCLUDES
-  # the standard batch — the plain 69-scenario run is retired; scores never cross-compare
-  # --parallel 2 is the BENCH HARNESS's scenario concurrency (tool-eval-bench's own
-  # option, user round 139 cont. 10) — two scenarios in flight against the serve, so
-  # two separate contexts coexist in the KV pool: a cross-spill probe. It is NOT the
-  # serve's PARALLEL= lanes (config.sh — the engine's stream count; the gates restart
+  # --hardmode (user, round 132): hardmode is THE quality instrument and it
+  # INCLUDES
+  # the standard batch — the plain 69-scenario run is retired; scores never
+  # cross-compare
+  # --parallel 2 is the BENCH HARNESS's scenario concurrency (tool-eval-bench's
+  # own
+  # option, user round 139 cont. 10) — two scenarios in flight against the
+  # serve, so
+  # two separate contexts coexist in the KV pool: a cross-spill probe. It is NOT
+  # the
+  # serve's PARALLEL= lanes (config.sh — the engine's stream count; the gates
+  # restart
   # with PARALLEL=4). The two stack: 2 bench scenarios × 4 server lanes.
   PYTHONUNBUFFERED=1 "$BENCH" run \
     --base-url "http://127.0.0.1:$PORT/v1" \
@@ -299,8 +334,10 @@ bench_cell() {     # the fixed matrix bench options against the running server
     --seed 42 --perf --hardmode --parallel 2 --timeout 240 --no-live \
     --label "$label" --output-dir "$dest" --json-file "$dest/result.json" \
     2>&1 | tee "$dest/bench.log" | tail -20 || rc=$?
-  # a non-zero bench exit must not kill the campaign (set -e) — record it and move on
-  [[ $rc -ne 0 ]] && echo "- NOTE: bench exited $rc (its receipts may still be complete)" || true
+  # a non-zero bench exit must not kill the campaign (set -e) — record it and
+  # move on
+  [[ $rc -ne 0 ]] && echo \
+    "- NOTE: bench exited $rc (its receipts may still be complete)" || true
   return 0
 }
 
@@ -322,9 +359,12 @@ bench_perf() {     # $1 label, $2 dest, $3 client parallel (default 4) — the m
     --seed 42 --perf --perf-only --parallel "$clients" --timeout 240 --no-live \
     --label "$label" --output-dir "$dest" --json-file "$dest/result.json" \
     2>&1 | tee "$dest/bench.log" | tail -4 || rc=$?
-  # a non-zero bench exit must not kill the campaign (set -e) — record it and move on
-  [[ $rc -ne 0 ]] && echo "- NOTE: bench exited $rc (its report may still be complete)" || true
-  report=$(ls -t "$dest"/2026/*/*--*.md "$dest"/2026/*/*/*--*.md 2>/dev/null | head -1) || true
+  # a non-zero bench exit must not kill the campaign (set -e) — record it and
+  # move on
+  [[ $rc -ne 0 ]] && echo \
+    "- NOTE: bench exited $rc (its report may still be complete)" || true
+  report=$(ls -t "$dest"/2026/*/*--*.md "$dest"/2026/*/*/*--*.md 2>/dev/null | \
+    head -1) || true
   if [[ -n "${report:-}" ]]; then sed -n '/^| Test/,/^$/p' "$report" || true; fi
   return 0
 }
@@ -353,9 +393,12 @@ except Exception:
 }
 
 content_sha() {    # sha256 of the normalized CONTENT text (whitespace-folded, reasoning excluded).
-                   # The native engine is byte-level nondeterministic at greedy (2026-10-23 receipt:
-                   # g1 raw shas differ while content matches), so the §2 gates bind on content,
-                   # with raw-sha equality recorded as a bonus line when it holds.
+                   # The native engine is byte-level nondeterministic at greedy
+                   # (2026-10-23 receipt:
+                   # g1 raw shas differ while content matches), so the §2 gates
+                   # bind on content,
+                   # with raw-sha equality recorded as a bonus line when it
+                   # holds.
   python3 -c '
 import hashlib, json, re, sys
 try:
@@ -382,7 +425,8 @@ json.dump(body, open(sys.argv[1], "w"))
 EOF
 }
 
-# A seeded filler that tokenizes ~4 chars/token without the degenerate-repeat trap.
+# A seeded filler that tokenizes ~4 chars/token without the degenerate-repeat
+# trap.
 FILL_WORDS="harbor lantern gravel meadow tideline quarry bramble inkwell thicket ferry
 cistern gable linden sluice cobble rafter minnow heather bracken cellars
 windlass tarn larch furrow beck gantry lintel osier marl culvert"
@@ -406,18 +450,25 @@ EOF
 if want preflight && ! phase_done preflight; then
   log "=== preflight"
   P="$OUT/00-preflight.md"; : > "$P"
-  # preflight demands the stop only when GPU phases are selected. Round 138: the stop itself is
-  # the window wrapper's job (autonomous-window.sh stops the PROMOTED production through the
-  # production repo's own scripts before the block runs) — the block never stops production
-  # itself; if production is still up here, the wrapper's stop failed and the GPU phases must
+  # preflight demands the stop only when GPU phases are selected. Round 138: the
+  # stop itself is
+  # the window wrapper's job (autonomous-window.sh stops the PROMOTED production
+  # through the
+  # production repo's own scripts before the block runs) — the block never stops
+  # production
+  # itself; if production is still up here, the wrapper's stop failed and the
+  # GPU phases must
   # not start.
   if prod_running && [[ "$NEEDS_GPU" == 1 ]]; then
-    log "PRODUCTION IS STILL RUNNING — the window wrapper's stop failed (or a no-window run): the GPU phases will not start"
+    log "PRODUCTION IS STILL RUNNING — the window wrapper's stop failed (or a" \
+      "no-window run): the GPU phases will not start"
     prod_running && die "production still running — the GPU phases will not start; the window wrapper owns the stop"
   elif prod_running; then
-    log "production is up — read-only phases only (reference); no restarts selected"
+    log "production is up — read-only phases only (reference); no restarts" \
+      "selected"
   fi
-  prod_running && [[ "$NEEDS_GPU" == 1 ]] && die "production still running — this script will not continue"
+  prod_running && [[ "$NEEDS_GPU" == 1 ]] && die \
+    "production still running — this script will not continue"
   {
     echo "# preflight $RUN_ID"
     echo "- prepared marker: $(cat "$STATE_DIR/prepared" 2>/dev/null || echo MISSING)"
@@ -427,14 +478,16 @@ if want preflight && ! phase_done preflight; then
     echo "- NCCL_IB_HCA: ${NCCL_IB_HCA:-<empty>}"
     echo "- disk free head: $(df -BG /home | awk 'NR==2{print $4}')"
   } >> "$P"
-  [[ -n "${NCCL_IB_HCA:-}" ]] || log "WARNING: NCCL_IB_HCA empty — the RoCE gather will not come up"
+  [[ -n "${NCCL_IB_HCA:-}" ]] || log \
+    "WARNING: NCCL_IB_HCA empty — the RoCE gather will not come up"
   touch "$OUT/.preflight.done"
 fi
 
 # ---------------------------------------------------------------------------
 # phase: reference (production's output capture; read-only, one request)
 # ---------------------------------------------------------------------------
-REF_PROMPT="List the first eight prime numbers in order, comma separated, then state the sum."
+REF_PROMPT="List the first eight prime numbers in order, comma separated, then"
+REF_PROMPT+=" state the sum."
 if want reference && ! phase_done reference; then
   log "=== reference"
   P="$OUT/01-reference.md"; : > "$P"
@@ -446,7 +499,8 @@ if want reference && ! phase_done reference; then
       {
         echo "# production reference (the promoted native production, read-only single request)"
         echo "- sha256: $(sha_msg "$OUT/reference-prod.json")"
-        echo '- content: '"$(content_of "$OUT/reference-prod.json" | head -c 400)"
+        echo \
+          '- content: '"$(content_of "$OUT/reference-prod.json" | head -c 400)"
       } >> "$P"
       log "production reference captured"
     else
@@ -454,15 +508,19 @@ if want reference && ! phase_done reference; then
     fi
   else
     echo "# production reference: production was not running at campaign start — skipped" >> "$P"
-    log "production not up; reference skipped (comparisons will be internal only)"
+    log \
+      "production not up; reference skipped (comparisons will be internal only)"
   fi
   touch "$OUT/.reference.done"
 fi
 
-# (the prodqual phase RETIRED round 132 (user): ALL quality/perf metrics run on the
-# clean testing port 8001 — never against the live production on 8000 (it negates the
+# (the prodqual phase RETIRED round 132 (user): ALL quality/perf metrics run on
+# the
+# clean testing port 8001 — never against the live production on 8000 (it
+# negates the
 # testing environment), so there is nothing this phase can measure in place. The
-# production-vs-us instrument is the DUEL: production started FOR TESTING on 8001
+# production-vs-us instrument is the DUEL: production started FOR TESTING on
+# 8001
 # (the intent-keyed port), the five direct instruments, both engines on 8001.)
 
 # ---------------------------------------------------------------------------
@@ -473,25 +531,31 @@ run_cell() {       # $1 label, $2.. env pairs; PARALLEL=4 first, fallback 2
   local P="$OUT/$label.md"; : > "$P"
   log "=== cell $label: restart (parallel 4, fallback 2)"
   if ! restart_fb "$@"; then
-    echo "# $label: server refused to start at parallel 4 and 2" >> "$P"; return 1; fi
-  echo "# $label" >> "$P"; echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
+    echo "# $label: server refused to start at parallel 4 and 2" >> "$P"; \
+      return 1; fi
+  echo "# $label" >> "$P"; echo "- server: $(serve_line)" >> "$P"; echo \
+    "- $(roce_state)" >> "$P"
   log "bench: $label"
   bench_cell "$label" "$OUT/$label" >> "$P" 2>&1
-  grep -A11 "^| Test" "$OUT/$label"/2026/*/*--*.md "$OUT/$label"/2026/*/*/*--*.md 2>/dev/null | head -13 >> "$P" || true
+  grep -A11 "^| Test" "$OUT/$label"/2026/*/*--*.md \
+    "$OUT/$label"/2026/*/*/*--*.md 2>/dev/null | head -13 >> "$P" || true
 }
 
 if want parity && ! phase_done parity; then
-  run_cell parity DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  run_cell parity DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 \
+    PARALLEL=4
   touch "$OUT/.parity.done"
 fi
 
 if want candidate && ! phase_done candidate; then
-  run_cell dense4fp8 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
+  run_cell dense4fp8 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    PARALLEL=4
   touch "$OUT/.candidate.done"
 fi
 
 # ---------------------------------------------------------------------------
-# VALIDATION §2 gates, content form — shared by kvqual (dense8) and kvqual4 (dense4fp8)
+# VALIDATION §2 gates, content form — shared by kvqual (dense8) and kvqual4
+# (dense4fp8)
 # ---------------------------------------------------------------------------
 run_gates() {      # $1 tag (receipt file prefix), $2.. the gated config's env pairs
   local tag="$1"; shift
@@ -532,16 +596,21 @@ run_gates() {      # $1 tag (receipt file prefix), $2.. the gated config's env p
   fi
 
   # g3 resumed = fresh (the prompt cache's snap hooks) — the SAME 3-message conversation
-  # sent twice: arm 1 computes every token (cold cache, just restarted), arm 2 is a full
-  # prefix-cache hit. The 0.6.x gate, in its semantic form. (The first campaign's version
-  # wrongly compared two DIFFERENT prompts — turn 2 alone vs turn 1+2 — unrunnable by design.)
+  # sent twice: arm 1 computes every token (cold cache, just restarted), arm 2
+  # is a full
+  # prefix-cache hit. The 0.6.x gate, in its semantic form. (The first
+  # campaign's version
+  # wrongly compared two DIFFERENT prompts — turn 2 alone vs turn 1+2 —
+  # unrunnable by design.)
   if ! restart_fb "$@" PARALLEL=4; then
     echo "- SKIP g3 resumed=fresh: server refused to start" >> "$P"
     return 1
   fi
   local T1 T2 R1 A B
-  T1="Remember these three codes: alpha-7391, bravo-2250, charlie-8118. Reply with exactly: codes noted."
-  T2="What were the three codes? Answer with just the three codes, comma separated."
+  T1="Remember these three codes: alpha-7391, bravo-2250, charlie-8118. Reply"
+  T1+=" with exactly: codes noted."
+  T2="What were the three codes? Answer with just the three codes, comma"
+  T2+=" separated."
   SERVED_MODEL="$SERVED_NAME" T1="$T1" python3 - "$OUT" "$tag" <<'EOF'
 import json, os, sys
 json.dump({"model": os.environ["SERVED_MODEL"],
@@ -560,7 +629,8 @@ json.dump({"model": os.environ["SERVED_MODEL"], "messages": msgs,
 EOF
   chat "$OUT/g-$tag-3-conv.json" > "$OUT/g-$tag-3-computed.json"
   chat "$OUT/g-$tag-3-conv.json" > "$OUT/g-$tag-3-cached.json"
-  A=$(content_of "$OUT/g-$tag-3-computed.json"); B=$(content_of "$OUT/g-$tag-3-cached.json")
+  A=$(content_of "$OUT/g-$tag-3-computed.json"); B=$(content_of \
+    "$OUT/g-$tag-3-cached.json")
   if [[ "$A" == "$B" && -n "$A" ]]; then
     echo "- PASS g3 resumed=fresh (content): cache-hit reply identical to the computed reply (answer: $(echo "$A" | head -c 60))" >> "$P"
   else
@@ -585,11 +655,14 @@ EOF
   S=$(content_sha "$OUT/g-$tag-4-solo.json"); OK=1; BYTES=0
   for i in 1 2 3 4; do
     [[ "$(content_sha "$OUT/g-$tag-4-c$i.json")" == "$S" ]] || OK=0
-    [[ "$(sha_msg "$OUT/g-$tag-4-c$i.json")" == "$(sha_msg "$OUT/g-$tag-4-solo.json")" ]] || BYTES=$((BYTES+1))
+    [[ "$(sha_msg "$OUT/g-$tag-4-c$i.json")" == \
+      "$(sha_msg "$OUT/g-$tag-4-solo.json")" ]] || BYTES=$((BYTES+1))
   done
   if [[ "$OK" == 1 ]]; then
     echo "- PASS g4 concurrent=solo (content): all 4 concurrent outputs identical in content to solo" >> "$P"
-    [[ "$BYTES" -gt 0 ]] && echo "  ($BYTES/4 differ in raw bytes — the g1 byte-level nondeterminism)" >> "$P"
+    [[ "$BYTES" -gt 0 ]] && echo \
+      "  ($BYTES/4 differ in raw bytes — the g1 byte-level nondeterminism)" >> \
+      "$P"
   else
     echo "- FAIL g4 concurrent=solo: at least one concurrent output differs in CONTENT from solo" >> "$P"
   fi
@@ -602,10 +675,13 @@ json.dump({"model": os.environ["SERVED_MODEL"],
            "temperature": 0.7, "top_p": 0.95, "seed": 42, "max_tokens": 512},
           open(f"{sys.argv[1]}/g-{sys.argv[2]}-5-req.json", "w"))
 EOF
-  chat "$OUT/g-$tag-5-req.json" > "$OUT/g-$tag-5a.json"; chat "$OUT/g-$tag-5-req.json" > "$OUT/g-$tag-5b.json"
-  if [[ "$(sha_msg "$OUT/g-$tag-5a.json")" == "$(sha_msg "$OUT/g-$tag-5b.json")" ]]; then
+  chat "$OUT/g-$tag-5-req.json" > "$OUT/g-$tag-5a.json"; chat \
+    "$OUT/g-$tag-5-req.json" > "$OUT/g-$tag-5b.json"
+  if [[ "$(sha_msg "$OUT/g-$tag-5a.json")" == \
+    "$(sha_msg "$OUT/g-$tag-5b.json")" ]]; then
     echo "- PASS g5 sampled determinism: seeded sample byte-identical across two runs" >> "$P"
-  elif [[ "$(content_sha "$OUT/g-$tag-5a.json")" == "$(content_sha "$OUT/g-$tag-5b.json")" ]]; then
+  elif [[ "$(content_sha "$OUT/g-$tag-5a.json")" == \
+    "$(content_sha "$OUT/g-$tag-5b.json")" ]]; then
     echo "- NOTE g5 sampled determinism: seeded samples identical in content, raw bytes differ" >> "$P"
   else
     echo "- NOTE g5 sampled determinism: seeded samples differ (sampling is not seed-reproducible on this engine; recorded, not gating)" >> "$P"
@@ -621,7 +697,8 @@ if want kvqual && ! phase_done kvqual; then
   if run_gates dense8 DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288; then
     touch "$OUT/.kvqual.done"
   else
-    echo "- kvqual incomplete (a restart was refused) — rerun this phase" >> "$P"
+    echo "- kvqual incomplete (a restart was refused) — rerun this phase" >> \
+      "$P"
   fi
 fi
 
@@ -631,23 +708,29 @@ if want kvqual4 && ! phase_done kvqual4; then
   log "=== kvqual4 (dense4fp8)"
   P="$OUT/03b-kvqual4.md"; : > "$P"
   echo "# kvqual4 (VALIDATION §2 on fp8 KV, DENSE_BITS=4, 512K window; the ladder candidate's own gates)" >> "$P"
-  if run_gates dense4fp8 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288; then
+  if run_gates dense4fp8 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288; \
+    then
     touch "$OUT/.kvqual4.done"
   else
-    echo "- kvqual4 incomplete (a restart was refused) — rerun this phase" >> "$P"
+    echo "- kvqual4 incomplete (a restart was refused) — rerun this phase" >> \
+      "$P"
   fi
 fi
 
-# phase: throughput — the perf-only bench (llama-benchy pp/tg) for both fp8 cells at 512K.
-# The first campaign's bench call accidentally ran the full tool-eval (quality 92) —
+# phase: throughput — the perf-only bench (llama-benchy pp/tg) for both fp8
+# cells at 512K.
+# The first campaign's bench call accidentally ran the full tool-eval (quality
+# 92) —
 # this phase collects the speed tables those receipts lack.
 # ---------------------------------------------------------------------------
 if want throughput && ! phase_done throughput; then
   log "=== throughput (perf-only: parity + dense4fp8 at 512K)"
   P="$OUT/03c-throughput.md"; : > "$P"
   echo "# throughput (perf-only bench, 512K window, fp8 KV)" >> "$P"
-  if restart_fb DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
-    echo "## parity (dense8+fp8)" >> "$P"; echo "- server: $(serve_line)" >> "$P"
+  if restart_fb DENSE_BITS=8 HEAD_BITS=8 KV_CACHE=fp8 CONTEXT=524288 \
+    PARALLEL=4; then
+    echo "## parity (dense8+fp8)" >> "$P"; echo "- server: $(serve_line)" >> \
+      "$P"
     bench_perf parity "$OUT/parity-perf" 4 >> "$P"
   else
     echo "- parity config refused to start" >> "$P"
@@ -663,8 +746,10 @@ fi
 
 
 # ---------------------------------------------------------------------------
-# phase: kvqual4P — VALIDATION §2 gates on PAGED GLM KV (the #1163/#1211 branch):
-# dense4bf16 at the 512K window, TF_KV_PAGES=on, KV_CACHE unset (bf16 is the only
+# phase: kvqual4P — VALIDATION §2 gates on PAGED GLM KV (the #1163/#1211
+# branch):
+# dense4bf16 at the 512K window, TF_KV_PAGES=on, KV_CACHE unset (bf16 is the
+# only
 # paged path — the engine exits on fp8 KV × paging, 87e4417e receipt,
 # campaign-20261023-165319). First a NO-PAGING control at the same window so the
 # receipt answers "would it admit anyway": window-mode bf16 holds ~6.3 GiB per
@@ -681,27 +766,33 @@ if want kvqual4P && ! phase_done kvqual4P; then
     echo "- window-mode control (no TF_KV_PAGES): bf16 at 512K refused PARALLEL=4 — the window arithmetic holds; paging is the only route to parity" >> "$P"
     docker logs "$CONTAINER_NAME" 2>&1 | tail -2 >> "$P"
   fi
-  if run_gates dense4bf16P DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 TF_KV_PAGES=on; then
+  if run_gates dense4bf16P DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 \
+    TF_KV_PAGES=on; then
     touch "$OUT/.kvqual4P.done"
   else
-    echo "- kvqual4P incomplete (a restart was refused) — rerun this phase" >> "$P"
+    echo "- kvqual4P incomplete (a restart was refused) — rerun this phase" >> \
+      "$P"
   fi
 fi
 
 # ---------------------------------------------------------------------------
 # phase: throughputP — perf-only bench on PAGED bf16 KV (dense4, 512K window):
 # the same packing as dense4fp8 with only the KV dtype+layout different, so the
-# tables compare directly against the fp8-window receipts in TOOL_EVAL_TESTING.md.
+# tables compare directly against the fp8-window receipts in
+# TOOL_EVAL_TESTING.md.
 # ---------------------------------------------------------------------------
 if want throughputP && ! phase_done throughputP; then
   log "=== throughputP (perf-only: paged dense4bf16 at 512K)"
   P="$OUT/05b-throughputP.md"; : > "$P"
   echo "# throughputP (perf-only bench, 512K window, PAGED bf16 KV, DENSE_BITS=4)" >> "$P"
-  if restart_fb DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 TF_KV_PAGES=on PARALLEL=4; then
+  if restart_fb DENSE_BITS=4 HEAD_BITS=4 CONTEXT=524288 TF_KV_PAGES=on \
+    PARALLEL=4; then
     echo "- server: $(serve_line)" >> "$P"; echo "- $(roce_state)" >> "$P"
     bench_perf "dense4bf16P" "$OUT/dense4bf16P" 4 >> "$P"
   else
-    echo "- dense4bf16P config refused to start (paged bf16 at 512K, PARALLEL=4)" >> "$P"
+    echo \
+      "- dense4bf16P config refused to start (paged bf16 at 512K, PARALLEL=4)" \
+      >> "$P"
   fi
   touch "$OUT/.throughputP.done"
 fi
@@ -716,7 +807,9 @@ fi
 # TF_GLM_OVERLAP_PIECES=6 (a prompt chunk's RoCE exchanges in 6 row pieces,
 # default 3), TF_GLM_KDA_DECODE_WIDE=0 (KDA decode off the three-kernel chain).
 # Each cell is a TIMED restart — the engine's own "loaded in Ns" line is the
-# loading-time metric (the RETIRED Python recipe loaded in 93.7 s — kept for reference until the round-139 native-vs-native re-pair re-dates the pair; the promoted production boots in ~80 s; our restart walls run
+# loading-time metric (the RETIRED Python recipe loaded in 93.7 s — kept for
+# reference until the round-139 native-vs-native re-pair re-dates the pair; the
+# promoted production boots in ~80 s; our restart walls run
 # ~265 s — the load-nodraft cell isolates the drafter's share). Baseline: the
 # dense4fp8 receipts (campaign-20261023-093827, and the 185520 A/B round).
 # ---------------------------------------------------------------------------
@@ -746,9 +839,11 @@ if want knobs && ! phase_done knobs; then
   knob_cell overlap6 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_OVERLAP_PIECES=6
   knob_cell kdawide0 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_KDA_DECODE_WIDE=0
   # the loading-time cells: the drafter's share of our ~265 s (packing share is read
-  # off the engine's own lines; a bf16 cell is not expressible via env pairs — an
+  # off the engine's own lines; a bf16 cell is not expressible via env pairs —
+  # an
   # unset would be needed, so packing is inferred from the engine's load lines)
-  knob_cell load-nodraft DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 DRAFTS=0
+  knob_cell load-nodraft DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    PARALLEL=4 DRAFTS=0
   touch "$OUT/.knobs.done"
 fi
 
@@ -766,7 +861,8 @@ if want prof && ! phase_done prof; then
   log "=== prof (TF_GLM_PROF=1, the concurrency diagnosis)"
   P="$OUT/03e-prof.md"; : > "$P"
   echo "# prof (TF_GLM_PROF=1, dense4fp8 + fp8 KV + 524288, PARALLEL=4)" >> "$P"
-  restart_fb DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_PROF=1
+  restart_fb DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+    TF_GLM_PROF=1
   python3 - "$OUT" "$FILL_WORDS" <<'EOF'
 import json, random, sys
 words, seed = sys.argv[2].split(), 4242
@@ -782,14 +878,17 @@ for tag, depth in (("d0", 0), ("d4096", 4096)):
                    "temperature": 0, "max_tokens": 2048},
                   open(f"{sys.argv[1]}/prof-{variant}-{tag}-req.json", "w"))
 EOF
-  curl -s -m 10 "http://127.0.0.1:$PORT/health" > "$OUT/prof-health-before.json" || true
+  curl -s -m 10 "http://127.0.0.1:$PORT/health" > \
+    "$OUT/prof-health-before.json" || true
   for variant in solo c4; do
     for tag in d0 d4096; do
       START=$(date +%s.%N)
       if [[ "$variant" == solo ]]; then
-        chat "$OUT/prof-solo-$tag-req.json" > "$OUT/prof-solo-$tag-resp.json" || true
+        chat "$OUT/prof-solo-$tag-req.json" > "$OUT/prof-solo-$tag-resp.json" \
+          || true
       else
-        for i in 1 2 3 4; do { chat "$OUT/prof-c4-$tag-req.json" > "$OUT/prof-c4-$tag-$i.json" || true; } & done; wait
+        for i in 1 2 3 4; do { chat "$OUT/prof-c4-$tag-req.json" > \
+          "$OUT/prof-c4-$tag-$i.json" || true; } & done; wait
       fi
       ELAPSED=$(python3 -c "print(f'{$(date +%s.%N)-$START:.2f}')")
       echo "$variant $tag $ELAPSED" >> "$OUT/prof-walls.txt"
@@ -821,9 +920,12 @@ except Exception as e:
     print(f"- health delta unavailable: {e}")
 EOF
   echo "## head prof lines (per draft-window section averages, ms/call)" >> "$P"
-  docker logs "$CONTAINER_NAME" 2>&1 | grep "glm prof" | tail -24 >> "$P" || true
+  docker logs "$CONTAINER_NAME" 2>&1 | grep "glm prof" | tail -24 >> "$P" || \
+    true
   echo "## worker prof lines" >> "$P"
-  ssh -o BatchMode=yes "$WORKER" "docker logs $CONTAINER_NAME 2>&1 | grep 'glm prof' | tail -24" >> "$P" 2>/dev/null || true
+  ssh -o BatchMode=yes "$WORKER" \
+    "docker logs $CONTAINER_NAME 2>&1 | grep 'glm prof' | tail -24" >> "$P" \
+    2>/dev/null || true
   touch "$OUT/.prof.done"
 fi
 
@@ -899,7 +1001,8 @@ EOF
   for variant in plain schema; do
     START=$(date +%s.%N)
     for i in 1 2 3 4; do
-      if [[ "$variant" == schema && $i -eq 4 ]]; then F="$OUT/cliff-schema.json"; else F="$OUT/cliff-plain.json"; fi
+      if [[ "$variant" == schema && $i -eq 4 ]]; then \
+        F="$OUT/cliff-schema.json"; else F="$OUT/cliff-plain.json"; fi
       { chat "$F" > "$OUT/cliff-$variant-$i.json" || true; } &
     done; wait
     ELAPSED=$(python3 -c "print(f'{$(date +%s.%N)-$START:.1f}')")
@@ -915,7 +1018,8 @@ fi
 if want prefill && ! phase_done prefill; then
   log "=== prefill"
   P="$OUT/06-prefill.md"; : > "$P"
-  # this phase only probes — make sure a server is actually up (the climb phase may
+  # this phase only probes — make sure a server is actually up (the climb phase
+  # may
   # have ended on a refusal with the stack down)
   curl -s -m 5 "http://127.0.0.1:$PORT/health" >/dev/null 2>&1 || \
     restart_fb DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4
@@ -966,7 +1070,8 @@ fi
 
 # (the bpw4sweep/bpw3sweep session phases RETIRED round 132 — the 4bpw sweep
 # receipted (TR3 94 / MIA 94 / Focus 93 / AZ 90 — docs/bpw4-sweep-cards.svg, the
-# receipts in results/bpw4sweep/) and the 3bpw track CLOSED on the engine's 4-bit
+# receipts in results/bpw4sweep/) and the 3bpw track CLOSED on the engine's
+# 4-bit
 # expert floor: the CUDA family reads 4-bit EXL3 experts — all three community
 # packs refused (UnsupportedQuant). Re-run patterns: git history.
 
@@ -1012,21 +1117,28 @@ if want duel && ! phase_done duel; then
   P="$OUT/07-duel.md"; : > "$P"
   echo "# duel (five direct instruments, same probes on both engines; no bench rows)" >> "$P"
 
-  # NATIVE-vs-NATIVE (the round-139 (user) directive): the Python recipe is retired —
-  # the baseline arm is THIS REPO's own promoted config, started FOR TESTING on 8001
+  # NATIVE-vs-NATIVE (the round-139 (user) directive): the Python recipe is
+  # retired —
+  # the baseline arm is THIS REPO's own promoted config, started FOR TESTING on
+  # 8001
   # (the intent-keyed start; the promoted repo IS the baseline arm now). The
   # candidate arm ("ours") carries the campaign's PATCHES (the standing stack by
   # default; MMS2_DUEL_PATCHES overrides — the candidate-duel pattern).
-  # The failure shape the round-139 void fixed: the ours arm's restart happens ONLY
-  # after the baseline arm's stop, and a restart failure DIES the phase — the two
+  # The failure shape the round-139 void fixed: the ours arm's restart happens
+  # ONLY
+  # after the baseline arm's stop, and a restart failure DIES the phase — the
+  # two
   # arms must never share 8001, and a dead arm can never fall through silently
-  # (the round-139 void: the duel started the baseline on 8001, then restarted the
-  # ours arm WITHOUT stopping the baseline first — the round-132 port guard refused,
+  # (the round-139 void: the duel started the baseline on 8001, then restarted
+  # the
+  # ours arm WITHOUT stopping the baseline first — the round-132 port guard
+  # refused,
   # the phase fell through, the baseline sat idle on both GPUs, and the window's
   # docker-stop-then-die killed the wrapper before its EXIT trap).
   log "duel: stopping the testing stack to free 8001"
   ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-  log "duel: the baseline arm (the promoted config) starting FOR TESTING on 8001"
+  log \
+    "duel: the baseline arm (the promoted config) starting FOR TESTING on 8001"
   PORT=8001 ./scripts/start.sh </dev/null >>"$LOG" 2>&1 || {
     echo "- the baseline arm refused to start on 8001 — its refusal is the receipt; the duel is void" >> "$P"
     touch "$OUT/.duel.done"
@@ -1042,17 +1154,23 @@ except Exception: print("")') || BASE_MODEL=""
   PROD_PORT_SAVE="$PROD_PORT"
   PROD_PORT=8001 duel_arm baseline "$BASE_MODEL"
   PROD_PORT="$PROD_PORT_SAVE"
-  log "baseline probed — stopping it for the ours arm (restored by the window flow's exit path)"
+  log "baseline probed — stopping it for the ours arm (restored by the window" \
+    "flow's exit path)"
   ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
   if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
-    die "the baseline arm still runs after the stop — the ours arm needs the GPUs"
+    die \
+      "the baseline arm still runs after the stop — the ours arm needs the GPUs"
   fi
-  # the ours arm rides the STANDING config's stack unless a candidate overrides it
-  # (MMS2_DUEL_PATCHES — the candidate-duel pattern; a standalone duel launch has it
-  # unset, and the bare ${MMS2_DUEL_PATCHES-} expanded to the EMPTY opt-out list —
+  # the ours arm rides the STANDING config's stack unless a candidate overrides
+  # it
+  # (MMS2_DUEL_PATCHES — the candidate-duel pattern; a standalone duel launch
+  # has it
+  # unset, and the bare ${MMS2_DUEL_PATCHES-} expanded to the EMPTY opt-out list
+  # —
   # the stock build refused the adopted fp8+pages mode and the first v1.2.4 duel
   # re-pair burned on exactly that, campaign-20261107-160107).
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PATCHES="${MMS2_DUEL_PATCHES-${PATCHES-}}" || {
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+    PATCHES="${MMS2_DUEL_PATCHES-${PATCHES-}}" || {
     echo "- the ours arm refused to start — the duel is void (fail-honest; the baseline arm is stopped, production comes back on the exit path)" >> "$P"
     touch "$OUT/.duel.done"
     log "duel: the ours arm refused — phase void (fail-honest)"
@@ -1077,7 +1195,8 @@ if want confirm && ! phase_done confirm; then
   echo "- the lead being tested: c2 @ d8192 aggregate 17.3 → 33.1 t/s (campaign-20261023-200302)" >> "$P"
   for r in a b; do
     S=$(date +%s)
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_PROMPT_STEPS=0; then
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+      TF_GLM_PROMPT_STEPS=0; then
       echo "## run $r (load $(( $(date +%s) - S )) s)" >> "$P"
       bench_perf "confirm-$r" "$OUT/confirm-$r" 4 >> "$P"
     else
@@ -1128,20 +1247,26 @@ fi
 # it). Adoption moves config.sh's PROMPT_CACHE_GIB default.
 # ---------------------------------------------------------------------------
 if want cachefixqual && ! phase_done cachefixqual; then
-  log "=== cachefixqual (the #2699 recovery: --prompt-cache-gib 4 vs the cacheless standing)"
+  log "=== cachefixqual (the #2699 recovery: --prompt-cache-gib 4 vs the" \
+    "cacheless standing)"
   P="$OUT/11-cachefixqual.md"; : > "$P"
   echo "# cachefixqual (the #2699 recovery: the standing cacheless config vs --prompt-cache-gib 4; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
   for arm in off on; do
     S=$(date +%s)
     if [ "$arm" = on ]; then CFENV="PROMPT_CACHE_GIB=4"; else CFENV=""; fi
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $CFENV; then
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+      $CFENV; then
       echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
       # the PLACED-flag witness (window 33's placebo lesson): the container argv
       # itself must carry --prompt-cache-gib 4 — the serve line's advice tail
-      # ("--prompt-cache-gib 4 holds all 16") prints regardless and proves nothing.
+      # ("--prompt-cache-gib 4 holds all 16") prints regardless and proves
+      # nothing.
       # Guards (window 34's lesson): every grep in an assignment is guarded — a
-      # bare grep at a pipeline's end exits 1 on no-match and set -e kills the phase.
-      argv_flags=$(docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | tr " " "\n" | { grep -A1 "^--prompt-cache-gib$" || true; } | tail -1)
+      # bare grep at a pipeline's end exits 1 on no-match and set -e kills the
+      # phase.
+      argv_flags=$(docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" \
+        2>/dev/null | tr " " "\n" | { grep -A1 "^--prompt-cache-gib$" || true; \
+        } | tail -1)
       if [ "$arm" = on ]; then
         if [ "$argv_flags" = "4" ]; then
           echo "- the argv witness: --prompt-cache-gib 4 PLACED" >> "$P"
@@ -1151,12 +1276,17 @@ if want cachefixqual && ! phase_done cachefixqual; then
       else
         echo "- the argv witness: the flag absent as intended (${argv_flags:-absent})" >> "$P"
       fi
-      echo "- the serve line: $(serve_line | grep -oE "taking [0-9]+ pages of 512 rows \\([0-9.]+ GiB\\)|no prompt cache[^;]*|[0-9]+ of TF_KV_SHARE=[0-9]+ kept states[^;]*|[0-9]+ kept states. slots[^;]*)" | head -2)" >> "$P"
+      echo "- the serve line: $(serve_line | grep -oE "taking [0-9]+ pages of \
+        512 rows \\([0-9.]+ GiB\\)|no prompt cache[^;]*|[0-9]+ of \
+        TF_KV_SHARE=[0-9]+ kept states[^;]*|[0-9]+ kept states. \
+        slots[^;]*)" | head -2)" >> "$P"
       echo "- the serve line full: $(serve_line)" >> "$P"
       docker logs "$CONTAINER_NAME" 2>&1 | grep -E "prompt cache|kept states" | tail -2 >> "$P" || true
-      # the funded witness: the fully-funded phrasing has NO "of TF_KV_SHARE=" and
+      # the funded witness: the fully-funded phrasing has NO "of TF_KV_SHARE="
+      # and
       # no advice tail; the clip report ("the room funds ... of the ... asks")
-      # appears only when the room does not fund the full ask (cuda_kv_pool.zig:183).
+      # appears only when the room does not fund the full ask
+      # (cuda_kv_pool.zig:183).
       if [ "$arm" = on ]; then
         if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "the room funds"; then
           echo "- the clip report: PRESENT (the room did not fund the full 4 GiB ask — a budget clip, not a placebo)" >> "$P"
@@ -1168,9 +1298,12 @@ if want cachefixqual && ! phase_done cachefixqual; then
       # the greedy witness (the same-bits guard):
       req_file "$OUT/cx-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
       chat "$OUT/cx-$arm-req.json" > "$OUT/cx-$arm-resp.json" || true
-      echo "- the greedy content sha: $(content_sha "$OUT/cx-$arm-resp.json")" >> "$P"
-      # the warm-resume instrument, RELABELED reference-only (window 33's lesson:
-      # turn 2 re-prefills its longer history, so its wall is HIGHER than turn 1's
+      echo "- the greedy content sha: $(content_sha "$OUT/cx-$arm-resp.json")" \
+        >> "$P"
+      # the warm-resume instrument, RELABELED reference-only (window 33's
+      # lesson:
+      # turn 2 re-prefills its longer history, so its wall is HIGHER than turn
+      # 1's
       # by construction — the walls measure re-prefill, not resume). The resume
       # witnesses are g3 (resumed=fresh content) and the funded-slots line.
       C1=$(python3 -c "
@@ -1191,9 +1324,12 @@ print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content':
       # is not "did the slots fund" (compliance) but "did the kept states move a
       # user-visible number" (value). Two instruments, run on THIS arm's serve
       # while it stands:
-      # (v1) the within-session resume delta: the g3-shaped conversation computed
-      #      twice (cold then immediate) — its wall delta IS the page-cache value
-      #      already present cacheless; the ON arm must BEAT the OFF arm's delta.
+      # (v1) the within-session resume delta: the g3-shaped conversation
+      # computed
+      #      twice (cold then immediate) — its wall delta IS the page-cache
+      #      value
+      #      already present cacheless; the ON arm must BEAT the OFF arm's
+      #      delta.
       # (v2) the multi-turn TTFT: a ~4k-token fill, turn 2 (a follow-up on the
       #      kept history) vs turn 1 — the opencode interaction shape.
       # The anchors: cross-restart resume is COLD cacheless (7.25 s) and the
@@ -1209,7 +1345,10 @@ json.dump(conv, open(sys.argv[1], "w"))
 PYV
       rm -f "$OUT/cx-$arm-v1-walls.txt"
       for r in cold warm; do
-        S=$(date +%s%3N); curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$V1CONV" -o "$OUT/cx-$arm-v1-$r.json" || true; E=$(date +%s%3N)
+        S=$(date +%s%3N); curl -s -m 300 \
+          "http://127.0.0.1:$PORT/v1/chat/completions" -H \
+          'Content-Type: application/json' --data @"$V1CONV" -o \
+          "$OUT/cx-$arm-v1-$r.json" || true; E=$(date +%s%3N)
         echo "$r $((E-S))" >> "$OUT/cx-$arm-v1-walls.txt"
       done
       python3 - "$OUT" "$arm" >> "$P" <<'PYV'
@@ -1264,12 +1403,15 @@ print('- turn 1 prompt tokens: %s, completion: %s' % (t1["usage"]["prompt_tokens
 print('- turn 2 prompt tokens: %s (the full history re-prefilled unless the cache resumed), completion: %s' % (t2["usage"]["prompt_tokens"], t2["usage"]["completion_tokens"]))
 " >> "$P" || true
     else
-      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' \
+        >> "$P"
     fi
   done
   echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 PROMPT_CACHE_GIB=4 || true
-  run_gates cx DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PROMPT_CACHE_GIB=4 || true
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+    PROMPT_CACHE_GIB=4 || true
+  run_gates cx DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    PROMPT_CACHE_GIB=4 || true
   echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
   mkdir -p "$OUT/cxhm"
   model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
@@ -1280,18 +1422,26 @@ except Exception: print("")' 2>/dev/null) || model=""
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
     --hardmode --label "cachefixqual" --output-dir "$OUT/cxhm" --parallel 2 \
     --json-file "$OUT/cxhm/hm.json" > "$OUT/cxhm/hm.log" 2>&1 || true
-  grep -o '"final_score": [0-9]*' "$OUT/cxhm/hm.json" >> "$P" 2>/dev/null || true
-  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> "$P" 2>/dev/null || true
-  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"final_score": [0-9]*' "$OUT/cxhm/hm.json" >> "$P" 2>/dev/null || \
+    true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> \
+    "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/cxhm/hm.log" >> \
+    "$P" 2>/dev/null || true
   echo "## the vision suite (4/4 must hold)" >> "$P"
   mkdir -p "$OUT/cxvision"
   if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/cxvision/vision.json" > "$OUT/cxvision/vision.log" 2>&1 || true
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/cxvision/vision.json" > "$OUT/cxvision/vision.log" 2>&1 || true
     tail -6 "$OUT/cxvision/vision.log" >> "$P" 2>/dev/null || true
   else
-    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    echo \
+      "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" \
+      >> "$P"
   fi
-  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  echo \
+    "## the regression watch (the bench + steady-state on the ON arm's serve)" \
+    >> "$P"
   bench_perf cx "$OUT/cx-bench" 4 >> "$P" 2>&1 || true
   bf=$(mktemp /tmp/cxd.XXXXXX.json)
   python3 -c "
@@ -1303,7 +1453,9 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
   S=$(date +%s)
-  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/cx-decode.json" || true
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H \
+    'Content-Type: application/json' --data @"$bf" -o "$OUT/cx-decode.json" || \
+    true
   W=$(( $(date +%s) - S )); rm -f "$bf"
   python3 -c "
 import json
@@ -1340,19 +1492,23 @@ fi
 # the standing config stays, the question closes as upstream data.
 # ---------------------------------------------------------------------------
 if want livehalf && ! phase_done livehalf; then
-  log "=== livehalf (the #2181 live-half A/B: the standing config vs TF_GLM_KV_LIVE_HALF=1)"
+  log "=== livehalf (the #2181 live-half A/B: the standing config vs" \
+    "TF_GLM_KV_LIVE_HALF=1)"
   P="$OUT/12-livehalf.md"; : > "$P"
   echo "# livehalf (the #2181 live-half A/B: the standing cacheless config vs TF_GLM_KV_LIVE_HALF=1; dense4fp8 @ 512K x4 on the testing port)" >> "$P"
   for arm in off on; do
     if [ "$arm" = on ]; then LHENV="TF_GLM_KV_LIVE_HALF=1"; else LHENV=""; fi
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $LHENV; then
+    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+      $LHENV; then
       echo "## the $arm arm" >> "$P"
       # the PLACED-flag witness (window 33's placebo lesson; window 36's argv
       # extraction lesson): the container argv must carry the flag as a
       # K=V env pair — inspect the Env array, not Cmd (the env var is how
       # the knob reaches the engine; the argv carries --prompt-cache-gib
       # class flags, TF_GLM_* rides the environment).
-      argv_env=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" "$CONTAINER_NAME" 2>/dev/null | { grep -c "^TF_GLM_KV_LIVE_HALF=1$" || true; })
+      argv_env=$(docker inspect --format \
+        "{{range .Config.Env}}{{println .}}{{end}}" "$CONTAINER_NAME" \
+        2>/dev/null | { grep -c "^TF_GLM_KV_LIVE_HALF=1$" || true; })
       if [ "$arm" = on ]; then
         if [ "$argv_env" -ge 1 ] 2>/dev/null; then
           echo "- the env witness: TF_GLM_KV_LIVE_HALF=1 PLACED in the container env" >> "$P"
@@ -1364,11 +1520,15 @@ if want livehalf && ! phase_done livehalf; then
       fi
       echo "- the serve line: $(serve_line)" >> "$P"
       # the slots + enough-for witnesses straight from the serve line
-      echo "- the slots witness: $(serve_line | grep -oE "[0-9]+( of TF_KV_SHARE=16)? kept states. slots \([0-9.]+ GiB\)|no prompt cache")" >> "$P"
-      echo "- the enough-for witness: $(serve_line | grep -oE "enough for [0-9]+ at a 524288")" >> "$P"
+      echo "- the slots witness: $(serve_line | grep -oE "[0-9]+( of \
+        TF_KV_SHARE=16)? kept states. slots \([0-9.]+ GiB\)|no prompt cache")" \
+        >> "$P"
+      echo "- the enough-for witness: $(serve_line | grep -oE "enough for \
+        [0-9]+ at a 524288")" >> "$P"
       # the eviction warning: the OFF arm's line carries it (6 of 16 funded);
       # the ON arm must NOT (all 16 funded) for the value gate to fire.
-      if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "live streams evict each other"; then
+      if docker logs "$CONTAINER_NAME" 2>&1 | grep -q \
+        "live streams evict each other"; then
         echo "- the eviction warning: PRESENT (the standing shape — live streams evict before a resume)" >> "$P"
       else
         echo "- the eviction warning: ABSENT" >> "$P"
@@ -1376,14 +1536,18 @@ if want livehalf && ! phase_done livehalf; then
       # the greedy witness (the same-bits guard):
       req_file "$OUT/lh-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
       chat "$OUT/lh-$arm-req.json" > "$OUT/lh-$arm-resp.json" || true
-      echo "- the greedy content sha: $(content_sha "$OUT/lh-$arm-resp.json")" >> "$P"
+      echo "- the greedy content sha: $(content_sha "$OUT/lh-$arm-resp.json")" \
+        >> "$P"
     else
-      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' >> "$P"
+      echo "## the $arm arm — REFUSED" >> "$P"; tail -4 "$LOG" | sed 's/^/  /' \
+        >> "$P"
     fi
   done
   echo "## the §2 content gates (the ON arm's serve stands)" >> "$P"
-  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 TF_GLM_KV_LIVE_HALF=1 || true
-  run_gates lh DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 TF_GLM_KV_LIVE_HALF=1 || true
+  restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 \
+    TF_GLM_KV_LIVE_HALF=1 || true
+  run_gates lh DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    TF_GLM_KV_LIVE_HALF=1 || true
   echo "## hardmode (the 95 must hold, the ON arm's serve)" >> "$P"
   mkdir -p "$OUT/lhhm"
   model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
@@ -1394,18 +1558,26 @@ except Exception: print("")' 2>/dev/null) || model=""
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
     --hardmode --label "livehalf" --output-dir "$OUT/lhhm" --parallel 2 \
     --json-file "$OUT/lhhm/hm.json" > "$OUT/lhhm/hm.log" 2>&1 || true
-  grep -o '"final_score": [0-9]*' "$OUT/lhhm/hm.json" >> "$P" 2>/dev/null || true
-  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/lhhm/hm.log" >> "$P" 2>/dev/null || true
-  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/lhhm/hm.log" >> "$P" 2>/dev/null || true
+  grep -o '"final_score": [0-9]*' "$OUT/lhhm/hm.json" >> "$P" 2>/dev/null || \
+    true
+  grep -o '"scenario_id": "TC-51", "status": "[a-z]*"' "$OUT/lhhm/hm.log" >> \
+    "$P" 2>/dev/null || true
+  grep -o '"scenario_id": "TC-92", "status": "[a-z]*"' "$OUT/lhhm/hm.log" >> \
+    "$P" 2>/dev/null || true
   echo "## the vision suite (4/4 must hold)" >> "$P"
   mkdir -p "$OUT/lhvision"
   if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/lhvision/vision.json" > "$OUT/lhvision/vision.log" 2>&1 || true
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/lhvision/vision.json" > "$OUT/lhvision/vision.log" 2>&1 || true
     tail -6 "$OUT/lhvision/vision.log" >> "$P" 2>/dev/null || true
   else
-    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    echo \
+      "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" \
+      >> "$P"
   fi
-  echo "## the regression watch (the bench + steady-state on the ON arm's serve)" >> "$P"
+  echo \
+    "## the regression watch (the bench + steady-state on the ON arm's serve)" \
+    >> "$P"
   bench_perf lh "$OUT/lh-bench" 4 >> "$P" 2>&1 || true
   bf=$(mktemp /tmp/lh.XXXXXX.json)
   python3 -c "
@@ -1417,7 +1589,9 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
   S=$(date +%s)
-  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/lh-decode.json" || true
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H \
+    'Content-Type: application/json' --data @"$bf" -o "$OUT/lh-decode.json" || \
+    true
   W=$(( $(date +%s) - S )); rm -f "$bf"
   python3 -c "
 import json
@@ -1529,9 +1703,12 @@ WARMTTFT_RETIRED=1
 # from ~945 ms toward production's ~212 ms full-hit skip. The greedy
 # witness (80cc3802…) runs on both arms.
 # ---------------------------------------------------------------------------
-# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141 review): the
-# stub pattern only — no launchable path exists; a stray 'warmkeep' launch now refuses
-# at the launcher's phase-name gate. The receipts: results/campaign-20261112-023109
+# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141
+# review): the
+# stub pattern only — no launchable path exists; a stray 'warmkeep' launch now
+# refuses
+# at the launcher's phase-name gate. The receipts:
+# results/campaign-20261112-023109
 # and the arc's record in docs/LAUNCH.md round 141 cont. 33-43.
 WARMKEEP_RETIRED=1
 # ---------------------------------------------------------------------------
@@ -1556,11 +1733,15 @@ if want regresswatch && ! phase_done regresswatch; then
   log "=== regresswatch (the concurrent 4-prefix resume on the v1.2.6 pool plan: the kvshare2 shape, one arm)"
   P="$OUT/13-regresswatch.md"; : > "$P"
   echo "# regresswatch (the concurrent 4-prefix resume on v1.2.6's #2257 pool plan — the standing config vs the round-133 kvshare2 receipt: 4/4 cached, ttft ~1.84 s, aggregate ~7.4 s)" >> "$P"
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; \
+    then
     echo "- the serve line: $(serve_line)" >> "$P"
     echo "- the slots funded: $(serve_line | grep -oE "[0-9]+ of TF_KV_SHARE=16 kept states[^;]*|[0-9]+ kept states. slots \([0-9.]+ GiB\)")" >> "$P"
-    mark() { echo "- --- $1 ---" >> "$P"; docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "prompt cache|store|keep|evict|resumed" | tail -4 | sed 's/^/  /' >> "$P"; }
-    # 4 distinct d4096 prefixes, cold sequential (the kvshare2 contract verbatim)
+    mark() { echo "- --- $1 ---" >> "$P"; docker logs "$CONTAINER_NAME" 2>&1 | \
+      grep -iE "prompt cache|store|keep|evict|resumed" | tail -4 | sed \
+      's/^/  /' >> "$P"; }
+    # 4 distinct d4096 prefixes, cold sequential (the kvshare2 contract
+    # verbatim)
     for i in 1 2 3 4; do
       bf="$OUT/rw-cc$i.json"
       FILL_WORDS="$FILL_WORDS" python3 -c "
@@ -1575,20 +1756,27 @@ json.dump({'model': 'X', 'temperature': 0, 'max_tokens': 1, 'messages': [{'role'
     done
     mark "after the 4 colds (did all four keep?)"
     # the solo warm: cc1 again — does it hit?
-    T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/rw-cc1.json" -o "$OUT/rw-solo.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
+    T=$(curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H \
+      'Content-Type: application/json' --data @"$OUT/rw-cc1.json" -o \
+      "$OUT/rw-solo.json" -w "%{time_starttransfer}" 2>/dev/null || echo 0)
     echo "- cc1 WARM SOLO ttft_wall ${T}s (the round-133 receipt: 1.841 s — a hit; the page cache over the pool's pages should hit in BOTH cases now)" >> "$P"
     mark "after the solo warm (hit or evicted?)"
     # the 4 concurrent warms
     S=$(date +%s.%N)
     for i in 1 2 3 4; do
-      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$OUT/rw-cc$i.json" -o "$OUT/rw-cc$i-w.json" || true
+      curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H \
+        'Content-Type: application/json' --data @"$OUT/rw-cc$i.json" -o \
+        "$OUT/rw-cc$i-w.json" || true
     done &
     wait
     E=$(date +%s.%N)
     echo "- the 4 concurrent resumes: $(python3 -c "print(f'{$E-$S:.2f}')") s aggregate (the round-133 receipt: 7.41 s)" >> "$P"
     mark "after the concurrent warms"
-    echo "- the concurrent warms' engine lines (cached= is the verdict):" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -6 | sed 's/^/  /' >> "$P" || true
+    echo "- the concurrent warms' engine lines (cached= is the verdict):" >> \
+      "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -oE \
+      "done chatcmpl-[a-f0-9]+ .*ttft=[0-9.]+" | tail -6 | sed 's/^/  /' >> \
+      "$P" || true
     echo "- VERDICT (the watch, no adoption branch): 4/4 cached>0 + the aggregate near 7.4 s => the #2257 pool plan did NOT regress the concurrent resume — the round-133 receipt re-anchors on v1.2.6. cached=0 on any prefix or the aggregate far off => a REGRESSION: the receipt lands, the ledger's watch item opens, and the shape gets its own stage brief." >> "$P"
   else
     echo "- the serve REFUSED (the refusal is the receipt):" >> "$P"
@@ -1682,9 +1870,12 @@ PRODCOLD_RETIRED=1
 # (inert at our KV_SHARE=16) and #2557's router_tile-only router — the
 # bench row records what they move on our shape.
 # ---------------------------------------------------------------------------
-# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141 review):
-# the v1.2.7 qualification battery: QUALIFIED and PROMOTED (window 51 — the witness
-# IDENTICAL, §2 ALL PASS, hardmode 95, the vision 4/4, the walls; production serves
+# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141
+# review):
+# the v1.2.7 qualification battery: QUALIFIED and PROMOTED (window 51 — the
+# witness
+# IDENTICAL, §2 ALL PASS, hardmode 95, the vision 4/4, the walls; production
+# serves
 # v1.2.7 since). The receipts: campaign-20261111-191641; the record: LAUNCH.md
 # round 141 cont. 28-29.
 V127VAL_RETIRED=1
@@ -1734,21 +1925,27 @@ if want v129val && ! phase_done v129val; then
   P="$OUT/29-v129val.md"; : > "$P"
   echo "# v129val (v1.2.9 6b9de69 + the 18-patch re-anchored stack; #2852/#2843/#2814 mainlined under the stack; DSEL+INDEX_CUDA defaults on)" >> "$P"
   log "v129val: explicit prepare (the fingerprint moved: TF_COMMIT + the patch bodies)"
-  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v129val: the image rebuild (prepare) failed - see the log"; fi
-  echo "## the standing restart (the v1.2.9 engine + the adopted defaults)" >> "$P"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die \
+    "v129val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.2.9 engine + the adopted defaults)" >> \
+    "$P"
   S=$(date +%s)
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; \
+    then
     echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
     echo "- the serve line: $(serve_line)" >> "$P"
-    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci \
+      "malformed\|BadSetting\|refused" || true)
     echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
     docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
     req_file "$OUT/v129-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
     chat "$OUT/v129-req.json" > "$OUT/v129-greedy.json" || true
-    echo "- the greedy content sha: $(content_sha "$OUT/v129-greedy.json")" >> "$P"
+    echo "- the greedy content sha: $(content_sha "$OUT/v129-greedy.json")" >> \
+      "$P"
     echo "- the same-bits witness: $([ "$(content_sha "$OUT/v129-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
   else
-    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | \
+      sed 's/^/  /' >> "$P"
   fi
   echo "## the section-2 content gates" >> "$P"
   run_gates v129 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
@@ -1764,7 +1961,9 @@ try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
   S=$(date +%s)
-  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v129-decode.json" || true
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H \
+    'Content-Type: application/json' --data @"$bf" -o "$OUT/v129-decode.json" \
+    || true
   W=$(( $(date +%s) - S )); rm -f "$bf"
   python3 -c "
 import json
@@ -1785,20 +1984,27 @@ except Exception: print("")' 2>/dev/null) || model=""
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
     --hardmode --label "v129val" --output-dir "$OUT/v129hm" --parallel 2 \
     --json-file "$OUT/v129hm/hm.json" > "$OUT/v129hm/hm.log" 2>&1 || true
-  grep -o '"final_score": [0-9]*' "$OUT/v129hm/hm.json" >> "$P" 2>/dev/null || true
+  grep -o '"final_score": [0-9]*' "$OUT/v129hm/hm.json" >> "$P" 2>/dev/null || \
+    true
   echo "## the vision suite (4/4 must hold)" >> "$P"
   mkdir -p "$OUT/v129vision"
   if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v129vision/vision.json" > "$OUT/v129vision/vision.log" 2>&1 || true
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/v129vision/vision.json" > "$OUT/v129vision/vision.log" 2>&1 || true
     tail -6 "$OUT/v129vision/vision.log" >> "$P" 2>/dev/null || true
   else
-    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    echo \
+      "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" \
+      >> "$P"
   fi
-  echo "## the timed load walls (the loading row's re-take on the v1.2.9 engine)" >> "$P"
+  echo \
+    "## the timed load walls (the loading row's re-take on the v1.2.9 engine)" \
+    >> "$P"
   for r in a b; do
     ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
     S=$(date +%s)
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || \
+      { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
     echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
   done
   echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls = the v1.2.9 bump qualifies (the digest re-dates the anchors and the promotion sync moves production); any FAIL holds the pin at v1.2.7 until understood" >> "$P"
@@ -1965,14 +2171,19 @@ if want summary; then
     echo "# Replication campaign $RUN_ID"
     echo
     echo "## Gates"
-    grep -hE "^- (PASS|FAIL|NOTE|depth|batch|usage|server|RoCE|PARALLEL|.*refused)" "$OUT"/[0-9]*.md 2>/dev/null | head -60 || true
+    grep -hE \
+      "^- (PASS|FAIL|NOTE|depth|batch|usage|server|RoCE|PARALLEL|.*refused)" \
+      "$OUT"/[0-9]*.md 2>/dev/null | head -60 || true
     echo
     echo "## Phase receipts"
-    for f in "$OUT"/[0-9]*.md; do [ -f "$f" ] || continue; echo "### $(basename "$f")"; cat "$f"; echo; done
+    for f in "$OUT"/[0-9]*.md; do [ -f "$f" ] || continue; echo \
+      "### $(basename "$f")"; cat "$f"; echo; done
     echo "## Way forward"
-    echo "- Content-form gates (VALIDATION §2 receipt, 2026-10-23): PASS = content-identical;"
+    echo "- Content-form gates (VALIDATION §2 receipt, 2026-10-23): PASS =" \
+      "content-identical;"
     echo "  raw-byte differences are the engine's documented nondeterminism, not a cache fault."
-    echo "- dense4fp8 vs parity: tool-eval 92 = 92 (first campaign); this campaign's"
+    echo "- dense4fp8 vs parity: tool-eval 92 = 92 (first campaign); this" \
+      "campaign's"
     echo "  throughput + climb receipts pick the serving config and its stream count."
     echo "- kvqual4 PASS + throughput lead = dense4fp8 is the qualified ladder config;"
     echo "  feed the cliff/prefill receipts into the next upstream note."
@@ -1980,7 +2191,8 @@ if want summary; then
   if ./scripts/render-perf-chart.sh --check >> "$S" 2>&1; then
     log "chart check: the committed SVG matches the anchors"
   else
-    log "chart check: STALE vs the anchors — regenerate and commit (render-perf-chart.sh)"
+    log "chart check: STALE vs the anchors — regenerate and commit" \
+      "(render-perf-chart.sh)"
   fi
   log "campaign complete: $S"
   tail -40 "$S"
