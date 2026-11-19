@@ -19,13 +19,17 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold **v1.2.9** + **the adopted 18-patch stack re-anchored**
+- **Engine**: TensorFold **v1.2.10** + **the adopted 18-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
-  the v1.2.9 rebase's round-trip is proven byte-identical — pristine v1.2.9 + the
-  18 patches = the rebase tree; the v129val battery QUALIFIED the pin —
-  campaign-20261116-001527, the round-142 receipt; #2852/#2843/#2814 mainlined
-  upstream and ride the engine — 002/012/018 carry their unmainlined residue;
-  021-vision2744 and 022-shared-budgets mainlined at v1.2.7 and dropped).
+  the v1.2.10 rebase's store replay is proven byte-exact — pristine v1.2.10 + the
+  18 patches = the composed tree; the v1210val battery QUALIFIED the pin —
+  campaign-20261119-100642, the round-148 receipt: the greedy witness
+  `80cc3802…` IDENTICAL across five engine bumps, hardmode 95 the
+  thirty-seventh consecutive, the vision 4/4, the walls 83/83 s, steady-state
+  decode 73.1 — bit-for-bit the v1.2.9 receipt; the videorows default carries;
+  #3151's `TF_GLM_EXPERT_FORM` rides the engine (unset: the form race is the
+  qualified behavior); 010/011 re-cut around v1.2.10's #3588 quoted-markup
+  Scanner and coexist with it).
 - **Testing runs from this same repo**: a start FOR OPENCODE serves 8000; a start FOR
   TESTING serves 8001 (intent-keyed ports). Opencode never touches 8001; the quality
   gates never touch 8000. The lifecycle is autonomous — see *The autonomous loop*.
@@ -49,9 +53,9 @@ nothing but docker, ssh and the NVIDIA driver.
 
 | question | answer |
 | --- | --- |
-| Quality | **Tool-eval-bench Hard Mode: Quality 95/100 (197/208 points), Deployability 76/100** on the shipping config — receipted thirty-six consecutive times (every one Quality 95, byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261116-001527 (the v1.2.9 v129val battery; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
+| Quality | **Tool-eval-bench Hard Mode: Quality 95/100 (197/208 points), Deployability 76/100** on the shipping config — receipted thirty-seven consecutive times (every one Quality 95, byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261119-100642 (the v1.2.10 v1210val battery; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
-| Speed | The v1.2.9 engine's own numbers (campaign-20261116-001527, the v129val battery): load wall **83 s**, steady-state decode **73.1 tok/s** (2048-token probe), prefill **1,528 tok/s** (pp d0), hardmode **95** with the vision suite 4/4 and the §2 gates ALL PASS. The chart pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv) |
+| Speed | The v1.2.10 engine's own numbers (campaign-20261119-100642, the v1210val battery): load wall **83 s**, steady-state decode **73.1 tok/s** (2048-token probe — bit-identical to v1.2.9's receipt), prefill **1,514 tok/s** (pp d0), hardmode **95** with the vision suite 4/4 and the §2 gates ALL PASS. The chart pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
 | Vision | **Enabled as the standing default** at the 524,288 window; the test assets and runner: `assets/vision/` via `scripts/vision-suite-probe.py` |
 
