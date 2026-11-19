@@ -27,14 +27,18 @@ A/B: the serve lines' own arithmetic — the streams' pages, the funded cache,
 the fund-report line — plus the §2 gates, hardmode 95, the vision 4/4, the
 greedy same-bits sha). The compile RC=0 (fatbins + native, sm_121) receipted on the ported tree. Adoption moves config.sh's env default.
 
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
+REGEN-NOTE (2026-11-19, the v1.2.10 rebase): the kv_pool hunks re-cut
+onto the v1.2.10 anchors — Budget gained the cache_first field, windows()
+gained the room0 line composed onto v1.2.10's kept-slots rest comment,
+and cuda_kv_pool.zig's Budget constructions carry .cache_first =
+cacheFirst() (the #3125-era TF_KV_SHARE pricing rides the engine now).
+The composed-tree round-trip verifies byte-exact.
 
 diff --git a/zig/src/core/kv_pool.zig b/zig/src/core/kv_pool.zig
-index a8941b77f..ba53d46d6 100644
+index 0179b930f..f6856d221 100644
 --- a/zig/src/core/kv_pool.zig
 +++ b/zig/src/core/kv_pool.zig
-@@ -96,6 +96,9 @@ pub const Budget = struct {
+@@ -97,6 +97,9 @@ pub const Budget = struct {
      window: u64 = 0,
      /// The engine's own rows are pages too: a window of them first, then the cache after the windows the rest holds.
      engine_paged: bool = false,
@@ -43,19 +47,19 @@ index a8941b77f..ba53d46d6 100644
 +    cache_first: bool = false,
      /// Parts per million of the cache that kept states hold as pool pages (TF_KV_SHARE): made pages past the windows.
      kept_ppm: u32 = 0,
-     /// TF_KV_SHARE with a slot a state (GLM): the cache is its slots, `snaps` at most, and the rest is made pages.
-@@ -173,7 +176,8 @@ fn held(l: Layout, b: Budget, fit: u64, more: u64) u64 {
+     /// TF_KV_SHARE with a slot a state (GLM): `snaps` slots at most, where an asked cache goes; the rest made pages.
+@@ -176,7 +179,8 @@ fn held(l: Layout, b: Budget, fit: u64, more: u64) u64 {
  fn windows(l: Layout, b: Budget, rest: u64) u64 {
      if (!b.engine_paged or b.window == 0 or b.asked) return 1; // an asked cache comes before all but the engine's own
      const own = ownPages(l, b);
 -    const room = @min(b.lanes, 1 + (b.room - own) / (own + l.fixed_bytes)); // a window and a fixed part each
 +    const room0 = if (b.cache_first) b.room -| b.cache else b.room; // cache_first: the cache is set aside first, the streams share the left
 +    const room = @min(b.lanes, 1 + (room0 - own) / (own + l.fixed_bytes)); // a window and a fixed part each
-     return if (own == 0) room else @min(room, 1 + rest / own); // `rest`: past the engine's own window and every fixed part
+     return if (own == 0) room else @min(room, 1 + rest / own); // `rest`: past the engine's own window, every fixed part and TF_KV_SHARE's slots
  }
  
 diff --git a/zig/src/native/cuda_kv_pool.zig b/zig/src/native/cuda_kv_pool.zig
-index 5f0b16318..98442bf92 100644
+index b02d2e477..87001ca0f 100644
 --- a/zig/src/native/cuda_kv_pool.zig
 +++ b/zig/src/native/cuda_kv_pool.zig
 @@ -156,7 +156,7 @@ fn cacheWanted(comptime F: type, o: api.Open) u64 {

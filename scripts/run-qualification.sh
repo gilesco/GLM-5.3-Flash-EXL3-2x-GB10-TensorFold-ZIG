@@ -1927,6 +1927,97 @@ fi
 
 # ---------------------------------------------------------------------------
 
+# phase: v1210val (SESSION-SPECIFIC; retires with the receipt — the round-148
+# stage brief docs/STAGE_BRIEF_v1210val.md carries the value gate). The v1.2.10
+# bump qualification: the v129val battery's shape re-dated — the same gates,
+# the same same-bits greedy witness (80cc3802…), the new engine pin 2a674b552
+# + the re-anchored 18-patch store. The ground read before staging: the GLM
+# CUDA kernel files are UNTOUCHED by v1.2.10 (the lowest re-anchor risk since
+# v1.2.5); the overlap is server-layer (tool_parse's quoted-markup scanner
+# around our 010's callName — callName still returns null when unoffered, so
+# 010 stays needed) and small GLM zig diffs (the #3151 expert-form knob, the
+# block32 rework, the TF_KV_SHARE advice wording). TF_GLM_EXPERT_FORM stays
+# UNSET for the battery (the qualified behavior is the form race; the knob
+# adoption is its own measured window later). The videorows default carries.
+# ---------------------------------------------------------------------------
+if want v1210val && ! phase_done v1210val; then
+  log "=== v1210val (the v1.2.10 bump: gates + battery + vision + the wall)"
+  P="$OUT/31-v1210val.md"; : > "$P"
+  echo "# v1210val (v1.2.10 2a674b5 + the 18-patch re-anchored stack; the videorows default carries; TF_GLM_EXPERT_FORM unset — the form race is the qualified behavior)" >> "$P"
+  log "v1210val: explicit prepare (the fingerprint moved: TF_COMMIT + the re-anchored store)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v1210val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.2.10 engine + the adopted defaults)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
+    req_file "$OUT/v1210-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v1210-req.json" > "$OUT/v1210-greedy.json" || true
+    echo "- the greedy content sha: $(content_sha "$OUT/v1210-greedy.json")" >> "$P"
+    echo "- the same-bits witness: $([ "$(content_sha "$OUT/v1210-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v1210 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
+  echo "## the bench pass + the steady-state decode probe (the v1.2.10 engine on our shape)" >> "$P"
+  bench_perf v1210 "$OUT/v1210-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/v1210d.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v1210-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v1210-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" >> "$P"
+  mkdir -p "$OUT/v1210hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
+    --model "$model" --format openai --tokenizer "$MODEL_ID" \
+    --hardmode --label "v1210val" --output-dir "$OUT/v1210hm" --parallel 2 \
+    --json-file "$OUT/v1210hm/hm.json" > "$OUT/v1210hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/v1210hm/hm.json" >> "$P" 2>/dev/null || true
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v1210vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v1210vision/vision.json" > "$OUT/v1210vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/v1210vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on the v1.2.10 engine)" >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls in band + the pool line at the videorows arithmetic = the v1.2.10 bump qualifies (the digest moves the pin and the promotion sync follows); ANY FAIL holds the pin at v1.2.9 (6b9de6951) until understood" >> "$P"
+  touch "$OUT/.v1210val.done"
+fi
+
+# ---------------------------------------------------------------------------
+
 if want summary; then
   log "=== summary"
   S="$OUT/CAMPAIGN.md"

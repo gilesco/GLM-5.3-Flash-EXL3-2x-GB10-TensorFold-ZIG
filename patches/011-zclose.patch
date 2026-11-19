@@ -1,35 +1,84 @@
-From b88c6618f9d8d93916de06424a17050c52cf0481 Mon Sep 17 00:00:00 2001
-From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
-Date: Sun, 8 Nov 2026 19:53:42 +0000
-Subject: glm-zz-zclose: the tool-call envelope closer scans value-aware
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+REGEN-NOTE (2026-11-19, the v1.2.10 rebase): the body is REAL again —
+the value-aware closer fn + its three call sites, cut as the sequential
+state diff AFTER 010-tools256's composed body (the fn lifted verbatim
+from the proven v1.2.9 composed state; the sites composed with v1.2.10's
+code.check branches). The composed-tree round-trip verifies byte-exact.
 
-A closer tag inside the payload's own data — a quoted markup example inside a
-JSON string value, or inside an arg_value/parameter region of the XML forms —
-is the model's data, not the envelope closer. THE WRITE-CALL HALT: a reply
-whose JSON arguments quote tool-call markup was cut mid-string, its payload
-invalid, the real call lost as content, and the fragment after the cut
-re-scanned as a phantom call. Reproduced live against the serving stack: a
-write call with markup quoted in its arguments returned empty arguments and
-the tail as content; the client saw "Arguments provided: {}" and the model
-retried forever. The shape every fixture-writing reply produces.
-
-envelopeCloser() tracks JSON string state and arg_value/parameter regions
-across the three envelope scans (the JSON/XML loop, the pipe-spelling loop,
-openCall), falling back to the plain first-tag find when the payload does not
-open as JSON or the JSON never closes outside its strings — a malformed
-payload cuts and is rejected exactly as before, so nothing regresses.
-
-The host suite pins the two quoted-markup shapes (the write-call fixture and
-the pipe spelling). The fork kept-list case (the strict-retry composition)
-follows in the next commit.
----
- zig/src/server/tool_parse.zig      | 49 ++++++++++++++++++++++++++++--
- zig/src/server/tool_parse_test.zig | 32 +++++++++++++++++++
- 2 files changed, 78 insertions(+), 3 deletions(-)
-
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body is EMPTY — this patch's content is fully carried by the member that lands its shared files in the composed stack; the end-state replay verifies byte-exact. The concern's record, receipts and original port provenance stay in this header and patches/README.md.
-
+diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
+--- a/zig/src/server/tool_parse.zig
++++ b/zig/src/server/tool_parse.zig
+@@ -41,6 +41,49 @@
+     return std.mem.indexOfPos(u8, hay, from, needle);
+ }
+ 
++/// The first ``close`` tag at or after ``from`` that closes an envelope: a tag inside the payload's own data
++/// is the model's quoted markup, not the closer. A JSON string value (the ``{...}`` form) or an
++/// ``<arg_value>``/``<parameter=..>`` region (the XML forms) is skipped, so a call may quote tool-call
++/// markup inside its arguments — the shape every fixture-writing reply produces. When the payload does
++/// not open as JSON the scan keeps the plain first-tag find; when the JSON never closes outside its
++/// strings the plain find is the fallback, so a malformed payload cuts and is rejected as before.
++fn envelopeCloser(text: []const u8, from: usize, close: []const u8, any_case: bool, skip_values: bool) ?usize {
++    var i = from;
++    while (i < text.len and space(text[i])) i += 1;
++    const json_form = i < text.len and (text[i] == '{' or text[i] == '[');
++    var in_string = false;
++    var region: []const u8 = "";
++    var j = i;
++    while (j < text.len) : (j += 1) {
++        const ch = text[j];
++        if (in_string) {
++            if (ch == '\\') {
++                j += 1; // the escaped byte is data even when it reads the tag
++            } else if (ch == '"') {
++                in_string = false;
++            }
++            continue;
++        }
++        if (json_form and ch == '"') {
++            in_string = true;
++            continue;
++        }
++        if (region.len > 0) {
++            if (std.mem.startsWith(u8, text[j..], region)) region = "";
++            continue;
++        }
++        if (std.mem.startsWith(u8, text[j..], close)) return j;
++        if (skip_values) {
++            if (std.mem.startsWith(u8, text[j..], "<arg_value>")) {
++                region = "</arg_value>";
++            } else if (std.mem.startsWith(u8, text[j..], "<parameter=")) {
++                region = "</parameter>";
++            }
++        }
++    }
++    return if (any_case) findCI(text, close, from) else find(text, close, from);
++}
++
+ /// Python's ``\w`` on one byte, non-ASCII bytes counting as letters.
+ fn word(ch: u8) bool {
+     return std.ascii.isAlphanumeric(ch) or ch == '_' or ch >= 0x80;
+@@ -72,13 +115,13 @@
+                 break :blk .{ .start = s, .end = end, .payload = text[s..end], .complete = e != null };
+             }
+             if (!no_tc and std.ascii.startsWithIgnoreCase(text[s..], "<tool_call>")) {
+-                if (findCI(text, "</tool_call>", s + 11)) |e| {
++                if (envelopeCloser(text, s + 11, "</tool_call>", true, true)) |e| {
+                     break :blk .{ .start = s, .end = e + 12, .payload = strip(text[s + 11 .. e]) };
+                 }
+                 no_tc = true;
+             }
+             if (!no_gemma and std.mem.startsWith(u8, text[s..], "<|tool_call>")) {
+-                if (find(text, "<tool_call|>", s + 12)) |e| {
++                if (envelopeCloser(text, s + 12, "<tool_call|>", false, false)) |e| {
+                     break :blk .{ .start = s, .end = e + 12, .payload = strip(text[s + 12 .. e]) };
+                 }
+                 no_gemma = true;
+@@ -282,7 +325,7 @@
+             pos = code.skip_end;
+             continue;
+         }
+-        pos = (findCI(text, "</tool_call>", s + 11) orelse break s) + 12;
++        pos = (envelopeCloser(text, s + 11, "</tool_call>", true, true) orelse break s) + 12;
+         code.jumpTo(pos);
+     } else null;
+ }
