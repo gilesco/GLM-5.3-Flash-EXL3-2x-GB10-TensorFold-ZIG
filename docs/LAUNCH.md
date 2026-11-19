@@ -4089,3 +4089,14 @@ dead TF_PROMPT_CACHE_FIRST export REMOVED with its consumer, not fixed).
 drop020val summary` (the fingerprint moves: one fewer patch staged).
 ANY gate FAIL reverts the PATCHES default to the 18-patch stack; the
 pin holds at v1.2.10 regardless.
+  **WINDOW 37 VOIDED — the round-150 phase's own staging bug (2026-11-19)**:
+  campaign-20261119-122719 died in 10 s at the drop020val phase's first line —
+  `local: can only be used in a function` (the phase staged `local
+  D020_PATCHES=...` at top level; `bash -n` cannot see the class, it is a
+  RUNTIME error, not syntax). Production untouched (the failure preceded the
+  prepare; restored healthy in 81 s). The fix: the two `local` lines became
+  plain top-level assignments (the assembly re-verified: 17 patches). The
+  discipline held: the phase that failed was re-verified against its OWN
+  failure mode — phase-lint gained class (c), `local` outside a function
+  body, replayed against the broken tree from git (both lines flagged) and
+  the fixed tree (clean). Relaunch follows as the sitting's last action.

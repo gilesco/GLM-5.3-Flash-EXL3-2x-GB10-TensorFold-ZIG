@@ -1822,7 +1822,7 @@ fi
 if want drop020val && ! phase_done drop020val; then
   log "=== drop020val (the 020 drop-verify: the 17-patch store vs the qualified instruments)"
   # the 17-patch store: the standing default minus 020-cachefirst
-  local d020_store="001-absorb-mma.patch 002-exl3prompt.patch"
+  d020_store="001-absorb-mma.patch 002-exl3prompt.patch"
   d020_store+=" 003-fp8-pages.patch 004-packed-s2.patch"
   d020_store+=" 005-pagerows-fix.patch 006-selist-fix.patch"
   d020_store+=" 007-attnfetch8.patch 008-loaddirect.patch"
@@ -1831,7 +1831,7 @@ if want drop020val && ! phase_done drop020val; then
   d020_store+=" 013-zprompt.patch 014-zs2.patch"
   d020_store+=" 015-zshfl.patch 016-zstep.patch"
   d020_store+=" 018-callquote.patch"
-  local D020_PATCHES="$d020_store"
+  D020_PATCHES="$d020_store"
   P="$OUT/31-drop020val.md"; : > "$P"
   echo "# drop020val (the 17-patch store — 020-cachefirst dropped from" \
     "the default; v1.2.10 2a674b5; the videorows default carries;" \

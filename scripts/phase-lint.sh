@@ -120,6 +120,48 @@ else
   say "PASS: every staged K=V name is in the consumers' contract"
 fi
 
+# (c) `local` outside a function body: a RUNTIME error bash -n cannot see —
+# the window-37 void (the round-150 drop020val phase staged `local
+# D020_PATCHES=...` at top level; the phase died in 10 s, rc=1, before the
+# first prepare). Scan for `local` lines and flag any whose enclosing block
+# is not a function definition.
+lint_locals() {
+  python3 - "$TARGET" <<'PYL'
+import re, sys
+src = open(sys.argv[1], encoding="utf-8").read()
+lines = src.split("\n")
+# function-definition start lines: `name() {` (incl. `function name() {`)
+func_starts = set()
+for i, ln in enumerate(lines, 1):
+    if re.match(r'^\s*(function\s+)?[A-Za-z_][A-Za-z0-9_]*\s*\(\)\s*\{', ln):
+        func_starts.add(i)
+# walk brace depth; a `local` whose line is not inside any function body flags
+depth = 0
+start_stack = []          # depths at which a function body began
+cur_func_depth = None
+for i, ln in enumerate(lines, 1):
+    if i in func_starts and cur_func_depth is None:
+        cur_func_depth = depth
+    depth += ln.count("{") - ln.count("}")
+    # leaving the function body when depth drops back to its start
+    if cur_func_depth is not None \
+            and depth <= cur_func_depth \
+            and i not in func_starts:
+        cur_func_depth = None
+    stripped = ln.strip()
+    if re.match(r'^local\b', stripped) and cur_func_depth is None:
+        print(f"FIND (local outside a function body — a runtime error) "
+              f"line {i}: {stripped[:120]}")
+sys.exit(0)
+PYL
+}
+lint_locout=$(lint_locals)
+if [ -n "$lint_locout" ]; then
+  say "$lint_locout"; fails=$((fails + 1))
+else
+  say "PASS: no local outside a function body"
+fi
+
 # (c) the env-contract check itself: the names the phase stages AS overrides
 # (PROMPT_CACHE_GIB=4 etc.) must appear in start.sh's flag-mapping lines.
 grep -n 'PROMPT_CACHE_GIB' scripts/start.sh > /dev/null || { say "FIND: PROMPT_CACHE_GIB has no mapping in scripts/start.sh"; fails=$((fails + 1)); }
