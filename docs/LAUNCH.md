@@ -3947,3 +3947,60 @@ e21d0d2 (the DRY_RUN witness: `--vision-video-tokens 64` in the serve line).
 The window's total user-visible gain: **+152 pool pages ≈ 0.75 GiB/rank of
 KV room on the same hardware, zero output change** (the same-bits sha held
 end to end).
+
+## (round 148) THE V1.2.10 REBASE STAGED — THE COMPOSED TREE + THE STORE REGEN; THE V1210VAL BATTERY GATES THE PIN (2026-11-19)
+
+**The release**: v1.2.10 shipped 2026-11-18 (2a674b552), 480 commits past
+v1.2.9 — the release watch's next fire. The ground read BEFORE staging (the
+stage brief docs/STAGE_BRIEF_v1210val.md):
+
+- **The GLM CUDA kernel files are UNTOUCHED by v1.2.10** — the lowest
+  re-anchor risk since the v1.2.5 bump. The release's GLM work is knobs and
+  server-layer: #3151's `TF_GLM_EXPERT_FORM` (the deterministic-loads knob),
+  #3679's message-starts groundwork, #3699's stuck-think reply gate,
+  #3038's grammar-size guards, #3220's background Responses.
+- **The server-layer overlap is real but bounded**: #3588's quoted-markup
+  Scanner landed in v1.2.10's envelopes()/openCall AROUND our 010/011
+  ground. callName still returns null when unoffered (verified in the
+  v1.2.10 source) — 010 stays needed. #3588's Scanner coexists with our
+  value-aware closer: the code.check branches skip code spans FIRST, then
+  our closer runs value-aware inside the envelope branches.
+- **Nothing mainlined any of our unmainlined residue**; #3125's kept-states
+  placement was already in our v1.2.9 serve.
+
+**The composition** (the round-143 discipline: the compose-and-diff tool,
+not hand-edited hunks): pristine v1.2.10 + the 18-patch store applied in
+name order — 001/002/003/004/008/009/012/013 CLEAN verbatim; 010/011/020
+needed composition:
+
+- **010-tools256**: the body re-cut as the sequential state chain — pristine
+  v1.2.10's tool_parse + this body = the composed state minus 011's closer
+  ground. The Scanner's code.check/skip wiring composes; callName keeps the
+  own-name rule; the reject/salvage composition unchanged.
+- **011-zclose**: a REAL body again — the value-aware closer fn lifted
+  verbatim from the proven v1.2.9 composed state, its three call sites
+  re-cut around v1.2.10's code.check branches.
+- **020-cachefirst**: both kv_pool files — Budget.cache_first +
+  windows()' room0 line composed onto v1.2.10's kept-slots rest comment +
+  the cuda_kv_pool Budget constructions carry .cache_first = cacheFirst().
+
+**The proof chain**: the store replay reproduces the composed tree
+**BYTE-EXACT** (the /tmp/tf-v110-rt2 verification: v1.2.10 + the
+regenerated store = 0 diffs against the composed tree) — the
+compose-and-diff method caught the round-143 class (hand-crafted store
+splits) before any window: two intermediate regens failed the replay
+(a mixed-concern 010 body cut against the wrong base state; a 020 body
+missing its cuda_kv_pool half) and were fixed by the state-machine regen,
+not by hand-editing hunks.
+
+**The gates**: the pin moved to 2a674b552 in the head's local.sh (the
+battery gates the move — any FAIL holds the pin at v1.2.9 until
+understood); the v1210val phase staged (the v129val shape re-dated; the
+greedy witness 80cc3802 must hold; the §2 gates; hardmode; the vision 4/4;
+the walls; the pool line at the videorows arithmetic ~4,352 pages);
+TF_GLM_EXPERT_FORM stays UNSET for the battery (the form race is the
+qualified behavior; the knob's adoption is its own measured window later).
+
+**The launch follows as this sitting's last action**: `preflight v1210val
+summary` (DRY_RUN green through the head's launcher; production healthy on
+the v1.2.9 serve at 4,352 pages until the window's exit path restores it).
