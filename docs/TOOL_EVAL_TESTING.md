@@ -298,6 +298,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
       front behind, 80%) doesn't move; the +1.87 GiB / halved prompt-cache
       trade is paid at the 512K×4 admission margin with an unmeasured
       multi-turn risk. The knob stays available as an env, never the default.
+      **RE-MEASURED round 152 on the moved ground (the knobcsval window,
+      campaign-20261119-223933): the hold RE-AFFIRMED and the question
+      CLOSED for the v1.2.10+17 base** — the steady-state probe 73.1 tok/s
+      on BOTH arms (exactly flat), the bench solo cells all
+      inside-to-negative (pp d0 −3.0%, tg d0 −6.8%), the trade still real
+      (pool −535 pages, load 83→87 s), every quality gate green (the
+      witness `80cc3802…` both arms, §2 ALL PASS, hardmode 95 — the
+      thirty-ninth consecutive, the vision 4/4). The round-132 tg gains
+      (+5.1/+8.7%) did not transfer to the paged-fp8-pool ground — the
+      third measured-not-transferred class after zshfl/zstep.
 - [x] **kvshare121 — the #1732 pages mechanism A/B** — CLOSED (cont. 27): the fp8×pages
       pair is a DESIGNED non-combination on mainline (the engine's admission
       line: "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or

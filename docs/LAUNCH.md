@@ -4154,3 +4154,113 @@ and #2856 (batched shared MTP) are still NOT mainlined (checked against
 main's log this sitting) — the next release remains the ride for them.
 The user-parked 0110 KV-shard port stays parked. The queued stage briefs
 await the discipline layer's launches.
+
+## (round 152) THE DISCOUNTED-KNOB SWEEP: THE DESK KILLED #2856; #2852 ALREADY IN PRODUCTION; THE CS REMEASURE RAN — THE ROUND-132 HOLD RE-AFFIRMED ON v1.2.10+17 (2026-11-19)
+
+**The (user) directive**: research the discounted/dismissed performance
+knobs with the highest reported increases and remeasure them — without
+compromising quality — with a divide-and-conquer methodology to
+minimize test runs.
+
+**The methodology (landed this sitting)**: four levels, each cheaper
+than the one below — level 0 the desk triage (code + receipts, no GPU:
+reach / already-on / headroom), level 1 the order-matched arm-pair
+screen (one window, a cohort of candidates, the ±5% same-window band),
+level 2 the value battery on survivors, level 3 the standing check.
+Level 0 paid for itself immediately: it killed the highest-claimed
+candidate before a single window.
+
+**The desk adjudications**:
+1. **#2856 batched shared MTP — DEAD ON OUR LINE** (the highest
+   reported number on the record: four-stream chat +19.3/+19.6%, code
+   +7.2/+7.8%, two GB10s TP=2 NVFP4+MTP, the 2026-11-11 07:03 PR
+   comment): `draftShared` is called only from the MTP head's
+   chained-draft path (cuda_follow.zig:438, cuda_mtp_lanes.zig:84);
+   no `dflash_*` file references `draft_streams`/`draftShared`;
+   DFlash2's block pass (`dflash_block.pass`) is already ONE batched
+   pass for all S streams. Our serve passes `--drafter` (DFlash2) and
+   never runs the MTP head's chains. A port would A/B a code path our
+   serve never takes — the value gate would read flat BY DESIGN.
+   Re-opens only on an MTP-drafted checkpoint. The 0.5-window cost
+   avoided.
+2. **#2852 EXL3 whole-pass routing — ALREADY IN PRODUCTION**: merged
+   2026-11-12 (`9247585e6`), an ancestor of the v1.2.10 tag (verified
+   `git merge-base --is-ancestor`), carried free by the round-151
+   bump. The old "still open" note withdrawn.
+3. The 14 never-A/B'd env knobs triaged (PORT_QUEUE's round-152
+   entry): five already-on upstream defaults
+   (KDA_DECODE_WIDE/DSEL/PROMPT_PAIR/PDL/OVERLAP_PIECES), the rest
+   structural/diagnostic; TF_LOAD_PREFETCH at ceiling (16 = max
+   readers). The strongest remeasure candidate: **CS
+   (TF_GLM_CHUNK_SOLO=4096)** — the only env-flippable knob with a
+   real measured gain on our own line (the knobsv121 receipt), held
+   (user) round 132 on grounds that have since moved (c4 crossed).
+
+**The stage brief** (`docs/STAGE_BRIEF_knobcsval.md`): the round-132
+hold re-judged on the base it moved to — v1.2.10 + the 17-patch store,
+the paged fp8 pool, TR3-4bpw. Value-if-yes: a user-visible anchor
+moves beyond the ±5% order-matched band with the steady-state probe
+agreeing in sign. Cost: one ~60-70 min window, no prepare (CS is
+env-only; the TF_GLM_ prefix forwards; the fingerprint does not
+move). Closest prior instrument: the round-132 knobsv121 phase —
+diffed: the paged-pool ground, the steady-state probe (the honest
+decode cell), the OFF(1)→ON→OFF(2) order-matched bracket per the
+round-149 drift map. Constants desk-measured: the `80cc3802…` witness
+(the standing sha across five bumps), the ±5% band (the round-149
+drift map), the walls band center 80 s ±10%, the pool slope
+~305-314 pages/GiB (round 149). DRY_RUN green (phase-lint 4/4);
+commit c86f6d4; launched as the sitting's last action.
+
+**The window (w2734863, campaign-20261119-223933, rc=0, production
+restored 23:29)** — the receipt:
+- **All quality gates GREEN**: the same-bits greedy witness
+  `80cc3802…` IDENTICAL on BOTH arms; the §2 gates ALL PASS on the ON
+  arm (g1 determinism, g2 drafted=plain, g3 resumed=fresh with the
+  codes answer, g4 concurrent=solo 4/4, g5 sampled NOTE); hardmode
+  **95** (the thirty-ninth consecutive); the vision 4/4; the walls
+  83/87/83 s inside the band.
+- **The engagement witness**: the ON serve line's model 83.41 GiB (vs
+  OFF 81.62) and the pool 3513 pages (vs 4048) — the knob armed
+  exactly in the round-132 pattern (+1.79 GiB model, −535 pages of
+  pool room); the load 83→87 s. The "1 refusal line" was the known
+  video-library note (the PORT_QUEUE round-148 entry), not a settings
+  refusal; the startup line stays "passes of up to 2048 rows" on both
+  arms by design (cuda_startup reads the family's prompt_rows
+  constant, not the solo knob).
+- **THE VALUE READ — flat, the hold re-affirmed**: the steady-state
+  probe (the honest cell) read **73.1 tok/s on BOTH arms — exactly
+  flat**. The bench solo cells (ON vs OFF): pp d0 −3.0%, d4096
+  −0.5%, d8192 −0.6%; tg d0 −6.8%, d4096 −4.6%, d8192 −3.8% — no
+  positive move anywhere beyond the band, and the
+  prefill-concurrent cells swung both directions inside their
+  documented restart variance (the anchor row's own 48.2 vs 37.0
+  same-config pair). The round-132 tg gains (+5.1%/+8.7%) did NOT
+  transfer to the paged-fp8-pool ground on v1.2.10 — the third
+  measured-not-transferred class after zshfl/zstep, and the second
+  on the CS knob itself (its round-132 gains rode the v1.2.1
+  window-mode ground).
+
+**The verdict: the round-132 hold RE-AFFIRMED on the current base;
+the question CLOSES for v1.2.10+17.** No adoption; the config
+default untouched; the knob stays available as an env only. The
+receipt cites both windows (the knobsv121 original + this one). No
+qualified perf fact moved — the anchors and the chart stand (the
+chart check passed green in the campaign's summary).
+
+**Instrument shortfall, recorded honestly**: the committed phase's
+OFF(2) arm served only the closing bench restart — no OFF(2)
+steady-state probe or greedy cell (the phase's `cs_cell off2` call
+never existed; the bracket's value judgment ran on OFF(1) alone). The
+verdict is robust regardless: the probe read EXACTLY flat (73.1 both
+arms), and the OFF(2) bench's tg solo cells (55.9/52.1/52.2) agree
+with OFF(1)'s direction against the ON bench (52.1/49.7/50.2) — no
+reading could cross the +5% QUALIFIED band with the OFF side this
+consistent. A future order-matched bracket phase carries the
+OFF(2) value cells.
+
+**The state docs updated the same sitting**: PORT_QUEUE's round-152
+entry (the desk adjudications + the funnel), ECOSYSTEM.md (the #2852
+merge + the #2856 dead-here note), the ledger's CS arc closes, the
+phase sweep (drop020val + knobcsval retired from
+run-qualification.sh — the receipts stand in
+results/campaign-20261119-124951/ and results/campaign-20261119-223933/).

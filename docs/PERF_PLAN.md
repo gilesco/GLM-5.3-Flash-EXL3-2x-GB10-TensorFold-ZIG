@@ -1,30 +1,39 @@
 # Performance plan: closing the measured fronts
 
-> **THE CURRENT NEXT STEP (one pointer — kept current; the history below is
-> the trail, round 141 cont. 44, 2026-11-12)**: **the duel A/A re-ground
-> LANDED (window 62, campaign-20261112-030105: all five instruments flat
-> inside the band — solo 100.7%, c2 101.0%, c4 101.8%, ITL ~flat, overhead
-> 99.5%; the c4 198.0 the highest ever recorded; the anchors re-dated on
-> the third pair — production-vs-us is now measured v1.2.7-vs-v1.2.7 at
-> every row)**, and the warmkeep arc is CLOSED (windows 52-61: NINE voids,
-> then the first VALID A/B — the end state never admitted on the GLM
-> native serving path; 023 retired). The re-ground closes the re-pair
-> item. What remains: the upstream watch (#2852 EXL3 whole-pass routing,
-> #2856 batched shared MTP — OPEN with no numbers; the next release may
-> mainline them), the user-parked 0110 KV-SHARD port. (The DRAFTS=0+
-> LIVE_HALF composition is NOT a lever — w48's A/B retired it on the
-> decode trade: DFlash2 drafts are worth ~2× on decode, the ON arm's c4
-> 35.1; the anchor's row carries the receipt.) **THE (USER) DECISION
-> (round 141 cont. 50): WE WAIT FOR THE NEXT TENSORFOLD RELEASE — the
-> #2856 stage brief is SHELVED, not discarded; the next release's
-> rebase carries #2843's EXL3 decode-grid fix free (already merged into
-> main) and possibly #2856's batched shared MTP and #3064's paged FP8
-> KV. The watch is ARMED: `scripts/upstream-release-watch.sh` (the
-> deep cron every 30 min) pokes the session the moment a tag newer
-> than v1.2.7 lands; the wake names the release notes and the bump
-> protocol (the round-141 v1.2.7 shape). The next sitting then opens
-> with the release read and the rebase stage — no launch without the
-> battery's stage brief, per the bump protocol.**
+> **THE CURRENT NEXT STEP (one pointer — kept current; the trail below is
+> the history, round 152, 2026-11-19)**: **THE DISCOUNTED-KNOB SWEEP RAN
+> ITS COURSE — the divide-and-conquer methodology landed, the desk level
+> killed #2856 dead on our line (DFlash2 never takes draftShared — the
+> value gate would read flat BY DESIGN), #2852 rode the v1.2.10 bump
+> free, and the one live remeasure candidate (CS
+> TF_GLM_CHUNK_SOLO=4096) RAN as the knobcsval window
+> (campaign-20261119-223933): the round-132 hold RE-AFFIRMED on the
+> v1.2.10+17 paged-fp8 base — the steady-state probe 73.1 tok/s on both
+> arms, the bench cells inside-to-negative, every quality gate green
+> (hardmode 95, the thirty-ninth consecutive). The question CLOSES for
+> this base.** The wait decision (round 141 cont. 50) resolved: the next
+> release LANDED (v1.2.8/9/10), the bump qualified through v1.2.10 + the
+> 17-patch store, production serves it. What remains on the horizon: the
+> upstream watch (the release watch is armed at PIN_TAG=v1.2.10 —
+> upstream main is 295 commits past the tag; #2856 remains unmainlined
+> and CANNOT ENGAGE on our DFlash2 line regardless; #3653's
+> shared-prefix join kernels are Qwen-only today; #3064's paged FP8 KV
+> as a first-class path is qualification-open when a release carries
+> it), the user-parked 0110 KV-SHARD port, and the never-A/B'd knob
+> classes in PORT_QUEUE's round-152 entry (already-on defaults and
+> structural knobs — no lever among them on the desk read). **The next
+> lever candidates are upstream-gated or user-parked; the loop waits on
+> the release watch or the user's next directive — the discipline layer
+> governs any launch (no brief, no launch).**
+> The board behind it: the round-151 promotion (v1.2.10 + the 17-patch
+> store) is production; the anchors' duel rows date to the round-141
+> A/A re-ground (v1.2.7-vs-v1.2.7, the third pair; c4 198.0 the
+> highest ever recorded, 101.8%); quality holds 95 ×39; the drop020val
+> window qualified the 17-patch store end-to-end (the witness
+> IDENTICAL, §2 ALL PASS, the walls 84/83); the knobcsval window
+> re-affirmed the CS hold on the current base (flat). The retired
+> recipe's numbers are history — the operative floor is the native-
+> native pair at every row.
 > The board behind it: the warmkeep arc CLOSED
 > (windows 52-61: NINE instrument voids, then the first VALID A/B — window
 > 61's page-aligned fills on both arms, the colds honest, the greedy shas

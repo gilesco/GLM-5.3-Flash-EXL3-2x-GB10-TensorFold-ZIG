@@ -15,7 +15,7 @@ scripts/render-launch-index.sh 10
 scripts/render-perf-chart.sh 37
 scripts/render-sweep-cards.sh 15
 scripts/run-bench-matrix.sh 34
-scripts/run-qualification.sh 191
+scripts/run-qualification.sh 190
 scripts/run-window-block.sh 4
 scripts/start.sh 22
 scripts/status.sh 2
