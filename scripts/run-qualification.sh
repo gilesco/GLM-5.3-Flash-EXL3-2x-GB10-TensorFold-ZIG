@@ -2163,6 +2163,163 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
+# phase: knobcsval (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_knobcsval.md carries the value gate). The CS
+# remeasure: does TF_GLM_CHUNK_SOLO=4096 move a user-visible decode/prefill
+# number on the CURRENT base (v1.2.10 + the 17-patch store, the paged fp8
+# pool, TR3-4bpw) at every quality gate — the round-132 hold re-judged on
+# the ground it moved to? The round-132 knobsv121 receipt measured CS on
+# the v1.2.1 window-mode ground (tg d0 +5.1%, d4096 +8.7%, d8192 flat;
+# c4 untouched) and HELD it (user): the gains landed on crossed fronts,
+# the trade +1.87 GiB model / the prompt cache halved. Since: c4 CROSSED
+# (198.0 vs 194.5, the highest ever), the serving mode is the paged fp8
+# pool, and the steady-state decode probe exists. The arms are
+# order-matched OFF(1) -> ON -> OFF(2): the ON deltas judge against the
+# bracketing OFFs' mean inside the ±5% same-window band (the round-149
+# drift map: order-matched same-window only). CS is env-only (the
+# TF_GLM_ prefix forwards) — no prepare, no fingerprint move. ANY gate
+# FAIL = no adoption, the hold stands; a flat battery = the hold
+# RE-AFFIRMED on this base and the question closes. The adopt call on a
+# QUALIFIED read is the user's (the round-132 precedent — CS is an env,
+# not a patch).
+# ---------------------------------------------------------------------------
+if want knobcsval && ! phase_done knobcsval; then
+  log "=== knobcsval (the CS remeasure: TF_GLM_CHUNK_SOLO=4096," \
+    "order-matched OFF(1)->ON->OFF(2), the round-132 hold re-judged)"
+  P="$OUT/32-knobcsval.md"; : > "$P"
+  echo "# knobcsval (the CS remeasure on the current base:" \
+    "TF_GLM_CHUNK_SOLO=4096 vs the standing config;" \
+    "order-matched OFF(1)->ON->OFF(2))" >> "$P"
+  echo "- the brief: docs/STAGE_BRIEF_knobcsval.md" >> "$P"
+  echo "- the OFF arm doubles as the standing witness: the greedy" \
+    "probe must read the 80cc3802… sha IDENTICAL" >> "$P"
+  CS_STAND=(DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288)
+  cs_cell() {        # $1 label, $2.. the env pairs — the value cells per arm
+    local tag="$1"; shift
+    local bf model S W
+    req_file "$OUT/cs-$tag-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/cs-$tag-req.json" > "$OUT/cs-$tag-greedy.json" || true
+    python3 -c "
+import json, hashlib, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    m = d['choices'][0]['message'].get('content') or ''
+    print('content_sha:', hashlib.sha256(
+        ' '.join(m.split()).encode()).hexdigest())
+except Exception as e:
+    print('content_sha: FAIL ' + repr(e))
+" "$OUT/cs-$tag-greedy.json" >> "$P"
+    # the steady-state decode probe: 2048 tokens, solo — the honest cell
+    bf=$(mktemp /tmp/csdec.XXXXXX.json)
+    python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1],
+  'messages': [{'role': 'user',
+                'content': 'Write a 400-word essay about '
+                            'lighthouses.'}],
+  'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" \
+      "$SERVED_NAME" > "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+      | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys
+b = json.load(open(sys.argv[1]))
+b['model'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" \
+      -H 'Content-Type: application/json' \
+      --data @"$bf" -o "$OUT/cs-$tag-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/cs-$tag-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s'
+          ' = %.1f tok/s (wall incl. prefill)'
+          % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  }
+  echo "## the OFF(1) arm — the standing config" >> "$P"
+  S=$(date +%s)
+  if restart "${CS_STAND[@]}"; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    cs_cell off1
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "knobcsval: the OFF(1) arm refused to serve"
+  fi
+  echo "## the ON arm — TF_GLM_CHUNK_SOLO=4096" >> "$P"
+  S=$(date +%s)
+  if restart "${CS_STAND[@]}" TF_GLM_CHUNK_SOLO=4096; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | \
+      grep -ci "BadSetting\|refused" | sed \
+      's/^/- strict-TF_ refusal lines at boot: /' >> "$P" || true
+    cs_cell on
+    echo "## the section-2 content gates (the ON arm's env through)" \
+      >> "$P"
+    run_gates cs DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      TF_GLM_CHUNK_SOLO=4096 || true
+    echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" \
+      >> "$P"
+    mkdir -p "$OUT/cshm"
+    localmodel=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+      | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || localmodel=""
+    PYTHONUNBUFFERED=1 "$BENCH" run \
+      --base-url "http://127.0.0.1:$PORT" --model "$localmodel" \
+      --format openai --tokenizer "$MODEL_ID" --hardmode \
+      --label "knobcsval" --output-dir "$OUT/cshm" --parallel 2 \
+      --json-file "$OUT/cshm/hm.json" > "$OUT/cshm/hm.log" 2>&1 || true
+    grep -o '"final_score": [0-9]*' "$OUT/cshm/hm.json" \
+      >> "$P" 2>/dev/null || true
+    echo "## the vision suite (4/4 must hold)" >> "$P"
+    mkdir -p "$OUT/csvision"
+    python3 scripts/vision-suite-probe.py \
+      "http://127.0.0.1:$PORT" "$OUT/csvision/vision.json" \
+      > "$OUT/csvision/vision.log" 2>&1 || true
+    tail -6 "$OUT/csvision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "knobcsval: the ON arm refused to serve"
+  fi
+  echo "## the bench pass — order-matched pairs" >> "$P"
+  log "knobcsval: the ON-arm bench (order-matched against the bracket)"
+  bench_perf cson "$OUT/cs-bench-on" 4 >> "$P" 2>&1 || true
+  log "knobcsval: the OFF arm's bench (the bracket's close)"
+  if restart "${CS_STAND[@]}"; then
+    bench_perf csoff "$OUT/cs-bench-off" 4 >> "$P" 2>&1 || true
+    echo "- the bench pair is ON-before-OFF after the OFF(1) arm: the" \
+      "pp/tg cells judge inside the ±5% band against the bracketing" \
+      "arms, not the anchors" >> "$P"
+  else
+    echo "- the OFF bench's restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "- VERDICT: the same-bits witness IDENTICAL on BOTH arms" \
+    "+ the §2 gates ALL PASS on the ON arm + hardmode 95" \
+    "+ the vision 4/4 + the walls in band, THEN the value read:" \
+    "any cell beyond the ±5% order-matched band with the" \
+    "steady-state probe agreeing in sign = QUALIFIED (the digest" \
+    "moves the verdict to the user — the adopt call is the user's);" \
+    "no cell moves = the round-132 hold RE-AFFIRMED on this base;" \
+    "ANY gate FAIL = no adoption, the hold stands" >> "$P"
+  touch "$OUT/.knobcsval.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"
