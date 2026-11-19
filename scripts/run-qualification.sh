@@ -1806,214 +1806,154 @@ except Exception: print("")' 2>/dev/null) || model=""
 fi
 
 # ---------------------------------------------------------------------------
-
-# phase: videorows (SESSION-SPECIFIC; retires with the receipt — the round-147
-# stage brief docs/STAGE_BRIEF_videorows.md carries the value gate). The Mia
-# issue-#34 candidate as a config arm: the engine reserves vision_video_tokens
-# rows per stream (default 16384) whenever the checkpoint carries video ids,
-# even with no video runtime on the serve line — the desk calibration (the
-# v1.2.9 source + production's own boot line) prices the waste at
-# (16384-64)*4096*2 B = 127.5 MiB a stream. The arm: --vision-video-tokens 64
-# (the CLI's floor). The gates: the ON arm's serve line must MATCH the desk
-# arithmetic (~+150 pages, fixed-each ~288 MiB — a serve line that does not
-# show the predicted pages voids BEFORE any probe: a mis-anchored instrument,
-# not a result), the greedy same-bits sha (80cc3802…), the §2 content gates,
-# hardmode 95, the vision suite 4/4 (the image path must be untouched by the
-# video-token cut), the walls in the standing band. Adoption moves config.sh's
-# serve_args (a VISION_VIDEO_TOKENS knob, default 64) with the receipt cited.
+# phase: drop020val (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_drop020val.md carries the value gate). The 020 drop-
+# verify: the store's DEFAULT shrinks to 17 patches (020-cachefirst dropped)
+# IF the full battery holds on the 17-patch serve. The desk ground (the
+# sitting's own work): 020's live hunks are all gated off at our bare serve —
+# cache_first needs the TF_PROMPT_CACHE_FIRST env (which env_args() never
+# forwarded: the prefix list is TENSORFOLD|TF_GLM|TF_HEAT|TF_ROCE|TF_KV|NCCL,
+# not TF_PROMPT_) AND an un-asked engine_paged plan; the fund-report line
+# needs an asked --prompt-cache-gib our serve never sets; the byte-exact
+# store-minus-020 replay differs from the qualified composed tree in exactly
+# the two kv_pool files. The battery proves the drop moved nothing live; ANY
+# gate FAIL reverts the default to the 18-patch stack (the kill criterion).
 # ---------------------------------------------------------------------------
-if want videorows && ! phase_done videorows; then
-  log "=== videorows (--vision-video-tokens 64: the dead video reservation vs the freed pages)"
-  P="$OUT/30-videorows.md"; : > "$P"
-  echo "# videorows (--vision-video-tokens 64 vs the standing default 16384; dense4fp8 @ 512K x4; the stage brief docs/STAGE_BRIEF_videorows.md)" >> "$P"
-  VR_OFF_PAGES=""
-  for arm in off on; do
-    S=$(date +%s)
-    if [ "$arm" = on ]; then VENV="VISION_VIDEO_TOKENS=64"; else VENV=""; fi
-    if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 $VENV; then
-      echo "## the $arm arm (load $(( $(date +%s) - S )) s)" >> "$P"
-      # the argv witness (window 33's placebo lesson): the container argv itself
-      # must carry --vision-video-tokens 64 on the ON arm.
-      argv_vt=$(docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | tr " " "\n" | { grep -A1 "^--vision-video-tokens$" || true; } | tail -1)
-      if [ "$arm" = on ]; then
-        if [ "$argv_vt" = "64" ]; then
-          echo "- the argv witness: --vision-video-tokens 64 PLACED" >> "$P"
-        else
-          echo "- the argv witness: FAILED (the container runs WITHOUT the flag; argv tail: ${argv_vt:-absent}) — VOID" >> "$P"
-          echo "- VERDICT: VOID (the arm's flag never reached the binary; the instrument never met its precondition)" >> "$P"
-          touch "$OUT/.videorows.done"; continue
-        fi
-      else
-        echo "- the argv witness: the flag absent as intended (${argv_vt:-absent})" >> "$P"
-      fi
-      echo "- the serve line: $(serve_line)" >> "$P"
-      # the desk-arithmetic precondition (the aligned-probe-oracle rule: the
-      # probe's precondition measured by the engine's own observable, BEFORE
-      # any probe). OFF receipted at 4223 pages / 14.02 GiB / 415 MiB fixed
-      # each; pageBytes ~3.40 MiB; the predicted ON arm: ~4373 pages,
-      # fixed each ~288 MiB. The check reads the engine's own print, not a
-      # constant: each arm's pages/fixed parse from ITS serve line and the
-      # ON arm must show BOTH (a) more pages than the OFF arm measured in
-      # this same window and (b) fixed-each below the OFF arm's.
-      sl=$(serve_line)
-      pg=$(echo "$sl" | { grep -oE "taking [0-9]+ pages" || true; } | { grep -oE "[0-9]+" || true; } | head -1)
-      fx=$(echo "$sl" | { grep -oE "[0-9]+ MiB fixed each" || true; } | { grep -oE "^[0-9]+" || true; })
-      echo "- parsed from the serve line: pages=${pg:-UNPARSED} fixed_each=${fx:-UNPARSED} MiB" >> "$P"
-      if [ "$arm" = off ]; then
-        VR_OFF_PAGES="${pg:-}"
-        [ -n "$VR_OFF_PAGES" ] || { echo "- the OFF arm's serve line did not parse — VOID (the instrument is mis-anchored)" >> "$P"; touch "$OUT/.videorows.done"; continue; }
-      else
-        if [ -z "$pg" ] || [ -z "$fx" ]; then
-          echo "- the ON arm's serve line did not parse — VOID (the instrument is mis-anchored)" >> "$P"; touch "$OUT/.videorows.done"; continue
-        fi
-        if [ "$pg" -gt "$VR_OFF_PAGES" ] 2>/dev/null; then
-          echo "- the desk-arithmetic precondition: HELD ($pg pages > the OFF arm's $VR_OFF_PAGES; fixed each $fx MiB < 415) — the flag engaged; the freed room is real" >> "$P"
-        else
-          echo "- the desk-arithmetic precondition: FAILED ($pg pages <= the OFF arm's $VR_OFF_PAGES) — the flag did not move the pool plan; VOID before any probe" >> "$P"
-          echo "- VERDICT: VOID (the instrument never met its precondition — diagnose the serve line before any rerun)" >> "$P"
-          touch "$OUT/.videorows.done"; continue
-        fi
-      fi
-      # the greedy witness (the same-bits guard):
-      req_file "$OUT/vr-$arm-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-      chat "$OUT/vr-$arm-req.json" > "$OUT/vr-$arm-resp.json" || true
-      echo "- the greedy content sha: $(content_sha "$OUT/vr-$arm-resp.json")" >> "$P"
-      if [ "$arm" = on ]; then
-        echo "- the same-bits witness: $([ "$(content_sha "$OUT/vr-on-resp.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
-      fi
-    else
-      echo "## the $arm arm — the restart REFUSED" >> "$P"
-      docker logs "$CONTAINER_NAME" 2>&1 | tail -3 >> "$P" || true
-      tail -4 "$LOG" | sed 's/^/  /' >> "$P"
-    fi
-  done
-  # the ON arm's full gate battery (only if the ON arm is standing): the §2
-  # gates on the ON config, hardmode, the vision suite, the walls.
-  if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER_NAME" && docker inspect --format "{{.Config.Cmd}}" "$CONTAINER_NAME" 2>/dev/null | grep -q -- "--vision-video-tokens"; then
-    echo "## the section-2 content gates (the ON arm's config)" >> "$P"
-    run_gates vrid DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 VISION_VIDEO_TOKENS=64 || true
-    echo "## hardmode (the 95 must hold on the ON arm)" >> "$P"
-    mkdir -p "$OUT/vrhm"
-    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")' 2>/dev/null) || model=""
-    PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
-      --model "$model" --format openai --tokenizer "$MODEL_ID" \
-      --hardmode --label "videorows" --output-dir "$OUT/vrhm" --parallel 2 \
-      --json-file "$OUT/vrhm/hm.json" > "$OUT/vrhm/hm.log" 2>&1 || true
-    grep -o '"final_score": [0-9]*' "$OUT/vrhm/hm.json" >> "$P" 2>/dev/null || true
-    echo "## the vision suite (4/4 must hold — the image path untouched by the video cut)" >> "$P"
-    mkdir -p "$OUT/vrvision"
-    if [ -f scripts/vision-suite-probe.py ]; then
-      python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/vrvision/vision.json" > "$OUT/vrvision/vision.log" 2>&1 || true
-      tail -6 "$OUT/vrvision/vision.log" >> "$P" 2>/dev/null || true
-    else
-      echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
-    fi
-    echo "## the timed load walls (the ON arm's restart cost)" >> "$P"
-    for r in a b; do
-      ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-      S=$(date +%s)
-      restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 VISION_VIDEO_TOKENS=64 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
-      echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
-    done
-    echo "- VERDICT: the pages gain is the value; the gates (sha IDENTICAL + §2 PASS + hardmode 95 + the vision 4/4 + the walls in band) are the safety. ALL HELD = adopt VISION_VIDEO_TOKENS=64 into config.sh's serve_args (the freed room is user-visible: more pages / the room a 5th stream or a bigger kept-states set needs). ANY FAIL = the default stands, the receipt records the kill." >> "$P"
-  else
-    echo "- the ON arm is not standing — the gate battery SKIPPED (the receipt above carries why)" >> "$P"
+if want drop020val && ! phase_done drop020val; then
+  log "=== drop020val (the 020 drop-verify: the 17-patch store vs the qualified instruments)"
+  # the 17-patch store: the standing default minus 020-cachefirst
+  local d020_store="001-absorb-mma.patch 002-exl3prompt.patch"
+  d020_store+=" 003-fp8-pages.patch 004-packed-s2.patch"
+  d020_store+=" 005-pagerows-fix.patch 006-selist-fix.patch"
+  d020_store+=" 007-attnfetch8.patch 008-loaddirect.patch"
+  d020_store+=" 009-moeside.patch 010-tools256.patch"
+  d020_store+=" 011-zclose.patch 012-zmoe-fuse.patch"
+  d020_store+=" 013-zprompt.patch 014-zs2.patch"
+  d020_store+=" 015-zshfl.patch 016-zstep.patch"
+  d020_store+=" 018-callquote.patch"
+  local D020_PATCHES="$d020_store"
+  P="$OUT/31-drop020val.md"; : > "$P"
+  echo "# drop020val (the 17-patch store — 020-cachefirst dropped from" \
+    "the default; v1.2.10 2a674b5; the videorows default carries;" \
+    "TF_GLM_EXPERT_FORM unset)" >> "$P"
+  log "drop020val: explicit prepare"
+  log "  (the fingerprint moved: one fewer patch staged)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then
+    die "drop020val: the image rebuild (prepare) failed - see the log"
   fi
-  touch "$OUT/.videorows.done"
-fi
-
-# ---------------------------------------------------------------------------
-
-# phase: v1210val (SESSION-SPECIFIC; retires with the receipt — the round-148
-# stage brief docs/STAGE_BRIEF_v1210val.md carries the value gate). The v1.2.10
-# bump qualification: the v129val battery's shape re-dated — the same gates,
-# the same same-bits greedy witness (80cc3802…), the new engine pin 2a674b552
-# + the re-anchored 18-patch store. The ground read before staging: the GLM
-# CUDA kernel files are UNTOUCHED by v1.2.10 (the lowest re-anchor risk since
-# v1.2.5); the overlap is server-layer (tool_parse's quoted-markup scanner
-# around our 010's callName — callName still returns null when unoffered, so
-# 010 stays needed) and small GLM zig diffs (the #3151 expert-form knob, the
-# block32 rework, the TF_KV_SHARE advice wording). TF_GLM_EXPERT_FORM stays
-# UNSET for the battery (the qualified behavior is the form race; the knob
-# adoption is its own measured window later). The videorows default carries.
-# ---------------------------------------------------------------------------
-if want v1210val && ! phase_done v1210val; then
-  log "=== v1210val (the v1.2.10 bump: gates + battery + vision + the wall)"
-  P="$OUT/31-v1210val.md"; : > "$P"
-  echo "# v1210val (v1.2.10 2a674b5 + the 18-patch re-anchored stack; the videorows default carries; TF_GLM_EXPERT_FORM unset — the form race is the qualified behavior)" >> "$P"
-  log "v1210val: explicit prepare (the fingerprint moved: TF_COMMIT + the re-anchored store)"
-  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die "v1210val: the image rebuild (prepare) failed - see the log"; fi
-  echo "## the standing restart (the v1.2.10 engine + the adopted defaults)" >> "$P"
+  echo "## the standing restart" \
+    "(the 17-patch store on the v1.2.10 engine)" >> "$P"
   S=$(date +%s)
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4; then
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 PATCHES="$D020_PATCHES"; then
     echo "- load $(( $(date +%s) - S )) s (first load after prepare)" >> "$P"
     echo "- the serve line: $(serve_line)" >> "$P"
-    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci "malformed\|BadSetting\|refused" || true)
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 \
+      | grep -ci "malformed\|BadSetting\|refused" || true)
     echo "- strict-TF_ refusal lines at boot: ${N:-0}" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
-    req_file "$OUT/v1210-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-    chat "$OUT/v1210-req.json" > "$OUT/v1210-greedy.json" || true
-    echo "- the greedy content sha: $(content_sha "$OUT/v1210-greedy.json")" >> "$P"
-    echo "- the same-bits witness: $([ "$(content_sha "$OUT/v1210-greedy.json")" = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d" ] && echo IDENTICAL || echo DIFFERENT)" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 \
+      | grep -i "malformed\|BadSetting" | head -3 >> "$P" || true
+    CF=$(docker logs "$CONTAINER_NAME" 2>&1 \
+      | grep -c "sets the cache aside" || true)
+    echo "- the cache-first reserve line at boot" \
+      "(must be ABSENT): $CF" >> "$P"
+    req_file "$OUT/d020-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/d020-req.json" > "$OUT/d020-greedy.json" || true
+    GSHA=$(content_sha "$OUT/d020-greedy.json")
+    echo "- the greedy content sha: $GSHA" >> "$P"
+    SHA=$(content_sha "$OUT/d020-greedy.json")
+    WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
+    WANTED+="0216a89e5a226566d"
+    if [ "$SHA" = "$WANTED" ]; then
+      WITNESS=IDENTICAL
+    else
+      WITNESS=DIFFERENT
+    fi
+    echo "- the same-bits witness: $WITNESS" >> "$P"
   else
-    echo "- REFUSED (the prepare/start log's tail):" >> "$P"; tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
   fi
   echo "## the section-2 content gates" >> "$P"
-  run_gates v1210 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 || true
-  echo "## the bench pass + the steady-state decode probe (the v1.2.10 engine on our shape)" >> "$P"
-  bench_perf v1210 "$OUT/v1210-bench" 4 >> "$P" 2>&1 || true
-  bf=$(mktemp /tmp/v1210d.XXXXXX.json)
+  run_gates d020 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    PATCHES="$D020_PATCHES" || true
+  echo "## the bench pass + the steady-state decode probe" \
+    "(the 17-patch store on our shape)" >> "$P"
+  bench_perf d020 "$OUT/d020-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/d020d.XXXXXX.json)
   python3 -c "
 import json, sys
-print(json.dumps({'model': sys.argv[1], 'messages': [{'role': 'user', 'content': 'Write a 400-word essay about lighthouses.'}], 'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" "$SERVED_NAME" > "$bf"
+print(json.dumps({'model': sys.argv[1],
+  'messages': [{'role': 'user',
+                'content': 'Write a 400-word essay about '
+                            'lighthouses.'}],
+  'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" \
+    "$SERVED_NAME" > "$bf"
   model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
 import json, sys
 try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
-  python3 -c "import json,sys; b=json.load(open(sys.argv[1])); b['model']=sys.argv[2]; json.dump(b, open(sys.argv[1],'w'))" "$bf" "$model"
+  python3 -c "import json,sys
+b = json.load(open(sys.argv[1]))
+b['model'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$bf" "$model"
   S=$(date +%s)
-  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" -H 'Content-Type: application/json' --data @"$bf" -o "$OUT/v1210-decode.json" || true
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" \
+    -H 'Content-Type: application/json' \
+    --data @"$bf" -o "$OUT/d020-decode.json" || true
   W=$(( $(date +%s) - S )); rm -f "$bf"
   python3 -c "
 import json
 try:
-    d = json.load(open('$OUT/v1210-decode.json'))
+    d = json.load(open('$OUT/d020-decode.json'))
     ct = d['usage']['completion_tokens']
-    print('- steady-state decode: %d tokens in %d s = %.1f tok/s (wall incl. prefill)' % (ct, $W, ct / max($W, 1)))
+    print('- steady-state decode: %d tokens in %d s'
+          ' = %.1f tok/s (wall incl. prefill)'
+          % (ct, $W, ct / max($W, 1)))
 except Exception as e:
     print('- the decode probe FAILED: ' + repr(e))
 " >> "$P"
   echo "## hardmode (the 95 must hold; the harness runs --parallel 2)" >> "$P"
-  mkdir -p "$OUT/v1210hm"
+  mkdir -p "$OUT/d020hm"
   model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c '
 import json, sys
 try: print(json.load(sys.stdin)["data"][0]["id"])
 except Exception: print("")' 2>/dev/null) || model=""
   PYTHONUNBUFFERED=1 "$BENCH" run --base-url "http://127.0.0.1:$PORT" \
     --model "$model" --format openai --tokenizer "$MODEL_ID" \
-    --hardmode --label "v1210val" --output-dir "$OUT/v1210hm" --parallel 2 \
-    --json-file "$OUT/v1210hm/hm.json" > "$OUT/v1210hm/hm.log" 2>&1 || true
-  grep -o '"final_score": [0-9]*' "$OUT/v1210hm/hm.json" >> "$P" 2>/dev/null || true
+    --hardmode --label "drop020val" --output-dir "$OUT/d020hm" --parallel 2 \
+    --json-file "$OUT/d020hm/hm.json" > "$OUT/d020hm/hm.log" 2>&1 || true
+  grep -o '"final_score": [0-9]*' "$OUT/d020hm/hm.json" \
+    >> "$P" 2>/dev/null || true
   echo "## the vision suite (4/4 must hold)" >> "$P"
-  mkdir -p "$OUT/v1210vision"
+  mkdir -p "$OUT/d020vision"
   if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" "$OUT/v1210vision/vision.json" > "$OUT/v1210vision/vision.log" 2>&1 || true
-    tail -6 "$OUT/v1210vision/vision.log" >> "$P" 2>/dev/null || true
+    python3 scripts/vision-suite-probe.py \
+      "http://127.0.0.1:$PORT" "$OUT/d020vision/vision.json" \
+      > "$OUT/d020vision/vision.log" 2>&1 || true
+    tail -6 "$OUT/d020vision/vision.log" >> "$P" 2>/dev/null || true
   else
-    echo "- the vision-suite runner is MISSING at scripts/vision-suite-probe.py" >> "$P"
+    echo "- the vision-suite runner is MISSING at" \
+      "scripts/vision-suite-probe.py" >> "$P"
   fi
-  echo "## the timed load walls (the loading row's re-take on the v1.2.10 engine)" >> "$P"
+  echo "## the timed load walls (the band check on the 17-patch store)" >> "$P"
   for r in a b; do
     ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
     S=$(date +%s)
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 PARALLEL=4 || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 PATCHES="$D020_PATCHES" \
+      || { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
     echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
   done
-  echo "- VERDICT: the same-bits greedy + the gates content-PASS + hardmode holds + the vision 4/4 + the walls in band + the pool line at the videorows arithmetic = the v1.2.10 bump qualifies (the digest moves the pin and the promotion sync follows); ANY FAIL holds the pin at v1.2.9 (6b9de6951) until understood" >> "$P"
-  touch "$OUT/.v1210val.done"
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS" \
+    "+ hardmode holds + the vision 4/4 + the walls in band" \
+    "+ no cache-first line at boot = the 020 drop QUALIFIES" \
+    "(the digest moves the PATCHES default to 17 patches; the store" \
+    "keeps the 020 file on disk; the production store drops 020 at" \
+    "the next promotion sync behind the round-146 identity guard);" \
+    "ANY FAIL reverts the PATCHES default to the 18-patch stack and" \
+    "the pin holds at v1.2.10 regardless" >> "$P"
+  touch "$OUT/.drop020val.done"
 fi
 
 # ---------------------------------------------------------------------------

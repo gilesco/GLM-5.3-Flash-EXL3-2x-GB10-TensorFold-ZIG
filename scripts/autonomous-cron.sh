@@ -15,6 +15,11 @@ flock -n 9 || exit 0
 STATE=/tmp/autonomous-testing.flag
 LOG="$HOME/autonomous-cron.log"
 PROD="$HOME/$PROD_REPO"
+# the round-146 guard: never start production from a repo whose config.sh lost
+# production's identity (the port-identity incident: a promotion sync's
+# wholesale copy carried the testing identity — 8001 + the -test name — into
+# the production repo; only the reboot exposed it).
+scripts/assert-prod-identity.sh "$PROD" || exit 1
 # the maintenance pause (the (user) maintenance window, round 141): while this
 # file exists the crash-net HANDS OFF — no restarts, no log noise — so planned
 # reboots (both hosts) do not fight the net. It lives in /tmp so the pause is

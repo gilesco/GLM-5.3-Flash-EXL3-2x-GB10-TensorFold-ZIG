@@ -203,6 +203,23 @@ activate it once per clone with `git config core.hooksPath scripts/hooks`; a fai
 check blocks the commit until the doc it flags is fixed. Campaign receipts live on the
 head's checkout under `results/` and are not committed — quote them from there.
 
+## The line-length rule (the user, round 150): 80 columns in programming files
+
+- **Lines in programming files stay ≤ 80 characters** — scripts/*.sh, config.sh,
+  *.py. Readability is the rule; no after-the-fact negotiation per line.
+- **Enforced as a ratchet by the docs guard** (check 8): the count of >80-char
+  lines per file lives in `scripts/.line-length-baseline`; a commit that GROWS
+  any file's count fails the guard — the curve only bends down. The ~1,270
+  pre-existing long lines are grandfathered (mass-rewrapping live loop scripts
+  and byte-exact patch members is churn the repo avoids), not exempted one by one.
+- **Exempt**: `patches/*.patch` (their embedded diffs are byte-exact against the
+  store replay — rewrapping one breaks the replay), the docs/*.md prose files,
+  and the generated chart SVGs.
+- **New code wraps as it is written**: continuation lines (`\` in shell, implicit
+  string join in Python), and long literals split into named pieces — the
+  round-150 sitting rewrote its own drop020val phase and the identity guard to
+  comply before committing.
+
 ## Gotchas that have already cost us (don't relearn them)
 
 - Bench **tg128 rows divide by TOTAL time** — prefill pollutes short generations at

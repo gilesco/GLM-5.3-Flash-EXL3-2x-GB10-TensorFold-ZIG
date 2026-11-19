@@ -148,6 +148,61 @@ for f in README.md AGENTS.md docs/*.md; do
 done
 [[ -z $_badlinks ]] && pass "all local links resolve" || fail "broken local links:$_badlinks"
 
+# --- 8. the 80-column rule for programming files (the ratchet) -------------------
+# NEW long lines block the commit; the pre-existing ones are grandfathered
+# through a count baseline (the rule lands 2026-11-19: mass-rewrapping live
+# loop scripts and byte-exact store members is churn the repo avoids — the
+# ratchet bends the curve without rewriting history).
+LONG_BASELINE_FILE=scripts/.line-length-baseline
+lint_lengths() { # $1.. files; prints "file count-of-lines-over-80"
+  python3 - "$@" <<'PYL'
+import sys
+for path in sys.argv[1:]:
+    try:
+        n = sum(1 for ln in open(path, encoding="utf-8", errors="replace")
+                if len(ln.rstrip("\n")) > 80)
+    except OSError:
+        continue
+    if n:
+        print(path, n)
+PYL
+}
+_prog_files=$( { ls scripts/*.sh config.sh scripts/local.sh.example; \
+                 find . -maxdepth 2 -name '*.py' -not -path './results/*' \
+                   -not -path './.git/*'; } 2>/dev/null )
+_now=$(lint_lengths $_prog_files | LC_ALL=C sort)
+_base=""
+[ -f "$LONG_BASELINE_FILE" ] && _base=$(LC_ALL=C sort "$LONG_BASELINE_FILE")
+if [[ -z $_base ]]; then
+  printf '%s\n' "$_now" > "$LONG_BASELINE_FILE"
+  _n=$(awk '{s+=$2} END {print s+0}' "$LONG_BASELINE_FILE")
+  pass "80-col ratchet: baseline recorded ($_n long lines grandfathered)"
+else
+  # per-file counts, joined on the path: fail only when a file's count GROWS
+  _joined=$(join -t' ' -j1 -o2.1,1.2,2.2 \
+    <(printf '%s\n' "$_base" | LC_ALL=C sort -k1,1) \
+    <(printf '%s\n' "$_now" | LC_ALL=C sort -k1,1))
+  _grew=$(echo "$_joined" | awk '$3+0 > $2+0 {print $1}')
+  _grown_new=$(comm -13 \
+    <(printf '%s\n' "$_base" | awk '{print $1}' | LC_ALL=C sort) \
+    <(printf '%s\n' "$_now" | awk '{print $1}' | LC_ALL=C sort))
+  # (the || true keeps set -e alive when both lists are empty)
+  _bad=$( { [ -n "$_grew" ] && echo "$_grew"; true; } 2>/dev/null; \
+           { [ -n "$_grown_new" ] && echo "$_grown_new"; true; } 2>/dev/null \
+           | LC_ALL=C sort -u )
+  if [[ -z $_bad ]]; then
+    if ! cmp -s <(printf '%s\n' "$_base") <(printf '%s\n' "$_now"); then
+      printf '%s\n' "$_now" > "$LONG_BASELINE_FILE"
+      git add "$LONG_BASELINE_FILE" 2>/dev/null || true
+    fi
+    pass "80-col ratchet: no new long lines (the curve only bends down)"
+  else
+    _files=$(echo "$_bad" | tr '\n' ' ')
+    fail "80-col rule: long-line count grew in: $_files" \
+      "— wrap them; the ratchet never grows"
+  fi
+fi
+
 # --- summary ---------------------------------------------------------------------
 if [[ $FAILS -gt 0 ]]; then
   printf 'GUARD: %d failure(s)\n' "$FAILS" >&2

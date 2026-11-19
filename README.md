@@ -19,8 +19,13 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold **v1.2.10** + **the adopted 18-patch stack re-anchored**
+- **Engine**: TensorFold **v1.2.10** + **the adopted 17-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
+  020-cachefirst DROP-GATED by the drop020val window — its live hunks are
+  gated off at our bare serve (the TF_PROMPT_CACHE_FIRST env never reached the
+  container through env_args()'s forwarding prefixes; the fund-report hunks
+  need an asked --prompt-cache-gib our serve never sets); the battery gates
+  the drop,
   the v1.2.10 rebase's store replay is proven byte-exact — pristine v1.2.10 + the
   18 patches = the composed tree; the v1210val battery QUALIFIED the pin —
   campaign-20261119-100642, the round-148 receipt: the greedy witness
@@ -140,7 +145,7 @@ site's). The ones that matter:
 | `PROD_REPO` | *(required by the autonomous scripts)* | the production checkout's dir name on this host — the window flow's stop/restore path and the poke's live check anchor it |
 | `TF_REF` / `TF_COMMIT` / `TF_REPO` | latest v1.\* release / upstream | the TensorFold line to track; **pin in `local.sh`, never the session env** — `start.sh`'s auto-prepare re-resolves the default whenever the config fingerprint changes and silently drops a shell pin |
 | `MODEL_ID` / `MODEL_REVISION` | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` @ `main` | the checkpoint; present on both hosts |
-| `PATCHES` | the 18-patch stack (below) | the adopted engine modifications; empty = stock engine |
+| `PATCHES` | the 17-patch stack (below) | the adopted engine modifications; empty = stock engine |
 | `DFLASH2_ID` / `DFLASH2_REVISION` | `incoai/GLM-5.3-Flash-DFlash2` @ `bf582e4e…` | the drafter passed as `--drafter` when `DRAFTS=1` (CC BY-NC-ND 4.0, non-commercial) |
 | `CONTEXT` | `524288` | the window — the qualified optimum |
 | `PARALLEL` | `4` | concurrent streams |
@@ -156,13 +161,12 @@ site's). The ones that matter:
 | `TF_GLM_PROMPT_STEPS` | `0` | the draft prompt-steps builder off — the depth-decode serving default (d8192 c2 48.2/37.0 vs the 17.3 floor with the builder on; the confirm receipt campaign-20261108-214221) |
 | `PDL` | `0` | `1` → programmatic dependent launch on the mm kernels (hurt dense4 — retired from the default) |
 | `RECALL` / `PROMPT_CACHE_GIB` | `0` / empty — CLOSED | the drafts-copy-from-text cache; the kept-states store's size cap. The #2699 value-first battery (window 36) measured the funded cache at no resume value the page cache does not already deliver, at the cost of a 512K window + 1 GiB of stream room — the cacheless standing holds |
-| `TF_PROMPT_CACHE_FIRST` | `1` | the prompt cache is set aside before the streams' windows are counted (020-cachefirst); `0` restores windows-first |
 | `SERVED_NAME` / `PORT` / `HOST` | `GLM-5.3-Flash-EXL3` / `8001` / `0.0.0.0` | the API surface |
 | `API_KEY` | empty | recommended; sent as `Authorization: Bearer` |
 | `MEMORY_LIMIT_GB` | engine default | → `TENSORFOLD_CUDA_MEMORY_LIMIT_GB` |
 | `BASE_IMAGE` / `ZIG_VERSION` / `SM_ARCH` | NGC pytorch 26.07 / `0.17.0` / `121` | the builder |
 
-### The 18-patch stack (`PATCHES`)
+### The 17-patch stack (`PATCHES`)
 
 The image applies the patches **in filename order — the three-digit prefix IS the
 application order** (`001-` first, `.done` numbers are never reused; the next
@@ -187,7 +191,7 @@ port takes the next free number). What each does:
 | `015-zshfl` | the 4-bit grouped experts read every trellis word once (`TF_EXL3_SHFL=0`) |
 | `016-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
 | `018-callquote` | a call after prose that quotes its opener is still a call — the envelope closer scans value-aware (server-layer; no knob) |
-| `020-cachefirst` | the prompt cache is set aside before the streams' windows are counted (`TF_PROMPT_CACHE_FIRST=0` windows-first); the fund-report line prints when the room funds less than `PROMPT_CACHE_GIB` asks |
+| `020-cachefirst` | DROP-GATED by the drop020val window (the desk ground: live hunks gated off at our bare serve — the TF_PROMPT_CACHE_FIRST env never reached the container, the fund-report hunks need an asked --prompt-cache-gib; any gate FAIL reverts the default to the 18-patch stack); the file stays on disk |
 | `022-shared-budgets` | DFlash2's shared draft rounds keep the budgets rule — a blocked lane (the pool's `fits()` refusing at the 524,288 window) stops pricing shared drafts, so its peers keep their grant (`TF_GLM_`-free; the upstream #2793 fix; the room-matched c4 +6.1%, campaign-20261111-094017) |
 
 Every patch's provenance, port receipts and knobs: [patches/README.md](patches/README.md).

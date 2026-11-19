@@ -390,7 +390,29 @@ quoted-example class (a call quoted inside prose parses whole; the engine
 describing its own tool-call format round-trips) — the same-bits claim held,
 so the behavior is the only change.
 
-## 020-cachefirst.patch — ADOPTED 2026-11-09 (the twenty-first patch; the fork 0108 port)
+## 020-cachefirst.patch — DROP-GATED by the drop020val window (adopted 2026-11-09 as the twenty-first patch; the fork 0108 port)
+
+**The drop ground (the round-150 desk work; the battery gates the drop — any
+gate FAIL reverts the PATCHES default to the 18-patch stack)**: every live
+hunk is gated off at our standing serve. `cache_first` fires only with the
+TF_PROMPT_CACHE_FIRST env set AND an un-asked engine_paged plan — but
+config.sh's export never reached the container (env_args() forwards only
+TENSORFOLD_|TF_GLM_|TF_HEAT_|TF_ROCE_|TF_KV_|NCCL_ prefixes; production's
+live env verified clean). The fund-report line fires only with an asked
+--prompt-cache-gib, which our serve never sets. The byte-exact
+store-minus-020 replay differs from the qualified composed tree in exactly
+the two kv_pool files. The round-139 cachefirstqual ON-arm page deltas
+(3,110→3,103/3,083) sit inside the round-149 boot-wobble band and the ON
+arms rode the same dead env path — both arms served the identical
+windows-first arithmetic; the +6.1% c4 attribution belonged to
+022-shared-budgets (mainlined at v1.2.7). IF the env were forwarded it
+would COST the pool ~1,000 pages (the automatic-cache probe reserves the
+post-streams half-room with the 16 GiB floor before counting windows) —
+the env being dead protected production. The file stays on disk.
+
+## The v1.2.10-era record (the original adoption entry)
+
+ADOPTED 2026-11-09 (the twenty-first patch; the fork 0108 port)
 
 The prompt cache (--prompt-cache-gib) is set aside BEFORE the room is counted
 in the streams' windows (TF_PROMPT_CACHE_FIRST=1): the streams share the pages

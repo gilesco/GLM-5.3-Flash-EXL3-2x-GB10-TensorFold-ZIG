@@ -22,6 +22,10 @@ PHASES="${1:-preflight summary}"
 CONSOLE="${2:-/tmp/autonomous.console}"
 STATE=/tmp/autonomous-testing.flag
 PROD="$HOME/$PROD_REPO"
+# the round-146 guard: the window stops and restores production through the
+# production repo's own scripts — never from a repo whose config.sh lost
+# production's identity (the round-146 incident).
+scripts/assert-prod-identity.sh "$PROD" || exit 1
 WID="$$"
 note() { echo "[$(date '+%F %T')] [w$WID] $*" >> "$CONSOLE"; }
 STARTED=0

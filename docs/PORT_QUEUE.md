@@ -567,10 +567,11 @@ green.
   QUALIFIED = the pin MOVES to v1.2.9-plus and the promotion sync
   follows; any FAIL = the pin holds at v1.2.7 and the defect question
   reopens with the receipt.
-- [ ] **Queued after the verdict**: the drop-verify A/B for 002's
-  0007-half (the #2852 redundancy); the 020/#3125 overlap check; the
-  residual stage briefs (0114 KV-shard first — the biggest memory-shape
-  lever; the discipline layer gates each with a stage brief).
+- [x] **Queued after the verdict — RESOLVED at the desk (round 150)**:
+  the drop-verify question for 002's 0007-half closed when the
+  round-148 regen adjudicated the mechanism out of the composed tree
+  (native 8978c4357 supersedes it); the 020/#3125 overlap check became
+  the drop020val window (the default's shrink to 17 patches).
 
 ## Round 144 (2026-11-16) — the v1.2.9 bump QUALIFIED
 
@@ -588,9 +589,16 @@ green.
   store (a9edf9b) and its serve restarted on it — both ranks Up, the
   binary reads tensorfold-native 1.2.9, the greedy probe answers (wall
   3.1 s). Production IS the v1.2.9 engine now.
-- [ ] **Queued**: the drop-verify A/B for 002's 0007-half (vs #2852);
-  the 020/#3125 overlap check; the residual stage briefs (0114
-  KV-shard, the PDL decode family, 0120 EXTRA_EOS).
+- [x] **The drop-verify items resolved at the desk (round 150)**: 002's
+  0007-half was ALREADY adjudicated out of the composed tree by the
+  round-148 regen (native `8978c4357` mainlines the in-place slot-write
+  prompt mechanism at v1.2.8+, beyond our 2,048-row calls — the patch's
+  prose predates the regen; its hunks are correct); the 020/#3125
+  overlap check resolved as DROP-GATED: 020's live hunks are gated off
+  at our bare serve (the TF_PROMPT_CACHE_FIRST env never reached the
+  container through env_args()'s prefixes; the fund-report hunks need
+  an asked --prompt-cache-gib) — the drop020val window gates the
+  default's shrink to 17 patches (the round-150 stage brief).
 
 ## Round 145 cont. (2026-11-18) — the Mia 1104 re-inventory (the user's ask, the wait-window work): the patch tree holds nothing new; the PR stack and issues carry six items — desk-checked against our v1.2.9 tree the same sitting
 

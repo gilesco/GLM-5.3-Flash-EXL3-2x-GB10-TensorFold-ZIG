@@ -4034,3 +4034,58 @@ through the promotion path (the detached round-146/147 pattern with the
 done-marker). The anchors re-dated (the walls 83/83, decode 73.1, prefill
 1,514); the chart regenerated; the README's engine row re-dated; the streak
 at thirty-seven.
+
+## (round 150) THE 80-COLUMN RULE + THE DROP-VERIFY DESK WORK + THE ROUND-146 GUARD LANDED — THE DROP020VAL WINDOW STAGED LAST (2026-11-19)
+
+**The rule (the user)**: lines in programming files stay ≤ 80 characters.
+Landed as **a ratchet in the docs guard** (check 8): per-file long-line
+counts live in `scripts/.line-length-baseline`; a commit that GROWS any
+file's count fails the guard. The ~1,270 pre-existing long lines are
+grandfathered through the baseline (mass-rewrapping live loop scripts and
+byte-exact patch members is churn the repo avoids); `patches/*.patch` and
+the prose docs are exempt. This sitting's own new code (the identity guard,
+the drop020val phase, the guard's check itself) was rewritten to comply
+BEFORE committing — the ratchet caught its own author twice on the way in
+(the guard's `&&`-chain under `set -e`, and its own failing-test line), both
+fixed by the ratchet.
+
+**The drop-verify desk work (no window spent to learn it)**:
+- **002's 0007-half: already adjudicated by the round-148 record** — the
+  composed tree's `cuda_exl3.zig` carries NO chunk_rows change vs native
+  (the regen kept only the decode-side grouped functions, the yrow ABI and
+  the TF_GLM_EXL3P switch); native `8978c4357` mainlines the in-place
+  slot-write prompt mechanism at v1.2.8+ (4,096-row calls, no copies —
+  beyond our 2,048). The patch's PROSE predates the regen; its hunks are
+  correct. Closed by the record; no window.
+- **The 020/#3125 overlap check widened into a live finding**: the adopted
+  round-139 default `TF_PROMPT_CACHE_FIRST=1` NEVER reached the container —
+  env_args() forwards only TENSORFOLD_|TF_GLM_|TF_HEAT_|TF_ROCE_|TF_KV_|NCCL_
+  prefixes (verified live: production's env has no TF_PROMPT_CACHE_FIRST).
+  020's live hunks are all gated on that env or on an asked
+  --prompt-cache-gib our serve never sets; the byte-exact store-minus-020
+  replay differs from the qualified composed tree in exactly the two
+  kv_pool files. AND the desk arithmetic: if the env HAD been forwarded,
+  the automatic-cache probe would reserve ~1,000 pages before counting
+  windows — the env being dead protected production. The round-139
+  cachefirstqual ON-arm page deltas (7/32 pages) sit inside the
+  round-149 boot-wobble band; both arms rode the same dead env path; the
+  +6.1% c4 attribution belonged to 022-shared-budgets (mainlined at
+  v1.2.7). DROP-GATED: the drop020val window decides.
+
+**The round-146 guard IMPLEMENTED**: `scripts/assert-prod-identity.sh`
+asserts a repo's config.sh carries production's identity (PORT=8000, the
+unsuffixed container) before any start/stop/sync from it; wired into
+autonomous-cron.sh and autonomous-window.sh ahead of the flag-file touch
+(a refused guard never touches production's lifecycle). Verified both
+ways: FAILS on the testing repo (all four findings named), PASSES on the
+production repo.
+
+**The store's default: DROP-GATED to 17 patches** (config.sh's PATCHES
+default minus 020-cachefirst; the README/patches-README rows re-dated as
+drop-gated, not retired — the receipt lands with the window; the
+dead TF_PROMPT_CACHE_FIRST export REMOVED with its consumer, not fixed).
+
+**The launch follows as this sitting's last action**: `preflight
+drop020val summary` (the fingerprint moves: one fewer patch staged).
+ANY gate FAIL reverts the PATCHES default to the 18-patch stack; the
+pin holds at v1.2.10 regardless.
