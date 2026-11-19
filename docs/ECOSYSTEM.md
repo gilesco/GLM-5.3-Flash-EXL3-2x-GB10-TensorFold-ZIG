@@ -149,9 +149,24 @@ line says "does not reach inference: no lane, sampler, precision or
 prompt-processing change"). **#2852 (EXL3 whole-pass routing): still open,
 mergeable-clean, but upstream's own device receipts remain queued** ("tf-cuda-test
 glm-exl3 on a GB10 with fresh records, then a TP=2 A/B on two GB10s" — the PR
-body's own words). **#2856 (batched shared MTP): still open and now DIRTY**
-(conflicts with main); its receipts are pending too (and its body tests
-NVFP4, not EXL3). Neither crosses a staging trigger — the watch stands.
+body's own words). **#2856 (batched shared MTP): still open and DIRTY**
+against main; only the `glm-mtp-shared-check` device check remains before
+THEY land it — and its TP=2 receipts are on the record (the 2026-11-11
+07:03 comment: two GB10s, NVFP4+MTP, tokens equal 52/52 in both run
+orders, four-stream chat +19.3/+19.6%, code +7.2/+7.8%). **ROUND 152
+DESK ADJUDICATION: #2856 CANNOT ENGAGE ON OUR LINE — the port is DEAD
+here, not deferred.** The PR batches the MTP head's chained drafts
+(`draftShared` is called only from cuda_follow.zig:438 and
+cuda_mtp_lanes.zig:84; no `dflash_*` file references `draft_streams`/
+`draftShared`; DFlash2's block pass `dflash_block.pass` is ALREADY one
+batched pass for all S streams). Our serve passes `--drafter` (DFlash2)
+and never runs the MTP head's chains; upstream's own receipts are
+"NVFP4 with MTP". The value gate would read flat BY DESIGN — no window
+burns on it. Re-opens only if the line ever serves an MTP-drafted
+checkpoint. **#2852 (EXL3 whole-pass routing) MERGED 2026-11-12
+(`9247585e6`) and is an ancestor of the v1.2.10 tag (verified
+`git merge-base --is-ancestor`) — it rode the round-151 bump FREE and
+is already in production.** The older "still open" note is withdrawn.
 
 The releases: v1.1.3 (2026-10-23) remains the newest and carries **no glm/cuda perf
 content** (round 13's verdict stands); `main` is 136 commits ahead of our pin —
@@ -310,7 +325,7 @@ in; only the `glm-mtp-shared-check` device check remains before landing**
 — and its TP=2 receipts are ALREADY ON THE RECORD (the 2026-11-11 07:03
 comment, two GB10s, NVFP4+MTP: tokens equal 52/52; four-stream chat
 +19.3/+19.6%, code +7.2/+7.8%; one stream level; prompt level). #2852 is
-unchanged (clean, the TP=2 EXL3 A/B still the trigger) but rides the
+unchanged (clean) but rides the
 maintainer's CI train #3056. **New on our line's radar: #3064/#3062
 (explicitly paged FP8 KV for GLM CUDA — OUR adopted mode becoming a
 first-class upstream path; implementation done, qualification open),

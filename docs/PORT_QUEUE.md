@@ -678,3 +678,45 @@ user-visible number, it needs no release, and its brief is the cheapest
 window shape we run (a config arm beside an existing battery). Stage brief
 next sitting if the value question stands: "more pages / more admitted
 streams at 524,288 from the freed video reservation, zero output change."
+
+## Round 152 (2026-11-19) — the discounted-knob sweep: the desk triage (no windows burned)
+
+The (user) directive: re-measure the discounted/dismissed knobs with the
+highest reported increases, quality uncompromised — with a
+divide-and-conquer methodology to minimize test runs. The desk pass ran
+first; its adjudications stand on the code and the receipts:
+
+1. **#2856 batched shared MTP — DEAD ON OUR LINE (the desk proof)**: the
+   highest reported number on the record (+19.3/+19.6% four-stream chat),
+   but the mechanism does not reach our serve. `draftShared` is called
+   only from the MTP head's chained-draft path (cuda_follow.zig:438,
+   cuda_mtp_lanes.zig:84); no `dflash_*` file references
+   `draft_streams`/`draftShared`; DFlash2's block pass
+   (`dflash_block.pass`) is already ONE batched pass for all S streams;
+   our serve passes `--drafter` (DFlash2) and never runs the MTP head's
+   chains; upstream's receipts are NVFP4+MTP. A port would A/B a code
+   path our serve never takes — the value gate would read flat BY
+   DESIGN. The 0.5-window cost avoided. Re-opens only on an
+   MTP-drafted checkpoint. (Receipt: the v1.2.10 tree, the PR head
+   `b8d68bc0`, both read this sitting.)
+2. **#2852 EXL3 whole-pass routing — already IN PRODUCTION**: merged
+   2026-11-12 (`9247585e6`), an ancestor of the v1.2.10 tag (verified),
+   carried free by the round-151 bump. The round-141 "rebase carries
+   #2843 free" expectation landed WITH #2852 also aboard. Nothing to
+   remeasure — the prefill front's 100.1%/1,524 row is its receipt.
+3. **TF_LOAD_PREFETCH — no headroom**: `default_readers = 16 =
+   max_readers` (checkpoint_prefetch.zig); our serve runs the default.
+   The loading front's one behind row (83 vs 80 s) has no knob left.
+4. **The never-A/B'd env knobs triaged into three classes**:
+   - **Already-on upstream defaults** (inherited optimizations, not
+     levers): TF_GLM_KDA_DECODE_WIDE, TF_GLM_DSEL, TF_GLM_PROMPT_PAIR,
+     TF_GLM_PDL, TF_GLM_OVERLAP_PIECES.
+   - **Structural/diagnostic, no perf claim**: TF_GLM_CONTEXT_CEILING,
+     TF_GLM_REQUEST_STARTS (refused with KV_SHARE), TF_GLM_PROMPT_TAIL
+     (rank-0 cache rule), TF_GLM_DFLASH2_LOG/PROF, TF_GLM_PROF.
+   - **Live candidates** (the measured-out screen below): the
+     never-A/B'd lever list the methodology's level 1 takes next.
+
+The funnel: level 0 desk triage (free — this sitting) → level 1 the
+arm-pair screen (one window, order-matched pairs, the ±5% same-window
+band) → level 2 the value battery on survivors only.
