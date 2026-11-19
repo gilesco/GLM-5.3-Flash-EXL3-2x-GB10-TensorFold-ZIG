@@ -4004,3 +4004,33 @@ qualified behavior; the knob's adoption is its own measured window later).
 **The launch follows as this sitting's last action**: `preflight v1210val
 summary` (DRY_RUN green through the head's launcher; production healthy on
 the v1.2.9 serve at 4,352 pages until the window's exit path restores it).
+
+## (round 149) THE V1.2.10 BUMP QUALIFIED — THE PIN MOVES; THE PROMOTION SYNC FOLLOWS (2026-11-19)
+
+**Window 36** (campaign-20261119-100642, `preflight v1210val summary`, rc=0,
+production restored healthy after 80 s — on the v1.2.10 engine 2a674b552 +
+the regenerated store): the v1210val battery passed on every instrument.
+
+- **The same-bits greedy witness: IDENTICAL** — the `80cc3802…` sha has now
+  held across **v1.2.5 → v1.2.6 → v1.2.7 → v1.2.9 → v1.2.10** with the
+  re-anchored stack. The #3588 Scanner composition moved nothing
+  deterministic.
+- **The §2 content gates ALL PASS** (g1–g4 + the g5 note).
+- **Hardmode 95 — the thirty-seventh consecutive.** The vision **4/4**.
+- **The walls 83/83 s** (the band holds); steady-state decode **73.1 tok/s**
+  — bit-identical to the v1.2.9 receipt; the bench pp d0 1,514 (inside the
+  band; the c4 aggregate 1,527).
+- **The pool line: 4,101 pages at 18.1 GiB room** — the −250-page shift vs
+  the videorows receipt is the HOST-MEMORY STATE at boot, not the engine:
+  the room wobbled 18.9 → 18.3 → 18.1 across three boots (the GB10's CUDA-
+  visible pool tracks the host RSS at boot), and the pages/GiB slope
+  (251/0.8 = 314) matches the page size (~305/GiB) exactly — the pool plan
+  converts room→pages identically on both engines. No regression; the
+  freed-video-room arithmetic carries.
+
+**The adoption**: the pin MOVES to 2a674b552 (v1.2.10). The promotion sync
+mirrors the store + config to the production repo; production restarts
+through the promotion path (the detached round-146/147 pattern with the
+done-marker). The anchors re-dated (the walls 83/83, decode 73.1, prefill
+1,514); the chart regenerated; the README's engine row re-dated; the streak
+at thirty-seven.
