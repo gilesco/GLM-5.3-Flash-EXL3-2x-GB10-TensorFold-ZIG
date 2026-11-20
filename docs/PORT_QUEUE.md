@@ -672,12 +672,14 @@ line; their community complaints run against their OWN old Python recipe,
 not against our native-vs-native discipline; their repo health is active
 but their engine base (1.1.9) is ~1,059 commits behind our v1.2.9 pin.
 
-**Posture: the v1.2.10-wait posture is REINFORCED, with one actionable**:
-the vision-video-rows flag (item 1) is the only candidate that could move a
-user-visible number, it needs no release, and its brief is the cheapest
-window shape we run (a config arm beside an existing battery). Stage brief
-next sitting if the value question stands: "more pages / more admitted
-streams at 524,288 from the freed video reservation, zero output change."
+**Posture (UPDATED round 152: the round-147/148 actionable RESOLVED)**:
+the vision-video-rows flag ran as the videorows window
+(campaign-20261118-102606) and ADOPTED — VISION_VIDEO_TOKENS defaults
+to 64 in config.sh (the freed 152 pages ≈ 0.75 GiB/rank of pool,
+the witness identical, hardmode 95 the thirty-sixth consecutive);
+production carries it since the round-151 promotion. The queue has no
+open config-side item. The remaining candidates are upstream-gated or
+user-parked (the round-152 desk triage in the entry above).
 
 ## Round 152 (2026-11-19) — the discounted-knob sweep: the desk triage (no windows burned)
 
