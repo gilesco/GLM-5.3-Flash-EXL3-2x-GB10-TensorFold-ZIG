@@ -1512,4 +1512,14 @@ The completed round arcs (the round-140 v1.2.6 rebase + cachefixqual era) moved 
   assignment line missing; the error swallowed by `|| true` into a
   misleading "no session found" log every tick) — fixed and it fired
   the same hour.
+- [x] **THE BENCH VERSION BOUNDARY** ((user), 2026-11-20): the
+  tool-eval-bench upgraded to **3.1.0** on the head (09:16) — every
+  receipt through the v130val battery (campaign-20261120-002016) ran
+  **3.0.1.dev4**, so the forty-streak is a same-instrument streak
+  end to end. The NEXT battery is the first on 3.1.0: a slightly
+  different score there is the INSTRUMENT, not the line — the
+  streak's run-level comparison across the boundary carries this
+  note, and the next receipt records its own
+  `tool_eval_bench_version` field as every battery's JSON already
+  does.
 

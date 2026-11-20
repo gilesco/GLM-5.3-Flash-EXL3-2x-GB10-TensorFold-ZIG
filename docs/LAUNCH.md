@@ -4343,3 +4343,27 @@ repo, and the restart verified: **production serves v1.3.0 on 8000**
 chart's pairs unchanged — no anchor row moved), the ledger's bump arc
 closes, the README's streak re-dates to forty, the release watch's
 PIN_TAG moves to v1.3.0.
+
+## (round 153 cont.) THE BENCH VERSION BOUNDARY — THE USER UPGRADED TOOL-EVAL-BENCH TO 3.1.0 (2026-11-20)
+
+**(user)**: "I have upgraded the tool-eval-bench on the head, so it
+will be normal to see a slightly different score from before."
+
+**The boundary, measured**: every receipt in the forty-streak ran
+**3.0.1.dev4+gb672b53ff** (the `tool_eval_bench_version` field, read
+from the two most recent batteries' JSON); the upgraded binary
+reports **3.1.0** (09:16 this morning). The forty-streak is therefore
+a same-instrument streak end to end, and the NEXT battery is the
+first on the new instrument.
+
+**The rule going forward**: a slightly different score on the next
+battery is the INSTRUMENT, not the line — no gate reading (hardmode
+95's "must hold", a streak count, a quality comparison across the
+boundary) crosses versions without this note. Each battery's JSON
+already records its own `tool_eval_bench_version`; the receipts cite
+it from now on. If the next receipt's score moves, the honest
+disposition is a same-instrument re-run on the OLD bench only if the
+user wants the boundary quantified — otherwise the 3.1.0 number
+RE-BASES the streak (the count restarts its descriptive frame, the
+gate stays "95 or the new instrument's named equivalent once
+measured").
