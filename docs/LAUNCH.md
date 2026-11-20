@@ -4367,3 +4367,95 @@ user wants the boundary quantified — otherwise the 3.1.0 number
 RE-BASES the streak (the count restarts its descriptive frame, the
 gate stays "95 or the new instrument's named equivalent once
 measured").
+
+## (round 154) V1.3.1 QUALIFIED AND PROMOTED — AND THE STATE-COLLISION INCIDENT ROOT-CAUSED AND FIXED THE SAME SITTING (2026-11-20)
+
+**The release** (the watch fired 13:41): **v1.3.1** (5e1e1912,
+published 13:39 UTC, 11 commits, 14 h after v1.3.0) is **Metal-only
+Hy4-flash** — the body's own claim: "nothing else changes: every
+other model, flag and default is as in 1.3.0". The tree verifies it:
+`git diff v1.3.0 v1.3.1` on the GLM zig + CUDA kernels touches ONLY
+new `hy4_flash/` files — zero hunks on any existing GLM file, no
+knob, no default, no serving-path change. The stale round-141
+expectations the poke's template names (#2843/#2856/#3064) are NOT
+in this release.
+
+**The desk**: the 17-patch store composes zero-conflict on pristine
+v1.3.1 (the scratch verify: the 10 verbatim carriers apply, the 7
+empty-body regens no-op — identical to the v1.3.0 compose). One
+instrument subtlety caught: the scratch worktree carried UNTRACKED
+residue files from the v1.3.0 compose (the patches create them —
+001 creates glm_glue_num.cuh — and refuse to overwrite); `git
+checkout -- .` does not remove untracked files; `git clean -fd`
+fixed it. The brief (docs/STAGE_BRIEF_v131val.md) is the lean gate
+shape: no value screen rides inside (nothing to screen), and the
+hardmode gate carries the **bench-version boundary** (the first
+battery on tool-eval-bench 3.1.0 — the user's note this morning).
+The pin moved on the head; DRY_RUN green; commit c9606b6; launched
+last.
+
+**The window** (w3814842, campaign-20261120-140338, rc=0) — the
+receipt:
+- **The v1.3.1 bump QUALIFIES on every instrument that cannot
+  move**: the same-bits greedy witness `80cc3802…` IDENTICAL —
+  across the SEVENTH engine bump; the §2 gates ALL PASS; the vision
+  4/4; the walls 83/84 s in band; zero strict-TF_ refusals.
+- **Hardmode: 94 on tool-eval-bench 3.1.0** — the boundary case the
+  brief staged for: the FIRST receipt on the new instrument (every
+  prior receipt ran 3.0.1.dev4; the version fields read from both
+  batteries' JSON). Per the user's note and the committed rule: the
+  score is the INSTRUMENT, not the line — the 94 RE-BASES the
+  streak's frame (the fifty-eighth entry: 95 ×40 on 3.0.1.dev4, then
+  94 on 3.1.0). The JSON's own sub-scores: Deployability 75 (was
+  76), Responsiveness 30 (unchanged), median turn 5,307 ms, total
+  points 196/208. **The gate stays honest**: the next battery runs
+  3.1.0 and must hold 94 — the new instrument's named equivalent.
+- **The steady-state decode: 75.9 tok/s** (2048 tokens in 27 s) —
+  the fastest steady-state reading on the record (73.1 across five
+  bumps before); the bench pp d0 1,532. Both inside the bands; the
+  pool line 3,381 pages at 15.7 GiB (the boot-state wobble priced
+  per round 149). NO anchor row re-dates on a bump with no perf
+  claim — the numbers are recorded in the receipt, the chart stands.
+
+**THE PROMOTION + THE INCIDENT**: the identity guard passed, the pin
++ store synced, production restarted and verified (the /health
+version field 1.3.0 → wait — 1.3.1 BEFORE the sync).
+
+**The collision root cause** (the same sitting): the
+`prepared` marker on the head recorded `tf=commit@5e1e1912` at
+**14:11 — inside the v131val window** — and production's /health
+read **1.3.1 from 14:52**, before any promotion sync. Production's
+pin said v1.3.0. **The two repos shared `STATE_DIR`
+($HOME/.local/state/glm53-native) and `IMAGE_NAME`
+(glm53-native-tf)**: the testing window's prepare built the v1.3.1
+engine into the SHARED image tag and overwrote the SHARED prepared
+marker; the window's exit path restored production through
+production's start.sh, whose fingerprint check passed (its own
+config matched) and whose `resolved_from_marker` read the TESTING
+prepare's marker. **Production served v1.3.1 from 14:52 —
+unqualified-by-promotion.** The round-146 guard asserted the config
+identity (port/name) but NOT the shared mutable state.
+
+**The mitigating fact, recorded honestly**: the engine the collision
+served IS the engine the v131val battery qualified (the witness
+IDENTICAL, §2 ALL PASS, the vision 4/4) — the serve was correct in
+content, wrong in order. The process failed, not the bits.
+
+**The fixes, committed and verified both ways**:
+1. **The state split**: the testing repo's `STATE_DIR` defaults to
+   `$HOME/.local/state/glm53-native-test` (config.sh, the comment
+   carries the incident); production's stays unsuffixed.
+2. **The guard extension** (scripts/assert-prod-identity.sh): the
+   round-146 guard now fires on the shared-state classes — a
+   STATE_DIR equal to production's, and an IMAGE_NAME equal to
+   production's while carrying the testing port. Verified: fails on
+   the testing repo (all three classes fire), passes on production.
+3. **The promotion completed properly**: production's pin moved to
+   5e1e1912 with the receipt cited, the restart verified (the
+   /health version 1.3.1, healthy after 80 s) — the marker now
+   records the pin from production's OWN local.sh. The serve-order
+   discipline holds again.
+
+**The state docs**: the ledger's bump arc + the boundary note; the
+README's streak row re-bases on the 3.1.0 frame (94); the release
+watch's PIN_TAG moves to v1.3.1; v131val retires with its receipt.

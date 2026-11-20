@@ -1512,6 +1512,26 @@ The completed round arcs (the round-140 v1.2.6 rebase + cachefixqual era) moved 
   assignment line missing; the error swallowed by `|| true` into a
   misleading "no session found" log every tick) — fixed and it fired
   the same hour.
+- [x] **THE V1.3.1 BUMP ARC** (round 154, window w3814842,
+  campaign-20261120-140338): QUALIFIED and PROMOTED — the witness
+  `80cc3802…` IDENTICAL across the SEVENTH engine bump, the §2 gates
+  ALL PASS, the vision 4/4, the walls 83/84. **Hardmode 94 on
+  tool-eval-bench 3.1.0 — the boundary case the brief staged for: the
+  first receipt on the new instrument, the streak's frame RE-BASES
+  (95 ×40 on 3.0.1.dev4, then 94 on 3.1.0; Deployability 75,
+  Responsiveness 30 unchanged, total 196/208). The gate going
+  forward: hold 94 on 3.1.0.**
+- [x] **THE ROUND-154 STATE-COLLISION INCIDENT** (root-caused the
+  same sitting): the two repos shared `STATE_DIR` and `IMAGE_NAME` —
+  the testing window's prepare overwrote the SHARED prepared marker
+  (tf=commit@5e1e1912 written 14:11, inside the window) and the
+  production restore's start.sh read the TESTING marker: production
+  served v1.3.1 from 14:52 BEFORE the promotion sync — unqualified
+  by promotion order, though the engine was the one the battery
+  qualified. FIXED: the testing STATE_DIR split to
+  glm53-native-test; the round-146 guard extended to fire on the
+  shared-state classes (verified both ways); the promotion completed
+  properly (production's own pin + restart + the /health verify).
 - [x] **THE BENCH VERSION BOUNDARY** ((user), 2026-11-20): the
   tool-eval-bench upgraded to **3.1.0** on the head (09:16) — every
   receipt through the v130val battery (campaign-20261120-002016) ran
