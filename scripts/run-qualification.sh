@@ -1881,6 +1881,167 @@ PRODCOLD_RETIRED=1
 V127VAL_RETIRED=1
 
 # ---------------------------------------------------------------------------
+# phase: v131val (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_v131val.md carries the gate). The v1.3.1 bump:
+# the engine is v1.3.1 (5e1e1912, released 2026-11-20 13:39 UTC, 11
+# commits past v1.3.0, 14 h later). The release carries NOTHING for our
+# line: "1.3.0 plus native Hy4-flash on Metal. Nothing else changes" —
+# the tree verifies it (git diff v1.3.0 v1.3.1 on the GLM zig + CUDA
+# kernels touches ONLY new hy4_flash/ files; no knob, no default, no
+# serving-path change), and the 17-patch store composes zero-conflict on
+# pristine v1.3.1 exactly as on v1.3.0 (the scratch verify, this
+# sitting). The battery proves the tag moved nothing live: the same-bits
+# greedy witness 80cc3802… IDENTICAL (the seventh consecutive bump on
+# PASS), the §2 content gates, hardmode, the vision 4/4, the walls in
+# band, the pool line at the videorows arithmetic. NO value screen rides
+# inside (no perf claim to screen; the L2PF screen closed flat at
+# v1.3.0). BENCH VERSION BOUNDARY (round 153 cont., user): this is the
+# FIRST battery on tool-eval-bench 3.1.0 — the user upgraded the bench
+# this morning; a slightly different score is the INSTRUMENT, not the
+# line; the receipt records its tool_eval_bench_version and the 3.1.0
+# number RE-BASES the streak's frame if it moves from 95. ANY gate FAIL
+# holds the pin at v1.3.0 until understood; the promotion sync follows a
+# QUALIFIED verdict (the pin moves; production restarts through the
+# promotion path; the release watch's PIN_TAG moves to v1.3.1).
+# ---------------------------------------------------------------------------
+if want v131val && ! phase_done v131val; then
+  log "=== v131val (the v1.3.1 lean bump gate — the release carries" \
+    "nothing for our line)"
+  P="$OUT/31-v131val.md"; : > "$P"
+  echo "# v131val (v1.3.1 5e1e1912 + the 17-patch store; the release" \
+    "is Metal-only Hy4-flash — zero hunks on any existing GLM file;" \
+    "the bench-version boundary: the first 3.1.0 battery)" >> "$P"
+  echo "- the brief: docs/STAGE_BRIEF_v131val.md" >> "$P"
+  log "v131val: explicit prepare (the fingerprint moved: TF_COMMIT)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die \
+    "v131val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.3.1 engine + the 17-patch" \
+    "store)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" \
+      >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci \
+      "malformed\|BadSetting" || true)
+    echo "- strict-TF_ refusal lines at boot (the video-library note" \
+      "excluded per the round-148 reading): ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" \
+      | head -3 >> "$P" || true
+    V=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -m1 -oE \
+      "tensorfold-native [0-9.]+" || true)
+    echo "- the engine version line: ${V:-ABSENT}" >> "$P"
+    req_file "$OUT/v131-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v131-req.json" > "$OUT/v131-greedy.json" || true
+    SHA=$(content_sha "$OUT/v131-greedy.json")
+    echo "- the greedy content sha: $SHA" >> "$P"
+    WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
+    WANTED+="0216a89e5a226566d"
+    if [ "$SHA" = "$WANTED" ]; then WITNESS=IDENTICAL; else
+      WITNESS=DIFFERENT; fi
+    echo "- the same-bits witness: $WITNESS" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "v131val: the qualification arm refused to serve"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v131 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    || true
+  echo "## the bench pass + the steady-state decode probe" >> "$P"
+  bench_perf v131 "$OUT/v131-bench" 4 >> "$P" 2>&1 || true
+  bf=$(mktemp /tmp/v131d.XXXXXX.json)
+  python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1],
+  'messages': [{'role': 'user',
+                'content': 'Write a 400-word essay about '
+                            'lighthouses.'}],
+  'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" \
+    "$SERVED_NAME" > "$bf"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+    | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  python3 -c "import json,sys
+b = json.load(open(sys.argv[1]))
+b['model'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$bf" "$model"
+  S=$(date +%s)
+  curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" \
+    -H 'Content-Type: application/json' \
+    --data @"$bf" -o "$OUT/v131-decode.json" || true
+  W=$(( $(date +%s) - S )); rm -f "$bf"
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v131-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s'
+          ' = %.1f tok/s (wall incl. prefill)'
+          % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  echo "## hardmode (the first battery on tool-eval-bench 3.1.0 —" \
+    "the boundary note governs; the harness runs --parallel 2)" >> "$P"
+  mkdir -p "$OUT/v131hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+    | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run \
+    --base-url "http://127.0.0.1:$PORT" --model "$model" \
+    --format openai --tokenizer "$MODEL_ID" --hardmode \
+    --label "v131val" --output-dir "$OUT/v131hm" --parallel 2 \
+    --json-file "$OUT/v131hm/hm.json" > "$OUT/v131hm/hm.log" 2>&1 \
+    || true
+  grep -o '"final_score": [0-9]*' "$OUT/v131hm/hm.json" \
+    >> "$P" 2>/dev/null || true
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v131hm/hm.json'))
+    print('- the bench version: %s' %
+          d.get('tool_eval_bench_version', 'NOT RECORDED'))
+except Exception: pass
+" >> "$P"
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v131vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/v131vision/vision.json" > "$OUT/v131vision/vision.log" \
+      2>&1 || true
+    tail -6 "$OUT/v131vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo \
+      "- the vision-suite runner is MISSING at" \
+      "scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on v1.3.1)" \
+    >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 || \
+      { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS" \
+    "+ hardmode holds (the 3.1.0 boundary: the first receipt on the" \
+    "new instrument re-bases the streak's frame if it moves from 95)" \
+    "+ the vision 4/4 + the walls in band = the v1.3.1 bump QUALIFIES" \
+    "(the pin moves to 5e1e1912; the promotion sync follows; the" \
+    "release watch's PIN_TAG moves); any FAIL holds the pin at" \
+    "v1.3.0 until understood" >> "$P"
+  touch "$OUT/.v131val.done"
+fi
+
+# ---------------------------------------------------------------------------
 
 if want summary; then
   log "=== summary"
