@@ -291,7 +291,15 @@ CPUSET="${CPUSET:-}"
 
 # Runtime state: pidfiles, logs (each rank's docker log saved gzipped at stop, LOG_KEEP kept),
 # and the prepared marker that start.sh compares to decide whether prepare.sh must run again.
-STATE_DIR="${STATE_DIR:-$HOME/.local/state/glm53-native}"
+STATE_DIR="${STATE_DIR:-$HOME/.local/state/glm53-native-test}"   # the TESTING stack's state dir (the
+                                 # round-154 collision: both repos shared one
+                                 # state dir and one image name — the testing
+                                 # window's prepare overwrote the SHARED
+                                 # prepared marker and the production
+                                 # restore's start.sh read the TESTING marker,
+                                 # so production served the window's engine
+                                 # unqualified. Production's repo keeps the
+                                 # unsuffixed glm53-native.
 LOG_DIR="${LOG_DIR:-$HOME/.cache/glm53-native/logs}"
 LOG_KEEP="${LOG_KEEP:-10}"
 
@@ -442,7 +450,11 @@ export TF_GLM_PROMPT_STEPS="${TF_GLM_PROMPT_STEPS:-0}"
 # export has no consumer at all — REMOVED, not fixed: if a cache-first
 # mechanism is ever wanted again it arrives as its own measured window with
 # the env name inside env_args()'s forwarding list.
-case "$TEMPERATURE" in ""|*) [[ -z "$TEMPERATURE" ]] || [[ "$TEMPERATURE" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "TEMPERATURE must be a number (0 enables DFlash2 drafts on every request; empty: the engine default 1.0)" ;; esac
+case "$TEMPERATURE" in ""|*)
+  [[ -z "$TEMPERATURE" ]] ||
+    [[ "$TEMPERATURE" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die \
+      "TEMPERATURE must be a number (0 enables DFlash2 drafts on
+      every request; empty: the engine default 1.0)" ;; esac
 
 # --- site identity must be set (scripts/local.sh)
 # -------------------------------------------
