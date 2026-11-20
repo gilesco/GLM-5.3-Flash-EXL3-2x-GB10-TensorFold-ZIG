@@ -4459,3 +4459,67 @@ content, wrong in order. The process failed, not the bits.
 **The state docs**: the ledger's bump arc + the boundary note; the
 README's streak row re-bases on the 3.1.0 frame (94); the release
 watch's PIN_TAG moves to v1.3.1; v131val retires with its receipt.
+
+## (round 155) THE V1.3.2 RELEASE READ — THE PDL/ITEM-PLAN/FORM-RACE RELEASE; THE HAND REBASE IN PROGRESS (2026-11-20)
+
+**The release** (the watch fired 19:27): **v1.3.2** (b472b9f8,
+published 2026-11-20 19:27 UTC, 452 commits past v1.3.1) is the
+big one for our line — the GLM CUDA speed list carries THREE direct
+items, all default-on:
+- **#3776 PDL** (programmatic dependent launches): "GLM's kernels
+  and qmmf's decode linears launch as programmatic dependent
+  launches, so a decode token's kernels lose most of their launch
+  gaps" — the commit measures "2-3 us idle between each of ~1,320
+  kernels"; `TF_GLM_PDL=0` launches everything plain. **This is the
+  PDL family our round-116 survey priced out as a from-scratch
+  build — now upstream.** **#3776 SUPERSEDES our 016-zstep** (the
+  fork's narrower four-kernel PDL chain): the rebase DROPS 016 (the
+  022-shared-budgets overlap class) and the knob broadens from
+  TF_EXL3_PDL to TF_GLM_PDL.
+- **#2044 EXL3 item plan**: "a decode window's EXL3 routed experts
+  launch on the 16-pair item plan instead of the group kernel's
+  grid of mostly idle blocks, with the same output bytes".
+- **#3249 form race**: the load races classic vs factored expert
+  forms at each of TEN decode window widths and keeps the faster
+  per width; `TF_GLM_EXPERT_FORM` names one for every width.
+Plus #3705's sampler-rule dedup and #3852's KV page-retirement fix
+(the KV pool state our 003 marriage owns). NOT in the release: the
+#2856/#3064 items the stale poke template names.
+
+**The rebase surface: a HAND rebase — the first since v1.2.10.** The
+store composes 5/10 carriers clean; FIVE drift (001/003/004/009/012)
+— all in the PDL launch-rewrite's file set. The scratch compose
+(/tmp/opencode/tf130-rt, branch compose-v132) has ALL 3-way conflicts
+resolved by hand:
+- The PDL launch wrapper (`cuda_pdl.launch`) composed with the
+  fp8-paged variants in cuda_latent.zig (the variant selection
+  from ours, the PDL path from theirs).
+- 012's group/core/combine decomposition PRESERVED beside
+  upstream's runWith item plan in exl3_experts.zig (run() delegates
+  to the decomposition; runWith carries the item plan for the
+  prompt/paired path; the Geometry scoping separated from the
+  item-plan locals; `k.experts.fact` -> `factored(rows)` per #3249).
+- glm_glue_moe.cuh: both includes; the topk_row namespace; PDL
+  enter() in all three kernels.
+- **Every GLM kernel now carries the PDL enter prologue** — the
+  desk-scan of every glm_*.cu[h] file is green (the fp8-paged
+  variants and glue_num's two kernels gained theirs; the scan
+  test's rule: every kernel opens with enter() or enter_weights()).
+
+**The remaining stage work** (the next sitting): regenerate the five
+drifted members from the composed tree (the round-143
+compose-and-diff rule — the members must replay to the tree
+byte-exact; the ownership map is clean: each drifted member owns
+its files exclusively), the round-trip verify, DRY_RUN, then
+launch `preflight v132val summary` as the sitting's last action.
+The stage brief docs/STAGE_BRIEF_v132val.md is written: the gates
+(the witness across the eighth bump, §2, hardmode 94 on the 3.1.0
+frame, the vision 4/4, the walls) plus the PDL value bracket
+(default(1) → TF_GLM_PDL=0 → default(2) — the fork's narrower
+version never transferred at 016qual; the native, wider version is
+a different mechanism width and must be measured, not assumed).
+
+**The loop state**: production healthy on v1.3.1 (the round-154
+promotion); no window; the release watch armed at v1.3.2. This
+sitting launches nothing — the rebase is mid-stage and the launch
+is the LAST action of a sitting.
