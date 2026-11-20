@@ -13,11 +13,12 @@ cd "$(dirname "$0")/.."
 : "${OPENCODE_UNIT:?set OPENCODE_UNIT (the opencode server systemd unit path) in scripts/local.sh}"
 LOG="$HOME/upstream-release-watch.log"
 MARKER="$HOME/.upstream-release-last-poked"
-PIN_TAG="v1.2.10"  # the promoted pin (the round-151 promotion: v1.2.10 + the 17-patch store; the rebase target when a newer tag lands)
+PIN_TAG="v1.3.0"  # the promoted pin (the round-153 promotion: v1.3.0 d3d0bf110 + the 17-patch store, serving verified on 8000; the rebase target when a newer tag lands)
 PW=$(grep -oP 'OPENCODE_SERVER_PASSWORD=\K.*' "$OPENCODE_UNIT" 2>/dev/null | tr -d '"')
 [ -n "$PW" ] || { echo "$(date '+%F %T') no web password — cannot poke" >> \
   "$LOG"; exit 1; }
 AUTH="opencode:$PW"
+API="$OPENCODE_API"
 # 1. the newest release tag upstream (gh: the authenticated path — the
 # unauthenticated API rate-limits within a single sitting's research; a cron
 # running every 30 min would exhaust it in a day. gh's stored token carries

@@ -1500,4 +1500,16 @@ The completed round arcs (the round-140 v1.2.6 rebase + cachefixqual era) moved 
   the pin, so the store's staleness hid until a rebuild was forced).
 - [x] The warm-resume cost in the paged+share era (CLOSED round 141 — the
   kill criterion fired on the first valid A/B; see the round-141 arc).
+- [x] **The v1.3.0 bump arc** (round 153, window w2878799,
+  campaign-20261120-002016): QUALIFIED and PROMOTED — the witness
+  `80cc3802…` IDENTICAL across the sixth engine bump, the §2 gates ALL
+  PASS, hardmode **95 — the FORTIETH consecutive**, the vision 4/4, the
+  walls 83/83; production serves v1.3.0 (the /health version verified).
+  The L2PF site-f value screen rode the same window: the steady-state
+  probe 73.1 on all three arms — the #3156 claim does not transfer at
+  our shape; the rider stays (bit-safe, default-on). The release watch
+  was broken since 2026-11-19 14:00 (the unbound $API — the API=
+  assignment line missing; the error swallowed by `|| true` into a
+  misleading "no session found" log every tick) — fixed and it fired
+  the same hour.
 

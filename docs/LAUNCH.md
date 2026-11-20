@@ -4264,3 +4264,82 @@ merge + the #2856 dead-here note), the ledger's CS arc closes, the
 phase sweep (drop020val + knobcsval retired from
 run-qualification.sh — the receipts stand in
 results/campaign-20261119-124951/ and results/campaign-20261119-223933/).
+
+## (round 153) THE RELEASE WATCH FIXED + FIRED — V1.3.0 QUALIFIED AND PROMOTED; THE L2PF SCREEN FLAT; PRODUCTION SERVES 1.3.0 (2026-11-20)
+
+**The release watch was BROKEN — fixed and it fired immediately.** The
+30-min cron had died at line 33 since yesterday 14:00: the script
+validated `OPENCODE_API` but assigned `$API` never (the sibling
+autonomous-poke.sh carries `API="$OPENCODE_API"` at its line 29 — the
+release-watch copy lost the line). The unbound variable inside the SID
+subshell was swallowed by `|| true`, logging the misleading "no session
+found" every tick. One added line fixed it (`API="$OPENCODE_API"`); the
+manual run poked **v1.3.0** instantly — the watch had been blind to a
+release tagged 2026-11-19 23:04 UTC. The log carries the blind period's
+whole receipt.
+
+**The release read** (the API release body + the tag tree): 375 commits
+past v1.2.10. For our line: **#3156's L2PF site f** (a MoE layer's
+shared gate-up prefetched after its router — claimed ~1.0-1.2% faster
+decode at TP=2 GB10, identical tokens), **#3614/#3675's vision-sleep**
+(the other ranks sleep on their liveness lines while rank 0's vision
+tower runs — a stability fix for our standing vision default), #3495's
+cost-cache keys, #2825's qmm_prefill (dense-path, not our EXL3 prompt
+path). NOT in the release: #2856 (consistent with the round-152 desk
+adjudication — dead on our DFlash2 line regardless), #3064's paged FP8
+KV as first-class. The changelog quotes each item with its PR number.
+
+**The rebase surface: the lowest the line has run.** Pristine v1.3.0 +
+the 17-patch store applied in name order — **ALL 17 members apply with
+ZERO conflicts** (the scratch worktree verify, /tmp/opencode/tf130-rt):
+10 members carry real bodies verbatim, 7 are empty-body regens whose
+content rides the carriers. No composition edits, no hand-cut hunks;
+the replay property holds trivially (the composed tree IS pristine +
+the store). The "every patch drifts" first read was the empty-body
+screen artifact — `git apply --check` refuses header-only patches
+without --allow-empty; the six regens re-screened correctly.
+
+**The stage brief** (docs/STAGE_BRIEF_v130val.md): the bump gate rides
+WITH the L2PF value screen in one window (the divide-and-conquer rule:
+instruments that share a serve batch into one window). The gates: the
+witness `80cc3802…` (upstream's claim is identical tokens — a prefetch
+cannot move the math; the witness gates it anyway), §2, hardmode 95,
+the vision 4/4, the walls band, the L2PF boot line as the engagement
+witness. The L2PF pair: default(1) → TF_GLM_L2PF=0 → default(2),
+order-matched per the round-149 drift map. The pin moved in the head's
+local.sh BEFORE the window (d3d0bf110; the battery gates the move —
+any FAIL holds the pin at v1.2.10). DRY_RUN green; commit acf5550;
+launched as the sitting's last action.
+
+**The window** (w2878799, campaign-20261120-002016, rc=0, production
+restored healthy) — the receipt:
+- **The v1.3.0 bump QUALIFIES on every gate**: the same-bits greedy
+  witness `80cc3802…` IDENTICAL — across the SIXTH engine bump; the
+  §2 gates ALL PASS; hardmode **95 — the FORTIETH consecutive**; the
+  vision 4/4; the walls 83/83 s; zero strict-TF_ refusals; the L2PF
+  engagement witness present (176 rows, 1110 MiB a decode window,
+  2 CTAs a site at 150 GB/s).
+- **The L2PF value read: FLAT — the claim does not transfer at our
+  shape.** The steady-state probe read 73.1 tok/s on ALL THREE arms
+  (the bracket complete this time). The bench cells swing inside
+  their documented restart variance (d8192 c2 52.8→68.9 between
+  adjacent serves — the anchor row's own class), nothing
+  sign-consistent beyond the band. Upstream's 1.0-1.2% (their
+  three-launch mean) sits inside our instrument's noise at the
+  honest cell. The site-f rider STAYS: bit-safe, default-on, every
+  gate green with it. The L2PF question closes.
+- The pool line: 3,530 pages at 16.2 GiB — the videorows arithmetic
+  carrying (the boot-state wobble priced separately per round 149).
+
+**THE PROMOTION**: the identity guard passed (the round-146 guard run
+by hand this sitting), the pin + the 17 served store members mirrored
+to production (the 17 byte-identical; the 4 differing members 017/
+019/021/022 are all OUTSIDE the default PATCHES list; glm-boot-marks2
+removed as never-served), the promotion commit landed in production's
+repo, and the restart verified: **production serves v1.3.0 on 8000**
+(the /health version field 1.3.0, healthy after 80 s).
+
+**The state docs**: the anchors re-dated (the battery's receipts; the
+chart's pairs unchanged — no anchor row moved), the ledger's bump arc
+closes, the README's streak re-dates to forty, the release watch's
+PIN_TAG moves to v1.3.0.
