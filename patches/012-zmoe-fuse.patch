@@ -2,8 +2,32 @@ From 39ac60e3baef53b9d187418e7d923c1158b4abda Mon Sep 17 00:00:00 2001
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
 Subject: glm-cuda: a decode window's MoE glue fused, EXL3 decode tiles at one width, KDA f_b and g_b in one launch (Mia 1104 0030, ported to v1.2.4 + the 9-patch stack)
 
-REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132, the scratch verify) — the PDL launch-rewrite (#3776) collided with this member's hunks; the resolution composes the PDL wrapper with this member's variants; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
---- a/zig/kernels/cuda/exl3_group.cuh
+
+---
+ zig/kernels/cuda/exl3_experts.cu        |  80 ++++------
+ zig/kernels/cuda/exl3_group.cuh         |  60 ++++++++
+ zig/kernels/cuda/exl3_grouped.cuh       | 100 +++++++++++++
+ zig/kernels/cuda/glm_glue_moe.cuh       |  37 ++++-
+ zig/kernels/cuda/glm_mm.cu              |  24 ++-
+ zig/src/cuda/exl3_experts.zig           | 185 +++++++++++++++---------
+ zig/src/families/glm/cuda_engine.zig    |  13 +-
+ zig/src/families/glm/cuda_exl3.zig      |  25 ++++
+ zig/src/families/glm/cuda_forward.zig   |   3 +-
+ zig/src/families/glm/cuda_glue.zig      |  14 ++
+ zig/src/families/glm/cuda_kda_block.zig |   6 +
+ zig/src/families/glm/cuda_mm.zig        |  33 ++++-
+ zig/src/families/glm/cuda_moe.zig       |  36 ++++-
+ 13 files changed, 480 insertions(+), 136 deletions(-)
+ create mode 100644 zig/kernels/cuda/exl3_group.cuh
+
+
+REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
+
+
+REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+diff --git a/zig/kernels/cuda/exl3_group.cuh b/zig/kernels/cuda/exl3_group.cuh
+new file mode 100644
+--- /dev/null
 +++ b/zig/kernels/cuda/exl3_group.cuh
 @@ -0,0 +1,60 @@
 +// EXL3 routed experts' grouping in one block, shared by tf_exl3_group and the decode router's fused top-k.
@@ -66,6 +90,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +}
 +
 +}  // namespace tf_exl3
+diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.cuh
 --- a/zig/kernels/cuda/exl3_grouped.cuh
 +++ b/zig/kernels/cuda/exl3_grouped.cuh
 @@ -23,8 +23,22 @@
@@ -324,6 +349,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          float s = red[0][row][col];
  #pragma unroll
          for (int w = 1; w < W; ++w) s += red[w][row][col];
+diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.cuh
 --- a/zig/kernels/cuda/glm_glue_moe.cuh
 +++ b/zig/kernels/cuda/glm_glue_moe.cuh
 @@ -2,6 +2,7 @@
@@ -389,6 +415,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +  for (int i = threadIdx.x; i < n; i += tf_exl3::GROUP_THREADS) pick8[i] = sh_pick[i];
 +  tf_exl3::group_rows(sh_pick, n, top_k, ne, rows, uids, ucount, members);
 +}
+diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
 @@ -134,9 +134,15 @@
@@ -650,6 +677,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  test "the plan matches experts.py's for known shapes" {
      try std.testing.expectEqual(@as(u32, 4), try plan(4096, 2048, true)); // GLM_GATEUP
      try std.testing.expectEqual(@as(u32, 1), try plan(2048, 4096, false)); // GLM_DOWN
+diff --git a/zig/src/families/glm/cuda_kda_block.zig b/zig/src/families/glm/cuda_kda_block.zig
 --- a/zig/src/families/glm/cuda_kda_block.zig
 +++ b/zig/src/families/glm/cuda_kda_block.zig
 @@ -111,6 +111,12 @@

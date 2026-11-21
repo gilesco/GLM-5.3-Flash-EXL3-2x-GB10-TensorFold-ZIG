@@ -53,7 +53,9 @@ constructor, deinit and both Forward call sites re-anchored around them.
 
 REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
 
-REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132, the scratch verify) — the PDL launch-rewrite (#3776) collided with this member's hunks; the resolution composes the PDL wrapper with this member's variants; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
 --- a/zig/src/families/glm/cuda_moe.zig
 +++ b/zig/src/families/glm/cuda_moe.zig
 @@ -42,7 +42,26 @@

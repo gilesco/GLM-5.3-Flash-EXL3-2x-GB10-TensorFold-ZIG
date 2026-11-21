@@ -68,7 +68,9 @@ receipted on that tree.
 
 REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
 
-REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132, the scratch verify) — the PDL launch-rewrite (#3776) collided with this member's hunks; the resolution composes the PDL wrapper with this member's variants; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
 @@ -78,6 +78,7 @@
@@ -79,6 +81,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      b.step("test-glm-prompt-settings-host", "Actual opt-in settings and rank agreement on the CPU").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"prompt K experiment"} })).step);
      const request_starts = b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"glm request starts:"} }));
      b.step("test-glm-request-starts-host", "GLM message-start prompt cuts and the shared-KV startup refusal without devices").dependOn(&request_starts.step);
+diff --git a/zig/glm_snapshot_host.zig b/zig/glm_snapshot_host.zig
 --- a/zig/glm_snapshot_host.zig
 +++ b/zig/glm_snapshot_host.zig
 @@ -597,3 +597,144 @@
@@ -227,6 +230,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +    f.e.cur = &f.seq;
 +}
 \ No newline at end of file
+diff --git a/zig/kernels/cuda/common/mla.cuh b/zig/kernels/cuda/common/mla.cuh
 --- a/zig/kernels/cuda/common/mla.cuh
 +++ b/zig/kernels/cuda/common/mla.cuh
 @@ -43,8 +43,15 @@
@@ -359,6 +363,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      commit();
    }
    for (int i = 0; i < MT; ++i)
+diff --git a/zig/kernels/cuda/glm_glue_attn.cuh b/zig/kernels/cuda/glm_glue_attn.cuh
 --- a/zig/kernels/cuda/glm_glue_attn.cuh
 +++ b/zig/kernels/cuda/glm_glue_attn.cuh
 @@ -43,6 +43,24 @@
@@ -386,6 +391,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  extern "C" __global__ void __launch_bounds__(128)
      tf_glm_merge(const float* po, const float* pm, const float* pl, __nv_bfloat16* out, const int* cnt, int64_t rows,
                   int64_t heads, int nch, int sparse) {
+diff --git a/zig/kernels/cuda/glm_glue_latent.cuh b/zig/kernels/cuda/glm_glue_latent.cuh
 --- a/zig/kernels/cuda/glm_glue_latent.cuh
 +++ b/zig/kernels/cuda/glm_glue_latent.cuh
 @@ -99,3 +99,17 @@
@@ -406,7 +412,9 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +  float* s = reinterpret_cast<float*>(reinterpret_cast<unsigned char*>(scales) + page) + row;
 +  tf_kv_fp8::quant_row<512, true>(__bfloat162float(lat[r * stride + d]), d, cache + page + row * 512, s, red);
 +}
---- a/zig/src/core/contract/glm_kv_paged_records.zig
+diff --git a/zig/src/core/contract/glm_kv_paged_records.zig b/zig/src/core/contract/glm_kv_paged_records.zig
+new file mode 100644
+--- /dev/null
 +++ b/zig/src/core/contract/glm_kv_paged_records.zig
 @@ -0,0 +1,52 @@
 +//! GLM's E4M3 latent cache on KV pages: nvcc 13.0's receipts owed, 13.3's in measurements/pending_133.zig.
@@ -461,6 +469,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +    try std.testing.expectEqual(cuda.len, n);
 +    for (cuda) |r| _ = try twin(r);
 +}
+diff --git a/zig/src/core/contract/measurements/pending_133.zig b/zig/src/core/contract/measurements/pending_133.zig
 --- a/zig/src/core/contract/measurements/pending_133.zig
 +++ b/zig/src/core/contract/measurements/pending_133.zig
 @@ -35,8 +35,11 @@
@@ -475,6 +484,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      .{ .name = "norms tf_l2_rows", .usage = .{ .{ .regs = 48, .static = 32, .bound = 256 }, .{ .regs = 48, .static = 32, .bound = 256 }, .{ .regs = 48, .static = 32, .bound = 256 }, .{ .regs = 64, .static = 32, .bound = 256 }, .{ .regs = 64, .static = 32, .bound = 256 } } },
      .{ .name = "norms tf_slerp_rows", .usage = .{ .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 } } },
      .{ .name = "qk_rows tf_qk_rows at dim 256", .usage = .{ .{ .regs = 30, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 } } },
+diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry.zig
 --- a/zig/src/core/contract/registry.zig
 +++ b/zig/src/core/contract/registry.zig
 @@ -485,6 +485,7 @@
@@ -485,6 +495,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      _ = @import("flashnext_attn_lanes_pending.zig");
  }
  test "unmeasured CUDA records cannot pass a compiled resource check" {
+diff --git a/zig/src/core/contract/registry_joins.zig b/zig/src/core/contract/registry_joins.zig
 --- a/zig/src/core/contract/registry_joins.zig
 +++ b/zig/src/core/contract/registry_joins.zig
 @@ -50,7 +50,8 @@
@@ -497,6 +508,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  pub const metal_before = @import("fsr_records.zig").metal ++
      @import("scale_index_records.zig").metal ++
      @import("lfm3_records.zig").metal;
+diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
 --- a/zig/src/families/glm/cuda.zig
 +++ b/zig/src/families/glm/cuda.zig
 @@ -22,6 +22,7 @@
@@ -507,6 +519,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  pub const relay = @import("cuda_relay.zig");
  pub const config = @import("config.zig");
  pub const quant = @import("cuda_quant.zig");
+diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
 --- a/zig/src/families/glm/cuda_dsa_block.zig
 +++ b/zig/src/families/glm/cuda_dsa_block.zig
 @@ -236,8 +236,9 @@
@@ -521,6 +534,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  }
  
  fn writeKeys(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scratch, rows: usize, pos: u64) !void {
+diff --git a/zig/src/families/glm/cuda_kv8_test.zig b/zig/src/families/glm/cuda_kv8_test.zig
 --- a/zig/src/families/glm/cuda_kv8_test.zig
 +++ b/zig/src/families/glm/cuda_kv8_test.zig
 @@ -138,7 +138,42 @@
@@ -757,6 +771,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  }
  
  const Ops = struct {
+diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
 --- a/zig/src/families/glm/cuda_lanes.zig
 +++ b/zig/src/families/glm/cuda_lanes.zig
 @@ -352,7 +352,7 @@
@@ -768,6 +783,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          return p.fits(prompt, max_tokens);
      }
  
+diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_native.zig
 --- a/zig/src/families/glm/cuda_native.zig
 +++ b/zig/src/families/glm/cuda_native.zig
 @@ -514,6 +514,8 @@
@@ -803,6 +819,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      try std.testing.expect(explain(null, error.GlmKvHostNeedsPages) != null);
  }
  
+diff --git a/zig/src/families/glm/cuda_pages.zig b/zig/src/families/glm/cuda_pages.zig
 --- a/zig/src/families/glm/cuda_pages.zig
 +++ b/zig/src/families/glm/cuda_pages.zig
 @@ -14,14 +14,25 @@
@@ -915,6 +932,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          const st = &p.e.seqs.items[slot].?.st;
          const page = p.page;
          if (p.poison) for (ids[kept..]) |id| try p.e.d.check(p.e.d.api.cuMemsetD32Async(p.base() + id * page, 0xFFFF_FFFF, page / 4, p.e.stream.handle), "cuMemsetD32Async");
+diff --git a/zig/src/families/glm/cuda_pages_test.zig b/zig/src/families/glm/cuda_pages_test.zig
 --- a/zig/src/families/glm/cuda_pages_test.zig
 +++ b/zig/src/families/glm/cuda_pages_test.zig
 @@ -90,6 +90,7 @@
@@ -966,6 +984,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +    p.close(1);
 +    try expect(p.fits(600, 100));
 +}
+diff --git a/zig/src/families/glm/cuda_snapshot_layout.zig b/zig/src/families/glm/cuda_snapshot_layout.zig
 --- a/zig/src/families/glm/cuda_snapshot_layout.zig
 +++ b/zig/src/families/glm/cuda_snapshot_layout.zig
 @@ -84,11 +84,13 @@
@@ -985,6 +1004,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          try p.add(st, st.rings[2 * j], ring);
          try p.add(st, st.rings[2 * j + 1], ring);
          try p.addCache(st, x, x.pk, pooled, page_rows / sparse.pool * @as(usize, c.i_dim) * 2, if (x.pks != 0) x.pks else x.ps);
+diff --git a/zig/src/families/glm/cuda_sparse.zig b/zig/src/families/glm/cuda_sparse.zig
 --- a/zig/src/families/glm/cuda_sparse.zig
 +++ b/zig/src/families/glm/cuda_sparse.zig
 @@ -120,7 +120,8 @@
@@ -1006,6 +1026,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      args.add(@as(i64, @intCast(t.page_rows)));
      try cuda_pdl.launch(assemble, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 256 } }, stream, &args);
  }
+diff --git a/zig/src/families/glm/cuda_start.zig b/zig/src/families/glm/cuda_start.zig
 --- a/zig/src/families/glm/cuda_start.zig
 +++ b/zig/src/families/glm/cuda_start.zig
 @@ -49,10 +49,12 @@
@@ -1023,6 +1044,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +    for ([_][]const u8{ "on", "1", "all" }) |on| if (std.mem.eql(u8, v, on)) return true;
 +    return error.BadKvPages; // refused on every rank by name, not read as on
  }
+diff --git a/zig/src/families/glm/cuda_start_test.zig b/zig/src/families/glm/cuda_start_test.zig
 --- a/zig/src/families/glm/cuda_start_test.zig
 +++ b/zig/src/families/glm/cuda_start_test.zig
 @@ -62,13 +62,13 @@
@@ -1064,6 +1086,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          try run(&w, 0, 2, mode, kv8);
          try std.testing.expect(w.connected[0]);
          try std.testing.expect(w.constructed[0]);
+diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_state.zig
 --- a/zig/src/families/glm/cuda_state.zig
 +++ b/zig/src/families/glm/cuda_state.zig
 @@ -65,9 +65,10 @@

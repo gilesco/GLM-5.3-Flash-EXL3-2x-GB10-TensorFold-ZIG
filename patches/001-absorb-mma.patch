@@ -25,7 +25,38 @@ bit-equal to the SIMT kernels'. The fp32 summation order differs, so the flag is
 The opt-in prompt numerics are a new Settings.numerics field in every rank's fingerprint (layout 13): ranks that
 disagree refuse to start.
 
-REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132, the scratch verify) — the PDL launch-rewrite (#3776) collided with this member's hunks; the resolution composes the PDL wrapper with this member's variants; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+---
+ zig/kernels/cuda/glm_glue.cu             |   1 +
+ zig/kernels/cuda/glm_glue_num.cuh        | 156 +++++++++++++++++++++++
+ zig/src/families/glm/cuda_engine.zig     |  12 +-
+ zig/src/families/glm/cuda_forward.zig    |   3 +-
+ zig/src/families/glm/cuda_glue.zig       |  10 +-
+ zig/src/families/glm/cuda_latent.zig     |  18 +++
+ zig/src/families/glm/cuda_prompts.zig    |   2 +-
+ zig/src/families/glm/cuda_ranks.zig      |  24 +++-
+ zig/src/families/glm/cuda_ranks_test.zig |  28 +++-
+ 9 files changed, 247 insertions(+), 7 deletions(-)
+ create mode 100644 zig/kernels/cuda/glm_glue_num.cuh
+
+RE-ANCHORED onto v1.2.3 (6ec5fa4cb), 2026-11-06: only the cuda_engine.zig
+hunk at 181 moved - v1.2.3 logs a prompt chunk's exchange row pieces at
+TP>1 (the new line sits in the hunk's trailing context); the insertion
+(e.initNumerics after e.bp's errdefer) and every other hunk are verbatim
+(the diffstat still matches the original exactly: 9 files, 247 insertions,
+7 deletions). Applies on clean v1.2.3.
+
+REBASE (2026-11-07, onto v1.2.4 267c5af6a): the Fingerprint is layout 19 now
+(18 plus the prompt pair) - the patch bumps it to 20 (19 plus numerics) and inserts the
+numerics field after bits; the Forward constructions carry l2pf and
+prompt_pair.piecesOf now - .absorb_mma re-inserted beside them; the numerics test
+appended at the new EOF (v1.2.4 added the KV_SHARE adapter test after the old one).
+
+
+REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
+
+
+REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
 --- a/zig/kernels/cuda/glm_glue.cu
 +++ b/zig/kernels/cuda/glm_glue.cu
 @@ -8,4 +8,5 @@
@@ -34,7 +65,9 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  #include "glm_glue_attn.cuh"
 +#include "glm_glue_num.cuh"
  #include "glm_index_decode.cuh"
---- a/zig/kernels/cuda/glm_glue_num.cuh
+diff --git a/zig/kernels/cuda/glm_glue_num.cuh b/zig/kernels/cuda/glm_glue_num.cuh
+new file mode 100644
+--- /dev/null
 +++ b/zig/kernels/cuda/glm_glue_num.cuh
 @@ -0,0 +1,159 @@
 +// Opt-in prompt kernels that change rounding slightly (each behind a TF_GLM_* flag, off by default):
@@ -196,6 +229,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 +  glm_num::latent_mma<false, 3>(x, xr, w, out, orow, rows, n, k);
 +}
 +
+diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
 @@ -76,6 +76,8 @@
@@ -318,6 +352,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          try f.run(@ptrCast(ids[0..rows]));
          if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
          for (parts, segs[0..parts.len]) |p, g| {
+diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
 --- a/zig/src/families/glm/cuda_forward.zig
 +++ b/zig/src/families/glm/cuda_forward.zig
 @@ -157,6 +157,9 @@
@@ -348,6 +383,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
      }
  
      pub const Site = enum { mixer, ffn };
+diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
 @@ -7,6 +7,7 @@
@@ -436,6 +472,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  /// glue.rank_sum: out bf16 = partials summed rank 0 first, `me`'s from `own`, others' from `peers` in rank order.
  pub fn rankSum(set: Set, stream: cuda.Stream, own: u64, peers: u64, peer_stride: usize, out: u64, me: usize, rows: usize, d: usize, world: usize) !void {
      var a: cuda.Args = .{};
+diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_latent.zig
 --- a/zig/src/families/glm/cuda_latent.zig
 +++ b/zig/src/families/glm/cuda_latent.zig
 @@ -13,6 +13,10 @@
@@ -548,6 +585,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
  }
  
  /// latent.sparse_attention: rows with counts > 0 over their selected tokens (i32 [rows][w]); others left alone.
+diff --git a/zig/src/families/glm/cuda_prompts.zig b/zig/src/families/glm/cuda_prompts.zig
 --- a/zig/src/families/glm/cuda_prompts.zig
 +++ b/zig/src/families/glm/cuda_prompts.zig
 @@ -38,7 +38,7 @@
@@ -568,6 +606,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
              try f.mtp(@ptrCast(p.ids[1..]), &.{e.bp.fnormed + g.row0 * D * 2});
              try g.st.setMtpLen(e.stream, g.st.mtp_len + g.rows - 1);
          }
+diff --git a/zig/src/families/glm/cuda_ranks.zig b/zig/src/families/glm/cuda_ranks.zig
 --- a/zig/src/families/glm/cuda_ranks.zig
 +++ b/zig/src/families/glm/cuda_ranks.zig
 @@ -24,6 +24,7 @@
@@ -657,6 +696,7 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
          .capacity => "the sequence capacity (the context)",
          .heat_high => "TF_HEAT_HIGH",
          .heat_low => "TF_HEAT_LOW",
+diff --git a/zig/src/families/glm/cuda_ranks_test.zig b/zig/src/families/glm/cuda_ranks_test.zig
 --- a/zig/src/families/glm/cuda_ranks_test.zig
 +++ b/zig/src/families/glm/cuda_ranks_test.zig
 @@ -190,7 +190,7 @@
