@@ -35,11 +35,18 @@ instrument beyond the ±5% order-matched band?
      forms at each of TEN decode window widths and keeps the faster
      per width (classic unless factored is >1% faster);
      `TF_GLM_EXPERT_FORM` names one for every width.
-2. **#3776 SUPERSEDES our 016-zstep** (the fork's 0082 PDL chain):
-   upstream's native PDL covers EVERY GLM kernel (the fork's covered
-   the four EXL3 decode kernels only); the knob broadens from
-   TF_EXL3_PDL to TF_GLM_PDL. **The rebase DROPS 016** — the same
-   overlap class as 022-shared-budgets at v1.2.7 (mainlined, drop).
+2. **#3776 SUPERSEDES our 016-zstep's MECHANISM WIDTH, not its
+   kernels** (updated this sitting): upstream's native PDL covers
+   EVERY GLM kernel (the fork's covered the four EXL3 decode
+   kernels only); the knob broadens from TF_EXL3_PDL to TF_GLM_PDL.
+   But pristine v1.3.2 does NOT carry the fork's read-once
+   k8r8s/k8r16s kernels (015-zshfl's contribution, measured flat,
+   adopted bit-safe, the fork's 0083+ builds on them) — the store
+   KEEPS 015/016's fields in the compose and the fork chain stays
+   knob-flippable (TF_EXL3_PDL=0). The drop-016 question closes
+   AFTER the battery, with the honest reading in hand: the value
+   bracket measures the native PDL against the combined baseline
+   (the fork chain + the native wrapper both live in the compose).
 3. **The store composes 5/10 carriers clean; FIVE drift**: 001
    (cuda_glue.zig:194), 003 (cuda_kv8_test.zig:136), 004
    (cuda_mm.zig:59), 009 (cuda_moe.zig:54), 012 (glm_glue_moe.cuh:1)

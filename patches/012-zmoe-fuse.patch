@@ -2,31 +2,8 @@ From 39ac60e3baef53b9d187418e7d923c1158b4abda Mon Sep 17 00:00:00 2001
 From: GLM-EXL3-2x-GB10 testing line <tensorfold-zig-testing@local>
 Subject: glm-cuda: a decode window's MoE glue fused, EXL3 decode tiles at one width, KDA f_b and g_b in one launch (Mia 1104 0030, ported to v1.2.4 + the 9-patch stack)
 
-
----
- zig/kernels/cuda/exl3_experts.cu        |  80 ++++------
- zig/kernels/cuda/exl3_group.cuh         |  60 ++++++++
- zig/kernels/cuda/exl3_grouped.cuh       | 100 +++++++++++++
- zig/kernels/cuda/glm_glue_moe.cuh       |  37 ++++-
- zig/kernels/cuda/glm_mm.cu              |  24 ++-
- zig/src/cuda/exl3_experts.zig           | 185 +++++++++++++++---------
- zig/src/families/glm/cuda_engine.zig    |  13 +-
- zig/src/families/glm/cuda_exl3.zig      |  25 ++++
- zig/src/families/glm/cuda_forward.zig   |   3 +-
- zig/src/families/glm/cuda_glue.zig      |  14 ++
- zig/src/families/glm/cuda_kda_block.zig |   6 +
- zig/src/families/glm/cuda_mm.zig        |  33 ++++-
- zig/src/families/glm/cuda_moe.zig       |  36 ++++-
- 13 files changed, 480 insertions(+), 136 deletions(-)
- create mode 100644 zig/kernels/cuda/exl3_group.cuh
-
-
-REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
-
-diff --git a/zig/kernels/cuda/exl3_group.cuh b/zig/kernels/cuda/exl3_group.cuh
-new file mode 100644
-index 000000000..b354caa33
---- /dev/null
+REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132, the scratch verify) — the PDL launch-rewrite (#3776) collided with this member's hunks; the resolution composes the PDL wrapper with this member's variants; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+--- a/zig/kernels/cuda/exl3_group.cuh
 +++ b/zig/kernels/cuda/exl3_group.cuh
 @@ -0,0 +1,60 @@
 +// EXL3 routed experts' grouping in one block, shared by tf_exl3_group and the decode router's fused top-k.
@@ -89,11 +66,9 @@ index 000000000..b354caa33
 +}
 +
 +}  // namespace tf_exl3
-diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.cuh
-index 930700d96..88a39a6b2 100644
 --- a/zig/kernels/cuda/exl3_grouped.cuh
 +++ b/zig/kernels/cuda/exl3_grouped.cuh
-@@ -23,8 +23,22 @@ struct GroupedArgs {
+@@ -23,8 +23,22 @@
      int k, n, p, sk, maxm, slots, nexp_max, mats, ns, standard, skip;
  };
  
@@ -118,7 +93,7 @@ index 930700d96..88a39a6b2 100644
  
  // One warp's k tiles [kt0, kt0 + nkt) of an expert matrix into acc: per-lane loads and the shared decode (same bits).
  template <int CB, int K2, int NT, int LOAD>
-@@ -69,6 +83,107 @@ __device__ __forceinline__ void warp_tiles(const uint32_t* T, int ntiles, int kt
+@@ -69,6 +83,107 @@
      }
  }
  
@@ -226,10 +201,17 @@ index 930700d96..88a39a6b2 100644
  // Program (expert u, n block, split, member tile): 16 members times W_q over the split's K range, summed in warp order.
  template <int CB, int NT, int W, int LOAD>
  __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nblock, int zz) {
-@@ -159,4 +274,120 @@ __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nbl
-     }
- }
- 
+@@ -152,6 +267,122 @@
+         const int row = idx / (NT * 16), col = idx % (NT * 16);
+         const int r = rows_sh[row];
+         if (r < 0) continue;
++        float s = red[0][row][col];
++#pragma unroll
++        for (int w = 1; w < W; ++w) s += red[w][row][col];
++        a.z[(((size_t)mat * a.sk + split) * a.p + r) * a.n + nt0 * 16 + col] = s;
++    }
++}
++
 +// grouped_body at one trellis width K2F (no width switch: fewer registers) and RR reduction rows (a member tile of at
 +// most RR rows: decode windows); every column keeps its k slices and warp-order sum, so the bits are grouped_body's.
 +// SHFL_PDL (a dependent launch): before its wait a block reads only the plan (uids, count, members: from the router two
@@ -339,28 +321,20 @@ index 930700d96..88a39a6b2 100644
 +        const int row = idx / (NT * 16), col = idx % (NT * 16);
 +        const int r = rows_sh[row];
 +        if (r < 0) continue;
-+        float s = red[0][row][col];
-+#pragma unroll
-+        for (int w = 1; w < W; ++w) s += red[w][row][col];
-+        a.z[(((size_t)mat * a.sk + split) * a.p + r) * a.n + nt0 * 16 + col] = s;
-+    }
-+}
-+
- }  // namespace tf_exl3
-diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.cuh
-index 682d5cf03..722d1188b 100644
+         float s = red[0][row][col];
+ #pragma unroll
+         for (int w = 1; w < W; ++w) s += red[w][row][col];
 --- a/zig/kernels/cuda/glm_glue_moe.cuh
 +++ b/zig/kernels/cuda/glm_glue_moe.cuh
-@@ -1,6 +1,8 @@
- // GLM's MLP and MoE glue by hand: glue._topk and qmm._group_sums (SwiGLU: glm_swiglu.cuh; router dot: glm_glue_router).
+@@ -2,6 +2,7 @@
  #pragma once
  
+ #include "glm_pdl.cuh"
 +#include "exl3_group.cuh"
-+
+ 
  #include "glm_triton.cuh"
  
- using namespace glm_triton;
-@@ -19,13 +21,12 @@ extern "C" __global__ void __launch_bounds__(128)
+@@ -22,14 +23,12 @@
    if ((threadIdx.x & 7) == 0 && g < kg) xs[m * kg + g] = s;
  }
  
@@ -368,6 +342,7 @@ index 682d5cf03..722d1188b 100644
 -extern "C" __global__ void __launch_bounds__(32)
 -    tf_glm_topk(const float* logits, const float* bias, int* pick, float* wts, float scale, int ne, int top_k,
 -                int norm) {
+-  glm_pdl::enter();
 +// glue._topk of row `r` by one warp: top_k by sigmoid + bias (ties to lower id), normed if `norm`, x scale; then the
 +// shared expert. `sh` (or null): the row's routed picks also at sh[r * top_k ..], compact, for the EXL3 grouping.
 +namespace glm_moe {
@@ -379,7 +354,7 @@ index 682d5cf03..722d1188b 100644
    float score[MAXE], choice[MAXE];
    for (int i = 0; i < MAXE; ++i) {
      const int e = i * 32 + lane;
-@@ -59,8 +60,32 @@ extern "C" __global__ void __launch_bounds__(32)
+@@ -63,8 +62,34 @@
      const float v = norm ? div_full(mine, total + 1e-20f) : mine;
      pick[r * (top_k + 1) + lane] = mine_id;
      wts[r * (top_k + 1) + lane] = __fmul_rn(v, scale);
@@ -395,6 +370,7 @@ index 682d5cf03..722d1188b 100644
 +extern "C" __global__ void __launch_bounds__(32)
 +    tf_glm_topk(const float* logits, const float* bias, int* pick, float* wts, float scale, int ne, int top_k,
 +                int norm) {
++  glm_pdl::enter();
 +  glm_moe::topk_row(blockIdx.x, threadIdx.x, logits, bias, pick, wts, scale, ne, top_k, norm, nullptr);
 +}
 +
@@ -404,6 +380,7 @@ index 682d5cf03..722d1188b 100644
 +extern "C" __global__ void __launch_bounds__(tf_exl3::GROUP_THREADS)
 +    tf_glm_topk_group(const float* logits, const float* bias, int* pick, float* wts, float scale, int ne, int top_k, int norm,
 +                      int rows, int* pick8, int* uids, int* ucount, int* members) {
++  glm_pdl::enter();
 +  __shared__ int sh_pick[tf_exl3::GROUP_THREADS];
 +  const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
 +  if (warp < rows) glm_moe::topk_row(warp, lane, logits, bias, pick, wts, scale, ne, top_k, norm, sh_pick);
@@ -412,11 +389,9 @@ index 682d5cf03..722d1188b 100644
 +  for (int i = threadIdx.x; i < n; i += tf_exl3::GROUP_THREADS) pick8[i] = sh_pick[i];
 +  tf_exl3::group_rows(sh_pick, n, top_k, ne, rows, uids, ucount, members);
 +}
-diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
-index 005e007fd..3f125b6d3 100644
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
-@@ -107,9 +107,15 @@ pub fn scratch(base: u64, l: Layer, rows: usize, slots: usize) !Scratch {
+@@ -134,9 +134,15 @@
  /// The loaded kernels.
  pub const Experts = struct {
      mod: Module,
@@ -433,7 +408,7 @@ index 005e007fd..3f125b6d3 100644
      gateup: Function,
      down_combine: Function,
      prompt: prompt.Kernels = undefined,
-@@ -121,9 +127,11 @@ pub const Experts = struct {
+@@ -148,9 +154,11 @@
          if (!kernels.available) return error.BuiltWithoutKernels;
          var e: Experts = .{
              .mod = try Module.load(d, kernels.exl3_experts),
@@ -446,7 +421,7 @@ index 005e007fd..3f125b6d3 100644
              .gateup = undefined,
              .down_combine = undefined,
          };
-@@ -132,14 +140,20 @@ pub const Experts = struct {
+@@ -159,14 +167,20 @@
          e.plan_rotate = try e.mod.function("tf_exl3_plan_rotate");
          e.plan_finish = try e.mod.function("tf_exl3_plan_finish");
          e.plan_finish_after = try e.mod.function("tf_exl3_plan_finish_after");
@@ -469,46 +444,43 @@ index 005e007fd..3f125b6d3 100644
          e.gateup = try e.mod.function("tf_exl3_gateup_epilogue");
          e.down_combine = try e.mod.function("tf_exl3_down_combine");
          return e;
-@@ -156,34 +170,36 @@ pub const Experts = struct {
+@@ -183,7 +197,9 @@
  
      /// The routed experts of `rows` rows: group, rotate in, grouped gate/up, SwiGLU, grouped down, wts-weighted sum.
      pub fn run(e: *const Experts, s: Stream, l: Layer, x: u64, x_stride: usize, x_dtype: DType, pick: u64, wts: u64, rows: usize, out: u64, sc: Scratch) !void {
--        const d = l.dims;
--        const w = l.width;
--        const slots = sc.slots;
--        std.debug.assert(rows >= 1 and rows <= sc.rows);
--        std.debug.assert(slots >= 1 and slots <= 32);
--        std.debug.assert(l.experts >= 1 and l.experts <= 4096);
--        if (l.act_mode != 0 and l.act_mode != 1) return error.BadExperts; // SwiGLU-OAI runs through Grouped only
--        const g_sk = try plan(d, w, true);
--        const d_sk = try plan(w, d, false);
--        const p = rows * slots;
--        const maxu = @min(p, l.experts);
--        const mt = (rows + 15) / 16;
--        const i32d = struct {
--            fn f(v: usize) i32 {
--                return @intCast(v);
--            }
--        }.f;
+-        try e.runWith(s, l, x, x_stride, x_dtype, pick, wts, rows, out, sc, 0, null);
 +        try e.group(s, l, pick, rows, sc);
 +        try e.core(s, l, x, x_stride, x_dtype, pick, rows, sc);
 +        try e.combine(s, l, pick, rows, sc, wts, sc.slots, 0, out);
-+    }
+     }
  
+     /// run() on a decode window's item plan (`it`): the grouped kernels in standard mode, the slot rows in `ey`.
+@@ -229,7 +245,7 @@
+             a.add(i32d(slots));
+             a.add(i32d(l.experts));
+             a.add(i32d(rows));
+-            try launch_.launch(e.group, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * slots * 4) }, s, &a);
++            try launch_.launch(e.group_fn, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * slots * 4) }, s, &a);
+         }
+ 
+         var r: launch_.Args = .{};
+@@ -323,8 +339,185 @@
+         cb.add(i32d(slots));
+         try launch_.launch(e.down_combine, .{ .grid = .{ .x = @intCast(rows), .y = @intCast(d / 128), .z = 1 }, .block = .{ .x = @intCast(32 * slots), .y = 1, .z = 1 } }, s, &cb);
+     }
++
 +    /// `pick`'s distinct experts and their members into sc.ids, sc.count and sc.members (tf_exl3_group).
 +    pub fn group(e: *const Experts, s: Stream, l: Layer, pick: u64, rows: usize, sc: Scratch) !void {
 +        const g = try Geometry.of(l, rows, sc);
-         var a: launch_.Args = .{};
-         a.add(pick);
-         a.add(sc.ids);
-         a.add(sc.count);
-         a.add(sc.members);
-         a.add(i32d(rows));
--        a.add(i32d(slots));
++        var a: launch_.Args = .{};
++        a.add(pick);
++        a.add(sc.ids);
++        a.add(sc.count);
++        a.add(sc.members);
++        a.add(i32d(rows));
 +        a.add(i32d(g.slots));
-         a.add(i32d(l.experts));
-         a.add(i32d(rows));
--        try launch_.launch(e.group, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * slots * 4) }, s, &a);
++        a.add(i32d(l.experts));
++        a.add(i32d(rows));
 +        try launch_.launch(e.group_fn, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * g.slots * 4) }, s, &a);
 +    }
 +
@@ -522,44 +494,21 @@ index 005e007fd..3f125b6d3 100644
 +        // dependent launches when both projections take the kernels that wait (k8r8p/k8r16p): rot_in and the epilogue
 +        // wait first and trigger; the grouped kernels read the plan, trellis pointers and first tile before their wait
 +        const chain = gt.pdl and dt.pdl;
- 
-         var r: launch_.Args = .{};
-         r.add(x);
-@@ -194,34 +210,34 @@ pub const Experts = struct {
-         r.add(l.suh_u);
-         r.add(sc.xg);
-         r.add(sc.xu);
--        r.add(i32d(d));
--        r.add(i32d(slots));
++
++        var r: launch_.Args = .{};
++        r.add(x);
++        r.add(i32d(x_stride));
++        r.add(@as(i32, @backingInt(x_dtype)));
++        r.add(pick);
++        r.add(l.suh_g);
++        r.add(l.suh_u);
++        r.add(sc.xg);
++        r.add(sc.xu);
 +        r.add(i32d(g.d));
 +        r.add(i32d(g.slots));
-         r.add(i32d(l.experts));
--        try launch_.launch(e.rot_in, .{ .grid = .{ .x = @intCast(p), .y = @intCast(d / 128), .z = 2 }, .block = .{ .x = 32, .y = 1, .z = 1 } }, s, &r);
++        r.add(i32d(l.experts));
 +        try launch_.launch(e.rot_in, .{ .grid = .{ .x = @intCast(g.p), .y = @intCast(g.d / 128), .z = 2 }, .block = .{ .x = 32, .y = 1, .z = 1 }, .pdl = chain }, s, &r);
- 
--        var g: launch_.Args = .{};
--        g.add(sc.xg);
--        g.add(sc.xu);
--        g.add(l.gate);
--        g.add(l.up);
--        g.add(l.gate_k2);
--        g.add(l.up_k2);
--        g.add(sc.ids);
--        g.add(sc.count);
--        g.add(sc.members);
--        g.add(sc.z);
--        g.add(i32d(d));
--        g.add(i32d(w));
--        g.add(i32d(p));
--        g.add(i32d(g_sk));
--        g.add(i32d(rows));
--        g.add(i32d(slots));
--        g.add(i32d(maxu));
--        g.add(@as(i32, 2));
--        g.add(i32d(l.gu_stride));
--        g.add(@as(i32, 0));
--        g.add(@as(i32, -1));
--        try launch_.launch(e.grouped[@backingInt(l.codebook)], .{ .grid = .{ .x = @intCast(maxu), .y = @intCast(w / 128), .z = @intCast(2 * g_sk * mt) }, .block = .{ .x = 128, .y = 1, .z = 1 } }, s, &g);
++
 +        var gu: launch_.Args = .{};
 +        gu.add(sc.xg);
 +        gu.add(sc.xu);
@@ -583,52 +532,47 @@ index 005e007fd..3f125b6d3 100644
 +        gu.add(@as(i32, 0));
 +        gu.add(@as(i32, -1));
 +        try launch_.launch(gt.f, .{ .grid = .{ .x = @intCast(g.maxu), .y = @intCast(g.w / (gt.nt * 16)), .z = @intCast(2 * g.g_sk * g.mt) }, .block = .{ .x = 128, .y = 1, .z = 1 }, .pdl = chain }, s, &gu);
- 
-         var ep: launch_.Args = .{};
-         ep.add(sc.z);
-@@ -230,13 +246,13 @@ pub const Experts = struct {
-         ep.add(l.svh_u);
-         ep.add(l.suh_d);
-         ep.add(sc.xd);
--        ep.add(i32d(p));
--        ep.add(i32d(w));
--        ep.add(i32d(g_sk));
++
++        var ep: launch_.Args = .{};
++        ep.add(sc.z);
++        ep.add(pick);
++        ep.add(l.svh_g);
++        ep.add(l.svh_u);
++        ep.add(l.suh_d);
++        ep.add(sc.xd);
 +        ep.add(i32d(g.p));
 +        ep.add(i32d(g.w));
 +        ep.add(i32d(g.g_sk));
-         ep.add(i32d(l.experts));
-         ep.add(l.limit);
-         ep.add(l.act_mode);
--        try launch_.launch(e.gateup, .{ .grid = .{ .x = @intCast(p), .y = @intCast(w / 128), .z = 1 }, .block = .{ .x = 32, .y = 1, .z = 1 } }, s, &ep);
++        ep.add(i32d(l.experts));
++        ep.add(l.limit);
++        ep.add(l.act_mode);
 +        try launch_.launch(e.gateup, .{ .grid = .{ .x = @intCast(g.p), .y = @intCast(g.w / 128), .z = 1 }, .block = .{ .x = 32, .y = 1, .z = 1 }, .pdl = chain }, s, &ep);
- 
-         var dn: launch_.Args = .{};
-         dn.add(sc.xd);
-@@ -249,19 +265,47 @@ pub const Experts = struct {
-         dn.add(sc.count);
-         dn.add(sc.members);
-         dn.add(sc.z);
--        dn.add(i32d(w));
--        dn.add(i32d(d));
--        dn.add(i32d(p));
--        dn.add(i32d(d_sk));
++
++        var dn: launch_.Args = .{};
++        dn.add(sc.xd);
++        dn.add(sc.xd);
++        dn.add(l.down);
++        dn.add(l.down);
++        dn.add(l.down_k2);
++        dn.add(l.down_k2);
++        dn.add(sc.ids);
++        dn.add(sc.count);
++        dn.add(sc.members);
++        dn.add(sc.z);
 +        dn.add(i32d(g.w));
 +        dn.add(i32d(g.d));
 +        dn.add(i32d(g.p));
 +        dn.add(i32d(g.d_sk));
-         dn.add(i32d(rows));
--        dn.add(i32d(slots));
--        dn.add(i32d(maxu));
++        dn.add(i32d(rows));
 +        dn.add(i32d(g.slots));
 +        dn.add(i32d(g.maxu));
-         dn.add(@as(i32, 1));
-         dn.add(@as(i32, 0));
-         dn.add(@as(i32, 0));
-         dn.add(@as(i32, -1));
--        try launch_.launch(e.grouped[@backingInt(l.codebook)], .{ .grid = .{ .x = @intCast(maxu), .y = @intCast(d / 128), .z = @intCast(d_sk * mt) }, .block = .{ .x = 128, .y = 1, .z = 1 } }, s, &dn);
++        dn.add(@as(i32, 1));
++        dn.add(@as(i32, 0));
++        dn.add(@as(i32, 0));
++        dn.add(@as(i32, -1));
 +        try launch_.launch(dt.f, .{ .grid = .{ .x = @intCast(g.maxu), .y = @intCast(g.d / (dt.nt * 16)), .z = @intCast(g.d_sk * g.mt) }, .block = .{ .x = 128, .y = 1, .z = 1 }, .pdl = chain }, s, &dn);
 +    }
- 
++
 +    /// The grouped kernel for a projection of `rows` rows and its tiles a block. Only the block's column span, the width
 +    /// dispatch and the unused reduction rows change (every column keeps its k slices and warp-order sum), so every form
 +    /// gives the same bits. Chosen where each measured faster on sm_120 (decode2_bench/results_exl3_*.txt, cold weights):
@@ -656,27 +600,22 @@ index 005e007fd..3f125b6d3 100644
 +    pub fn combine(e: *const Experts, s: Stream, l: Layer, pick: u64, rows: usize, sc: Scratch, wts: u64, wslots: usize, extra: u64, out: u64) !void {
 +        const g = try Geometry.of(l, rows, sc);
 +        if (wslots != g.slots + @intFromBool(extra != 0)) return error.BadSlots;
-         var cb: launch_.Args = .{};
-         cb.add(sc.z);
-         cb.add(pick);
-@@ -269,15 +313,46 @@ pub const Experts = struct {
-         cb.add(sc.y);
-         cb.add(wts);
-         cb.add(out);
--        cb.add(i32d(p));
--        cb.add(i32d(d));
--        cb.add(i32d(d_sk));
++        var cb: launch_.Args = .{};
++        cb.add(sc.z);
++        cb.add(pick);
++        cb.add(l.svh_d);
++        cb.add(sc.y);
++        cb.add(wts);
++        cb.add(out);
 +        cb.add(i32d(g.p));
 +        cb.add(i32d(g.d));
 +        cb.add(i32d(g.d_sk));
-         cb.add(i32d(l.experts));
--        cb.add(i32d(slots));
--        try launch_.launch(e.down_combine, .{ .grid = .{ .x = @intCast(rows), .y = @intCast(d / 128), .z = 1 }, .block = .{ .x = @intCast(32 * slots), .y = 1, .z = 1 } }, s, &cb);
++        cb.add(i32d(l.experts));
 +        cb.add(i32d(g.slots));
 +        cb.add(extra);
 +        cb.add(i32d(wslots));
 +        try launch_.launch(e.down_combine, .{ .grid = .{ .x = @intCast(rows), .y = @intCast(g.d / 128), .z = 1 }, .block = .{ .x = @intCast(32 * g.slots), .y = 1, .z = 1 } }, s, &cb);
-     }
++    }
  };
  
 +/// A call's shape: projection splits, pairs, distinct-expert capacity and 16-member tiles (asserts the bounds).
@@ -711,11 +650,9 @@ index 005e007fd..3f125b6d3 100644
  test "the plan matches experts.py's for known shapes" {
      try std.testing.expectEqual(@as(u32, 4), try plan(4096, 2048, true)); // GLM_GATEUP
      try std.testing.expectEqual(@as(u32, 1), try plan(2048, 4096, false)); // GLM_DOWN
-diff --git a/zig/src/families/glm/cuda_kda_block.zig b/zig/src/families/glm/cuda_kda_block.zig
-index 92e3bcdd8..297ad7864 100644
 --- a/zig/src/families/glm/cuda_kda_block.zig
 +++ b/zig/src/families/glm/cuda_kda_block.zig
-@@ -110,6 +110,12 @@ pub fn project(set: glue.Set, stream: cuda.Stream, l: Layer, s: Scratch, x: u64,
+@@ -111,6 +111,12 @@
              if (!one) try columns(set, stream, s.tmp, w - fa, s.p + fa * 2, w, rows);
          },
      }
