@@ -36,18 +36,23 @@ chk '^CONTAINER_NAME="${CONTAINER_NAME:-glm53-native-tf}"' \
 # share — STATE_DIR (the prepared marker's home; the round-154 collision:
 # the testing window's prepare overwrote the SHARED marker and the
 # production restore's start.sh read the TESTING marker) and IMAGE_NAME
-# (the docker image tag both prepares build into). The guard fires only
-# on a TESTING repo checked as production (a shared STATE_DIR/IMAGE_NAME
-# would make the collision possible again).
-if grep -q '^STATE_DIR="${STATE_DIR:-$HOME/.local/state/glm53-native}"' \
-  "$CFG"; then
-  echo "IDENTITY GUARD: $CFG shares STATE_DIR with production" \
-    "(the round-154 collision class)" >&2; fail=1
+# (the docker image tag both prepares build into). The guard fires on a
+# repo whose PORT is the TESTING port (8001) but whose STATE_DIR is
+# production's UNSUFFIXED dir — the round-154 collision shape (the
+# testing repo silently writing production's marker). Production itself
+# carries the unsuffixed dir legitimately; the round-155 false-positive
+# lesson: the guard must check the COLLISION (testing port + shared
+# dir), not the shared dir alone.
+if grep -q 'PORT="${PORT:-8001}"' "$CFG" \
+  && grep -q '^STATE_DIR="${STATE_DIR:-$HOME/.local/state/glm53-native}"' \
+    "$CFG"; then
+  echo "IDENTITY GUARD: $CFG is the testing stack but writes production's" \
+    "STATE_DIR (the round-154 collision class)" >&2; fail=1
 fi
-if grep -q '^IMAGE_NAME="${IMAGE_NAME:-glm53-native-tf}"' "$CFG" \
-  && grep -q 'PORT="${PORT:-8001}"' "$CFG"; then
-  echo "IDENTITY GUARD: $CFG shares IMAGE_NAME with production while" \
-    "carrying the testing port (the round-154 collision class)" >&2
+if grep -q 'PORT="${PORT:-8001}"' "$CFG" \
+  && grep -q '^IMAGE_NAME="${IMAGE_NAME:-glm53-native-tf}"' "$CFG"; then
+  echo "IDENTITY GUARD: $CFG is the testing stack but builds into" \
+    "production's IMAGE_NAME (the round-154 collision class)" >&2
   fail=1
 fi
 if [ "$fail" -ne 0 ]; then
