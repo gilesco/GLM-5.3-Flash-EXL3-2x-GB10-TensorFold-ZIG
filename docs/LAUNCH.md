@@ -4523,3 +4523,55 @@ a different mechanism width and must be measured, not assumed).
 promotion); no window; the release watch armed at v1.3.2. This
 sitting launches nothing — the rebase is mid-stage and the launch
 is the LAST action of a sitting.
+
+## (round 157) THE V1.3.2 BUMP QUALIFIED AND PROMOTED — THE THREE-WINDOW ROAD; THE PDL VALUE READ CLOSES THE DROP-016 QUESTION (2026-11-21)
+
+**The stage brief** (docs/STAGE_BRIEF_v132val.md, round 155): does the
+v1.3.2 engine (b472b9f8 + the re-anchored store, three decode levers
+default-on) hold every quality gate, and does #3776's PDL launch-gap
+claim transfer at our shape? Value-if-yes: the decode row moves and the
+ninth-bump ground stands; kill: ANY gate FAIL holds the pin at v1.3.1.
+
+**The road took three windows.**
+
+- **Window w1787589** (campaign-20261121-210259): VOID — the image build
+  died at `exl3_group.cuh: No such file or directory`. Root cause: the
+  round-155 regen emitted the five drifted members WITHOUT `diff --git`
+  headers (the build-native skip logic reads them as provenance markers
+  and skipped 012 entirely). The regen format fixed to git-native diffs;
+  the first splice attempt also mangled hunk headers (the sed rewrite of
+  `---`/`+++` collided with `tail -n +3` — three false starts before the
+  byte-exact round-trip re-proved against compose-v132).
+- **Window w1857731** (campaign-20261121-212619): VOID — the zig compile
+  gate caught THREE hand-merge defects: the runWith-local `i32d`
+  shadowing the file-level fn; a `glue.combine` tail mis-scoped into
+  `sharedRows` (the line belongs to `fill` only); the fork's
+  `group_fn` field rename breaking muse_spark's v1.3.2 consumer (the
+  field back to upstream's `group` name, the method renamed
+  `groupRows`). Compose fixed at `16e83c054`; the round-trip re-proven.
+- **Window w1870081** (campaign-20261121-215341): **QUALIFIED** — the
+  witness `80cc3802…` IDENTICAL across the eighth bump, the §2 gates
+  ALL PASS (g1-g4 content), hardmode **94 HOLDS on the 3.1.0 frame**,
+  the vision 4/4, the walls 83/83, load 174 s, strict-TF_ refusals 0.
+
+**The PDL value read** (the brief's value bracket, order-matched):
+default(1) 78.8 tok/s → TF_GLM_PDL=0 OFF 73.1 → default(2) 75.9. The
+bracket agrees inside the band; OFF sits beyond the ±5% order-matched
+band. **The claim transfers** — the decode row re-dates 73.1 -> 77.3
+(the anchors + the chart re-rendered the same sitting), and the
+round-155 drop-016 deferral CLOSES: transfers (016's mechanism stays
+native-superseded; the fork kernels stay beside the wrapper, bit-safe,
+knob-flippable).
+
+**The promotion sync** (production's own repo, the d5c820b pattern):
+the pin `b472b9f8`, the 17 served members mirrored byte-identical into
+patches/ + image/patches/, build-native.sh synced, the identity guard
+green BEFORE the restart (round 146), production restarted through its
+own scripts — `/health version 1.3.2` verified at 23:13. Promotion
+commit f6e6a6d. The release watch's PIN_TAG -> v1.3.2. The state docs
+updated the same sitting (README engine pin, the ledger's bump entry,
+the anchors' dated header + the decode row).
+
+**Next**: the v1.3.3 rebase per the round-155 order decision — the
+compose against v1.3.3 (`1e4a32cb`, 631 commits), the brief naming
+#3486/#3693/#3164's default-behavior changes as the value questions.

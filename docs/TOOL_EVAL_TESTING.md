@@ -1440,6 +1440,32 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
+- [x] **THE V1.3.2 BUMP ARC** (rounds 155-157, windows w1787589/w1857731/
+  w1870081, campaign-20261121-215341): QUALIFIED and PROMOTED — the
+  witness `80cc3802…` IDENTICAL across the EIGHTH engine bump, the §2
+  gates ALL PASS, the vision 4/4, the walls 83/83. **Hardmode 94 HOLDS
+  on the 3.1.0 frame** (the re-based boundary the user set round 154;
+  95 ×40 on 3.0.1.dev4 before it). The bump rode the hand-rebase ground:
+  the compose `e8c3c054` (pristine v1.3.2 `b472b9f8` + the re-anchored
+  store — three decode levers default-on: #3776 PDL supersedes 016's
+  mechanism, #2044's item plan, #3249's form race; 016-zstep's body
+  retired EMPTY, its mechanism native). The road there took THREE
+  windows: the first died at the image build (the regen members emitted
+  `--- a/` first-lines with mangled hunk headers — git apply refused;
+  the regen format fixed to git-native diffs with new-file-mode markers
+  for created files), the second at the zig compile (three defects the
+  gate caught: the runWith-local `i32d` shadowing, a `glue.combine` tail
+  mis-scoped into `sharedRows`, and the fork's `group_fn` field rename
+  breaking muse_spark's v1.3.2 consumer — the field back to upstream's
+  `group` name, the method renamed `groupRows`), the third RAN CLEAN.
+  The round-trip re-proven byte-exact each time (pristine v1.3.2 + the
+  store = the composed tree, zero diffs). THE PDL VALUE READ: the
+  order-matched bracket default(1) 78.8 / default(2) 75.9 tok/s vs OFF
+  73.1 — beyond the ±5% band with the bracket agreeing: **the #3776
+  launch-gap claim TRANSFERS; the decode row re-dates 73.1 -> 77.3;
+  the round-155 drop-016 deferral CLOSES (transfers)**. Production
+  serves v1.3.2 from 23:13 (`/health version 1.3.2` verified; the
+  promotion commit f6e6a6d; the release watch's PIN_TAG moved).
 - [x] **The warm-resume cost in the paged+share era — CLOSED round 141, the
   kill criterion fired on the first VALID A/B reading (window 61,
   campaign-20261112-023109)**. The arc: the warmttft re-anchor (window 50)
