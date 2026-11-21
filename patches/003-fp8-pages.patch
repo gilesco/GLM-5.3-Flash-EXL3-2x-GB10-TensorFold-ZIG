@@ -70,10 +70,12 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 
 
 REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the composed tree (branch compose-v133) — v1.3.3's the fp8-pages marriage ground moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.3 + the store = the composed tree, zero diffs).
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
-@@ -78,6 +78,7 @@
+@@ -79,6 +79,7 @@
      const snapshots_run = b.addRunArtifact(b.addTest(.{ .root_module = snapshots }));
      b.step("test-glm-snapshots-host", "Prompt-sized GLM state copies, page budgets and rank ordering without devices").dependOn(&snapshots_run.step);
      step.dependOn(&snapshots_run.step);
@@ -498,16 +500,14 @@ diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry
 diff --git a/zig/src/core/contract/registry_joins.zig b/zig/src/core/contract/registry_joins.zig
 --- a/zig/src/core/contract/registry_joins.zig
 +++ b/zig/src/core/contract/registry_joins.zig
-@@ -50,7 +50,8 @@
-     @import("cuda_lane_pending.zig").records ++
+@@ -56,6 +56,7 @@
      @import("weight_only_records.zig").cuda ++
      @import("hc_activation_records.zig").cuda ++
--    @import("qwen4_records.zig").cuda;
-+    @import("qwen4_records.zig").cuda ++
-+    @import("glm_kv_paged_records.zig").cuda;
+     @import("qwen4_records.zig").cuda ++
++    @import("glm_kv_paged_records.zig").cuda ++
+     @import("registry_media.zig").cuda_pending;
  pub const metal_before = @import("fsr_records.zig").metal ++
      @import("scale_index_records.zig").metal ++
-     @import("lfm3_records.zig").metal;
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
 --- a/zig/src/families/glm/cuda.zig
 +++ b/zig/src/families/glm/cuda.zig
@@ -795,7 +795,7 @@ diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_na
          error.BadKvShare => "TF_KV_SHARE: give how many states the prompt store over the KV pages keeps, or 0 or unset for off",
          error.GlmKvShareMoved => "TF_GLM_KV_SHARE is now TF_KV_SHARE, the prompt store every family on the KV pool shares: set that instead",
          error.GlmRequestStartsWithSharedKv => "TF_GLM_REQUEST_STARTS=1 cannot be used with TF_KV_SHARE above 0: unset request starts or disable shared KV",
-@@ -561,18 +563,21 @@
+@@ -559,18 +561,21 @@
          try std.testing.expect(!try paging("off", w, false));
          try std.testing.expect(!try paging("0", w, false));
          try std.testing.expect(try paging("all", w, false));
@@ -1007,7 +1007,7 @@ diff --git a/zig/src/families/glm/cuda_snapshot_layout.zig b/zig/src/families/gl
 diff --git a/zig/src/families/glm/cuda_sparse.zig b/zig/src/families/glm/cuda_sparse.zig
 --- a/zig/src/families/glm/cuda_sparse.zig
 +++ b/zig/src/families/glm/cuda_sparse.zig
-@@ -120,7 +120,8 @@
+@@ -121,7 +121,8 @@
      return from > 0 and world > 1 and start >= from;
  }
  
@@ -1017,7 +1017,7 @@ diff --git a/zig/src/families/glm/cuda_sparse.zig b/zig/src/families/glm/cuda_sp
  pub fn selectTokens(set: glue.Set, ops: cuda.Module, stream: cuda.Stream, qi: u64, wts: u64, w_stride: usize, pk: u64, t: latent.Table, pos: u64, host_pos: usize, rows: usize, heads: usize, d: usize, np_max_cap: usize, s: Scratch, tokens: u64, counts: u64) !void {
      return selectTokensProfile(set, ops, stream, qi, wts, w_stride, pk, t, pos, host_pos, rows, heads, d, np_max_cap, s, tokens, counts, null, null);
  }
-@@ -186,7 +187,7 @@
+@@ -189,7 +190,7 @@
      args.add(@as(c_int, topk_pools));
      args.add(tokens);
      args.add(counts);
@@ -1128,7 +1128,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
      x.pks = p.pk_page;
      x.pt = table;
      x.ps = p.page_bytes;
-@@ -397,6 +405,8 @@
+@@ -400,6 +408,8 @@
      mtp_base: usize = 0,
      prompt_hidden: u64, // first-draft row owned and charged by this sequence arena
      table: u64 = 0, // on pages: its page table (i32, `pages` entries), else 0
@@ -1137,7 +1137,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
      pages: []const u32 = &.{}, // on pages: the page ids its table holds, in row order (none while no stream holds it)
  
      pub fn init(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize) !State {
-@@ -404,16 +414,29 @@
+@@ -407,16 +417,29 @@
      }
  
      pub fn initFormat(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize, kv8: bool) !State {
@@ -1169,7 +1169,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
          const sizes = try stateSizes(gpa, w, capacity, false, pages);
          defer gpa.free(sizes);
          var total: usize = 0;
-@@ -421,7 +444,7 @@
+@@ -424,7 +447,7 @@
          return total;
      }
  
@@ -1178,7 +1178,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
          const c = &w.config;
          const s = &w.share;
          const nk = w.layers.len - mlaLayers(w);
-@@ -444,7 +467,7 @@
+@@ -447,7 +470,7 @@
          const rings = try gpa.alloc(u64, 2 * (nd + 1));
          for (0..nd + 1) |j| rings[2 * j ..][0..2].* = .{ p[9 + 4 * j], p[10 + 4 * j] };
          const ring_rows = @min(capacity, index_ring);
@@ -1187,7 +1187,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
          if (paged) |q| {
              st.table = p[14 + 4 * nd];
              st.capacity = 0; // no rows until a stream's pages are mapped
-@@ -455,8 +478,8 @@
+@@ -458,8 +481,8 @@
  
      /// A paged sequence's caches on the pages of `p` (the engine's own, made before its pool, placed when it is made).
      pub fn place(st: *State, w: *const weights.Weights, p: Paged) void {

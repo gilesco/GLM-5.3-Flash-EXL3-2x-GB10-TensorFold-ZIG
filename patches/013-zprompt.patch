@@ -40,16 +40,25 @@ Content-Transfer-Encoding: 8bit
 
 REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
 
+
+REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the composed tree (branch compose-v133) — v1.3.3's the exl3p rework ground moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.3 + the store = the composed tree, zero diffs).
 diff --git a/zig/kernels/cuda/exl3_prompt.cuh b/zig/kernels/cuda/exl3_prompt.cuh
-index 9f93e2766..273c656f8 100644
 --- a/zig/kernels/cuda/exl3_prompt.cuh
 +++ b/zig/kernels/cuda/exl3_prompt.cuh
-@@ -39,9 +39,334 @@ __device__ __forceinline__ void ttile(int q, int cb, int& mat, int& nt) {
+@@ -4,7 +4,6 @@
+ #include "common/qmm_frag.cuh"
+ namespace tf_exl3_prompt {
+ using namespace tf_exl3;
+-// One mcg tile of K2 half-bits a value (8: 4 bits, 6: 3 bits) from shared memory into this lane's B fragments.
+ template <int K2>
+ __device__ __forceinline__ void decode_tile_p(const uint32_t* tile, int lane, uint32_t (&b0)[2], uint32_t (&b1)[2]) {
+     uint32_t w[lane_words<K2>()];
+@@ -43,13 +42,337 @@
      nt = MATS == 2 ? cb * 8 + (q & 7) : cb * 16 + q;
  }
  
 -// Main loop: acc[i][nb] = warp tile i x members nb * 8 .. + 7 over K; XR rows a stage (TPM if X0 == X1, else 2 TPM).
--template <int MATS, int XR>
+-template <int MATS, int XR, int K2>
 +// The exl3p main loop (the fork 0078, after the Python recipe's K12 loop): the same items, blocks, B fragments
 +// and fp32 chains as the loop it replaces (each output one chain of mma.m16n8k16 over the ascending k tiles from zero),
 +// fed differently:
@@ -60,8 +69,8 @@ index 9f93e2766..273c656f8 100644
 +//  - each thread's cp.async source and destination worked out once an item, not once a stage;
 +//  - the mcg mask in a register (mcg2), and 4-bit tiles decoded from the lane's word and its neighbour's in fewer steps
 +//    (decode_a8: decode_lane<8>'s states, so its values).
-+// Our tree is 4-bit-only: the fork's K2 template param stays and is instantiated at 8 only; tstage_halves/tsmem_bytes
-+// keep our 1/0-param forms (the same values at K2 8).
++// The fork's K2 template param carries the width: 8 (4 bits) on the serving path; 6 (3 bits) instantiates the same
++// ground for the k6 kernels (upstream #3249's), the constants templated (twords/tstage_halves/tsmem_bytes).
 +__device__ __forceinline__ uint32_t lds32(uint32_t a) {
 +    uint32_t v;
 +    asm volatile("ld.shared.u32 %0, [%1];\n" : "=r"(v) : "r"(a));
@@ -186,8 +195,8 @@ index 9f93e2766..273c656f8 100644
 +        const uint64_t* __restrict__ tp1, const int* rows_sh, int e, int K, int NTILES, int cb, int xdiv, unsigned char* smem,
 +        float (&acc)[TMT][NBA][4]) {
 +    constexpr int TW = tile_words<K2>(), LW = lane_words<K2>();
-+    constexpr int SB = tstage_halves<XR>() * 2, TB = TW * 4;   // a stage's bytes, a tile's bytes
-+    static_assert(PS >= 3 && PS * SB <= tsmem_bytes(), "a stage of lookahead in the kernel's shared buffer");
++    constexpr int SB = tstage_halves<XR, K2>() * 2, TB = TW * 4;   // a stage's bytes, a tile's bytes
++    static_assert(PS >= 3 && PS * SB <= tsmem_bytes<K2>(), "a stage of lookahead in the kernel's shared buffer");
 +    static_assert(TKT % 2 == 0, "two A fragment sets: an even number of k tiles a stage");
 +    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
 +    int mat, nt_unused;
@@ -380,8 +389,39 @@ index 9f93e2766..273c656f8 100644
 +__device__ __forceinline__ void tmain_cl(const half* __restrict__ X0, const half* __restrict__ X1, const uint64_t* __restrict__ tp0,
          const uint64_t* __restrict__ tp1, const int* rows_sh, int cnt, int e, int K, int NTILES, int cb, int xdiv,
          half* stage, float (&acc)[TMT][TNB][4]) {
-     constexpr int SH = tstage_halves<XR>();
-@@ -120,7 +445,7 @@ __device__ __forceinline__ void tmain(const half* __restrict__ X0, const half* _
+-    constexpr int SH = tstage_halves<XR, K2>();
+-    constexpr int TW = tile_words<K2>(), PIECES = TW / 4;   // a tile's 32-bit words and 16-byte pieces
++    constexpr int SH = tstage_halves<XR, 8>();
+     const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
+     int mat, nt_unused;
+     ttile<MATS>(warp * TMT, cb, mat, nt_unused);
+@@ -74,12 +397,12 @@
+             cp_async16(dst + ((size_t)m * TPM + i) * TXS + j * 8, src, r >= 0);
+         }
+         uint32_t* wdst = reinterpret_cast<uint32_t*>(dst + (size_t)XR * TXS);
+-        for (int idx = threadIdx.x; idx < 16 * TKT * PIECES; idx += TT) {   // 16-byte pieces of the tiles' words
+-            const int q = idx / (TKT * PIECES), kk = (idx / PIECES) % TKT, part = idx % PIECES;
++        for (int idx = threadIdx.x; idx < 16 * TKT * 8; idx += TT) {   // 16-byte pieces of the 128-byte tile words
++            const int q = idx / (TKT * 8), kk = (idx / 8) % TKT, part = idx % 8;
+             int wm, nt;
+             ttile<MATS>(q, cb, wm, nt);
+-            const uint32_t* src = (wm ? T1 : T0) + (((size_t)chunk * TKT + kk) * NTILES + nt) * TW + part * 4;
+-            cp_async16(wdst + ((size_t)q * TKT + kk) * TW + part * 4, src, true);
++            const uint32_t* src = (wm ? T1 : T0) + (((size_t)chunk * TKT + kk) * NTILES + nt) * 32 + part * 4;
++            cp_async16(wdst + ((size_t)q * TKT + kk) * 32 + part * 4, src, true);
+         }
+     };
+ #pragma unroll
+@@ -101,7 +424,7 @@
+ #pragma unroll
+             for (int i = 0; i < TMT; ++i) {
+                 uint32_t b0[2], b1[2];
+-                decode_tile_p<K2>(ws + ((size_t)(warp * TMT + i) * TKT + kk) * TW, lane, b0, b1);
++                decode_tile_p<8>(ws + ((size_t)(warp * TMT + i) * TKT + kk) * 32, lane, b0, b1);
+                 a[i][0] = b0[0]; a[i][1] = b1[0]; a[i][2] = b0[1]; a[i][3] = b1[1];
+             }
+ #pragma unroll
+@@ -125,7 +448,7 @@
  }
  
  // acc (members TPH * hf .. + TPH - 1) -> E[member - TPH * hf][col] fp32, row stride ES; col0: first tile's column.
@@ -390,25 +430,27 @@ index 9f93e2766..273c656f8 100644
      const int lane = threadIdx.x & 31, g = lane >> 2, t = lane & 3;
  #pragma unroll
      for (int i = 0; i < TMT; ++i)
-@@ -136,7 +461,7 @@ __device__ __forceinline__ void tspill(float* E, int ES, int col0, const float (
+@@ -140,8 +463,8 @@
+         }
  }
  
- template <int XR>
+-template <int XR, int K2>
 -__device__ __forceinline__ void tgateup(const half* __restrict__ Xg, const half* __restrict__ Xu, const uint64_t* __restrict__ Tg,
++template <int XR>
 +__device__ __forceinline__ void tgateup_cl(const half* __restrict__ Xg, const half* __restrict__ Xu, const uint64_t* __restrict__ Tg,
          const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members,
          const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d, half* __restrict__ xd,
          int K, int N, int xdiv, float limit, int act_mode, unsigned char* smem_raw, int* rows_sh) {
-@@ -147,7 +472,7 @@ __device__ __forceinline__ void tgateup(const half* __restrict__ Xg, const half*
+@@ -152,7 +475,7 @@
      __syncthreads();
      const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
      float acc[TMT][TNB][4];
--    tmain<2, XR>(Xg, Xu, Tg, Tu, rows_sh, cnt, e, K, N >> 4, cb, xdiv, reinterpret_cast<half*>(smem_raw), acc);
+-    tmain<2, XR, K2>(Xg, Xu, Tg, Tu, rows_sh, cnt, e, K, N >> 4, cb, xdiv, reinterpret_cast<half*>(smem_raw), acc);
 +    tmain_cl<2, XR>(Xg, Xu, Tg, Tu, rows_sh, cnt, e, K, N >> 4, cb, xdiv, reinterpret_cast<half*>(smem_raw), acc);
      float* Eg = reinterpret_cast<float*>(smem_raw);
      int mat, nt;
      ttile<2>(warp * TMT, cb, mat, nt);
-@@ -155,7 +480,7 @@ __device__ __forceinline__ void tgateup(const half* __restrict__ Xg, const half*
+@@ -160,7 +483,7 @@
      const int n = cb * 128 + 4 * lane;
      for (int hf = 0; hf < 2 && hf * TPH < cnt; ++hf) {
          if (hf) __syncthreads();   // the first half's rows are read
