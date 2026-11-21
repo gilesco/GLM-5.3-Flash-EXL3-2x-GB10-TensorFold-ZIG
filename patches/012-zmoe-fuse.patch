@@ -418,12 +418,8 @@ diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.c
 diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
-@@ -134,9 +134,15 @@
- /// The loaded kernels.
- pub const Experts = struct {
-     mod: Module,
--    group: Function,
-+    group_fn: Function,
+@@ -137,6 +137,12 @@
+     group: Function,
      rot_in: Function,
      grouped: [3]Function, // one per codebook
 +    grouped_nt4: Function, // mcg at 4 tiles a block (the same bits as grouped[1])
@@ -435,12 +431,8 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
      gateup: Function,
      down_combine: Function,
      prompt: prompt.Kernels = undefined,
-@@ -148,9 +154,11 @@
-         if (!kernels.available) return error.BuiltWithoutKernels;
-         var e: Experts = .{
-             .mod = try Module.load(d, kernels.exl3_experts),
--            .group = undefined,
-+            .group_fn = undefined,
+@@ -151,6 +157,8 @@
+             .group = undefined,
              .rot_in = undefined,
              .grouped = undefined,
 +            .grouped_nt4 = undefined,
@@ -448,17 +440,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
              .gateup = undefined,
              .down_combine = undefined,
          };
-@@ -159,14 +167,20 @@
-         e.plan_rotate = try e.mod.function("tf_exl3_plan_rotate");
-         e.plan_finish = try e.mod.function("tf_exl3_plan_finish");
-         e.plan_finish_after = try e.mod.function("tf_exl3_plan_finish_after");
--        e.group = try e.mod.function("tf_exl3_group");
--        try e.group.allowDynamicShared(64 * 1024);
-+        e.group_fn = try e.mod.function("tf_exl3_group");
-+        try e.group_fn.allowDynamicShared(64 * 1024);
-         e.rot_in = try e.mod.function("tf_exl3_experts_rot_in");
-         e.grouped = .{
-             try e.mod.function("tf_exl3_grouped_0"),
+@@ -167,6 +175,12 @@
              try e.mod.function("tf_exl3_grouped_1"),
              try e.mod.function("tf_exl3_grouped_2"),
          };
@@ -476,28 +458,31 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
      /// The routed experts of `rows` rows: group, rotate in, grouped gate/up, SwiGLU, grouped down, wts-weighted sum.
      pub fn run(e: *const Experts, s: Stream, l: Layer, x: u64, x_stride: usize, x_dtype: DType, pick: u64, wts: u64, rows: usize, out: u64, sc: Scratch) !void {
 -        try e.runWith(s, l, x, x_stride, x_dtype, pick, wts, rows, out, sc, 0, null);
-+        try e.group(s, l, pick, rows, sc);
++        try e.groupRows(s, l, pick, rows, sc);
 +        try e.core(s, l, x, x_stride, x_dtype, pick, rows, sc);
 +        try e.combine(s, l, pick, rows, sc, wts, sc.slots, 0, out);
      }
  
      /// run() on a decode window's item plan (`it`): the grouped kernels in standard mode, the slot rows in `ey`.
-@@ -229,7 +245,7 @@
-             a.add(i32d(slots));
-             a.add(i32d(l.experts));
-             a.add(i32d(rows));
--            try launch_.launch(e.group, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * slots * 4) }, s, &a);
-+            try launch_.launch(e.group_fn, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * slots * 4) }, s, &a);
-         }
- 
-         var r: launch_.Args = .{};
-@@ -323,8 +339,185 @@
+@@ -200,11 +216,6 @@
+         const p = rows * slots;
+         const maxu = @min(p, l.experts);
+         const mt = (rows + 15) / 16;
+-        const i32d = struct {
+-            fn f(v: usize) i32 {
+-                return @intCast(v);
+-            }
+-        }.f;
+         // A decode window's item plan: the picks grouped into 16-pair items, the grouped kernels in standard mode.
+         const items = it != null; // one codebook a launch, a plan, and ey to write the slot rows into: nothing else
+         if (items and (l.codebook != .mcg or wts != 0 or out != 0 or ey == 0 or it.?.plan.members == 0 or it.?.plan.items == 0 or it.?.plan.counts == 0)) return error.TileNotBuilt;
+@@ -323,8 +334,185 @@
          cb.add(i32d(slots));
          try launch_.launch(e.down_combine, .{ .grid = .{ .x = @intCast(rows), .y = @intCast(d / 128), .z = 1 }, .block = .{ .x = @intCast(32 * slots), .y = 1, .z = 1 } }, s, &cb);
      }
 +
 +    /// `pick`'s distinct experts and their members into sc.ids, sc.count and sc.members (tf_exl3_group).
-+    pub fn group(e: *const Experts, s: Stream, l: Layer, pick: u64, rows: usize, sc: Scratch) !void {
++    pub fn groupRows(e: *const Experts, s: Stream, l: Layer, pick: u64, rows: usize, sc: Scratch) !void {
 +        const g = try Geometry.of(l, rows, sc);
 +        var a: launch_.Args = .{};
 +        a.add(pick);
@@ -508,7 +493,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
 +        a.add(i32d(g.slots));
 +        a.add(i32d(l.experts));
 +        a.add(i32d(rows));
-+        try launch_.launch(e.group_fn, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * g.slots * 4) }, s, &a);
++        try launch_.launch(e.group, .{ .grid = .{ .x = 1, .y = 1, .z = 1 }, .block = .{ .x = 1024, .y = 1, .z = 1 }, .shared = @intCast(rows * g.slots * 4) }, s, &a);
 +    }
 +
 +    /// Rotate in, grouped gate/up, SwiGLU, grouped down: the down partials in sc.z from picks already grouped in sc
