@@ -9,7 +9,7 @@ round-trip verifies byte-exact.
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the tool-parse module split moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 
-REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the four compile defects fixed) — the before-state is the mid-replay tree (the members before this one applied), the state-machine discipline; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the compile defects fixed) — the before-state is the mid-replay tree; the round-trip verifies byte-exact.
 diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
 --- a/zig/src/server/tool_parse.zig
 +++ b/zig/src/server/tool_parse.zig
@@ -143,27 +143,26 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
                  unoffered = true;
                  try keepName(a, &kept_names, strip(c.name));
              };
-@@ -163,15 +213,10 @@
+@@ -163,13 +213,15 @@
              if (reject == .unoffered) kept_unoffered += 1 else kept_malformed += 1;
              continue;
          }
 -        for (parsed.?) |c| {
--            if (max_calls != null and calls.items.len >= max_calls.?) continue;
--            const call = (try openaiCall(a, (try callName(a, c, &known)).?, c.arguments)) orelse {
--                try residue.appendSlice(a, text[env.start..env.end]);
--                rejected += 1;
--                kept_malformed += 1;
--                continue :next_envelope;
--            };
--            try calls.append(a, call);
 +        const list = parsed.?;
 +        try residue.appendSlice(a, text[env.start..start]);
 +        for (list) |c| {
-+            if (max_calls == null or calls.items.len < max_calls.?) try calls.append(a, try openaiCall(a, (try callName(a, c, &known, true)).?, c.arguments));
+             if (max_calls != null and calls.items.len >= max_calls.?) continue;
+-            const call = (try openaiCall(a, (try callName(a, c, &known)).?, c.arguments)) orelse {
++            const call = (try openaiCall(a, (try callName(a, c, &known, true)).?, c.arguments)) orelse {
+                 try residue.appendSlice(a, text[env.start..env.end]);
+                 rejected += 1;
+                 kept_malformed += 1;
+-                continue :next_envelope;
++                continue;
+             };
+             try calls.append(a, call);
          }
-     }
-     try residue.appendSlice(a, text[cursor..]);
-@@ -195,6 +240,62 @@
+@@ -195,6 +247,62 @@
      try names.append(a, name);
  }
  
@@ -226,7 +225,7 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
  /// What closes the call ``text`` ends inside (the model's end token came before its ``
  pub fn closeCall(a: Allocator, text: []const u8, tools: []const Value) Allocator.Error![]const u8 {
      const start = openCall(text) orelse return "";
-@@ -226,7 +327,7 @@
+@@ -226,7 +334,7 @@
              pos = code.skip_end;
              continue;
          }
@@ -235,7 +234,7 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
          code.jumpTo(pos);
      } else null;
  }
-@@ -244,10 +345,16 @@
+@@ -244,10 +352,16 @@
      return closed[body.len..];
  }
  

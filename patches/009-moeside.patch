@@ -57,6 +57,8 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the moe direct path (#3659's rework of the block) moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the compile defects fixed) — the before-state is the mid-replay tree; the round-trip verifies byte-exact.
 diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
 --- a/zig/src/families/glm/cuda_moe.zig
 +++ b/zig/src/families/glm/cuda_moe.zig
@@ -97,21 +99,17 @@ diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.z
  
  /// TF_GLM_MOE_DIRECT=1: a decode window's EXL3 experts on flat picks, their slot rows summed in place (no copies).
  fn direct(k: Kernels, l: Layer, rows: usize, prompt: bool) bool {
-@@ -62,36 +76,72 @@
+@@ -62,7 +76,8 @@
      try fill(k, stream, l, s, x, x_stride, 0, rows, prompt, out);
  }
  
 -/// Router and top-k selection, with `pick` optionally a segment of a paired plan's picks.
--pub fn prepare(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, pick: u64, flat_picks: ?u64) !void {
--    const d = l.routed.dims;
--    const stamp = prof_mod.span(k.prof, stream, .router);
--    defer stamp.end();
--    try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
--    try glue.select(k.set, stream, s.mlog, l.bias, pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, flat_picks);
--}
--
- /// The block up to its fill: the router, the top-k pick, the plan and the routed experts into the slot rows.
- pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, prompt: bool) !void {
++/// The router and the top-k selection, `pick` optionally a segment of a paired plan's picks; `flat` the direct
++/// path's [rows][top_k] picks (null keeps tf_glm_topk's write-off).
+ pub fn prepare(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, pick: u64, flat_picks: ?u64) !void {
+     const d = l.routed.dims;
+     const stamp = prof_mod.span(k.prof, stream, .router);
+@@ -76,22 +91,67 @@
      const d = l.routed.dims;
      const slots = l.top_k + 1;
      const shared_id: i32 = @intCast(l.count);
@@ -185,7 +183,7 @@ diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.z
      const d = l.routed.dims;
      const slots = l.top_k + 1;
      const n = hi - lo;
-@@ -100,33 +150,11 @@
+@@ -100,33 +160,11 @@
      try projection.matmul(k.set, stream, l.shared_gu, x + lo * x_stride * 2, x_stride, s.sgu + lo * 2 * l.shared * 2, s.mm_part, n, 2 * l.shared, d, false);
      try glue.swiglu(k.set, stream, s.sgu + lo * 2 * l.shared * 2, s.sact + lo * l.shared * 2, s.sxs + lo * (l.shared / 64) * 4, l.routed.limit, n, l.shared);
      try projection.matmul(k.set, stream, l.shared_down, s.sact + lo * l.shared * 2, l.shared, s.sy + lo * d * 4, s.mm_part, n, d, l.shared, true);
