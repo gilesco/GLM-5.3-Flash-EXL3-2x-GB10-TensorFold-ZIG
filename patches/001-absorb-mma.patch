@@ -61,7 +61,7 @@ REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the compos
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the engine/memory refactor (#4427's budget, the mla Shape work) moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 
-REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the four compile defects fixed) — the before-state is the pristine tree (001 is the first member); the round-trip verifies byte-exact.
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (the paired-slot ABI composed) — the before-state is the pristine tree (001 is the first member); forward_pair joins this member's file set (the fork slot ABI rides where the engine hooks live); the round-trip verifies byte-exact.
 diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
 --- a/zig/kernels/cuda/glm_glue.cu
 +++ b/zig/kernels/cuda/glm_glue.cu
@@ -720,3 +720,23 @@ diff --git a/zig/src/families/glm/cuda_ranks_test.zig b/zig/src/families/glm/cud
          var all = [_]Fingerprint{ zero, one };
          @field(all[1], name) += 1;
          try std.testing.expectEqual(@field(Fingerprint.Field, name), mismatch(&all).?.field);
+diff --git a/zig/src/families/glm/cuda_forward_pair.zig b/zig/src/families/glm/cuda_forward_pair.zig
+--- a/zig/src/families/glm/cuda_forward_pair.zig
++++ b/zig/src/families/glm/cuda_forward_pair.zig
+@@ -72,14 +72,14 @@
+         const k = a.moeKernels();
+         const d = r.w.config.hidden;
+         try moe.prepare(k, a.stream, m, r.b.moe, r.b.normed, d, ra, r.b.moe.pick, null); // prompt rows never take the direct path
+-        for (cuts_a) |piece| try moe.shared(k, a.stream, m, r.b.moe, r.b.normed, d, piece[0], piece[1], true);
++        for (cuts_a) |piece| try moe.shared(k, a.stream, m, r.b.moe, r.b.normed, d, piece[0], piece[1], true, true);
+     }
+     try awaitShared(b, b.pieces.?, cuts_b.len);
+     for (a.ranks, b.ranks) |ar, br| {
+         const k = a.moeKernels();
+         const d = ar.w.config.hidden;
+         try moe.prepare(k, a.stream, m, br.b.moe, br.b.normed, d, rb, ar.b.moe.pick + split * 4, null);
+-        for (cuts_b) |piece| try moe.shared(k, a.stream, m, br.b.moe, br.b.normed, d, piece[0], piece[1], true);
++        for (cuts_b) |piece| try moe.shared(k, a.stream, m, br.b.moe, br.b.normed, d, piece[0], piece[1], true, true);
+         const plan: experts.Plan = .{ .route = ar.b.moe.plan, .slots = slots, .experts = m.count + 1, .prompt = true };
+         try experts.runPair(k.experts, a.stream, m.routed, plan, ar.b.moe.pick, ar.b.normed, br.b.normed, d, ra, rb, ar.b.moe.eact, br.b.moe.eact, ar.b.moe.ey, br.b.moe.ey, @intCast(m.count));
+     }
