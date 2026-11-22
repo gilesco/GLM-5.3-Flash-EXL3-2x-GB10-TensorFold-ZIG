@@ -4575,3 +4575,42 @@ the anchors' dated header + the decode row).
 **Next**: the v1.3.3 rebase per the round-155 order decision — the
 compose against v1.3.3 (`1e4a32cb`, 631 commits), the brief naming
 #3486/#3693/#3164's default-behavior changes as the value questions.
+
+## (round 158) THE V1.3.3 BUMP QUALIFIED AND PROMOTED — THE NINTH BUMP; THE VALUE BRACKET READS IN-BAND (2026-11-22)
+
+**The stage brief** (docs/STAGE_BRIEF_v133val.md): does the v1.3.3
+engine (1e4a32cb, 631 commits past v1.3.2) + the re-anchored store hold
+every quality gate, and do #3486's long-prompt step sharing / #3693's
+identical-prompt leader join move a user-visible decode number at our
+shape? Value-if-yes: the decode row moves; kill: ANY gate FAIL holds
+the pin at v1.3.2.
+
+**The road took two windows.**
+
+- **Window w2053144** (campaign-20261121-234940): VOID — the image
+  build's patch overlay refused against the pinned tree: the head's
+  `local.sh` TF_COMMIT was still v1.3.2's `b472b9f8` while the store is
+  the v1.3.3-rebased one (001's first refusal at cuda_ranks.zig:219).
+  The round-155 class again: the pin is the second gate the staging
+  must flip, after the store. Fixed (the pin moved to `1e4a32cb`); the
+  DRY_RUN gates re-run green before the relaunch.
+- **Window w2060446** (campaign-20261122-000800): **QUALIFIED** — the
+  witness `80cc3802…` IDENTICAL across the ninth bump, the §2 gates
+  ALL PASS, hardmode **94 HOLDS on the 3.1.0 frame**, the vision 4/4,
+  the walls 83/83, load 108 s, strict-TF_ refusals 0. The value
+  bracket: steady-state decode **75.9 / 75.9 — both arms identical**,
+  in-band: **no decode row move; the #3486/#3693 value question closes
+  without a claim** (a claim would need a knob A/B the battery cannot
+  separate; the levers ride default-on either way).
+
+**The promotion sync** (production's own repo, the standing pattern):
+the pin `1e4a32cb`, the 17 served members mirrored byte-identical into
+patches/ + image/patches/, the identity guard green BEFORE the restart,
+production restarted through its own scripts — `/health version 1.3.3`
+verified at 00:59. Promotion commit 1ee4c38. The release watch's
+PIN_TAG -> v1.3.3. The state docs updated the same sitting (README
+engine pin, the ledger's bump entry, the anchors' dated header — no row
+moved, the chart's check green).
+
+**Next**: the perf plan's next step (docs/PERF_PLAN.md) — the
+divide-and-conquer sweep's standing order continues on the new ground.

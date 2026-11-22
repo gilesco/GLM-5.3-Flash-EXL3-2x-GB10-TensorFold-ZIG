@@ -1440,6 +1440,29 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
+- [x] **THE V1.3.3 BUMP ARC** (rounds 155-158, windows w2053144/w2060446,
+  campaign-20261122-000800): QUALIFIED and PROMOTED — the witness
+  `80cc3802…` IDENTICAL across the NINTH engine bump, the §2 gates
+  ALL PASS, the vision 4/4, the walls 83/83. **Hardmode 94 HOLDS on the
+  3.1.0 frame** (95 ×40 on 3.0.1.dev4 before it). The bump rode the
+  compose `627e0238` (branch compose-v133): pristine v1.3.3 `1e4a32cb`
+  + the store — the fork's exl3p NBA ground stays primary at 4 bits
+  with the k6 twins (#3249's) riding it; the fingerprint layout 23
+  carries numerics beside draft_split; the lanes ground is v1.3.3's
+  own (the shared-cap depth state machine — no member owns those
+  files). Four members regenerated (001/002/003/013) in the round-157
+  fixed format; the round-trip PROVEN byte-exact (pristine v1.3.3 +
+  the store = the composed tree, zero diffs). The road took TWO
+  windows: the first burned on the head's `local.sh` pin still at
+  v1.3.2 (the store refused against the pinned tree — the round-155
+  class again: the pin is the second gate the staging must flip); the
+  second RAN CLEAN. THE VALUE READ: the steady-state bracket
+  **75.9 / 75.9 — in-band**: no decode row move; the #3486/#3693 value
+  question CLOSES without a claim (a claim would need a knob A/B the
+  battery cannot separate). Production serves v1.3.3 from 00:59
+  (`/health version 1.3.3` verified; the promotion commit 1ee4c38; the
+  release watch's PIN_TAG moved).
+
 - [x] **THE V1.3.2 BUMP ARC** (rounds 155-157, windows w1787589/w1857731/
   w1870081, campaign-20261121-215341): QUALIFIED and PROMOTED — the
   witness `80cc3802…` IDENTICAL across the EIGHTH engine bump, the §2

@@ -19,7 +19,7 @@ nothing but docker, ssh and the NVIDIA driver.
 - **Checkpoint**: Mia-AiLab's **TR3-4bpw EXL3** quant (`Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw`,
   resharded locally to 55 shards) with the **DFlash2 drafter**; **vision on** as the
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
-- **Engine**: TensorFold **v1.3.2** + **the adopted 17-patch stack re-anchored**
+- **Engine**: TensorFold **v1.3.3** + **the adopted 17-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
   020-cachefirst RETIRED from the default — the drop020val battery qualified
   the drop (campaign-20261119-124951: the witness 80cc3802… IDENTICAL, the

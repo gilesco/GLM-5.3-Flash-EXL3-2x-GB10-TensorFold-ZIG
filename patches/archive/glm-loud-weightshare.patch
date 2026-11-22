@@ -1,36 +1,43 @@
---- a/zig/src/families/glm/cuda_native.zig
-+++ b/zig/src/families/glm/cuda_native.zig
-@@ -80,11 +80,28 @@
+edited copies written
+--- a/zig/src/native/cuda.zig
++++ b/zig/src/native/cuda.zig
+@@ -168,6 +168,7 @@
+ const record = @import("cuda_record.zig");
+ /// The engine for `o.dir`, or null with `problem` set when `refusal` names a flag or no CUDA family reads it.
+ pub fn open(a: Allocator, gpa: Allocator, io: std.Io, o: api.Open, problem: *[]const u8) !?api.Opened {
++    std.debug.print("[admit] open dir={s} model_type={s}\n", .{o.dir, o.model_type});
+     const report = platform.optional_libraries.atBoundary();
+     defer report.deinit();
+     if (@import("save_admission.zig").refused(io, o.dir, problem)) return null;
+@@ -194,6 +195,7 @@
+ const too_many = "--parallel {d} needs {d:.2} GiB for its streams at a {d}-token window, " ++
+     "and the CUDA memory budget leaves {d:.2} GiB{s}: serve --parallel {d}, or lower --context";
+ fn openWith(comptime F: type, a: Allocator, gpa: Allocator, io: std.Io, o: api.Open, problem: *[]const u8) !?api.Opened {
++    std.debug.print("[admit] openWith\n");
+     if (refusals.family(F, o)) |why| {
+         problem.* = why;
+         return null;
+--- a/zig/src/native/cuda_family_memory.zig
++++ b/zig/src/native/cuda_family_memory.zig
+@@ -40,6 +40,7 @@
  
- /// Bytes this rank's weights take at most, for the server's admission: the checkpoint times its largest axis share.
- pub fn weightShare(a: std.mem.Allocator, io: std.Io, dir: []const u8, total: u64) u64 {
--    const p = place() catch return total;
--    const path = std.fs.path.join(a, &.{ dir, "config.json" }) catch return total;
--    const text = std.Io.Dir.cwd().readFileAlloc(io, path, a, .limited(1 << 24)) catch return total;
--    const c = config.parse(a, text) catch return total;
--    const f = (shard.Share.of(&c, p.rank, p.world) catch return total).part(&c);
-+    std.debug.print("[weightShare] dir={s}\n", .{dir});
-+    const p = place() catch |e| {
-+        std.debug.print("[weightShare] place failed: {s}\n", .{@errorName(e)});
-+        return total;
+ /// `F`'s weight bytes on this rank: tensors or files, a split's share, a tower beside; null if tensors are unreadable.
+ pub fn weights(comptime F: type, a: Allocator, io: std.Io, o: api.Open, problem: *[]const u8) !?u64 {
++    std.debug.print("[admit] weights: tensorWeightBytes={}\n", .{@hasDecl(F, "tensorWeightBytes")});
+     const whole = if (@hasDecl(F, "tensorWeightBytes")) F.tensorWeightBytes(a, io, o.dir, o.vision != null) catch |err| {
+         problem.* = try std.fmt.allocPrint(a, "cannot read checkpoint tensor sizes ({s})", .{@errorName(err)});
+         return null;
+@@ -47,7 +48,12 @@
+         problem.* = try std.fmt.allocPrint(a, "cannot estimate checkpoint weight files ({s}); refusing CUDA admission", .{@errorName(err)});
+         return null;
+     };
+-    const text = if (@hasDecl(F, "placementWeightBytes")) try F.placementWeightBytes(a, io, o.dir, o.tp, o.rank, o.drafts) else if (@hasDecl(F, "weightShare")) F.weightShare(a, io, o.dir, whole) else whole;
++    std.debug.print("[admit] dispatcher: placement={} weightShare={}\n", .{@hasDecl(F, "placementWeightBytes"), @hasDecl(F, "weightShare")});
++    const text = if (@hasDecl(F, "placementWeightBytes")) try F.placementWeightBytes(a, io, o.dir, o.tp, o.rank, o.drafts) else if (@hasDecl(F, "weightShare")) F.weightShare(a, io, o.dir, whole) else blk: {
++        std.debug.print("[admit] dispatcher: NEITHER DECL - billing whole\n");
++        break :blk whole;
 +    };
-+    const path = std.fs.path.join(a, &.{ dir, "config.json" }) catch |e| {
-+        std.debug.print("[weightShare] join failed: {s}\n", .{@errorName(e)});
-+        return total;
-+    };
-+    const text = std.Io.Dir.cwd().readFileAlloc(io, path, a, .limited(1 << 24)) catch |e| {
-+        std.debug.print("[weightShare] readFile failed: {s}\n", .{@errorName(e)});
-+        return total;
-+    };
-+    const c = config.parse(a, text) catch |e| {
-+        std.debug.print("[weightShare] parse failed: {s}\n", .{@errorName(e)});
-+        return total;
-+    };
-+    const f = (shard.Share.of(&c, p.rank, p.world) catch |e| {
-+        std.debug.print("[weightShare] share failed: {s}\n", .{@errorName(e)});
-+        return total;
-+    }).part(&c);
-+    std.debug.print("[weightShare] rank={d} world={d} share={d}/{d}\n", .{ p.rank, p.world, f[0], f[1] });
-     return @intCast(@as(u128, total) * f[0] / f[1]);
++    std.debug.print("[admit] weights: whole={d:.1} text={d:.1} GiB\n", .{@as(f64, @floatFromInt(whole)) / (1 << 30), @as(f64, @floatFromInt(text)) / (1 << 30)});
+     return text + try @import("cuda_vision_offer.zig").weightBytes(F, a, io, o);
  }
  
