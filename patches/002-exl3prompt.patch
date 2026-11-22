@@ -55,6 +55,8 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 
 
 REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the composed tree (branch compose-v133) — v1.3.3's the prompt-path pass rework ground moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.3 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the mtpMode split moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
 --- a/zig/kernels/cuda/exl3_experts.cu
 +++ b/zig/kernels/cuda/exl3_experts.cu
@@ -471,7 +473,7 @@ diff --git a/zig/src/cuda/exl3_prompt.zig b/zig/src/cuda/exl3_prompt.zig
 diff --git a/zig/src/families/glm/cuda_exl3.zig b/zig/src/families/glm/cuda_exl3.zig
 --- a/zig/src/families/glm/cuda_exl3.zig
 +++ b/zig/src/families/glm/cuda_exl3.zig
-@@ -319,6 +319,31 @@
+@@ -331,6 +331,31 @@
      }
  }
  

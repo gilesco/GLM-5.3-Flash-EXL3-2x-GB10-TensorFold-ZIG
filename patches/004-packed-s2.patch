@@ -49,6 +49,8 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 
 
 REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the mm/glm_glue refactor moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/kernels/cuda/glm_mm.cu b/zig/kernels/cuda/glm_mm.cu
 --- a/zig/kernels/cuda/glm_mm.cu
 +++ b/zig/kernels/cuda/glm_mm.cu

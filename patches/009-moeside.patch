@@ -55,14 +55,23 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 
 
 REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-composed tree (branch compose-v132) — the PDL launch-rewrite (#3776) collided with this member's hunks; the round-trip verifies byte-exact (pristine v1.3.2 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the moe direct path (#3659's rework of the block) moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
 --- a/zig/src/families/glm/cuda_moe.zig
 +++ b/zig/src/families/glm/cuda_moe.zig
-@@ -42,7 +42,26 @@
+@@ -42,14 +42,28 @@
  };
  
  /// The kernels the block runs: the captured Triton set, the grouped NVFP4 experts, the plan, and glm_ops.
--pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null };
+-pub const Kernels = struct {
+-    set: glue.Set,
+-    experts: *const experts.Kernels,
+-    exl3: *const exl3.Kernels,
+-    put_slot: cuda.Function,
+-    prof: ?*prof_mod.Prof = null,
+-    direct: bool = false, // TF_GLM_MOE_DIRECT=1 (opt-in): see `direct`
+-};
 +/// A decode window's second stream: the shared expert runs there beside the router and the routed experts (the same
 +/// kernels on the same rows, so the same bits); `fork` and `join` order it after the block's input and before combine.
 +pub const Side = struct { s: cuda.Stream, fork: cuda.Event, join: cuda.Event };
@@ -70,7 +79,9 @@ diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.z
 +/// The kernels the block runs: the captured Triton set, the grouped NVFP4 experts, the plan, and glm_ops.
 +/// `side`: a decode window's shared expert on its own stream (null: on the block's stream, as before).
 +/// `fuse`: a decode window's EXL3 experts take the grouped path (TF_GLM_MOE_FUSE=0: off), the same bits.
-+pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null, side: ?Side = null, fuse: bool = false };
++/// `direct` (#3659's TF_GLM_MOE_DIRECT=1, opt-in): a decode window's EXL3 experts on flat picks, their slot rows
++/// summed in place — bit-equal to the default path (upstream's own composition of the fork's mechanism).
++pub const Kernels = struct { set: glue.Set, experts: *const experts.Kernels, exl3: *const exl3.Kernels, put_slot: cuda.Function, prof: ?*prof_mod.Prof = null, side: ?Side = null, fuse: bool = false, direct: bool = false };
 +
 +/// Whether a decode window's EXL3 experts take the grouped path: the fused select writes their compact picks and
 +/// grouping (tf_glm_topk_group: no copy, no group launch) and fill sums the routed slots with the shared expert's row
@@ -84,9 +95,23 @@ diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.z
 +    return k.side != null and !prompt;
 +}
  
- /// forward.moe_block: out [rows][dims] fp32 partial; `prompt`: 64-pair items, the prompt kernels, bf16 slot rows.
- pub fn block(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, prompt: bool, out: u64) !void {
-@@ -55,15 +74,32 @@
+ /// TF_GLM_MOE_DIRECT=1: a decode window's EXL3 experts on flat picks, their slot rows summed in place (no copies).
+ fn direct(k: Kernels, l: Layer, rows: usize, prompt: bool) bool {
+@@ -62,36 +76,72 @@
+     try fill(k, stream, l, s, x, x_stride, 0, rows, prompt, out);
+ }
+ 
+-/// Router and top-k selection, with `pick` optionally a segment of a paired plan's picks.
+-pub fn prepare(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, pick: u64, flat_picks: ?u64) !void {
+-    const d = l.routed.dims;
+-    const stamp = prof_mod.span(k.prof, stream, .router);
+-    defer stamp.end();
+-    try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
+-    try glue.select(k.set, stream, s.mlog, l.bias, pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, flat_picks);
+-}
+-
+ /// The block up to its fill: the router, the top-k pick, the plan and the routed experts into the slot rows.
+ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, prompt: bool) !void {
      const d = l.routed.dims;
      const slots = l.top_k + 1;
      const shared_id: i32 = @intCast(l.count);
@@ -100,35 +125,55 @@ diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.z
 +        try sharedRows(k, sd.s, l, s, x, x_stride, 0, rows, prompt, !grouped(k, l, rows, prompt));
 +        try sd.join.record(sd.s);
 +    }
-     var stamp = prof_mod.span(k.prof, stream, .router);
-     try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
--    try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
++    var stamp = prof_mod.span(k.prof, stream, .router);
++    try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
 +    const g = grouped(k, l, rows, prompt);
+     const flat = direct(k, l, rows, prompt);
+-    try prepare(k, stream, l, s, x, x_stride, rows, s.pick, if (flat) s.x3.picks else null);
+-    const stamp = prof_mod.span(k.prof, stream, .experts);
 +    if (g) {
 +        const sc = (try exl3.decodeScratch(l.exl3.?, s.x3, rows, l.count, d, l.routed.width, l.routed.limit)) orelse return error.BadWindow;
 +        try glue.selectGroup(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, s.x3.picks, sc.ids, sc.count, sc.members);
-+    } else try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm);
-     stamp.end();
-     stamp = prof_mod.span(k.prof, stream, .experts);
++    } else try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, if (flat) s.x3.picks else null);
++    stamp.end();
++    stamp = prof_mod.span(k.prof, stream, .experts);
      defer stamp.end();
      if (k.prof) |p| p.mark(stream, .router);
      defer if (k.prof) |p| p.mark(stream, .routed);
+-    if (flat) return exl3.runDirect(k.exl3, stream, l.exl3.?, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
 -    if (l.exl3) |w| return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
 +    if (l.exl3) |w| {
 +        if (g) return exl3.runGrouped(k.exl3, stream, w, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
++        if (flat) return exl3.runDirect(k.exl3, stream, w, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
 +        return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
 +    }
      const plan: experts.Plan = .{ .route = s.plan, .slots = slots, .experts = l.count + 1, .prompt = prompt, .fact = !prompt and k.experts.factored(rows) and l.routed.format == .nvfp4 };
      try experts.route(k.experts, stream, s.pick, rows * slots, plan);
      try experts.run(k.experts, stream, .gate_up, l.routed, plan, x, x_stride, rows, s.eact, shared_id);
-@@ -79,13 +115,30 @@
-     const n = hi - lo;
-     const bf16_slots = prompt and l.exl3 == null; // the slot rows: bf16 in an NVFP4 prompt chunk, else fp32
-     const eb: usize = if (bf16_slots) 2 else 4;
+     try experts.run(k.experts, stream, if (prompt) .down else .down_f32, l.routed, plan, s.eact, l.routed.width, rows, s.ey, shared_id);
+ }
+ 
+-/// Shared expert and its slot, before the slot sum; paired passes call this on the original exchange pieces.
+-pub fn shared(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool) !void {
++/// moe_block's fill of rows lo..hi: shared expert into the last slot, slot sum into out fp32 (any range, same bits).
++pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool, out: u64) !void {
++    const stamp = prof_mod.span(k.prof, stream, .shared_expert);
++    defer stamp.end();
++    const d = l.routed.dims;
++    const slots = l.top_k + 1;
++    const n = hi - lo;
++    const bf16_slots = prompt and l.exl3 == null; // the slot rows: bf16 in an NVFP4 prompt chunk, else fp32
++    const eb: usize = if (bf16_slots) 2 else 4;
 +    if (grouped(k, l, hi, prompt)) { // body ran the grouped path on rows 0..hi: one fill of them all
 +        if (lo != 0) return error.BadFill;
 +        if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, 0, hi, prompt, false);
 +        return exl3.combineDecode(k.exl3, stream, l.exl3.?, s.x3, hi, l.count, d, l.routed.width, l.routed.limit, s.wts, s.sy, out);
++    }
++    if (direct(k, l, hi, prompt)) { // TF_GLM_MOE_DIRECT: body ran these rows direct; fill sums the flat picks' slot rows
++        if (lo != 0) return error.BadWindow;
++        if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, lo, hi, prompt, false);
++        const y = try exl3.directOut(l.exl3.?, s.x3, hi, l.count, d, l.routed.width, l.routed.limit);
++        return glue.combineTail(k.set, stream, y, s.sy, s.wts, out, hi - lo, d, l.top_k + 1);
 +    }
 +    if (forks(k, prompt)) try stream.wait(k.side.?.join) else try sharedRows(k, stream, l, s, x, x_stride, lo, hi, prompt, true);
 +    try glue.combine(k.set, stream, s.ey + lo * slots * d * eb, !bf16_slots, s.wts + lo * slots * 4, out, n, d, slots);
@@ -137,19 +182,42 @@ diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.z
 +/// The shared expert of rows lo..hi on `stream`: [gate | up], SwiGLU, down into `sy`, then with `slot` its rows into the
 +/// last slot of `ey` (the grouped decode path reads `sy` itself).
 +fn sharedRows(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool, slot: bool) !void {
-+    const d = l.routed.dims;
-+    const slots = l.top_k + 1;
-+    const n = hi - lo;
-+    const bf16_slots = prompt and l.exl3 == null;
-+    const eb: usize = if (bf16_slots) 2 else 4;
+     const d = l.routed.dims;
+     const slots = l.top_k + 1;
+     const n = hi - lo;
+@@ -100,33 +150,11 @@
      try projection.matmul(k.set, stream, l.shared_gu, x + lo * x_stride * 2, x_stride, s.sgu + lo * 2 * l.shared * 2, s.mm_part, n, 2 * l.shared, d, false);
      try glue.swiglu(k.set, stream, s.sgu + lo * 2 * l.shared * 2, s.sact + lo * l.shared * 2, s.sxs + lo * (l.shared / 64) * 4, l.routed.limit, n, l.shared);
      try projection.matmul(k.set, stream, l.shared_down, s.sact + lo * l.shared * 2, l.shared, s.sy + lo * d * 4, s.mm_part, n, d, l.shared, true);
+-    if (direct(k, l, hi, prompt)) { // body ran these rows direct: a decode window, filled whole; fill sums it (combineTail)
+-        if (lo != 0) return error.BadWindow;
+-        return;
+-    }
 +    if (!slot) return;
++    if (direct(k, l, hi, prompt)) return; // the direct path reads sy in fill's combineTail (no slot write)
      var a: cuda.Args = .{};
      a.add(s.sy + lo * d * 4);
      a.add(s.ey + lo * slots * d * eb);
      for ([_]usize{ n, d, slots, l.top_k, @intFromBool(bf16_slots) }) |v| a.add(@as(c_int, @intCast(v)));
      try cuda_pdl.launch(k.put_slot, .{ .grid = .{ .x = @intCast((n * d + 255) / 256) }, .block = .{ .x = 256 } }, stream, &a);
--    try glue.combine(k.set, stream, s.ey + lo * slots * d * eb, !bf16_slots, s.wts + lo * slots * 4, out, n, d, slots);
  }
+-
+-/// The already-filled slot rows, summed in slot order into out fp32 (any range, same bits).
+-pub fn combine(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, lo: usize, hi: usize, prompt: bool, out: u64) !void {
+-    const bf16_slots = prompt and l.exl3 == null;
+-    const eb: usize = if (bf16_slots) 2 else 4;
+-    try glue.combine(k.set, stream, s.ey + lo * (l.top_k + 1) * l.routed.dims * eb, !bf16_slots, s.wts + lo * (l.top_k + 1) * 4, out, hi - lo, l.routed.dims, l.top_k + 1);
+-}
+-
+-/// moe_block's fill of rows lo..hi: shared expert into the last slot, slot sum into out fp32 (any range, same bits).
+-pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool, out: u64) !void {
+-    const stamp = prof_mod.span(k.prof, stream, .shared_expert);
+-    defer stamp.end();
+-    try shared(k, stream, l, s, x, x_stride, lo, hi, prompt);
+-    if (direct(k, l, hi, prompt)) { // TF_GLM_MOE_DIRECT: the routed sum straight from the flat picks, then the shared slot
+-        const d = l.routed.dims;
+-        const y = try exl3.directOut(l.exl3.?, s.x3, hi, l.count, d, l.routed.width, l.routed.limit);
+-        return glue.combineTail(k.set, stream, y, s.sy, s.wts, out, hi - lo, d, l.top_k + 1);
+-    }
+-    try combine(k, stream, l, s, lo, hi, prompt, out);
+-}

@@ -6,10 +6,78 @@ the composed callName/own-name/reject/salvage ground around it. 011-
 zclose applies AFTER this and completes the tree. The composed-tree
 round-trip verifies byte-exact.
 
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the tool-parse module split moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
 --- a/zig/src/server/tool_parse.zig
 +++ b/zig/src/server/tool_parse.zig
-@@ -127,29 +127,36 @@
+@@ -43,6 +43,49 @@
+     return std.mem.indexOfPos(u8, hay, from, needle);
+ }
+ 
++/// The first ``close`` tag at or after ``from`` that closes an envelope: a tag inside the payload's own data
++/// is the model's quoted markup, not the closer. A JSON string value (the ``{...}`` form) or an
++/// ``<arg_value>``/``<parameter=..>`` region (the XML forms) is skipped, so a call may quote tool-call
++/// markup inside its arguments — the shape every fixture-writing reply produces. When the payload does
++/// not open as JSON the scan keeps the plain first-tag find; when the JSON never closes outside its
++/// strings the plain find is the fallback, so a malformed payload cuts and is rejected as before.
++fn envelopeCloser(text: []const u8, from: usize, close: []const u8, any_case: bool, skip_values: bool) ?usize {
++    var i = from;
++    while (i < text.len and space(text[i])) i += 1;
++    const json_form = i < text.len and (text[i] == '{' or text[i] == '[');
++    var in_string = false;
++    var region: []const u8 = "";
++    var j = i;
++    while (j < text.len) : (j += 1) {
++        const ch = text[j];
++        if (in_string) {
++            if (ch == '\\') {
++                j += 1; // the escaped byte is data even when it reads the tag
++            } else if (ch == '"') {
++                in_string = false;
++            }
++            continue;
++        }
++        if (json_form and ch == '"') {
++            in_string = true;
++            continue;
++        }
++        if (region.len > 0) {
++            if (std.mem.startsWith(u8, text[j..], region)) region = "";
++            continue;
++        }
++        if (std.mem.startsWith(u8, text[j..], close)) return j;
++        if (skip_values) {
++            if (std.mem.startsWith(u8, text[j..], "<arg_value>")) {
++                region = "</arg_value>";
++            } else if (std.mem.startsWith(u8, text[j..], "<parameter=")) {
++                region = "</parameter>";
++            }
++        }
++    }
++    return if (any_case) findCI(text, close, from) else find(text, close, from);
++}
++
+ /// Python's ``\w`` on one byte, non-ASCII bytes counting as letters.
+ fn word(ch: u8) bool {
+     return std.ascii.isAlphanumeric(ch) or ch == '_' or ch >= 0x80;
+@@ -74,13 +117,13 @@
+                 break :blk .{ .start = s, .end = end, .payload = text[s..end], .complete = e != null };
+             }
+             if (!no_tc and std.ascii.startsWithIgnoreCase(text[s..], "<tool_call>")) {
+-                if (tool_json_close.find(text, s + 11)) |e| {
++                if (envelopeCloser(text, s + 11, "</tool_call>", true, true)) |e| {
+                     break :blk .{ .start = s, .end = e + 12, .payload = strip(text[s + 11 .. e]) };
+                 }
+                 no_tc = true;
+             }
+             if (!no_gemma and std.mem.startsWith(u8, text[s..], "<|tool_call>")) {
+-                if (find(text, "<tool_call|>", s + 12)) |e| {
++                if (envelopeCloser(text, s + 12, "<tool_call|>", false, false)) |e| {
+                     break :blk .{ .start = s, .end = e + 12, .payload = strip(text[s + 12 .. e]) };
+                 }
+                 no_gemma = true;
+@@ -129,29 +172,36 @@
              continue;
          }
          if (max_calls) |m| if (calls.items.len >= m) continue;
@@ -19,6 +87,15 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
 -                    error.OutOfMemory => return error.OutOfMemory,
 -                    error.Invalid => null,
 -                };
+-            }
+-            const one = payload(a, env.payload, &schemas, max_calls != null) catch |e| switch (e) {
+-                error.OutOfMemory => return error.OutOfMemory,
+-                error.Invalid => break :blk null,
+-            };
+-            if (one) |c| {
+-                const list = try a.alloc(Call, 1);
+-                list[0] = c;
+-                break :blk list;
 +        var start = env.start;
 +        var parsed = try offeredCalls(a, env.payload, &schemas, &known, max_calls != null, true);
 +        // Prose that quotes the opener ("Qwen's <tool_call>{}") ahead of a call begins the envelope, so the call does
@@ -43,15 +120,6 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
 +                    break;
 +                }
              }
--            const one = payload(a, env.payload, &schemas, max_calls != null) catch |e| switch (e) {
--                error.OutOfMemory => return error.OutOfMemory,
--                error.Invalid => break :blk null,
--            };
--            if (one) |c| {
--                const list = try a.alloc(Call, 1);
--                list[0] = c;
--                break :blk list;
--            }
 -            break :blk null;
 -        };
 +        }
@@ -64,12 +132,19 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
                  unoffered = true;
                  try keepName(a, &kept_names, strip(c.name));
              };
-@@ -161,8 +168,10 @@
+@@ -163,15 +213,10 @@
              if (reject == .unoffered) kept_unoffered += 1 else kept_malformed += 1;
              continue;
          }
 -        for (parsed.?) |c| {
--            if (max_calls == null or calls.items.len < max_calls.?) try calls.append(a, try openaiCall(a, (try callName(a, c, &known)).?, c.arguments));
+-            if (max_calls != null and calls.items.len >= max_calls.?) continue;
+-            const call = (try openaiCall(a, (try callName(a, c, &known)).?, c.arguments)) orelse {
+-                try residue.appendSlice(a, text[env.start..env.end]);
+-                rejected += 1;
+-                kept_malformed += 1;
+-                continue :next_envelope;
+-            };
+-            try calls.append(a, call);
 +        const list = parsed.?;
 +        try residue.appendSlice(a, text[env.start..start]);
 +        for (list) |c| {
@@ -77,7 +152,7 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
          }
      }
      try residue.appendSlice(a, text[cursor..]);
-@@ -186,6 +195,62 @@
+@@ -195,6 +240,62 @@
      try names.append(a, name);
  }
  
@@ -140,7 +215,16 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
  /// What closes the call ``text`` ends inside (the model's end token came before its ``
  pub fn closeCall(a: Allocator, text: []const u8, tools: []const Value) Allocator.Error![]const u8 {
      const start = openCall(text) orelse return "";
-@@ -235,10 +300,16 @@
+@@ -226,7 +327,7 @@
+             pos = code.skip_end;
+             continue;
+         }
+-        pos = (tool_json_close.find(text, s + 11) orelse break s) + 12;
++        pos = (envelopeCloser(text, s + 11, "</tool_call>", true, true) orelse break s) + 12;
+         code.jumpTo(pos);
+     } else null;
+ }
+@@ -244,10 +345,16 @@
      return closed[body.len..];
  }
  
@@ -159,12 +243,11 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
 +    return name;
  }
  
- /// ``_openai_tool_call``: the call under ``name`` (``callName``), arguments as compact JSON.
+ /// A named ``_openai_tool_call`` with compact JSON arguments, or null when arguments are non-finite.
 diff --git a/zig/src/server/tool_parse_test.zig b/zig/src/server/tool_parse_test.zig
-index 325a097b7..ce9eb82ae 100644
 --- a/zig/src/server/tool_parse_test.zig
 +++ b/zig/src/server/tool_parse_test.zig
-@@ -159,7 +159,6 @@ test "a call left open that would not parse whole stays the reply's text" {
+@@ -159,7 +159,6 @@
          "Trying.<tool_call>\n<function=lookup>\n<parameter=n>\n5\n", // before its </parameter>
          "Trying.<tool_call>{\"name\":\"launch rocket!\",\"arguments\":{}}", // no function name
          "Trying.<tool_call>", // nothing written
@@ -172,7 +255,7 @@ index 325a097b7..ce9eb82ae 100644
      };
      for (replies) |text| {
          try std.testing.expectEqualStrings("", try closeCall(a, text, tools));
-@@ -182,23 +181,30 @@ test "replies that end outside a call close nothing" {
+@@ -182,23 +181,30 @@
      for (replies) |text| try std.testing.expectEqualStrings("", try closeCall(a, text, tools));
  }
  
@@ -213,7 +296,7 @@ index 325a097b7..ce9eb82ae 100644
      }
      // an unclosed envelope is not a call in either mode, so the reply keeps it
      const open = "<tool_call>{\"name\":\"launch\",\"arguments\":{\"when\":\"now\"}";
-@@ -207,6 +213,7 @@ test "a call to a tool the request did not declare stays text" {
+@@ -207,6 +213,7 @@
          try std.testing.expect(k.calls == null);
          try std.testing.expectEqualStrings(open, k.content);
      }
@@ -221,7 +304,7 @@ index 325a097b7..ce9eb82ae 100644
      const prose = "Launching. <tool_call><function=launch><parameter=when>now</function></tool_call>";
      try std.testing.expectEqualStrings(prose, (try parse(a, prose, tools, 1)).content);
      // an offered tool keeps its offered spelling; bare JSON naming one not offered stays content
-@@ -491,7 +498,7 @@ test "a GLM call the end token left open closes as #285 closed it" {
+@@ -491,7 +498,7 @@
      const left_open = [_][]const u8{
          "no call at all",
          "<tool_call>now</tool_call>", // closed already
@@ -230,7 +313,7 @@ index 325a097b7..ce9eb82ae 100644
          "<tool_call>run<arg_key>comm", // a key with no value
          "<tool_call>run<arg_key>command</arg_key>", // ... or no value yet
          "<tool_call>run command=ls", // not GLM's markup
-@@ -598,3 +605,138 @@ test "GLM pairs from the cached key and value ends are the pairs each key's own
+@@ -598,3 +605,138 @@
  test {
      _ = @import("tool_parse_visibility_test.zig");
  }
@@ -370,10 +453,9 @@ index 325a097b7..ce9eb82ae 100644
 +    try std.testing.expectEqualStrings("a literal <tool_call|> inside", doc.object.get("content").?.string);
 +}
 diff --git a/zig/src/server/tool_parse_visibility_test.zig b/zig/src/server/tool_parse_visibility_test.zig
-index b54fe08c2..aa51161c0 100644
 --- a/zig/src/server/tool_parse_visibility_test.zig
 +++ b/zig/src/server/tool_parse_visibility_test.zig
-@@ -54,7 +54,7 @@ test "tool visibility: rejected text does not consume a valid call and the secon
+@@ -54,7 +54,7 @@
      defer arena.deinit();
      const a = arena.allocator();
      const tools = (try json.parse(a, "[{\"type\":\"function\",\"function\":{\"name\":\"execute\"}}]")).ok.array;

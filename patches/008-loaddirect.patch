@@ -20,8 +20,9 @@ window (the content gate + the loading wall's re-take, the timed wall protocol).
 
 REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine style — this patch's owned files jump from their state at this point in the stack to the verified final state; later stack members' edits to shared files ride inside (the end-state replay verifies byte-exact).
 
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the loader work moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cuda_load_ahead.zig
-index f777c7e2e..1c255dd94 100644
 --- a/zig/src/families/glm/cuda_load_ahead.zig
 +++ b/zig/src/families/glm/cuda_load_ahead.zig
 @@ -1,4 +1,4 @@
@@ -30,7 +31,7 @@ index f777c7e2e..1c255dd94 100644
  
  const std = @import("std");
  const core = @import("core");
-@@ -15,17 +15,29 @@ pub fn layers(L: anytype, prefix: []const u8, ids: []const u32, out: anytype) !v
+@@ -15,17 +15,29 @@
  
  pub fn layersWithCount(L: anytype, ids: []const u32, out: anytype, count: usize) !void {
      var ahead: u64 = 0;
