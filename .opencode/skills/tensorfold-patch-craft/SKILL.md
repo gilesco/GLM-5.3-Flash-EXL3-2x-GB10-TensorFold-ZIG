@@ -1,6 +1,6 @@
 ---
 name: TensorFold Patch Craft
-description: "Craft, verify, and measure a local TensorFold engine patch on this testing line — writing the zig diff, the apply/symbol checks that git apply cannot do for you, the alphabetical staging order, shipping it through a resumecost window via RC_PATCHES, and reading the receipt (the boot wall, the content gate). Trigger words: engine patch, RC_PATCHES, patches/, git apply failed, duplicate struct member, the build refused the patch, boot marks, decompose the loader."
+description: "Craft, verify, and measure a local TensorFold engine patch on this testing line — writing the zig diff, the apply/symbol checks that git apply cannot do for you, the alphabetical staging order, shipping it through a resumecost window via RC_PATCHES, and reading the receipt (the boot wall, the content gate). Also covers the release-rebase staging: the composed tree, the store regen with the byte-exact round-trip, and the TWO fingerprint gates (the store AND the head's git-ignored pin) a bump window must flip together. Trigger words: engine patch, RC_PATCHES, patches/, git apply failed, duplicate struct member, the build refused the patch, boot marks, decompose the loader, release rebase, the store refuses, patch does not apply against the pinned tree, compose, round-trip, regen."
 ---
 
 # TensorFold Patch Craft
@@ -243,10 +243,53 @@ differently:
 6. Verify: compile RC=0 on the final tree, then byte-identity — fresh parent
    + `git format-patch` output applied = the commit tree hash.
 
+## Release rebases (a new upstream tag: the compose, the store regen, the two gates)
+
+A release bump is a special cross-tree port: the whole store re-anchors onto the
+new tag. The road has three traps that each cost a window before they were
+named:
+
+1. **Compose in a scratch branch, merge the tag INTO the composed tree** — the
+   composed tree (every member's end-state on the new pristine tag) is the
+   ground; resolve conflicts by the fork-primary rule (the fork's measured
+   machinery stays; upstream's new features fold in beside it; a fork-era
+   RENAME colliding with an upstream consumer means renaming the fork side
+   back — e.g. a fork's `group_fn` field vs upstream's `group` consumers).
+   **Never `git reset --hard` while the compose branch is checked out**: the
+   branch pointer moves with every reset and the composed tree is GONE (it
+   survived in the object store only because a commit referenced it). Do
+   replay tests in a separate DETACHED worktree (`git worktree add`), never on
+   the compose branch itself.
+2. **The regen must be git-native and read from immutable history**: each
+   regenerated member = the original patch's header verbatim + the body as
+   per-file git diffs (`diff --git` + `--- a/` + `+++ b/` + hunks; a CREATED
+   file needs `new file mode 100644` + `--- /dev/null`, and `git apply`
+   refuses a plain `--- a/` creation). The classic mistakes: emitting
+   `--- a/` first-lines with no `diff --git` header (the build's empty-body
+   skip then reads the member as a provenance marker and SKIPS it — the
+   include dies with `No such file or directory`), and splicing hunks via
+   `tail -n +3 | sed` (mangles the `@@` headers — `tail -n +3` already
+   removed `---`/`+++`, so re-emit them explicitly, never sed-rewrite line
+   positions). REGEN FROM GIT BLOBS (`git show <commit>:patches/x.patch`),
+   never from the store path itself — the store path holds your own last
+   output and every rerun self-contaminates (this cost four false starts in
+   one sitting).
+3. **The round-trip is the ground truth, and the PIN is the second gate**:
+   prove `pristine tag + the store = the composed tree` (zero diffs) BEFORE
+   any window. Then flip BOTH fingerprint gates before launching: the store
+   members AND the head's `scripts/local.sh` TF_COMMIT (git-ignored, not in
+   any commit — the first v133val window burned because the store was
+   v1.3.3-rebased while the pin still named v1.3.2; the patch overlay
+   refused against the pinned tree at the first drifted anchor). The
+   round-155 class: every bump staging flips the store, the pin, and
+   DRY_RUN, in that order, before the real launch.
+
 ## Verification
 
 - The scratch-repo stack apply passes in alphabetical order AND the symbol greps
   come back clean (each introduced name exactly once, no collisions).
+- The round-trip replay is byte-exact: fresh clone at the tag + the store
+  applied in stack order = the composed tree, zero diffs.
 - The window completes rc=0; `boot-full.log` carries the expected marks; the
   content gate's sha equals the standing config's; the wall delta matches the
   hypothesis (or the receipt explains why not — record it either way).

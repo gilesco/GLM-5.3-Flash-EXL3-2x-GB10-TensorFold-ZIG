@@ -89,3 +89,30 @@
   changes timing) — position-independent evidence (the ADDRESS, the values) beats
   position evidence (which kernel) when a race is in play.
 - Location: .opencode/skills/tensorfold-patch-craft/SKILL.md
+## 2026-11-22 — the v1.3.3 rebase: three staging traps, four false starts, one destroyed compose
+- Skill: tensorfold-patch-craft (extended — the new "Release rebases" section)
+- Symptom: (a) the v133val window died at the image build — the regen members
+  emitted `--- a/` first-lines with mangled hunk headers and no `diff --git`
+  headers, so the build's empty-body skip read 012 as a provenance marker and
+  skipped it entirely (`exl3_group.cuh: No such file or directory`); (b) three
+  regen reruns self-contaminated — each read the store path that held the last
+  run's own output; (c) the compose branch pointer was destroyed TWICE by
+  `git reset --hard v1.3.2` run while the branch was checked out; (d) the
+  first relaunched window died again — the store was v1.3.3-rebased but the
+  head's git-ignored `scripts/local.sh` TF_COMMIT still named v1.3.2, so the
+  overlay refused against the pinned tree (cuda_ranks.zig:219).
+- Root cause: the regen format never had a git-native spec (it was hand-rolled
+  per sitting); the store path was treated as an input when it is an OUTPUT;
+  the compose branch doubled as the replay worktree; and the staging
+  discipline listed the store flip but not the pin flip as a gate.
+- Fix: the regen now emits git-native diffs with new-file-mode markers, reads
+  originals from git blobs (`git show <commit>:patches/x.patch`), and the
+  replay runs in a detached worktree; the bump staging flips store → pin →
+  DRY_RUN in that order. All four recorded in the skill's new
+  "Release rebases" section.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md
+- Note: the destroyed compose survived only because a commit (e8c3c0015)
+  referenced the tree — the object store kept it retrievable. The
+  round-155 class (the pin) has now burned TWO windows (round 155's
+  auto-prepare drop, round 158's stale pin); it is the repeat offender to
+  check first on any "patch does not apply against the pinned tree" receipt.
