@@ -45,7 +45,7 @@ REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the compos
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the exl3p/pair-experts work moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 
-REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (the paired-slot ABI composed) — the before-state is the mid-replay tree; the round-trip verifies byte-exact.
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (the combine fn composed) — the before-state is the mid-replay tree; the round-trip verifies byte-exact.
 diff --git a/zig/kernels/cuda/exl3_prompt.cuh b/zig/kernels/cuda/exl3_prompt.cuh
 --- a/zig/kernels/cuda/exl3_prompt.cuh
 +++ b/zig/kernels/cuda/exl3_prompt.cuh
