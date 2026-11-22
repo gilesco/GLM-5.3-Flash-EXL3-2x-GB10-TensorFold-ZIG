@@ -74,6 +74,8 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the composed tree (branch compose-v133) — v1.3.3's the fp8-pages marriage ground moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.3 + the store = the composed tree, zero diffs).
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the Shape/Geometry cache refactor moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the four compile defects fixed) — the before-state is the mid-replay tree (the members before this one applied), the state-machine discipline; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
@@ -995,7 +997,7 @@ diff --git a/zig/src/families/glm/cuda_snapshot_layout.zig b/zig/src/families/gl
          const pooled = try std.math.mul(usize, @min(at / s.pool + 2, x.pk_rows), s.i_dim * 2);
 -        try p.addCache(st, x, x.lc, latent, s.latentBytes(), x.ps);
 -        if (x.ls != 0) try p.add(st, x.ls, try std.math.mul(usize, at, @sizeOf(f32)));
-+        try p.addCache(st, x, x.lc, latent, pageCacheBytes(s.caches, st.kv8), x.ps);
++        try p.addCache(st, x, x.lc, latent, page_rows * s.row * @as(usize, if (x.ls == 0) 2 else 1), x.ps);
 +        // E4M3 scales: beside the codes in the arena, or on pages a part's 512 after its codes (the fp8-pages layout)
 +        if (x.ls != 0) try p.addCache(st, x, x.ls, try std.math.mul(usize, at, @sizeOf(f32)), page_rows * @sizeOf(f32), x.ps);
          try p.add(st, st.rings[2 * j], ring);
@@ -1099,7 +1101,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
  /// The latent caches' shape: their count (DSA layers and the MTP layer's), a row's values, index key dims, pool rows.
  pub const Shape = struct {
      caches: usize,
-@@ -112,15 +117,28 @@
+@@ -112,15 +117,26 @@
      return shapeOf(w).pkPageBytes();
  }
  
@@ -1124,17 +1126,15 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
 +/// Cache `j`'s rows on pages: its part of page 0 at `p.kv`, the others through the table; E4M3's codes and scales
 +/// a cache's part too (the fp8-pages path's layout).
 +fn onPages(x: *dsa_block.Caches, s: Shape, p: Paged, table: u64, j: usize, kv8: bool) void {
-+    x.lc = p.kv + j * pageCacheBytes(s.caches, kv8);
-+    if (kv8) x.ls = x.lc + page_rows * s.row;
-+    x.pk = if (p.pk != 0) p.pk + j * s.pkBytes() else if (kv8) x.ls + page_rows * 4 else x.lc + s.latentBytes();
-+    x.pks = p.pk_page;
-+    x.pt = table;
-+    x.ps = p.page_bytes;
-+}
++    // one cache's part of a page: its latent rows (bf16 row*2, or E4M3 codes then their fp32 scales block), then its pools' keys
++    const latent_part: usize = page_rows * s.row * (if (kv8) @as(usize, 1) else 2) + page_rows * 4;
++    x.lc = p.kv + j * (latent_part + s.pkBytes());
++    if (kv8) x.ls = x.lc + page_rows * s.row; // the codes, then the scales: one fp32 each row
++    x.pk = if (p.pk != 0) p.pk + j * s.pkBytes() else x.lc + latent_part;
      x.pks = p.pk_page;
      x.pt = table;
      x.ps = p.page_bytes;
-@@ -444,6 +462,8 @@
+@@ -444,6 +460,8 @@
      mtp_base: usize = 0,
      prompt_hidden: u64, // first-draft row owned and charged by this sequence arena
      table: u64 = 0, // on pages: its page table (i32, `pages` entries), else 0
@@ -1143,7 +1143,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
      pages: []const u32 = &.{}, // on pages: the page ids its table holds, in row order (none while no stream holds it)
  
      pub fn init(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize) !State {
-@@ -451,16 +471,29 @@
+@@ -451,16 +469,29 @@
      }
  
      pub fn initFormat(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize, kv8: bool) !State {
@@ -1175,7 +1175,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
          const sizes = try stateSizes(gpa, w, capacity, false, pages);
          defer gpa.free(sizes);
          var total: usize = 0;
-@@ -468,7 +501,7 @@
+@@ -468,7 +499,7 @@
          return total;
      }
  
@@ -1184,7 +1184,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
          const c = &w.config;
          const s = &w.share;
          const nk = w.layers.len - mlaLayers(w);
-@@ -491,8 +524,7 @@
+@@ -491,8 +522,7 @@
          const rings = try gpa.alloc(u64, 2 * (nd + 1));
          for (0..nd + 1) |j| rings[2 * j ..][0..2].* = .{ p[9 + 4 * j], p[10 + 4 * j] };
          const ring_rows = @min(capacity, shapeOf(w).keys);
@@ -1194,7 +1194,7 @@ diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_sta
              st.table = p[14 + 4 * nd];
              st.capacity = 0; // no rows until a stream's pages are mapped
              st.place(w, q);
-@@ -503,8 +535,8 @@
+@@ -503,8 +533,8 @@
      /// A paged sequence's caches on the pages of `p` (the engine's own, made before its pool, placed when it is made).
      pub fn place(st: *State, w: *const weights.Weights, p: Paged) void {
          const s = shapeOf(w);

@@ -44,6 +44,8 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the composed tree (branch compose-v133) — v1.3.3's the exl3p rework ground moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.3 + the store = the composed tree, zero diffs).
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the exl3p/pair-experts work moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the four compile defects fixed) — the before-state is the mid-replay tree (the members before this one applied), the state-machine discipline; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/kernels/cuda/exl3_prompt.cuh b/zig/kernels/cuda/exl3_prompt.cuh
 --- a/zig/kernels/cuda/exl3_prompt.cuh
 +++ b/zig/kernels/cuda/exl3_prompt.cuh

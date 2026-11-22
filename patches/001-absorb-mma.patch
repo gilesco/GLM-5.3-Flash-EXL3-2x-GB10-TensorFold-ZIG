@@ -60,6 +60,8 @@ REGEN-NOTE (2026-11-21, the v1.3.2 rebase): the body regenerated from the hand-c
 REGEN-NOTE (2026-11-21, the v1.3.3 rebase): the body regenerated from the composed tree (branch compose-v133) — v1.3.3's the latent attention's absorb-mma port ground moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.3 + the store = the composed tree, zero diffs).
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the engine/memory refactor (#4427's budget, the mla Shape work) moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the four compile defects fixed) — the before-state is the pristine tree (001 is the first member); the round-trip verifies byte-exact.
 diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
 --- a/zig/kernels/cuda/glm_glue.cu
 +++ b/zig/kernels/cuda/glm_glue.cu
@@ -489,7 +491,7 @@ diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_la
  /// latent.head_block: a rank's 32 heads a program in prompt chunks (each key read once), 16 in decode windows.
  pub fn headBlock(rows: usize) usize {
      return if (rows >= 64) heads_tile_wide else heads_tile;
-@@ -58,9 +62,24 @@
+@@ -58,9 +62,26 @@
          return (try roped(set)).absorbQ(stream, q, d + rd, wk, out, lw + rd, rows, heads, d, lw);
      }
      if (d != 256 or lw != 512) return error.LatentShape;
@@ -511,10 +513,12 @@ diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_la
 +    var a: cuda.Args = .{};
 +    inline for (.{ x, @as(i64, @intCast(xr)), w, out, @as(i64, @intCast(orow)), @as(i64, @intCast(rows)), @as(c_int, @intCast(n)), @as(c_int, @intCast(k)) }) |v| a.add(v);
 +    try cuda.launch.launch(f, .{ .grid = .{ .x = @intCast(n / 128), .y = cdiv(rows, 128), .z = @intCast(heads) }, .block = .{ .x = 256 }, .shared = smem }, stream, &a);
++}
++
  /// Where rope turns a row's 64 columns: from x + r x_row + h x_head into out + r o_row + h o_head (bf16 elements).
  pub const RopeRows = cuda.mla.RopeRows;
  
-@@ -81,6 +100,7 @@
+@@ -81,6 +102,7 @@
  /// latent.expand_v (BF16 kv_b): out [rows][heads][dv] bf16 = o_lat [rows][heads][lw] . wv [heads][dv][lw].
  pub fn expandV(set: glue.Set, stream: cuda.Stream, ol: u64, wv: u64, out: u64, rows: usize, heads: usize, dv: usize, lw: usize) !void {
      if (dv != 256 or lw != 512) return error.LatentShape;
@@ -522,7 +526,7 @@ diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_la
      try rowBlocks(set.glue.expand_v, stream, ol, wv, out, rows, heads, dv / 16);
  }
  
-@@ -92,16 +112,23 @@
+@@ -92,16 +114,23 @@
  }
  
  /// On pages: the stream's table (i32 page ids) and the step from page to page in bytes and latent rows; 0: in order.
@@ -550,7 +554,7 @@ diff --git a/zig/src/families/glm/cuda_latent.zig b/zig/src/families/glm/cuda_la
  }
  
  /// latent.latent_write: rows of `lat` (stride `lat_stride`) into slots pos .. pos + rows - 1 (pos an i32 on device).
-@@ -125,31 +152,35 @@
+@@ -125,31 +154,35 @@
  }
  
  /// latent._dense_chunks (keys through pos + r) and _sparse_chunks (row r's `counts` of `tokens`); `lw` 512 or 576.

@@ -8,6 +8,8 @@ round-trip verifies byte-exact.
 
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the tool-parse module split moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+
+REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134, the four compile defects fixed) — the before-state is the mid-replay tree (the members before this one applied), the state-machine discipline; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
 diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
 --- a/zig/src/server/tool_parse.zig
 +++ b/zig/src/server/tool_parse.zig
@@ -77,6 +79,15 @@ diff --git a/zig/src/server/tool_parse.zig b/zig/src/server/tool_parse.zig
                      break :blk .{ .start = s, .end = e + 12, .payload = strip(text[s + 12 .. e]) };
                  }
                  no_gemma = true;
+@@ -121,7 +164,7 @@
+     var rejected: usize = 0;
+     var kept_unoffered: usize = 0;
+     var kept_malformed: usize = 0;
+-    next_envelope: for (envs) |env| {
++    for (envs) |env| {
+         try residue.appendSlice(a, text[cursor..env.start]);
+         cursor = env.end;
+         if (!env.complete) {
 @@ -129,29 +172,36 @@
              continue;
          }
