@@ -1878,6 +1878,118 @@ PRODCOLD_RETIRED=1
 # The receipt lives in results/campaign-20261123-075710/33-pairexval.md;
 # the stage brief docs/STAGE_BRIEF_pairexval.md stays as the design record.
 
+# ---------------------------------------------------------------------------
+# phase: thinkoffval (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_thinkoffval.md carries the value gate). THE
+# THINKING-SERVER-DEFAULT VERIFY (the issue-1 follow-up: the reporter wants
+# thinking off BY DEFAULT as a deployment config, not just per request). THE
+# ENGINE SIDE IS RECEIPTED IN SOURCE: --no-thinking (cli.zig:81) ->
+# args.thinking -> server_config.enable_thinking (serve.zig:206); the
+# request paths fall back to it when a request says nothing
+# (chat.zig:172, anthropic.zig:52) and request fields win in BOTH
+# directions. THE VALUE QUESTION: does THINKING=0 on the serve line flip
+# the DEFAULT request's behavior on the real stack (the effort-tail
+# template + DFlash2 + the 17-patch store), with the per-request override
+# still winning both ways? THE VALUE-IF-YES: the deployment can choose
+# its thinking default with one env var — the knob promotes to a
+# documented config option. THE ARMS (the reasoning_tokens discriminator
+# on the live probe's receipted prompt, greedy):
+#   A. the standing arm (THINKING=1): default request -> reasoning > 0.
+#   B. THINKING=0: the same default request -> reasoning == 0.
+#   C. THINKING=0 + chat_template_kwargs.enable_thinking=true ->
+#      reasoning > 0 (the override wins ON).
+#   D. THINKING=0 + thinking=false -> reasoning == 0 (the override wins OFF).
+#   E. g1 on the OFF arm: two identical greedy requests, content sha equal.
+# KILL: B still reasons (the flag never reached the default path — the knob
+# is dead, do not promote the default); C does not reason (the override
+# direction broken — the knob is UNSAFE as a default, it traps clients
+# that ask for thinking). ANY arm's refusal/boot failure holds the knob
+# at THINKING=1 default until understood. The phase ends by restarting the
+# standing arm so the stack is left on the qualified default.
+# ---------------------------------------------------------------------------
+if want thinkoffval && ! phase_done thinkoffval; then
+  log "=== thinkoffval (the THINKING=0 server-default verify: the"
+    "issue-1 follow-up — the reasoning_tokens discriminator on all arms)"
+  P="$OUT/34-thinkoffval.md"; : > "$P"
+  echo "# thinkoffval (the THINKING=0 server-default verify; the arms" \
+    "A standing control -> B server-off -> C override-on -> D override-off" \
+    "-> E g1 on the OFF arm)" >> "$P"
+  echo "- the brief: docs/STAGE_BRIEF_thinkoffval.md" >> "$P"
+  req_file "$OUT/to-req.json" "$REF_PROMPT" '{"max_tokens": 256}'
+  req_file "$OUT/to-req-on.json" "$REF_PROMPT" \
+    '{"max_tokens": 256, "chat_template_kwargs": {"enable_thinking": true}}'
+  req_file "$OUT/to-req-off.json" "$REF_PROMPT" \
+    '{"max_tokens": 256, "thinking": false}'
+  RTOK='import json,sys
+d = json.load(open(sys.argv[1]))
+m = d["choices"][0]["message"]
+u = d.get("usage", {})
+r = u.get("completion_tokens_details", {}).get("reasoning_tokens", "MISSING")
+c = repr((m.get("content") or "")[:40])
+f = d["choices"][0].get("finish_reason")
+print(r, "|", c, "|", f)'
+  # arm A: the standing arm from preflight (THINKING=1) — the default request
+  log "thinkoffval: arm A — the standing arm (THINKING=1), the default request"
+  echo "## arm A: the standing arm (THINKING=1), the default request" >> "$P"
+  chat "$OUT/to-req.json" > "$OUT/to-a.json" || true
+  echo "- reasoning|content|finish:" \
+    "$(python3 -c "$RTOK" "$OUT/to-a.json" 2>&1)" >> "$P"
+  # arm B: the server default flipped
+  log "thinkoffval: arm B — THINKING=0, the same default request"
+  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 THINKING=0; then
+    echo "- the THINKING=0 arm's restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "thinkoffval: the THINKING=0 arm refused to serve"
+  fi
+  echo "## arm B: THINKING=0, the default request" >> "$P"
+  chat "$OUT/to-req.json" > "$OUT/to-b.json" || true
+  echo "- reasoning|content|finish:" \
+    "$(python3 -c "$RTOK" "$OUT/to-b.json" 2>&1)" >> "$P"
+  log "thinkoffval: arm C — the explicit-ON override on the OFF server"
+  echo "## arm C: THINKING=0 + enable_thinking=true"
+    "(the override wins ON)" >> "$P"
+  chat "$OUT/to-req-on.json" > "$OUT/to-c.json" || true
+  echo "- reasoning|content|finish:" \
+    "$(python3 -c "$RTOK" "$OUT/to-c.json" 2>&1)" >> "$P"
+  log "thinkoffval: arm D — the explicit-off shape on the OFF server"
+  echo "## arm D: THINKING=0 + thinking=false (the override wins OFF)" >> "$P"
+  chat "$OUT/to-req-off.json" > "$OUT/to-d.json" || true
+  echo "- reasoning|content|finish:" \
+    "$(python3 -c "$RTOK" "$OUT/to-d.json" 2>&1)" >> "$P"
+  log "thinkoffval: arm E — g1 on the OFF arm (two greedy runs, content)"
+  echo "## arm E: g1 on the OFF arm — two identical greedy requests" >> "$P"
+  chat "$OUT/to-req-off.json" > "$OUT/to-e1.json" || true
+  chat "$OUT/to-req-off.json" > "$OUT/to-e2.json" || true
+  S1=$(content_sha "$OUT/to-e1.json") && S2=$(content_sha "$OUT/to-e2.json") \
+    || { S1=ERR; S2=ERR; }
+  echo "- content sha 1: $S1" >> "$P"
+  echo "- content sha 2: $S2" >> "$P"
+  if [ "$S1" = "$S2" ]; then E1=IDENTICAL; else E1=DIFFERENT; fi
+  echo "- g1 on the OFF arm: $E1" >> "$P"
+  echo "- VERDICT: B reasoning == 0 AND C reasoning > 0 AND D reasoning == 0" \
+    "AND E g1 IDENTICAL = the THINKING=0 server default WORKS with the" \
+    "override winning both ways — the knob is a valid deployment option" \
+    "(the config default STAYS 1 until its own battery promotes a flip);" \
+    "B reasoning > 0 = the flag never reached the default path, the knob" \
+    "is dead; C reasoning == 0 = the override direction is BROKEN, the" \
+    "knob is unsafe as a default (it traps clients that ask for" \
+    "thinking) — either kill criterion holds the THINKING default at 1" \
+    "and opens the defect question with this receipt" >> "$P"
+  log "thinkoffval: restoring the standing arm (THINKING=1)"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- the standing arm restored (THINKING=1) — the stack is left on" \
+      "the qualified default" >> "$P"
+  else
+    echo "- the standing arm's restore restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  touch "$OUT/.thinkoffval.done"
+fi
+
+# ---------------------------------------------------------------------------
+
 if want summary; then
   log "=== summary"
   S="$OUT/CAMPAIGN.md"
