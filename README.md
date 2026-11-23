@@ -97,6 +97,23 @@ cp scripts/local.sh.example scripts/local.sh   # or skip this: prepare.sh discov
 - Then point any OpenAI-compatible client at `http://<head>:<port>/v1`, model name
   `GLM-5.3-Flash-EXL3` (`SERVED_NAME`).
 
+**Thinking off, per request**: the model thinks by default; a request turns it
+off with any of these shapes (the engine reads all six):
+
+```jsonc
+{ "chat_template_kwargs": { "enable_thinking": false } }
+{ "thinking": false }
+{ "thinking": { "type": "disabled" } }   // DeepSeek-style
+{ "reasoning_effort": "none" }
+{ "chat_template_kwargs": { "thinking": false } }
+{ "chat_template_kwargs": { "reasoning_effort": "none" } }
+```
+
+The Anthropic-format route accepts `thinking: {"type": "disabled"}` likewise.
+`reasoning_effort` otherwise tunes the hint (`none, minimal, low, medium, high,
+xhigh, max`). Thinking stays ON as the standing default — the quality receipts
+(hardmode, the §2 gates) are measured with it on.
+
 ### Test it
 
 ```sh

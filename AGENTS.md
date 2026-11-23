@@ -51,6 +51,10 @@ Hard boundaries, never crossed:
   improvises an image again.
 - **Nothing is posted upstream** (no issues/PRs to ashhart/TensorFold or other repos).
   Findings for upstream are written into `docs/ECOSYSTEM.md` as data.
+- **GitHub issues on THIS repo may be answered by the agent (the user, 2026-11-23)**:
+  review the request against the repo's receipts, state plainly whether it can be
+  done, and **always open the response with a clear "this response is AI-generated,
+  not human" statement** — on every issue reply, no exceptions.
 - Site identity (hostnames, IPs, ssh targets, rail devices, HCA names) lives only in
   git-ignored `scripts/local.sh` / `docs/SITE.md`. **Never commit it, in any file**:
   committed prose says "the head" / "the worker", never a hostname, address, netdev
