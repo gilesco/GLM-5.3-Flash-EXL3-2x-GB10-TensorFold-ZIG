@@ -12,15 +12,17 @@ campaign receipt. All edits in the underlying repository are AI-generated
 - **Hardware**: a pair of NVIDIA DGX Spark (GB10) boxes as a TP=2 pair — one head
   (rank 0 + API), one worker (rank 1) — connected over RoCE.
 - **Engine**: TensorFold's **native** engine (Zig + CUDA, no Python at serve time)
-  at v1.2.4, plus a **13-patch local tuning stack** (below). Context **524,288
+  at v1.3.4, plus a **17-patch local tuning stack** (below). Context **524,288
   tokens**, 4 concurrent streams, fp8 KV pages, fp8 dense weights, images and video
   in.
 
-## The tuning stack (13 patches, each A/B-qualified bit-identical)
+## The tuning stack (17 patches, each A/B-qualified bit-identical)
 
 Every patch is content-verified: its A/B's greedy outputs are identical to the
 byte across arms, the §2 content gates pass, and hardmode holds. Each has an
-environment kill switch and can be dropped independently.
+environment kill switch and can be dropped independently. The stack re-anchors
+onto each TensorFold release and replays byte-exact (pristine upstream + the
+patches = the composed tree).
 
 | # | Patch | What it does |
 |---|-------|--------------|
@@ -37,8 +39,42 @@ environment kill switch and can be dropped independently.
 | 11 | zprompt | the prompt experts' main loop recompiled for 8-member column blocks, the next k-tile decoded among the current MMAs (pp +1.8-2.5%) |
 | 12 | zs2 | the packed prompt GEMMs' loads fixed once a block + 8-bit codes to bf16 pairs in fewer steps (pp +1.6%) |
 | 13 | zshfl | the 4-bit grouped experts read every trellis word once (bit-safe; neutral on this shape — kept as the base for the next patch) |
+| 14 | zstep | the decode chain launches as dependent kernels (the PDL wrapper; bit-safe, neutral here) |
+| 15 | tools256 | a call to a tool the request did not offer goes out under its own name (server-layer) |
+| 16 | zclose | the tool-call envelope closer scans value-aware — quoted markup inside a call's arguments is data |
+| 17 | callquote | a call after prose that quotes its opener is still a call (server-layer) |
 
-## The scoreboard (same-window duels against the stock EXL3/Python recipe)
+(The twelve load-path and kernel patches above were joined by zstep, tools256,
+zclose and callquote after the card's first posting; two more — the
+shared-budgets and vision fixes — mainlined upstream and dropped.)
+
+## Quality (current)
+
+- **hardmode: Quality 94/100 (196/208 points) on tool-eval-bench 3.1.0,
+  Deployability 75** (Responsiveness 31, median turn 5.2 s) — the v134val
+  battery, campaign-20261122-232612. The gate is "hold 94 on the 3.1.0
+  frame" after the round-154 re-base; the same-bits witness
+  (`80cc3802…`) has held identical across **ten consecutive engine bumps**.
+- **The §2 content gates: 43 consecutive ALL PASS** — greedy determinism,
+  drafted = plain, resumed = fresh, concurrent = solo (content-identical;
+  the raw-byte differences are the engine's documented nondeterminism).
+- **Vision: 4/4** on the raster suite (raster-only assets with agent-verified
+  ground truth — no improvised fixtures).
+
+## The scoreboard (current, native-vs-native)
+
+The stock EXL3/Python recipe is RETIRED — production IS this line now; the
+comparison is native-vs-native (the current production against the current
+testing arm, same window). The current chart and its pairs:
+[docs/perf-vs-production.svg](docs/perf-vs-production.svg) /
+[docs/perf-anchors.tsv](docs/perf-anchors.tsv) — steady-state decode
+**77.3 tok/s**, prefill **1,524 tok/s**, load wall **83 s**, TTFT at depth
+(cold d8192) **3,777 ms**, streaming latency **14.5 ms/token**.
+
+## The scoreboard (the Python-recipe era — HISTORY)
+
+> The retired recipe's era; the numbers above supersede this table. Kept for
+> the receipts.
 
 Both engines serve the same model, the same probes, the same window
 (campaign-20261107-225124 unless noted):
@@ -58,10 +94,9 @@ The prefill chain across four days of adoption: 1,150 → 1,434 (the one-call EX
 prompt path) → 1,458 (the attention prefetch) → 1,495 (the prompt experts' loop
 rework) → **1,519** (the packed-prompt loads) — the last uncrossed front fell.
 
-## Quality
+## Quality (the card's first-posting era — HISTORY; the current block above supersedes)
 
-- **hardmode: 95, thirteen consecutive runs** (the ceiling-holding scenario
-  battery; TC-51 and TC-92 pass in every run).
+- hardmode 95 on thirteen consecutive runs, on the retired 3.0.1.dev4 frame.
 - **Vision: 4/4** on the raster suite (raster-only assets with agent-verified
   ground truth — no improvised fixtures).
 - **The §2 content gates, every window**: greedy determinism, drafted = plain,
@@ -70,7 +105,7 @@ rework) → **1,519** (the packed-prompt loads) — the last uncrossed front fel
 - The cost tables were dropped after an attribution duel showed they cost the
   2-stream aggregate ~16% and bought nothing measurable.
 
-## Benchmarks (tool-eval-bench v3.0.1, seed 42, parallel=4)
+## Benchmarks (the card's first-posting full battery — HISTORY; tool-eval-bench v3.0.1, seed 42, parallel=4)
 
 One full run on the adopted stack — hardmode on, perf on, needle-in-a-haystack
 enabled (`--perf --needle --hardmode --parallel 4`, ~66 minutes wall,
@@ -121,7 +156,8 @@ campaign-20261108-010714):
 
 ## What's next
 
-The fork's decode-side series (the read-once trellis landed; the chain as
-dependent launches is next), the PDL launch-chain set, and the
-hyper-connection split/overlap set (+36% at 50k prompts on the fork's
-hardware) are scoped and queued.
+The what's-next list from the card's first posting (the fork's decode-side
+series, the PDL launch-chain set, the hyper-connection split/overlap set) has
+since LANDED: zstep (the PDL wrapper) and zshfl are patches 14/13 in the
+served stack; the release watch is armed at TensorFold v1.3.4 and every bump
+through the tenth has qualified and promoted.

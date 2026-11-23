@@ -4,7 +4,7 @@ Working notes for the fork-tail and upstream port work. Full recipes from the
 round-139 cont. 7 subagent scan (2026-11-08); line numbers reference our tree
 at `f202781d3` (the v124-rebase head — TWO rebases stale now: the recipes'
 line numbers are historical anchors, the dispositions are the live content;
-the tree is v1.2.7 `93a2e93` since the round-141 promotion). **The
+the tree is v1.3.4 `12ebd414` since the round-159 promotion). **The
 dispositions come from
 docs/ECOSYSTEM.md's scan** — port order reflects value and risk, not just
 readiness.
@@ -15,7 +15,10 @@ readiness.
    verbatim, 003-fp8-pages re-anchored onto the registry_joins move; the tree
    verified byte-identical; the v125val battery qualified it (the greedy sha
    IDENTICAL across the engine bump, hardmode 95, the vision 4/4, the walls
-   83/83 s). The pin held at v1.2.5 then v1.2.6 (6e9af9302) — it HOLDS at v1.2.7 (93a2e93) now, the round-141 promotion (the v127val battery, campaign-20261111-191641).
+   83/83 s). The pin has since ridden every release-watch bump to
+   **v1.3.4 (12ebd414) — the round-159 promotion** (the v134val battery,
+   campaign-20261122-232612; the store re-anchored, the witness identical
+   across all ten bumps).
 2. **0104 warm-turns** — PORTED, MEASURED, **PARKED** (round 139 cont. 14-15):
    the mechanism engages on our KV_SHARE mode (the share-store substrate fix;
    3 done / 3 stepped aside per ON arm) but buys NOTHING — the deepened
@@ -25,12 +28,13 @@ readiness.
    staged, NOT in the PATCHES default. The battery hardening (the
    witnessed-state gate, the four-arm drift control) is the A/B pattern now.
 
-3. **0108 CACHE_FIRST — DONE AND ADOPTED (round 139 cont. 16-17)**:
-   `020-cachefirst.patch` is the TWENTY-FIRST patch, the env default
-   TF_PROMPT_CACHE_FIRST=1 in config.sh. The cachefirstqual receipt: the ON
-   arms' streams ceded pages to the reserve (3110/3115 -> 3103/3083), the
-   fund-report line live, the §2 gates ALL PASS, hardmode 95 — the
-   TWENTY-FIRST consecutive — the vision 4/4.
+3. **0108 CACHE_FIRST — RETIRED FROM THE DEFAULT (the round-150 drop020val
+   battery qualified the drop)**: `020-cachefirst.patch` was the
+   twenty-first patch, then measured out — its live hunks were gated off at
+   our bare serve (the env never reached the container; the fund-report
+   hunks need an asked --prompt-cache-gib), so the +6.1% c4 attribution
+   belonged to 022-shared-budgets (mainlined upstream at v1.2.7). The file
+   stays on disk in the store; the record: patches/README.md's 020 entry.
 4. **0110 KV_SHARD** — SCOPED, NOT PORTED (round 139 cont. 17): the fork's
    biggest single patch — 5,309 lines across ~44 files (NEW modules:
    `cuda_kv_shard.zig`/`_attn.zig`/`_keep.zig`, `kv_parts.zig`, `kv-shard-check`

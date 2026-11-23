@@ -21,22 +21,9 @@ nothing but docker, ssh and the NVIDIA driver.
   standing default; **524,288-token window, 4 concurrent streams, fp8 paged KV**.
 - **Engine**: TensorFold **v1.3.4** + **the adopted 17-patch stack re-anchored**
   (`PATCHES` below; each patch's full record: [patches/README.md](patches/README.md);
-  020-cachefirst RETIRED from the default — the drop020val battery qualified
-  the drop (campaign-20261119-124951: the witness 80cc3802… IDENTICAL, the
-  §2 gates ALL PASS, hardmode 95 — the thirty-eighth consecutive, the vision
-  4/4, the walls 84/83 s); its live hunks were gated off at our bare serve
-  (the TF_PROMPT_CACHE_FIRST env never reached the container through
-  env_args()'s forwarding prefixes; the fund-report hunks need an asked
-  --prompt-cache-gib our serve never sets); the store keeps the file on disk,
-  the v1.2.10 rebase's store replay is proven byte-exact — pristine v1.2.10 + the
-  18 patches = the composed tree; the v1210val battery QUALIFIED the pin —
-  campaign-20261119-100642, the round-148 receipt: the greedy witness
-  `80cc3802…` IDENTICAL across five engine bumps, hardmode 95 the
-  thirty-seventh consecutive, the vision 4/4, the walls 83/83 s, steady-state
-  decode 73.1 — bit-for-bit the v1.2.9 receipt; the videorows default carries;
-  #3151's `TF_GLM_EXPERT_FORM` rides the engine (unset: the form race is the
-  qualified behavior); 010/011 re-cut around v1.2.10's #3588 quoted-markup
-  Scanner and coexist with it).
+  the store replay is proven byte-exact — pristine v1.3.4 + the 17 patches =
+  the composed tree; the fp8-pages marriage holds on every release — upstream
+  still refuses fp8-on-pages, so the fork's paged path stays load-bearing).
 - **Testing runs from this same repo**: a start FOR OPENCODE serves 8000; a start FOR
   TESTING serves 8001 (intent-keyed ports). Opencode never touches 8001; the quality
   gates never touch 8000. The lifecycle is autonomous — see *The autonomous loop*.
@@ -60,15 +47,15 @@ nothing but docker, ssh and the NVIDIA driver.
 
 | question | answer |
 | --- | --- |
-| Quality | **Tool-eval-bench Hard Mode: Quality 94/100 (196/208 points on 3.1.0), Deployability 75/100** on the shipping config — receipted on every battery since the streak began — **Quality 95 ×40 on tool-eval-bench 3.0.1.dev4, then 94 on 3.1.0** (the user upgraded the bench 2026-11-20; the score re-bases the frame, the gate holds at the new instrument's named equivalent) ( byte-identical token profiles), each with the vision suite **4/4** and the §2 exactness gates **ALL PASS** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **95**, Responsiveness **30/100** (median turn 5.2 s), **Deployability 76** — campaign-20261120-140338 (the v131val battery on the v1.3.1 engine — the first 3.1.0 receipt; 104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on 46 of 50 receipts since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
+| Quality | **Tool-eval-bench Hard Mode: Quality 94/100 (196/208 points on 3.1.0), Deployability 75/100** on the shipping config — the gate is "hold 94 on 3.1.0" (the user upgraded the bench 2026-11-20; the score re-bases the frame, the boundary holds at the new instrument's named equivalent; Quality 95 ×40 on the old 3.0.1.dev4 frame), each battery with the vision suite **4/4** and the §2 exactness gates **ALL PASS — 43 consecutive** (content form: drafted=plain, resumed=fresh, concurrent=solo, seeded sampling stable). The bench's composite **Deployability** = round(0.7×Quality + 0.3×Responsiveness); at the current receipt: Quality **94**, Responsiveness **31/100** (median turn 5.2 s), **Deployability 75** — the v134val battery, campaign-20261122-232612 (104 scenarios + Hard Mode, max 208 points). **Honest caveat: the bench's safety gate flags one scenario on every run (ours and production's alike) — TC-98 (Multi-Hop Transitive Prompt Injection) fails on nearly every receipt since 2026-11-06; the score already prices it (the P category 62/70)**. The definitive cards: [docs/cards/](docs/cards/) — [docs/VALIDATION.md](docs/VALIDATION.md) |
 | Context | **524,288 tokens qualified** end to end: the depth fact ladder **12/12** at 8k/64k/192k/384k — [docs/CONTEXT_512K_PLAN.md](docs/CONTEXT_512K_PLAN.md) |
-| Speed | The v1.3.0 engine's own numbers (campaign-20261120-002016, the v130val battery): load wall **83 s**, steady-state decode **73.1 tok/s** (2048-token probe — bit-identical across six bumps), prefill **1,519 tok/s** (pp d0), hardmode **95** with the vision suite 4/4 and the §2 gates ALL PASS. The chart pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv) |
+| Speed | The v1.3.4 engine's numbers (campaign-20261122-232612, the v134val battery): load wall **83 s**, steady-state decode **77.3 tok/s** (the round-157 PDL-bracket mean, the anchors' decode row; the v134val bracket read 75.9/75.9 in-band), prefill **1,524 tok/s** (pp d0), hardmode **94** with the vision suite 4/4 and the §2 gates ALL PASS. The chart pairs: [docs/perf-anchors.tsv](docs/perf-anchors.tsv) |
 | Resume | The concurrent 4-prefix resume is **−40% with the pool-pages store**; the solo warm resume is reliable; the cross-restart resume is receipted **COLD** (the store does not survive a restart) |
 | Vision | **Enabled as the standing default** at the 524,288 window; the test assets and runner: `assets/vision/` via `scripts/vision-suite-probe.py` |
 
-The checkpoint sweep's ranking (all four packs on the shipping stack): **TR3 95**
-(the served pack), production's stock 92, the Focus 92, the AZ top-4 87 at the top
-perf numbers: [docs/bpw4-sweep-cards.svg](docs/bpw4-sweep-cards.svg).
+The checkpoint sweep's ranking (all four packs on the shipping stack): **TR3 94**
+(the served pack, on the 3.1.0 frame), production's stock 92, the Focus 92, the
+AZ top-4 87 — the sweep cards: [docs/bpw4-sweep-cards.svg](docs/bpw4-sweep-cards.svg).
 
 ## Run it
 
@@ -168,7 +155,10 @@ site's). The ones that matter:
 | `MEMORY_LIMIT_GB` | engine default | → `TENSORFOLD_CUDA_MEMORY_LIMIT_GB` |
 | `BASE_IMAGE` / `ZIG_VERSION` / `SM_ARCH` | NGC pytorch 26.07 / `0.17.0` / `121` | the builder |
 
-### The 17-patch stack (`PATCHES`)
+### The serving stack (`PATCHES`)
+
+The 17-patch stack on the v1.3.4 engine (below); retired members stay listed
+with their disposition — they are NOT in the serve.
 
 The image applies the patches **in filename order — the three-digit prefix IS the
 application order** (`001-` first, `.done` numbers are never reused; the next
@@ -194,7 +184,7 @@ port takes the next free number). What each does:
 | `016-zstep` | the decode chain launches as dependent kernels (`TF_EXL3_PDL=0`) |
 | `018-callquote` | a call after prose that quotes its opener is still a call — the envelope closer scans value-aware (server-layer; no knob) |
 | `020-cachefirst` | RETIRED from the default (the drop020val receipt campaign-20261119-124951 QUALIFIED the drop: the witness 80cc3802… IDENTICAL, the §2 gates ALL PASS, hardmode 95 — the thirty-eighth, the vision 4/4, the walls 84/83 s; the live hunks were gated off at our bare serve); the file stays on disk |
-| `022-shared-budgets` | DFlash2's shared draft rounds keep the budgets rule — a blocked lane (the pool's `fits()` refusing at the 524,288 window) stops pricing shared drafts, so its peers keep their grant (`TF_GLM_`-free; the upstream #2793 fix; the room-matched c4 +6.1%, campaign-20261111-094017) |
+| `022-shared-budgets` | MAINLINED UPSTREAM at v1.2.7 and dropped from the stack — the budgets rule ships in the engine itself (the +6.1% c4 value the round-141 receipts carried); the file stays on disk |
 
 Every patch's provenance, port receipts and knobs: [patches/README.md](patches/README.md).
 

@@ -28,6 +28,16 @@ build. `config.sh`'s `PATCHES` knob selects them (empty = pristine upstream, the
 the tested configuration); `scripts/prepare.sh` stages the named files into `image/patches/`
 and the Docker build applies them right after the TensorFold checkout.
 
+> **THE CURRENT STATE (round 159, 2026-11-23)**: the serving stack is the
+> **17-patch store re-anchored onto TensorFold v1.3.4** (`12ebd414`; the
+> composed tree `46bae4f59` — pristine v1.3.4 + these patches, the round-trip
+> proven byte-exact). The store rode ten bump rebases since v1.2.3
+> (v1.2.4…v1.2.10, v1.3.0…v1.3.4; the sections below carry the early ones, the
+> LAUNCH.md round entries carry the rest); the fp8-pages marriage holds on
+> every release (upstream still refuses fp8-on-pages). The per-patch entries
+> below are each patch's record — the receipts cited there are the campaigns
+> that qualified them; the store replays byte-exact at the current pin.
+
 ## THE v1.2.4 REBASE (2026-11-07, round 135) — all 8 stack patches + one new wiring
 
 The adopted 8-patch stack was rebased onto **TensorFold v1.2.4** (`267c5af6a`,

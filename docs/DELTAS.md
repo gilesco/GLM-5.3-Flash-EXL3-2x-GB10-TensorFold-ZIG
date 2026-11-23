@@ -10,18 +10,20 @@
 > never cross-compare). The section below the separator is the pre-re-target
 > record, kept for its receipts.
 
-**The current state (round 141, 2026-11-12, the promotion + the duel A/A re-ground)**: the engine is TensorFold
-**v1.2.7** (`93a2e93`) + the **adopted 18-patch stack re-anchored** (the
-round-trip proven byte-identical — pristine v1.2.7 + the 18 rebase patches;
-021-vision2744 and 022-shared-budgets mainlined upstream and dropped from the
-stack; the round-141 warmkeep port 023 RETIRED on its valid negative). The v127val battery QUALIFIED the bump on every instrument
-(campaign-20261111-191641): the same-bits greedy witness IDENTICAL (the
-`80cc3802…` sha holds across the bump), the §2 gates ALL PASS, **hardmode
-Quality 95/100 (197/208 points), Deployability 76/100**
-— now the THIRTY-THIRD consecutive Quality-95 receipt, the vision 4/4, zero strict-TF_ refusals,
-the walls 83/84 s, the duel re-paired on the v1.2.7 engine the same sitting
-(campaign-20261112-030105: all five instruments flat — the A/A re-ground). Production
-serves opencode on 8000 from this repo's config. **Vision is ON as the
+**The current state (round 159, 2026-11-23, the v1.3.4 promotion)**: the engine is TensorFold
+**v1.3.4** (`12ebd414`) + the **adopted 17-patch stack re-anchored** (the
+round-trip proven byte-exact — pristine v1.3.4 + the 17 patches = the composed
+tree `46bae4f59`; the fp8-pages marriage holds — upstream still refuses
+fp8-on-pages; 020-cachefirst retired, 021/022 mainlined upstream). The v134val
+battery QUALIFIED the tenth bump on every instrument
+(campaign-20261122-232612): the same-bits greedy witness IDENTICAL (the
+`80cc3802…` sha holds across all ten bumps), the §2 gates ALL PASS — now the
+FORTY-THIRD consecutive — **hardmode Quality 94/100 (196/208 points on the
+3.1.0 frame; the boundary holds after the round-154 re-base), Deployability
+75/100**, the vision 4/4, zero strict-TF_ refusals,
+the walls 83/83 s, the value bracket 75.9/75.9 in-band (the decode row stands
+at the round-157 PDL mean 77.3). Production serves opencode on 8000 from this
+repo's config (promotion commit aaec1d9). **Vision is ON as the
 standing default and receipted** (the vision suite 4/4 in every battery since
 round 132). **The #2699 prompt-cache question is CLOSED** (window 36,
 campaign-20261110-215136): the value-first battery ran end to end — the flag
@@ -37,7 +39,11 @@ warning stays; the slot count tracks the run's room) while the mechanism
 itself reproduced on our shape — the keep cost −31%, enough-for-3 held, the
 greedy sha identical, every guard green — **no adoption**; the unplanned
 composition datum (DRAFTS=0 + LIVE_HALF: enough for FOUR at 512K, 10 of 16
-slots) is recorded as upstream data. The loop's discipline layer (the
+slots) is recorded as upstream data. **The #4493/#4619 paired-experts knob is
+CLOSED (round 160, campaign-20261123-075710): the pairing structurally cannot
+engage on the EXL3 line** — upstream's own gate requires the NVFP4 expert
+format; the claim is NVFP4-route-scoped by construction, the knob stays
+default-off. The loop's discipline layer (the
 stage brief, the value gate, the phase-lint, the phase-name gate, DRY_RUN,
 the hit-rate watch) governs launches per the round-140 cont. 5 (user)
 direction.

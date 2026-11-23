@@ -19,15 +19,16 @@ python bench tools (they are standard-library clients; `tools/bench_openai.py`,
 
 ## 2. Exactness (the same gates upstream's EXL3 receipts used, through the API)
 
-> **STANDING STATE (round 141): §2 has PASSED thirty-three consecutive times**
-> (every battery since the round-127 era; the newest: campaign-20261111-191641
-> window 51's v127val battery — g1-g4 + the g5 note, on the v1.2.7 engine +
-> the adopted 18-patch stack; the v1.2.7 bump QUALIFIED and promoted). The
+> **STANDING STATE (round 160): §2 has PASSED forty-three consecutive times**
+> (every battery since the round-127 era; the newest: campaign-20261122-232612's
+> v134val battery — g1-g4 + the g5 note, on the v1.3.4 engine + the adopted
+> 17-patch store; the v1.3.4 bump QUALIFIED and promoted, round 159). The
 > hardmode score is a **0–100 quality scale** — round(points/max_points × 100),
-> 197/208 → Quality 95 — NOT "out of 104 scenarios"; the battery also reports
-> **Deployability 76/100** (round(0.7 × Quality + 0.3 × Responsiveness);
-> Responsiveness 30 from the 5.2 s median turn) and its safety gate flags
-> TC-98 (prompt-injection) on nearly every run, ours and production's alike —
+> 196/208 → Quality 94 on tool-eval-bench 3.1.0 — NOT "out of 104 scenarios";
+> the battery also reports **Deployability 75/100** (round(0.7 × Quality +
+> 0.3 × Responsiveness); Responsiveness 31 from the 5.2 s median turn) and its
+> safety gate flags TC-98 (prompt-injection) on nearly every run, ours and
+> production's alike —
 > priced in the P category (62/70). The checkboxes below are the gate DEFINITIONS — they stay
 > unchecked here because the receipt lives in each battery, not in a manual
 > run of this file; VALIDATION.md is the definitions home, the batteries are

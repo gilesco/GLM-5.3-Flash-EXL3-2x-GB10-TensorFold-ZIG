@@ -24,6 +24,13 @@
 > and the depth ladder now has cold-TTFT receipts at 64k–384k on this config. The depth
 > fact-retrieval gate's v1.1.6-era run was re-run on the standing config (round 132: 12/12)
 > with the next window.
+>
+> **2026-11-12: re-qualified on the adopted engine (round 141)** — the depth fact
+> ladder 12/12 again on the paged-pool + share-store serving mode
+> (`campaign-20261112-023109`). The 524,288-token window is the standing default
+> (the pool re-shapes to 2 funded windows at 524,288 on the v1.3.4 engine's
+> #4427 budget — the v134val serve line); every engine bump since has carried
+> the §2 gates and the vision suite with it.
 
 **Goal:** move this stack from the default `--context 40960` to a **524,288-token window
 (512K)** on the two-GB10 pair (head = rank 0, worker = rank 1), with retrieval quality and
