@@ -1869,140 +1869,14 @@ PRODCOLD_RETIRED=1
 # load walls. The release carries #2404's request-starts module natively
 # (inert at our KV_SHARE=16) and #2557's router_tile-only router — the
 # bench row records what they move on our shape.
-# ---------------------------------------------------------------------------
-# the phase is retired and its LIVE CODE is REMOVED (the (user) round-141
-# review):
-# the v1.2.7 qualification battery: QUALIFIED and PROMOTED (window 51 — the
-# witness
-# IDENTICAL, §2 ALL PASS, hardmode 95, the vision 4/4, the walls; production
-# serves
-# v1.2.7 since). The receipts: campaign-20261111-191641; the record: LAUNCH.md
-# round 141 cont. 28-29.
-V127VAL_RETIRED=1
-
-# v132val RETIRED (2026-11-22): the v1.3.2 bump QUALIFIED and PROMOTED
-# (campaign-20261121-215341 — the witness 80cc3802 IDENTICAL across the
-# eighth bump, hardmode 94 HOLDS on the 3.1.0 re-based frame, the PDL
-# value read TRANSFERS — the decode row re-dates 73.1 -> 77.3 and the
-# round-155 drop-016 deferral closed). The receipt lives in
-# results/campaign-20261121-215341/32-v132val.md; the stage brief
-# docs/STAGE_BRIEF_v132val.md stays as the design record.
-
-# v133val RETIRED (2026-11-22): the v1.3.3 bump QUALIFIED and PROMOTED
-# (campaign-20261122-000800 — the witness 80cc3802 IDENTICAL across the
-# ninth bump, hardmode 94 on the 3.1.0 frame, the value bracket in-band).
-# The receipt lives in results/campaign-20261122-000800/32-v133val.md; the
-# stage brief docs/STAGE_BRIEF_v133val.md stays as the design record.
-
-# v134val RETIRED (2026-11-23): the v1.3.4 bump QUALIFIED and PROMOTED
-# (campaign-20261122-232612 — the witness 80cc3802 IDENTICAL across the
-# tenth bump after the six-window road; hardmode 94 HOLDS on the 3.1.0
-# frame; the value bracket 75.9/75.9 in-band — no decode row move). The
-# receipt lives in results/campaign-20261122-232612/32-v134val.md; the
-# stage brief docs/STAGE_BRIEF_v134val.md stays as the design record.
-# phase: pairexval (SESSION-SPECIFIC; retires with the receipt — the stage
-# brief docs/STAGE_BRIEF_pairexval.md carries the value gate). THE
-# #4493/#4619 PAIRED-EXPERTS A/B on the QUALIFIED v1.3.4 base: the
-# release's own claim is +15% prompts at 2K and ~+5% at 8K/32K on two
-# GB10s at TP=2 prefill (TF_GLM_PAIR_EXPERTS=1: one grouped routed-
-# expert pass per prompt pair with 128-row items, experts with many
-# tokens reading their weights once; each rank passes its own FFN
-# partial under the default split reduction, so tokens match the
-# unpaired path). THE VALUE QUESTION: does the claim transfer at our
-# shape (the serving config, the promoted store, the 4-stream serve)?
-# The value-if-yes: the prefill row moves (the anchors' prefill row is
-# 1,524 tok/s; a +5-15% pp move would be the largest prefill gain since
-# 002's port). The arms, order-matched: default(1) -> TF_GLM_PAIR_
-# EXPERTS=1 -> default(2), each arm the bench grid (pp2048 tg128 at
-# d0/d4096/d8192, c1/c2/c4) — the pp cells judge against the
-# bracketing arms inside the ±5% order-matched band (the round-149
-# drift map); the claim's own cell (pp at d0) is the primary read. THE
-# SAFETY NET (every gate must hold on BOTH arms): the greedy content
-# sha 80cc3802… IDENTICAL on both arms (the release says outputs are
-# unchanged — the same-bits witness is THE proof at our checkpoint),
-# the vision 4/4 on the ON arm. Kill: the witness moves on either arm
-# (the knob is NOT bit-safe at our shape — upstream's claim dies here);
-# a pp move inside the band = the claim does not transfer, the question
-# closes (the knob stays default-off); a pp move beyond the band with
-# the bracket agreeing = the claim transfers and the adoption question
-# opens (the config default changes through its own battery). ANY gate
-# FAIL holds the pin at v1.3.4 until understood.
-# ---------------------------------------------------------------------------
-if want pairexval && ! phase_done pairexval; then
-  log "=== pairexval (the #4493/#4619 paired-experts A/B: the release's" \
-    "+15%/+5% prompts claim at our shape; order-matched)"
-  P="$OUT/33-pairexval.md"; : > "$P"
-  echo "# pairexval (the #4493/#4619 paired-experts A/B on the qualified" \
-    "v1.3.4 base; the arms default(1) -> TF_GLM_PAIR_EXPERTS=1 -> default(2))" \
-    >> "$P"
-  echo "- the brief: docs/STAGE_BRIEF_pairexval.md" >> "$P"
-  log "pairexval: the default(1) arm (already serving)"
-  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4; then
-    echo "- the default(1) arm's restart REFUSED" >> "$P"
-    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-    die "pairexval: the default arm refused to serve"
-  fi
-  req_file "$OUT/px-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-  chat "$OUT/px-req.json" > "$OUT/px-def1.json" || true
-  SHA=$(content_sha "$OUT/px-def1.json")
-  echo "- the default(1) greedy content sha: $SHA" >> "$P"
-  WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
-  WANTED+="0216a89e5a226566d"
-  if [ "$SHA" = "$WANTED" ]; then W1=IDENTICAL; else W1=DIFFERENT; fi
-  echo "- the witness on the default arm: $W1" >> "$P"
-  bench_perf pxdef "$OUT/px-bench-def" 4 >> "$P" 2>&1 || true
-  log "pairexval: the ON arm (TF_GLM_PAIR_EXPERTS=1)"
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4 TF_GLM_PAIR_EXPERTS=1; then
-    echo "## the ON arm (TF_GLM_PAIR_EXPERTS=1)" >> "$P"
-    chat "$OUT/px-req.json" > "$OUT/px-on.json" || true
-    SHA=$(content_sha "$OUT/px-on.json")
-    echo "- the greedy content sha: $SHA" >> "$P"
-    if [ "$SHA" = "$WANTED" ]; then W2=IDENTICAL; else W2=DIFFERENT; fi
-    echo "- the witness on the ON arm: $W2" >> "$P"
-    bench_perf pxon "$OUT/px-bench-on" 4 >> "$P" 2>&1 || true
-  else
-    echo "- the ON arm's restart REFUSED" >> "$P"
-    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-  fi
-  log "pairexval: the default(2) arm (the bracket's close)"
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4; then
-    echo "## the default(2) arm (the bracket's close)" >> "$P"
-    chat "$OUT/px-req.json" > "$OUT/px-def2.json" || true
-    SHA=$(content_sha "$OUT/px-def2.json")
-    echo "- the greedy content sha: $SHA" >> "$P"
-    if [ "$SHA" = "$WANTED" ]; then W3=IDENTICAL; else W3=DIFFERENT; fi
-    echo "- the witness on the default(2) arm: $W3" >> "$P"
-    bench_perf pxdef2 "$OUT/px-bench-def2" 4 >> "$P" 2>&1 || true
-    echo "- the three arms judge order-matched: the pp cells against" \
-      "the bracketing defaults' mean inside the ±5% band; the" \
-      "witness on all three arms is the bit-safety gate" >> "$P"
-  else
-    echo "- the default(2) arm's restart REFUSED" >> "$P"
-    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-  fi
-  echo "## the vision suite on the ON arm (4/4 must hold)" >> "$P"
-  mkdir -p "$OUT/pxvision"
-  if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
-      "$OUT/pxvision/vision.json" > "$OUT/pxvision/vision.log" \
-      2>&1 || true
-    tail -6 "$OUT/pxvision/vision.log" >> "$P" 2>/dev/null || true
-  fi
-  echo "- VERDICT: the witness IDENTICAL on all three arms + the" \
-    "vision 4/4 + the pp cells beyond the ±5% order-matched band" \
-    "with the bracket agreeing = the claim TRANSFERS (the" \
-    "adoption question opens; the decode row stands); the pp cells" \
-    "in-band = the claim does not transfer at our shape, the" \
-    "question CLOSES (the knob stays default-off); the witness" \
-    "moved on ANY arm = NOT bit-safe, the claim dies, the pin" \
-    "holds at v1.3.4 and the knob stays off" >> "$P"
-  touch "$OUT/.pairexval.done"
-fi
-
-# ---------------------------------------------------------------------------
+# pairexval RETIRED (2026-11-23): the #4493/#4619 paired-experts A/B
+# CLOSED — the pairing structurally cannot engage on the EXL3 line
+# (upstreams own gate cuda_forward_pair.zig:42 requires m.exl3 == null
+# and routed.format == .nvfp4; our MoE layers carry m.exl3 != null).
+# The A/B read the ON arm at 0/9 pp cells beyond +-5% (witness identical
+# on all three arms): the claim is NVFP4-route-scoped by construction.
+# The receipt lives in results/campaign-20261123-075710/33-pairexval.md;
+# the stage brief docs/STAGE_BRIEF_pairexval.md stays as the design record.
 
 if want summary; then
   log "=== summary"
