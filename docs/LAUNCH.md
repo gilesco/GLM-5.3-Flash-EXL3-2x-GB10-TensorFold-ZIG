@@ -4735,6 +4735,24 @@ is green (the campaign's summary already verified it). The pairexval
 phase retires with its receipt
 (results/campaign-20261123-075710/33-pairexval.md).
 
+**The thinking-off live probe** (the issue-1 follow-up, same sitting): the
+first GitHub issue asked whether thinking-off is supported. The engine code
+read (the six request shapes in `fields.zig`'s thinkingFields, the
+close-injection path in `prompt.zig`) said yes — then the user authorized a
+LIVE functional probe on production 8000 directly (a (user) decision: a
+request-shape functional check is NOT a quality/perf instrument — the
+round-132 invalidation covers quality/perf loads, not feature checks; a
+window is not required for this class). The probe: greedy, the same
+arithmetic prompt on all seven arms (the default control + the six OFF
+shapes). **ALL SIX OFF SHAPES HONORED**: the default arm thought
+(reasoning_tokens 28, the chain in reasoning_content, content "42"); every
+OFF arm read reasoning_tokens 0, reasoning_content empty, content "42",
+finish stop — 2 completion tokens. Receipt:
+`results/thinkoff-probe/` (+ README.md). The README's Serve section now
+documents the six shapes (commit c8d65e9); AGENTS.md records the issue-
+response rule — every issue reply opens with a clear AI-generated statement
+(the user, 2026-11-23).
+
 **Next**: the loop waits on the release watch (armed at
 PIN_TAG=v1.3.4) or the user's next directive — no lever is on the
 desk; the divide-and-conquer sweep stands closed and the remaining
