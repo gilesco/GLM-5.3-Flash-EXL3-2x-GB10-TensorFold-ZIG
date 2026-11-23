@@ -4757,3 +4757,33 @@ response rule — every issue reply opens with a clear AI-generated statement
 PIN_TAG=v1.3.4) or the user's next directive — no lever is on the
 desk; the divide-and-conquer sweep stands closed and the remaining
 horizon items are upstream-gated or user-parked.
+
+## (round 160 cont. 1) THE THINKOFFVAL WINDOW BURNED — A MISSING
+CONTINUATION BACKSLASH KILLED IT AT BOOT; THE SECOND BREAK OF THE CLASS
+CAUGHT BY THE NEW CONTINUATION CHECK BEFORE ANY RELAUNCH (2026-11-23)
+
+**The void** (campaign-20261123-133323, w639589, rc=127): the
+thinkoffval phase died at its first log line — the staging edit lost the
+trailing backslash on the `log "…" \` continuation, and bash read the
+second line as a bare command (rc=127). **Neither `bash -n` nor
+phase-lint could catch it**: a bare quoted line IS valid bash syntax —
+the class is "valid syntax, runtime death". Production was restored
+correctly on the exit path (80 s health wait) — the window flow held.
+
+**The catch**: a new staging check joins every quote-leading
+continuation line in a phase block against its predecessor and refuses
+on a missing backslash — run against the staged phase, it caught the
+**SECOND break of the same class** (the arm C echo header, line 1950)
+that the window would have died on next. Both receipts fixed; the
+scanner now reads 0 findings.
+
+**The discipline note**: this is the w33/34 class again (staged phase
+code that dies at runtime) in a new shape — not unguarded grep or
+unknown-env but a continuation break that static syntax checks cannot
+see. The phase-lint charter grows by it: the continuation check rides
+the relaunch verification.
+
+**The relaunch**: DRY_RUN green after the fixes; the window relaunches
+this sitting (the hit-rate watch: 1 void of 2 windows this round —
+above half voids pause launches; this sits at exactly half with the
+relaunch staged against its OWN failure mode, which the rule requires).

@@ -1908,7 +1908,7 @@ PRODCOLD_RETIRED=1
 # standing arm so the stack is left on the qualified default.
 # ---------------------------------------------------------------------------
 if want thinkoffval && ! phase_done thinkoffval; then
-  log "=== thinkoffval (the THINKING=0 server-default verify: the"
+  log "=== thinkoffval (the THINKING=0 server-default verify: the" \
     "issue-1 follow-up — the reasoning_tokens discriminator on all arms)"
   P="$OUT/34-thinkoffval.md"; : > "$P"
   echo "# thinkoffval (the THINKING=0 server-default verify; the arms" \
@@ -1947,7 +1947,7 @@ print(r, "|", c, "|", f)'
   echo "- reasoning|content|finish:" \
     "$(python3 -c "$RTOK" "$OUT/to-b.json" 2>&1)" >> "$P"
   log "thinkoffval: arm C — the explicit-ON override on the OFF server"
-  echo "## arm C: THINKING=0 + enable_thinking=true"
+  echo "## arm C: THINKING=0 + enable_thinking=true" \
     "(the override wins ON)" >> "$P"
   chat "$OUT/to-req-on.json" > "$OUT/to-c.json" || true
   echo "- reasoning|content|finish:" \
