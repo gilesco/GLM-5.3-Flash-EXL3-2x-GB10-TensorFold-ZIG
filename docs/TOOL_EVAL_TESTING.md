@@ -1440,6 +1440,42 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
+- [x] **THE V1.3.4 BUMP ARC** (rounds 155-159, six windows w3615484 /
+  w3630445 / w3697024 / w3712239 / w3724296 / w3794892, campaign-20261122-232612): QUALIFIED and PROMOTED — the witness `80cc3802…`
+  IDENTICAL across the TENTH engine bump, the §2 gates ALL PASS, the
+  vision 4/4, the walls 83/83. **Hardmode 94 HOLDS on the 3.1.0
+  frame**. The value bracket **75.9 / 75.9 — in-band**: no decode row
+  move; the row stands at the round-157 PDL mean 77.3. The compose
+  `46bae4f59` (branch compose-v134): pristine v1.3.4 `12ebd414` + the
+  store — **the fp8-pages marriage stays** (upstream STILL refuses
+  fp8-on-pages: `cuda_native.zig:571` tests that refusal; the fork's
+  Table.logical, pageCacheBytes(kv8) and the paged kernels are
+  load-bearing on the adopted serving mode), the exl3p NBA ground
+  primary at 4 bits, the fused-select group stays. Upstream folded in:
+  **#4493/#4619's pair_experts** (the fingerprint layout 23 carries it
+  beside numerics/draft_split — the release's own claimed +15%/+5%
+  prompts at 2K/8K/32K on two GB10s; the pairexval A/B window is the
+  follow-up), **#3659's TF_GLM_MOE_DIRECT** (opt-in, bit-equal, the
+  topk kernel's sh pointer serving both the group and the direct path),
+  #4499's prefill skips, #4427's cached-page startup budget (the serve
+  line's pool note re-shapes to 2 windows at 524288), the mla/Shape
+  refactor beside the kv8 sizing, the tool-parse module split beside
+  the callName ABI, mtpMode beside the drafter guard. **The road took
+  SIX windows and the compile gate caught NINE hand-merge defects**
+  (the mid-fn splice brace; the private pageCacheBytes crossing the
+  module; the kv8 page-part arithmetic; the dead loop label; the
+  missing prepare helper; the openaiCall ?Value unwrap; the shared
+  rename; the paired slot ABI; the combine fn) — every one fixed in the
+  compose and every round-trip re-proven byte-exact
+  (pristine v1.3.4 + the store = the composed tree, zero diffs). The
+  state-machine regen discipline matured: each member's before-state
+  anchors at the tree the EARLIER members left, and forward_pair joined
+  001's file set (v1.3.4's refactor added the calls the fork's slot
+  signature needs — the file was pristine in v1.3.2/3, so no member
+  owned it before). Production serves v1.3.4 from 00:16
+  (`/health version 1.3.4` verified; the promotion commit aaec1d9; the
+  release watch's PIN_TAG moved).
+
 - [x] **THE V1.3.3 BUMP ARC** (rounds 155-158, windows w2053144/w2060446,
   campaign-20261122-000800): QUALIFIED and PROMOTED — the witness
   `80cc3802…` IDENTICAL across the NINTH engine bump, the §2 gates

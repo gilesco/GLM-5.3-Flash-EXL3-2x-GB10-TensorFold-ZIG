@@ -4614,3 +4614,64 @@ moved, the chart's check green).
 
 **Next**: the perf plan's next step (docs/PERF_PLAN.md) — the
 divide-and-conquer sweep's standing order continues on the new ground.
+
+## (round 159) THE V1.3.4 BUMP QUALIFIED AND PROMOTED — THE TENTH BUMP; NINE COMPILE DEFECTS CAUGHT AND FIXED ACROSS SIX WINDOWS (2026-11-23)
+
+**The stage brief** (docs/STAGE_BRIEF_v134val.md): does the v1.3.4
+engine (12ebd414, 362 commits past v1.3.3) + the re-anchored store hold
+every quality gate? The value candidates (#4493/#4619's pair-experts,
+the release's own +15%/+5% claim on two GB10s) are NOT measured here —
+the pairexval A/B window follows a QUALIFIED base. Kill: ANY gate FAIL
+holds the pin at v1.3.3.
+
+**The road took SIX windows.** Five died at the image build's compile
+gate — each caught real hand-merge defects the mechanical checks could
+not see:
+
+1. w3615484: four defects (the headsMma close brace my conflict splice
+   glued theirs mid-fn; pageCacheBytes private to cuda_state crossing
+   into the snapshot module; the onPages kv8 page-part arithmetic; the
+   dead next_envelope label).
+2. w3630445: two more (the prepare helper forward_pair calls — theirs
+   extracted it from body; the openaiCall ?Value unwrap at the composed
+   loop).
+3. w3697024: the shared rename (theirs renamed sharedRows to pub
+   shared; forward_pair's paired pieces call it).
+4. w3712239: the paired slot ABI (theirs' 9-arg form vs ours' 10-arg
+   shared signature — the composed callsites pass slot=true).
+5. w3724296: the combine fn (theirs' slot-sum helper forward_pair's
+   paired loop calls — dropped by the mangled rebuild with the shared
+   rename).
+6. w3794892 (campaign-20261122-232612): **QUALIFIED** — the witness
+   `80cc3802…` IDENTICAL across
+   the TENTH bump, the §2 gates ALL PASS, hardmode **94 HOLDS on the
+   3.1.0 frame**, the vision 4/4, the walls 83/83, load 103 s, strict-
+   TF_ refusals 0. The value bracket: steady-state decode **75.9 /
+   75.9 — in-band**: no decode row move.
+
+**The ground**: compose `46bae4f59` — the fp8-pages marriage stays
+(upstream STILL refuses fp8-on-pages; the fork's Table.logical, the
+kv8 page sizing and the paged kernels are load-bearing on the adopted
+serving mode), the exl3p NBA ground primary, the fused-select group
+stays; pair_experts (layout 23), TF_GLM_MOE_DIRECT, the mla/Shape
+refactor, the tool-parse module split, mtpMode folded in beside the
+fork ground. The state-machine regen discipline matured this arc: the
+before-state anchors at the tree the EARLIER members left, and
+forward_pair joined 001's file set (v1.3.4's refactor added calls the
+fork's slot signature needs — the file was pristine in v1.3.2/3). The
+nine defects and the discipline are in the skill
+(.opencode/skills/tensorfold-patch-craft — the release-rebase section
+written from the v1.3.3 arc, extended by this one).
+
+**The promotion sync**: the pin `12ebd414`, the 17 served members
+mirrored byte-identical into patches/ + image/patches/, the identity
+guard green BEFORE the restart — `/health version 1.3.4` verified at
+00:16. Promotion commit aaec1d9. The release watch's PIN_TAG ->
+v1.3.4. The state docs updated the same sitting (README engine pin, the
+ledger's bump entry, the anchors' dated header — no row moved, the
+chart's check green).
+
+**Next**: the pairexval window (the #4493/#4619 A/B — the release's
+own claimed +15%/+5% prompts at 2K/8K/32K on two GB10s, the value gate
+the prefill row) per the brief's follow-up note — staged next sitting
+with its own stage brief.
