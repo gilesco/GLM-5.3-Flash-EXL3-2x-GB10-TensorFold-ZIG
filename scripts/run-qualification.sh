@@ -1894,186 +1894,112 @@ V127VAL_RETIRED=1
 # The receipt lives in results/campaign-20261122-000800/32-v133val.md; the
 # stage brief docs/STAGE_BRIEF_v133val.md stays as the design record.
 
+# v134val RETIRED (2026-11-23): the v1.3.4 bump QUALIFIED and PROMOTED
+# (campaign-20261122-232612 — the witness 80cc3802 IDENTICAL across the
+# tenth bump after the six-window road; hardmode 94 HOLDS on the 3.1.0
+# frame; the value bracket 75.9/75.9 in-band — no decode row move). The
+# receipt lives in results/campaign-20261122-232612/32-v134val.md; the
+# stage brief docs/STAGE_BRIEF_v134val.md stays as the design record.
+# phase: pairexval (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_pairexval.md carries the value gate). THE
+# #4493/#4619 PAIRED-EXPERTS A/B on the QUALIFIED v1.3.4 base: the
+# release's own claim is +15% prompts at 2K and ~+5% at 8K/32K on two
+# GB10s at TP=2 prefill (TF_GLM_PAIR_EXPERTS=1: one grouped routed-
+# expert pass per prompt pair with 128-row items, experts with many
+# tokens reading their weights once; each rank passes its own FFN
+# partial under the default split reduction, so tokens match the
+# unpaired path). THE VALUE QUESTION: does the claim transfer at our
+# shape (the serving config, the promoted store, the 4-stream serve)?
+# The value-if-yes: the prefill row moves (the anchors' prefill row is
+# 1,524 tok/s; a +5-15% pp move would be the largest prefill gain since
+# 002's port). The arms, order-matched: default(1) -> TF_GLM_PAIR_
+# EXPERTS=1 -> default(2), each arm the bench grid (pp2048 tg128 at
+# d0/d4096/d8192, c1/c2/c4) — the pp cells judge against the
+# bracketing arms inside the ±5% order-matched band (the round-149
+# drift map); the claim's own cell (pp at d0) is the primary read. THE
+# SAFETY NET (every gate must hold on BOTH arms): the greedy content
+# sha 80cc3802… IDENTICAL on both arms (the release says outputs are
+# unchanged — the same-bits witness is THE proof at our checkpoint),
+# the vision 4/4 on the ON arm. Kill: the witness moves on either arm
+# (the knob is NOT bit-safe at our shape — upstream's claim dies here);
+# a pp move inside the band = the claim does not transfer, the question
+# closes (the knob stays default-off); a pp move beyond the band with
+# the bracket agreeing = the claim transfers and the adoption question
+# opens (the config default changes through its own battery). ANY gate
+# FAIL holds the pin at v1.3.4 until understood.
 # ---------------------------------------------------------------------------
-# phase: v134val (SESSION-SPECIFIC; retires with the receipt — the stage
-# brief docs/STAGE_BRIEF_v134val.md carries the value gate). The v1.3.4
-# bump: the engine is v1.3.4 (12ebd414, released 2026-11-22 17:51 UTC,
-# 362 commits past v1.3.3). The release's value candidates for our
-# shape: #4493/#4619's TF_GLM_PAIR_EXPERTS=1 (opt-in, the release's own
-# claimed +15%/+5% prompts at 2K/8K/32K on two GB10s — NOT measured
-# here; the pairexval A/B window follows a QUALIFIED base), #4499's
-# prefill skips, #4427's cached-page startup budget (the walls row the
-# witness), #3659's TF_GLM_MOE_DIRECT (opt-in, bit-equal — composed
-# beside the fused-select ground). The fork ground held: the fp8-pages
-# marriage stays (upstream STILL refuses fp8-on-pages), the exl3p NBA
-# ground primary at 4 bits, the fused-select group stays; the
-# fingerprint layout 23 carries pair_experts beside numerics/
-# draft_split. The rebase: ten members regenerated under the
-# state-machine discipline; 011's body retired EMPTY (its value-aware
-# closer rode the 010 regen — the tool-parse module split collapsed the
-# shared file set); the round-trip PROVEN byte-exact (pristine v1.3.4 +
-# the store = the composed tree 1c599da60, ZERO diffs). The head's pin
-# flipped BEFORE the launch (the two-gate rule). The gates: the
-# same-bits greedy witness 80cc3802… IDENTICAL (the NINTH -> TENTH
-# bump), the §2 content gates, hardmode 94 on the 3.1.0 frame (must
-# HOLD), the vision 4/4, the walls in band, the pool line. THE VALUE
-# BRACKET rides order-matched (the steady-state decode probe
-# default(1) -> default(2)): in-band both sides -> no row move (the row
-# stands at the round-157 PDL mean 77.3). ANY gate FAIL holds the pin
-# at v1.3.3 until understood; the promotion sync follows a QUALIFIED
-# verdict.
-# ---------------------------------------------------------------------------
-if want v134val && ! phase_done v134val; then
-  log "=== v134val (the v1.3.3 bump: the long-prompt step sharing / the"
-  log "leader join / the resume skip release; the value bracket rides)"
-  P="$OUT/32-v134val.md"; : > "$P"
-  echo "# v134val (v1.3.3 12ebd414 + the re-anchored 16-patch store;" \
-    "the value bracket: the steady-state decode default(1) -> default(2))" \
+if want pairexval && ! phase_done pairexval; then
+  log "=== pairexval (the #4493/#4619 paired-experts A/B: the release's" \
+    "+15%/+5% prompts claim at our shape; order-matched)"
+  P="$OUT/33-pairexval.md"; : > "$P"
+  echo "# pairexval (the #4493/#4619 paired-experts A/B on the qualified" \
+    "v1.3.4 base; the arms default(1) -> TF_GLM_PAIR_EXPERTS=1 -> default(2))" \
     >> "$P"
-  echo "- the brief: docs/STAGE_BRIEF_v134val.md" >> "$P"
-  log "v134val: explicit prepare (the fingerprint moved: TF_COMMIT + the" \
-    "patch bodies)"
-  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die \
-    "v134val: the image rebuild (prepare) failed - see the log"; fi
-  echo "## the standing restart (the v1.3.4 engine + the re-anchored" \
-    "store)" >> "$P"
-  S=$(date +%s)
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+  echo "- the brief: docs/STAGE_BRIEF_pairexval.md" >> "$P"
+  log "pairexval: the default(1) arm (already serving)"
+  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
       PARALLEL=4; then
-    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" \
-      >> "$P"
-    echo "- the serve line: $(serve_line)" >> "$P"
-    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci \
-      "malformed\|BadSetting" || true)
-    echo "- strict-TF_ refusal lines at boot (the video-library note" \
-      "excluded): ${N:-0}" >> "$P"
-    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" \
-      | head -3 >> "$P" || true
-    req_file "$OUT/v134-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-    chat "$OUT/v134-req.json" > "$OUT/v134-greedy.json" || true
-    SHA=$(content_sha "$OUT/v134-greedy.json")
-    echo "- the greedy content sha: $SHA" >> "$P"
-    WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
-    WANTED+="0216a89e5a226566d"
-    if [ "$SHA" = "$WANTED" ]; then WITNESS=IDENTICAL; else
-      WITNESS=DIFFERENT; fi
-    echo "- the same-bits witness: $WITNESS" >> "$P"
-  else
-    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    echo "- the default(1) arm's restart REFUSED" >> "$P"
     tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-    die "v134val: the qualification arm refused to serve"
+    die "pairexval: the default arm refused to serve"
   fi
-  echo "## the section-2 content gates" >> "$P"
-  run_gates v134 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-    || true
-  echo "## hardmode (94 must HOLD on the 3.1.0 frame; --parallel 2)" \
-    >> "$P"
-  mkdir -p "$OUT/v134hm"
-  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
-    | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")' 2>/dev/null) || model=""
-  PYTHONUNBUFFERED=1 "$BENCH" run \
-    --base-url "http://127.0.0.1:$PORT" --model "$model" \
-    --format openai --tokenizer "$MODEL_ID" --hardmode \
-    --label "v134val" --output-dir "$OUT/v134hm" --parallel 2 \
-    --json-file "$OUT/v134hm/hm.json" > "$OUT/v134hm/hm.log" 2>&1 \
-    || true
-  grep -o '"final_score": [0-9]*' "$OUT/v134hm/hm.json" \
-    >> "$P" 2>/dev/null || true
-  python3 -c "
-import json
-try:
-    d = json.load(open('$OUT/v134hm/hm.json'))
-    print('- the bench version: %s' %
-          d.get('tool_eval_bench_version', 'NOT RECORDED'))
-except Exception: pass
-" >> "$P"
-  echo "## the vision suite (4/4 must hold)" >> "$P"
-  mkdir -p "$OUT/v134vision"
-  if [ -f scripts/vision-suite-probe.py ]; then
-    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
-      "$OUT/v134vision/vision.json" > "$OUT/v134vision/vision.log" \
-      2>&1 || true
-    tail -6 "$OUT/v134vision/vision.log" >> "$P" 2>/dev/null || true
+  req_file "$OUT/px-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/px-req.json" > "$OUT/px-def1.json" || true
+  SHA=$(content_sha "$OUT/px-def1.json")
+  echo "- the default(1) greedy content sha: $SHA" >> "$P"
+  WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
+  WANTED+="0216a89e5a226566d"
+  if [ "$SHA" = "$WANTED" ]; then W1=IDENTICAL; else W1=DIFFERENT; fi
+  echo "- the witness on the default arm: $W1" >> "$P"
+  bench_perf pxdef "$OUT/px-bench-def" 4 >> "$P" 2>&1 || true
+  log "pairexval: the ON arm (TF_GLM_PAIR_EXPERTS=1)"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 TF_GLM_PAIR_EXPERTS=1; then
+    echo "## the ON arm (TF_GLM_PAIR_EXPERTS=1)" >> "$P"
+    chat "$OUT/px-req.json" > "$OUT/px-on.json" || true
+    SHA=$(content_sha "$OUT/px-on.json")
+    echo "- the greedy content sha: $SHA" >> "$P"
+    if [ "$SHA" = "$WANTED" ]; then W2=IDENTICAL; else W2=DIFFERENT; fi
+    echo "- the witness on the ON arm: $W2" >> "$P"
+    bench_perf pxon "$OUT/px-bench-on" 4 >> "$P" 2>&1 || true
   else
-    echo \
-      "- the vision-suite runner is MISSING at" \
-      "scripts/vision-suite-probe.py" >> "$P"
+    echo "- the ON arm's restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
   fi
-  echo "## the value bracket — order-matched (the steady-state decode)" \
-    >> "$P"
-  v134_decode_cell() {  # $1 tag — the steady-state decode probe per arm
-    local tag="$1" bf model S W
-    bf=$(mktemp /tmp/v134d.XXXXXX.json)
-    python3 -c "
-import json, sys
-print(json.dumps({'model': sys.argv[1],
-  'messages': [{'role': 'user',
-                'content': 'Write a 400-word essay about '
-                            'lighthouses.'}],
-  'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" \
-      "$SERVED_NAME" > "$bf"
-    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
-      | python3 -c '
-import json, sys
-try: print(json.load(sys.stdin)["data"][0]["id"])
-except Exception: print("")' 2>/dev/null) || model=""
-    python3 -c "import json,sys
-b = json.load(open(sys.argv[1]))
-b['model'] = sys.argv[2]
-json.dump(b, open(sys.argv[1], 'w'))" "$bf" "$model"
-    S=$(date +%s)
-    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" \
-      -H 'Content-Type: application/json' \
-      --data @"$bf" -o "$OUT/v134-$tag-decode.json" || true
-    W=$(( $(date +%s) - S )); rm -f "$bf"
-    python3 -c "
-import json
-try:
-    d = json.load(open('$OUT/v134-$tag-decode.json'))
-    ct = d['usage']['completion_tokens']
-    print('- steady-state decode: %d tokens in %d s'
-          ' = %.1f tok/s (wall incl. prefill)'
-          % (ct, $W, ct / max($W, 1)))
-except Exception as e:
-    print('- the decode probe FAILED: ' + repr(e))
-" >> "$P"
-  }
-  echo "### the default(1) arm (already serving)" >> "$P"
-  v134_decode_cell def1
-  log "v134val: the default(2) arm (the bracket's close)"
+  log "pairexval: the default(2) arm (the bracket's close)"
   if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
       PARALLEL=4; then
-    echo "### the default(2) arm (the bracket's close)" >> "$P"
-    v134_decode_cell def2
+    echo "## the default(2) arm (the bracket's close)" >> "$P"
+    chat "$OUT/px-req.json" > "$OUT/px-def2.json" || true
+    SHA=$(content_sha "$OUT/px-def2.json")
+    echo "- the greedy content sha: $SHA" >> "$P"
+    if [ "$SHA" = "$WANTED" ]; then W3=IDENTICAL; else W3=DIFFERENT; fi
+    echo "- the witness on the default(2) arm: $W3" >> "$P"
+    bench_perf pxdef2 "$OUT/px-bench-def2" 4 >> "$P" 2>&1 || true
+    echo "- the three arms judge order-matched: the pp cells against" \
+      "the bracketing defaults' mean inside the ±5% band; the" \
+      "witness on all three arms is the bit-safety gate" >> "$P"
   else
     echo "- the default(2) arm's restart REFUSED" >> "$P"
     tail -6 "$LOG" | sed 's/^/  /' >> "$P"
   fi
-  echo "## the timed load walls (the loading row's re-take on v1.3.4)" \
-    >> "$P"
-  for r in a b; do
-    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
-    S=$(date +%s)
-    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4 || \
-      { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
-    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
-  done
-  echo "- VERDICT: the same-bits greedy + the gates content-PASS" \
-    "+ hardmode holds on the 3.1.0 frame (94)" \
-    "+ the vision 4/4 + the walls in band = the v1.3.3 bump QUALIFIES" \
-    "(the pin moves to 12ebd414; the promotion sync follows; the" \
-    "release watch's PIN_TAG moves). THE VALUE READ: the steady-state" \
-    "probe beyond the ±5% order-matched band with both bracket arms" \
-    "agreeing = the decode row re-dates (the receipt names the lever;" \
-    "a CLAIM needs a follow-up knob A/B — this battery cannot" \
-    "separate #3486 from #3693); in-band = no row move, the question" \
-    "closes; ANY gate FAIL holds the pin at v1.3.3 until understood" \
-    >> "$P"
-  touch "$OUT/.v134val.done"
+  echo "## the vision suite on the ON arm (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/pxvision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/pxvision/vision.json" > "$OUT/pxvision/vision.log" \
+      2>&1 || true
+    tail -6 "$OUT/pxvision/vision.log" >> "$P" 2>/dev/null || true
+  fi
+  echo "- VERDICT: the witness IDENTICAL on all three arms + the" \
+    "vision 4/4 + the pp cells beyond the ±5% order-matched band" \
+    "with the bracket agreeing = the claim TRANSFERS (the" \
+    "adoption question opens; the decode row stands); the pp cells" \
+    "in-band = the claim does not transfer at our shape, the" \
+    "question CLOSES (the knob stays default-off); the witness" \
+    "moved on ANY arm = NOT bit-safe, the claim dies, the pin" \
+    "holds at v1.3.4 and the knob stays off" >> "$P"
+  touch "$OUT/.pairexval.done"
 fi
 
 # ---------------------------------------------------------------------------
