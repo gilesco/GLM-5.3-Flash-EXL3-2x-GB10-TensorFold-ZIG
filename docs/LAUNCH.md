@@ -4675,3 +4675,67 @@ chart's check green).
 own claimed +15%/+5% prompts at 2K/8K/32K on two GB10s, the value gate
 the prefill row) per the brief's follow-up note — staged next sitting
 with its own stage brief.
+
+## (round 160) THE PAIREXVAL A/B: THE #4493/#4619 PAIRED-EXPERTS CLAIM IS NVFP4-ROUTE-SCOPED BY CONSTRUCTION — IT CANNOT ENGAGE ON THE EXL3 LINE; THE QUESTION CLOSES, THE KNOB STAYS OFF (2026-11-23)
+
+**The window** (campaign-20261123-075710, rc=0; the pairexval phase
+staged last sitting per docs/STAGE_BRIEF_pairexval.md): the three-arm
+order-matched bracket default(1) → `TF_GLM_PAIR_EXPERTS=1` →
+default(2) on the qualified v1.3.4 base — the bench grid per arm
+(pp2048 tg128 @ d0/d4096/d8192, c1/c2/c4), the greedy witness on all
+three arms as the bit-safety gate, the vision suite on the ON arm.
+
+**The gates all held — and the read is structural, not merely flat**:
+- The witness `80cc3802…` IDENTICAL on all three arms; the vision
+  suite 4/4 (five probes, all ok) — every gate green, production
+  restored (81 s health wait), no value row moves.
+- The pp cells: the ON arm against the bracketing defaults' mean,
+  **0/9 cells beyond the ±5% order-matched band** — d0 −0.5%, d4096
+  −0.3%, d8192 −0.1%. The release's own claim was +15% at 2K and
+  ~+5% at 8K/32K; we read **nothing** at any depth.
+- The tg cells swing wide BETWEEN THE TWO IDENTICAL DEFAULTS
+  themselves (d0c2: 57.8 vs 69.0 between two default arms; the ON
+  arm's d8192c2 25.4 vs the defaults' 51.9/56.7) — the bracket's own
+  spread is the noise floor for the decode side; no decode claim is
+  read from this grid (the anchors' decode row stands at the
+  round-157 PDL mean 77.3).
+
+**Why the claim cannot transfer — the engine's own code decides it**:
+the engagement gate in upstream's v1.3.4 itself
+(`cuda_forward_pair.zig:42`) reads
+`m.exl3 == null and m.routed.format == .nvfp4` — the paired path
+routes 128-pair **NVFP4** expert items (`cuda_experts.zig`:
+`cuda.pair_experts.run(&ks.nvfp4, …)`), and **every MoE layer on our
+EXL3 line carries `m.exl3 != null`**. `joint` evaluated false at
+every layer: the ON arm measured only the settings/fingerprint/plan
+path (the flag IS read and carried in the rank fingerprint, layout
+23 — the arm was live, not dead: the restart line carries the env,
+campaign.log:21) — and even that measured ≤0.5% at d0. The release's
++15%/+5% was measured on the **NVFP4 route** (its own checkpoint and
+memory model); this line is EXL3-only by charter. **The claim does
+not transfer — by construction, not by tuning.** The knob stays
+default-off; the pin holds at v1.3.4; the adoption question never
+opens. The A/B's flat cells are the receipt that even the
+host-gate/plan overhead is negligible — a cleaner null than the
+brief's in-band criterion anticipated.
+
+**The instrument discipline note** (the aligned-probe rule applied
+to a parity read): a green A/B parity arm cannot prove engagement
+when the witness is DESIGNED to be identical — the engagement
+evidence here is the engine's own gate arithmetic read in the
+composed tree (`/tmp/opencode/tf130-rt`), not an output difference.
+The stage brief's arm-distinctness check verified the env reached
+the container; the code read is what separates "measured no
+difference" from "could not differ."
+
+**The state docs**: the ledger's #4493/#4619 item closes; the
+ecosystem note records the scoping (a Tier-2 ask dead on our line
+by format, not by tuning); no anchors row moves; the chart re-check
+is green (the campaign's summary already verified it). The pairexval
+phase retires with its receipt
+(results/campaign-20261123-075710/33-pairexval.md).
+
+**Next**: the loop waits on the release watch (armed at
+PIN_TAG=v1.3.4) or the user's next directive — no lever is on the
+desk; the divide-and-conquer sweep stands closed and the remaining
+horizon items are upstream-gated or user-parked.

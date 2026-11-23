@@ -176,6 +176,20 @@ draw's ring slot taken; every completed/cancelled request leaked a slot until re
 1-line `patches/glm-slot-leak.patch`, bit-invisible) and the **router-ks2 patch**
 (PERF_PLAN Front 2 Lever A2).
 
+**The #4493/#4619 pair-experts scoping (round 160, 2026-11-23 — the
+measured datum for upstream's own claim)**: the v1.3.4 release's
+claimed +15% prompts at 2K / ~+5% at 8K/32K on two GB10s was measured
+on the **NVFP4 route**, and the release's own code scopes it that
+way: the engagement gate (`cuda_forward_pair.zig:42`, shipped in
+v1.3.4) requires `m.exl3 == null and m.routed.format == .nvfp4`, and
+the paired kernels route 128-pair NVFP4 expert items
+(`cuda_experts.zig`). On an EXL3 checkpoint the pairing cannot
+engage — our order-matched A/B (default(1) → TF_GLM_PAIR_EXPERTS=1 →
+default(2), campaign-20261123-075710) measured the ON arm at 0/9 pp
+cells beyond ±5% against the bracketing defaults, witness identical
+on all three arms. Nothing to adopt on the EXL3 line by construction;
+the number stands as upstream's own data for the NVFP4 repo's users.
+
 The open PR field, by front:
 
 - **Front 2 (prefill)**: **#1176 — qwen CUDA: `--prompt-precision int8`, prompt matmuls

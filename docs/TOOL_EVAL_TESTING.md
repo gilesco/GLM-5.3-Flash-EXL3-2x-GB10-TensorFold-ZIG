@@ -1455,7 +1455,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   **#4493/#4619's pair_experts** (the fingerprint layout 23 carries it
   beside numerics/draft_split — the release's own claimed +15%/+5%
   prompts at 2K/8K/32K on two GB10s; the pairexval A/B window is the
-  follow-up), **#3659's TF_GLM_MOE_DIRECT** (opt-in, bit-equal, the
+  follow-up) — **CLOSED (round 160, campaign-20261123-075710): the
+  pairing structurally cannot engage on the EXL3 line** — upstream's
+  own gate (`cuda_forward_pair.zig:42`) requires `m.exl3 == null and
+  m.routed.format == .nvfp4`; our MoE layers carry `m.exl3 != null`,
+  so the ON arm measured default-vs-default (the witness IDENTICAL on
+  all three arms, the pp cells 0/9 beyond the ±5% band — even the
+  host-gate/plan overhead reads ≤0.5%). The claim is NVFP4-route-
+  scoped by construction; the knob stays default-off; no row moved.
+  **#3659's TF_GLM_MOE_DIRECT** (opt-in, bit-equal, the
   topk kernel's sh pointer serving both the group and the direct path),
   #4499's prefill skips, #4427's cached-page startup budget (the serve
   line's pool note re-shapes to 2 windows at 524288), the mla/Shape
