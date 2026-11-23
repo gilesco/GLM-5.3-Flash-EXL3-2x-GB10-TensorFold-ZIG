@@ -130,8 +130,9 @@ No agent runtime is required: **tool-eval-bench is the client** (see
 configuration).
 
 - [ ] The full bench run passes end to end: the current suite (104 scenarios in the
-      v3.0.1 era — 79 standard + 25 Hard Mode; the P category's 70 points of the 208
-      max are the Hard-Mode weight; the older 69-scenario era is history)
+      v3.1.0 era — 79 standard + 25 Hard Mode; the P category's 70 points of the 208
+      max are the Hard-Mode weight; the older 69-scenario and v3.0.1-dev eras are
+      history)
       with
       streamed tool calls, multi-turn tool results and `response_format`/structured cases —
       the scenarios themselves exercise the client-side API surface an agent would.
