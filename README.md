@@ -195,7 +195,7 @@ Every patch's provenance, port receipts and knobs: [patches/README.md](patches/R
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-TR3-4bpw` *(default)* | Mia's TR3 4bpw (topk=8, mcg); real files on both hosts |
 | `local/GLM-5.3-Flash-AZ-Focus-EXL3` | AxonZeta's efficiency-track Focus (topk=8, old-format mcg, integer bits); real files on both hosts |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` @ `top4cfg` | the top-4 variant of the stock pack (needs `PATCHES=017-topk4b.patch`) |
-| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (needs `PATCHES=017-topk4b.patch`) — the sweep's perf leader at Quality 87/100 (181/208 points; 94.7% is the shipping config's 95) |
+| `local/GLM-5.3-Flash-AZ-EXL3` | AxonZeta's AZ top-4 selector serve (needs `PATCHES=017-topk4b.patch`) — the sweep's perf leader at Quality 87/100 (181/208 points on the sweep's era) |
 | `Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold` *(stock)* | the stock pack; already in both caches |
 | `incoai/GLM-5.3-Flash-DFlash2` | the drafter; already in both caches (non-commercial terms) |
 
