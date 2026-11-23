@@ -143,6 +143,16 @@ CONTEXT="${CONTEXT:-524288}"
 PARALLEL="${PARALLEL:-4}"
 DRAFTS="${DRAFTS:-1}"            # 0 passes --no-drafts (the serial reference); 1 drafts, with
                                  # DFlash2 when its snapshot is present (DFLASH2_* above), else MTP
+THINKING="${THINKING:-1}"        # the server-level thinking default: 1 (the
+                                 # qualified standing — every quality receipt is
+                                 # measured with it on); 0 passes --no-thinking,
+                                 # so a request that says NOTHING about thinking
+                                 # serves without it (any of the six per-request
+                                 # shapes still overrides — the live probe
+                                 # results/thinkoff-probe/ receipts both sides).
+                                 # Not yet qualified as a serving default: flip
+                                 # it per deployment, and a default flip needs
+                                 # its own battery before it promotes.
 RECALL="${RECALL:-0}"            # 1 passes --recall on the server (1.0.12): drafts copy from text
                                  # the server has already read; verified-exact, its own size cap.
                                  # For agent loops that re-read text (2.4-3x upstream on repeats)
@@ -371,6 +381,9 @@ serve_args() {
     fi
   else
     args+=(--no-drafts)
+  fi
+  if [[ "$THINKING" == 0 ]]; then
+    args+=(--no-thinking)
   fi
   echo "${args[@]}"
 }
