@@ -112,7 +112,11 @@ off with any of these shapes (the engine reads all six):
 The Anthropic-format route accepts `thinking: {"type": "disabled"}` likewise.
 `reasoning_effort` otherwise tunes the hint (`none, minimal, low, medium, high,
 xhigh, max`). Thinking stays ON as the standing default — the quality receipts
-(hardmode, the §2 gates) are measured with it on.
+(hardmode, the §2 gates) are measured with it on. A deployment can also flip
+the **server-level default** with `THINKING=0` (the config table below; passes
+`--no-thinking` — every request that says nothing about thinking then serves
+without it, and the per-request shapes still override in both directions; the
+verify receipt: `results/campaign-20261123-134804/34-thinkoffval.md`).
 
 ### Test it
 
@@ -156,6 +160,7 @@ site's). The ones that matter:
 | `CONTEXT` | `524288` | the window — the qualified optimum |
 | `PARALLEL` | `4` | concurrent streams |
 | `DRAFTS` | `1` | `0` → `--no-drafts` (the serial reference); `1` drafts with DFlash2 (else the checkpoint's MTP head) |
+| `THINKING` | `1` | the server-level thinking default: `0` → `--no-thinking`, so a request that says nothing about thinking serves without it (any of the six per-request shapes still overrides — the thinkoffval verify, campaign-20261123-134804); `1` is the qualified standing default — every quality receipt is measured with thinking on |
 | `KV_CACHE` | `fp8` | `--kv-cache fp8`: halves per-token latent cache bytes; all §2 gates PASS on it at 524,288. Empty = the engine default bf16 (the literal `bf16` is refused) |
 | `TF_KV_PAGES` | `on` | the elastic paged KV pool (512-row pages shared across streams); `off` reverts to window-mode KV; an EMPTY value is refused |
 | `TF_KV_SHARE` | `16` | how many kept prompt-cache states live as pool pages (the host store off); v1.2.4 floors it at 4× `PARALLEL` |

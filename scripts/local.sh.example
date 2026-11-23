@@ -61,6 +61,9 @@ NCCL_SOCKET_IFNAME=enp1s0f1np1,enP2p1s0f1np1
 # SERVED_NAME=GLM-5.3-Flash-EXL3
 # API_KEY=change-me                 # recommended; clients send it as Authorization: Bearer
 # DRAFTS=0                          # the serial reference, no drafts
+# THINKING=0                        # serve with thinking off BY DEFAULT
+#                                   # (passes --no-thinking; any per-request
+#                                   # thinking field still overrides — README)
 # DENSE_BITS=8                      # pack the dense linears to 8 bits at load (v1.1.1; try 6/4 after)
 # HEAD_BITS=8                       # the head likewise
 # PDL=1                             # programmatic dependent launch on the mm kernels

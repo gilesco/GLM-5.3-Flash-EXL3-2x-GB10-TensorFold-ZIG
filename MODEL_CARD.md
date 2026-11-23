@@ -143,6 +143,14 @@ campaign-20261108-010714):
 
 ## Serving notes
 
+- **Thinking** is on by default and tunes per request: any of the six request
+  shapes (`thinking: false`, `chat_template_kwargs.enable_thinking: false`,
+  `thinking: {"type": "disabled"}`, `reasoning_effort: "none"` and the two
+  kwargs variants) turns it off for that request; `reasoning_effort`
+  (`none`…`max`) tunes the depth. A deployment can also flip the server-level
+  default with `THINKING=0` on the serve line (passes `--no-thinking`; request
+  fields still win in both directions) — the shipped default is `THINKING=1`,
+  the config every quality receipt is measured on.
 - Every tuning patch has an opt-out environment switch (`TF_GLM_MOE_FUSE=0`,
   `TF_GLM_EXL3P=0`, `TF_GLM_MM_P2=0`, `TF_EXL3_SHFL=0`, `TF_GLM_SHARED_SIDE=0`,
   `TF_GLM_ABSORB_MMA=0`, `TF_LOAD_DIRECT=0`), so a regression on different
