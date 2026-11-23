@@ -156,6 +156,7 @@ site's). The ones that matter:
 | `CONTEXT` | `524288` | the window — the qualified optimum |
 | `PARALLEL` | `4` | concurrent streams |
 | `DRAFTS` | `1` | `0` → `--no-drafts` (the serial reference); `1` drafts with DFlash2 (else the checkpoint's MTP head) |
+| `THINKING` | `1` | the server-level thinking default: `0` → `--no-thinking`, so a request that says nothing about thinking serves without it (any of the six per-request shapes still overrides — the thinkoffval verify, campaign-20261123-134804); `1` is the qualified standing default — every quality receipt is measured with thinking on |
 | `KV_CACHE` | `fp8` | `--kv-cache fp8`: halves per-token latent cache bytes; all §2 gates PASS on it at 524,288. Empty = the engine default bf16 (the literal `bf16` is refused) |
 | `TF_KV_PAGES` | `on` | the elastic paged KV pool (512-row pages shared across streams); `off` reverts to window-mode KV; an EMPTY value is refused |
 | `TF_KV_SHARE` | `16` | how many kept prompt-cache states live as pool pages (the host store off); v1.2.4 floors it at 4× `PARALLEL` |

@@ -1440,6 +1440,20 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
+- [x] **THE THINKING SERVER-DEFAULT KNOB** (the issue-1 arc, rounds 160
+  cont. 1-2, campaign-20261123-134804): QUALIFIED — the five-arm verify
+  (A standing-control/B server-off/C override-on/D override-off/E g1 on
+  the OFF arm) passed every named gate: B reasoning_tokens 0 on the
+  default request (the server default flips the behavior), C 104 (the
+  override wins ON — no client trap), D 0 (the override wins OFF), E
+  greedy IDENTICAL (`fb6f836b…`). The knob: `THINKING=0` passes
+  --no-thinking (the engine's server_config.enable_thinking default);
+  the config default STAYS 1 (the qualified standing — the receipts are
+  measured with thinking on; a promoted flip needs its own battery).
+  The per-request shapes: the six shapes in README's Serve section.
+  Arm A (the control) recorded nothing in w650640 — the phase assumed
+  the serve was up; fixed the same sitting (the arm restarts first now);
+  the verdict leaned on the round-160 live probe for the standing side.
 - [x] **THE V1.3.4 BUMP ARC** (rounds 155-159, six windows w3615484 /
   w3630445 / w3697024 / w3712239 / w3724296 / w3794892, campaign-20261122-232612): QUALIFIED and PROMOTED — the witness `80cc3802…`
   IDENTICAL across the TENTH engine bump, the §2 gates ALL PASS, the

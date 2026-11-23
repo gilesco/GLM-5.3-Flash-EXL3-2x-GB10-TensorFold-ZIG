@@ -4787,3 +4787,52 @@ the relaunch verification.
 this sitting (the hit-rate watch: 1 void of 2 windows this round —
 above half voids pause launches; this sits at exactly half with the
 relaunch staged against its OWN failure mode, which the rule requires).
+
+## (round 160 cont. 2) THE THINKOFFVAL WINDOW QUALIFIED — THE THINKING=0 SERVER DEFAULT WORKS AND THE OVERRIDE WINS BOTH WAYS; THE CONTROL ARM'S VOID RECEIPTED AND THE PHASE FIXED (2026-11-23)
+
+**The window** (campaign-20261123-134804, w650640, rc=0; production
+restored 80 s): the five-arm verify ran after the relaunch — and the
+four verdict gates ALL PASS:
+- **Arm B** (THINKING=0, the default request): reasoning_tokens **0**,
+  content direct, finish stop — the server default FLIPS the default
+  request's behavior. The knob is not dead.
+- **Arm C** (THINKING=0 + `enable_thinking: true`): reasoning_tokens
+  **104**, the chain present — the override wins ON. The knob is not
+  unsafe (it does not trap clients that ask for thinking).
+- **Arm D** (THINKING=0 + `thinking: false`): reasoning_tokens **0** —
+  the override wins OFF.
+- **Arm E** (g1 on the OFF arm): the two greedy content shas IDENTICAL
+  (`fb6f836b…`) — the OFF arm is deterministic at greedy.
+
+**The verdict against the brief**: every named gate green — **the
+THINKING=0 server default WORKS with the per-request override winning
+both directions.** The knob is a valid deployment option. The config
+default STAYS 1 (the qualified standing — every quality receipt is
+measured with thinking on); a promoted flip needs its own quality
+battery, and the knob's comment in config.sh says so. The issue-1
+follow-up is answered: per-request shapes AND the deployment-level
+default both exist now.
+
+**The receipt defect, honestly**: **arm A (the standing control)
+recorded NOTHING** — the phase assumed the pairexval shape (the serve
+already up) but nothing in `preflight thinkoffval summary` starts the
+stack; arm A fired at a dead port and the `|| true` swallowed the
+empty reply. The verdict gate did not depend on A (the round-160 live
+probe on production receipted the standing behavior with the same
+discriminator — reasoning_tokens 28 ON / 0 OFF), so the verdict stands
+on B/C/D/E. The phase is fixed in the same sitting: arm A now restarts
+the standing arm first (the dead-race value-gate lesson — an arm that
+assumes the serve is up gets a restart or an explicit up-check; the
+`|| true` swallow on a control arm is exactly the class the dead-race
+gate exists for).
+
+**The state docs**: the ledger's issue-1 item carries the qualified
+knob; the README's Serve section gains the THINKING knob line; no
+anchors row moves (no perf metric was read — a functional verify). The
+thinkoffval phase retires with its receipt
+(results/campaign-20261123-134804/34-thinkoffval.md).
+
+**Next**: the loop waits on the release watch (armed at
+PIN_TAG=v1.3.4) or the user's next directive — no lever is on the
+desk; the divide-and-conquer sweep stands closed and the remaining
+horizon items are upstream-gated or user-parked.

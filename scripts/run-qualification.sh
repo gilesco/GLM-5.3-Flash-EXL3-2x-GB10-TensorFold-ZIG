@@ -1928,8 +1928,17 @@ r = u.get("completion_tokens_details", {}).get("reasoning_tokens", "MISSING")
 c = repr((m.get("content") or "")[:40])
 f = d["choices"][0].get("finish_reason")
 print(r, "|", c, "|", f)'
-  # arm A: the standing arm from preflight (THINKING=1) — the default request
+  # arm A: the standing arm (THINKING=1) — a restart GUARANTEES the serve is
+  # up (the w650640 lesson: nothing in preflight+thinkoffval starts the stack;
+  # arm A fired at a dead port and the || true swallowed it — the control arm
+  # recorded nothing and the verdict leaned on the live probe alone)
   log "thinkoffval: arm A — the standing arm (THINKING=1), the default request"
+  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- the standing arm's restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "thinkoffval: the standing arm refused to serve"
+  fi
   echo "## arm A: the standing arm (THINKING=1), the default request" >> "$P"
   chat "$OUT/to-req.json" > "$OUT/to-a.json" || true
   echo "- reasoning|content|finish:" \
