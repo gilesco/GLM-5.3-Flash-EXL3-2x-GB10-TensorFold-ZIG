@@ -236,6 +236,74 @@ ledger as candidates; the desk verdicts first —
   kernels no gain, DSpark drafter −15-20% vs DFlash2 (licensing value
   only, and DFlash2's CC BY-NC-ND terms deserve a standing note).
 
+**The 2026-11-24 upstream sweep (round 161 cont. 1, the second read-only
+subagent scan — PRs/issues/changelog verified on main `9a38b1f7b`)**:
+the composition picture for the line's next window set —
+- **`TF_GLM_INDEX_SPLIT=32768` is IN OUR PIN, bit-safe, and unadopted**
+  (the v1.3.4 changelog's #4510; the knob sits at default 2048 in
+  cuda_ranks.zig): below the split position the indexer's
+  scores/pools/rows stay local per rank with NO blocking all-gathers;
+  upstream's own note records 1-2% prefill at 128k. Our serving profile
+  (short agent prompts under a 524k ceiling) sits entirely inside the
+  local band, so the skip engages on every chunk. Zero-bump: a config
+  flip + one order-matched A/B window. NOT in our closed list; no A/B
+  receipt exists on our line.
+- **`TF_GLM_GRAPHS=1` (#2279, open)** — the only candidate with a
+  MEASURED number on our exact topology: GPU idle is 3.6-5.3% of a
+  decode window at TP=2 (nsys, two GB10s); graph replay removes it →
+  decode +3.3-3.6% at 1/2/4 streams, tokens equal (14/14 incl.
+  drafted==undrafted). Composes with our adopted PDL: PDL chains
+  dependent launches; graphs delete the host launch overhead — the nsys
+  data says the residual class is real even with PDL. DFlash2 taps are
+  NOT graphed (partial coverage on the drafted path). The decode
+  composition candidate.
+- **#4701 (open draft) — Mia's 0078 pipelined prompt experts are being
+  MAINLINED upstream**: isolated gu −24% at 4,096 rows; a live 4K-prompt
+  cell +40% prefill (noisy). Our 013-zprompt carries the fork's 0078 —
+  at the next bump upstream's maintained, contract-gated version replaces
+  our hand-port (one fewer member to re-anchor) plus the newer SM121
+  pipelining. The #1143 ask is being answered through this line.
+- **#4565 MERGED 2026-11-24** — `TF_GLM_WIDE_EXPERT_TILE`: 17+-row
+  windows (a DFlash2 block 16 + pending row) re-read the routed-expert
+  down weights under the wide tile; bit-equal; the decode A/B (kill
+  under +1%) is still to run. Free at the next bump.
+- **The rows store (#1411, in Unreleased)** — `--learn-conversations`
+  keeps conversation states on disk through evictions and restarts (the
+  resume-after-eviction class our record measured at ~1.4 s); **#4694's
+  cancel-keeps-prefix** and **#4856's flush retain count** complete the
+  resume bundle. Fold all three at the next bump.
+- **#4573 (`TF_GLM_PRICED_WINDOWS`)** — measured DFlash2 window prices +
+  cost-derived width; the upstream-shaped answer to our standing "depth
+  should flex" watch item; the kill bar is stated (+3% or drop).
+- **The RECALL receipt question RESOLVED by upstream's own data**: our
+  RECALL=0 default is VALIDATED — #4247's lever table measures the copy
+  continuation as a NET LOSS on code prompts when present
+  (`TF_GLM_NO_COPY`: +4.2-11.2% on code by REMOVING it), and the copy
+  proposer is opt-in on our serve (the RECALL flag, default 0). The
+  unmeasured-here suspicion closes: the mechanism hurts on code on the
+  builds that carry it; our default already avoids it.
+- **Gated out, confirmed**: #4541 (`TF_GLM_PREFILL_SHARED_ONCE` — the
+  PR's own scope line excludes EXL3), #4695 (skip MTP prompt history —
+  our 002-exl3prompt already carries it), VISION_FUSED (bit-unsafe),
+  pair-experts (the EXL3 gate), L2PF (flat at our instrument — Mia's
+  new default flip on their fork is their posture, our instrument
+  governs).
+- **The single-vs-team trap (Anantus)**: at c4 speculation-on/off are
+  EQUAL on their 4xGB10 rig — our shape sits at the break-even; worth
+  ONE order-matched arm (drafts-off at c4) inside a window staged in
+  that neighborhood, not a dedicated window.
+
+**Watch list additions (no window owed until they land)**: the #4247
+prefill lever PRs one at a time (SOLO_TO_START −4.14% cold 8k, the
+one-pass prompt pipeline −4.7/−5.8/−6.5% at 8k/32k/120k on their TP=3
+build); the Qwen DFlash2-graphs landing (#4516, MERGED — the precedent
+for a GLM drafter-graphs PR: "over a hundred small launches per round"
+captured); #4559's hc_shared_fn (our ncu census measured hc_partial
+p50 104-115 µs — same neighborhood as our hc-fuse design, smaller
+surgery); #4514's native-FP4/FP8 expert conversions + stages3; #4809's
+keep_seqs (the slot-reuse zero-fill + prompt-copy at 524k); Mia 1104's
+patch 0014 (the DFlash2 selector skips out-of-vocabulary candidate ids).
+
 **The #4493/#4619 pair-experts scoping (round 160, 2026-11-23 — the
 measured datum for upstream's own claim)**: the v1.3.4 release's
 claimed +15% prompts at 2K / ~+5% at 8K/32K on two GB10s was measured
