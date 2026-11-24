@@ -176,6 +176,26 @@ draw's ring slot taken; every completed/cancelled request leaked a slot until re
 1-line `patches/glm-slot-leak.patch`, bit-invisible) and the **router-ks2 patch**
 (PERF_PLAN Front 2 Lever A2).
 
+**The 2026-11-24 watch check (round 161)**: v1.3.4 is STILL the newest tag —
+the release watch (armed at PIN_TAG=v1.3.4) correctly holds. `main` moved
+**702 commits past v1.3.4** in three days (39 on the 22nd, 236 on the 23rd,
+427 on the 24th — the fastest arc on record; the pre-release climb pattern
+suggests a tag is being gathered). The GLM-relevant content, none of it perf-
+front material for our line: **#3790's `TF_GLM_VISION_FUSED`** (the image
+tower's attention on the shared full-attention kernel instead of two
+cuBLASLt products around a softmax — opt-in, OFF by default, and its sums
+run in another order so image replies can differ: NOT bit-safe, so the
+knob's own note disqualifies the standing config's witness discipline),
+**d0fbf6bd's retain-completed-shared-prefixes-on-prefill-cancellation** (a
+correctness/efficiency fix on the prompt-cache path worth folding at the
+next bump), **1d7cc5fe's wide-factored-decode 64-pair tile match** (opt-in),
+and the **#4856 prompt-cache flush retain count** (a `retain` parameter
+keeping the most recently used prompt states through a flush — engine-level
+resume value on a path our #2699 closed at the API level; watch it). The
+rest is MiniMax/Qwen/Flash Next/H3/OCR/app and the host KV tier (#1501) —
+other families' fronts. No bump action: the pin holds at v1.3.4 until a
+tag lands, and the watch fires on it.
+
 **The #4493/#4619 pair-experts scoping (round 160, 2026-11-23 — the
 measured datum for upstream's own claim)**: the v1.3.4 release's
 claimed +15% prompts at 2K / ~+5% at 8K/32K on two GB10s was measured
