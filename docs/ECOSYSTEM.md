@@ -196,6 +196,46 @@ rest is MiniMax/Qwen/Flash Next/H3/OCR/app and the host KV tier (#1501) —
 other families' fronts. No bump action: the pin holds at v1.3.4 until a
 tag lands, and the watch fires on it.
 
+**The 2026-11-24 community sweep (round 161, the read-only subagent scan +
+the desk checks on its top claims)**: the full report's items go to the
+ledger as candidates; the desk verdicts first —
+- **The "sampled traffic gets no drafts" premise is FALSE on our line**:
+  the community report's top decode candidate (B1 — Gumbel-coupled
+  drafting, motivated by a claimed draftless gap on sampled requests)
+  assumed the engine gates drafts on greedy-only serving. OUR engine
+  carries keyed sampling natively (`/v1/models` capabilities reads
+  `greedy_only: false`) and the draft gate keys ONLY on `--no-drafts`
+  (`chat.zig:199`), not on the request's sampling — sampled requests DO
+  draft on our serve. The candidate dies at the desk; no window spent.
+- **The drafter-precision question stands** (B2): knapcio's FP8-drafter
+  linears cut the draft graph 27% with acceptance unchanged; the
+  local-inference-lab MXFP8 DFlash2 copy serves token-identical on two
+  community stacks. Our drafter serves incoai's BF16 revision — what
+  precision our draft path actually computes is a loader/source question
+  before any window.
+- **The MGEMM/MMA-operand EXL3 prefill mechanism stands as the strongest
+  externally-receipted prefill lever** (exllamav3 1.4.8: ~480 →
+  2,040-3,926 tok/s on the 170HX rig — 5-8×, decode unchanged): decode
+  trellis tiles straight into MMA operands at prefill shapes instead of
+  compute-bound dequant. A port-shape ask alongside the standing #1080
+  expert-batching one.
+- **KX7 exact dense weights (upstream issue #2498, hughmadden, the proof
+  branch public)**: 11-bit Huffman two-class pack of the BF16 dense
+  linears — replies exactly equal to BF16 (105/105), decode +11-16% solo,
+  +6-24% at 2/4/8 streams, rank 0 holds 2.7 GiB less. THE
+  EXACTNESS-PRESERVING BRACKET for our DENSE_BITS family — the prior that
+  sizes any future dense-bits window's quality risk. Upstream-gated until
+  merged; watch it into a release.
+- **The single-vs-team trap (Anantus)**: at c4 speculation-on/off are
+  EQUAL on their 4xGB10 rig — our serving shape sits exactly at the
+  break-even; worth ONE A/A-style arm (drafts-off at c4) if a window is
+  ever staged in that neighborhood, not a dedicated window.
+- **Do-not-re-propose additions from the community's own negative lists**:
+  W8A8 (rounds activations — theirs too), q4 dense (quality — theirs
+  too), dual rails ≈ 0, 8-bit draft head no gain, re-tuned 8-bit drafter
+  kernels no gain, DSpark drafter −15-20% vs DFlash2 (licensing value
+  only, and DFlash2's CC BY-NC-ND terms deserve a standing note).
+
 **The #4493/#4619 pair-experts scoping (round 160, 2026-11-23 — the
 measured datum for upstream's own claim)**: the v1.3.4 release's
 claimed +15% prompts at 2K / ~+5% at 8K/32K on two GB10s was measured
