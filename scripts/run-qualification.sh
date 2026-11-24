@@ -1887,99 +1887,15 @@ PRODCOLD_RETIRED=1
 # results/campaign-20261123-134804/34-thinkoffval.md; the stage brief
 # docs/STAGE_BRIEF_thinkoffval.md stays as the design record.
 
-# ---------------------------------------------------------------------------
-# phase: indexsplitval (SESSION-SPECIFIC; retires with the receipt — the
-# stage brief docs/STAGE_BRIEF_indexsplitval.md carries the value gate).
-# THE #4510 INDEXER-SPLIT A/B on the qualified v1.3.4 base: the knob
-# TF_GLM_INDEX_SPLIT=32768 keeps indexer scores/pools/rows LOCAL per rank
-# below position 32768 — no blocking all-gathers — where the default 2048
-# splits every chunk that starts past 2048 (the picks all-gathered). THE
-# VALUE QUESTION: our serving profile is short agent prompts under a 524k
-# ceiling — nearly every chunk starts below 32k, so the all-gather skip
-# engages on every chunk. Upstream's own receipt: 1-2% prefill at 128k.
-# THE ARM-DISTINGUISHING EXPECTATION (the brief names it up front): the
-# d0 cell (pp2048, one chunk at position 0) sits BELOW the default's
-# 2048 split too — d0 is expected FLAT inside the band; d4096/d8192 are
-# THE VALUE CELLS. THE VALUE-IF-YES: the config default flips to 32768
-# (zero bump risk — the knob is in the pin, bit-safe by construction).
-# The arms, order-matched: default(1) -> TF_GLM_INDEX_SPLIT=32768 ->
-# default(2), each arm the bench grid (pp2048 tg128 at d0/d4096/d8192,
-# c1/c2/c4) and the greedy witness (80cc3802… IDENTICAL on all three —
-# the bit-safety gate; the knob is outputs-unchanged by upstream's own
-# claim and the engine's own splitAt tests). Kill: the witness moves on
-# ANY arm (NOT bit-safe at our shape — the default stays 2048); the
-# d4096/d8192 cells in-band = the skip does not pay at our shape, the
-# question CLOSES; beyond the band with the bracket agreeing = the value
-# transfers, the default flips through its own battery. ANY gate FAIL
-# holds the default at 2048 until understood.
-# ---------------------------------------------------------------------------
-if want indexsplitval && ! phase_done indexsplitval; then
-  log "=== indexsplitval (the #4510 indexer-split A/B: the all-gather" \
-    "skip below position 32768; order-matched; d0 expected flat —" \
-    "d4096/d8192 the value cells)"
-  P="$OUT/35-indexsplitval.md"; : > "$P"
-  echo "# indexsplitval (the #4510 indexer-split A/B; the arms" \
-    "default(1) -> TF_GLM_INDEX_SPLIT=32768 -> default(2))" >> "$P"
-  echo "- the brief: docs/STAGE_BRIEF_indexsplitval.md" >> "$P"
-  log "indexsplitval: the default(1) arm (restart: the serve must be up)"
-  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4; then
-    echo "- the default(1) arm's restart REFUSED" >> "$P"
-    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-    die "indexsplitval: the default arm refused to serve"
-  fi
-  req_file "$OUT/ix-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-  chat "$OUT/ix-req.json" > "$OUT/ix-def1.json" || true
-  SHA=$(content_sha "$OUT/ix-def1.json")
-  echo "- the default(1) greedy content sha: $SHA" >> "$P"
-  WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
-  WANTED+="0216a89e5a226566d"
-  if [ "$SHA" = "$WANTED" ]; then W1=IDENTICAL; else W1=DIFFERENT; fi
-  echo "- the witness on the default arm: $W1" >> "$P"
-  bench_perf ixdef "$OUT/ix-bench-def" 4 >> "$P" 2>&1 || true
-  log "indexsplitval: the ON arm (TF_GLM_INDEX_SPLIT=32768)"
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4 TF_GLM_INDEX_SPLIT=32768; then
-    echo "## the ON arm (TF_GLM_INDEX_SPLIT=32768)" >> "$P"
-    chat "$OUT/ix-req.json" > "$OUT/ix-on.json" || true
-    SHA=$(content_sha "$OUT/ix-on.json")
-    echo "- the greedy content sha: $SHA" >> "$P"
-    if [ "$SHA" = "$WANTED" ]; then W2=IDENTICAL; else W2=DIFFERENT; fi
-    echo "- the witness on the ON arm: $W2" >> "$P"
-    bench_perf ixon "$OUT/ix-bench-on" 4 >> "$P" 2>&1 || true
-  else
-    echo "- the ON arm's restart REFUSED" >> "$P"
-    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-  fi
-  log "indexsplitval: the default(2) arm (the bracket's close)"
-  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4; then
-    echo "## the default(2) arm (the bracket's close)" >> "$P"
-    chat "$OUT/ix-req.json" > "$OUT/ix-def2.json" || true
-    SHA=$(content_sha "$OUT/ix-def2.json")
-    echo "- the greedy content sha: $SHA" >> "$P"
-    if [ "$SHA" = "$WANTED" ]; then W3=IDENTICAL; else W3=DIFFERENT; fi
-    echo "- the witness on the default(2) arm: $W3" >> "$P"
-    bench_perf ixdef2 "$OUT/ix-bench-def2" 4 >> "$P" 2>&1 || true
-  else
-    echo "- the default(2) arm's restart REFUSED" >> "$P"
-    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
-  fi
-  echo "- the three arms judge order-matched: d0 expected FLAT (below" \
-    "the default's own 2048 split); d4096/d8192 are the value cells" \
-    "against the bracketing defaults' mean inside the +-5% band; the" \
-    "witness on all three arms is the bit-safety gate" >> "$P"
-  echo "- VERDICT: the d4096/d8192 pp cells beyond the +-5%" \
-    "order-matched band with the bracket agreeing AND the witness" \
-    "IDENTICAL on all three arms = the value TRANSFERS (the config" \
-    "default flips to 32768 through its own battery); the value cells" \
-    "in-band = the skip does not pay at our shape, the question CLOSES" \
-    "(the default stays 2048); the witness moved on ANY arm = NOT" \
-    "bit-safe, the default stays 2048 and the defect question opens" >> "$P"
-  touch "$OUT/.indexsplitval.done"
-fi
-
-# ---------------------------------------------------------------------------
+# indexsplitval RETIRED (2026-11-24): the #4510 all-gather skip DOES NOT
+# PAY at our shape — the question CLOSED (campaign-20261124-191142: the
+# witness 80cc3802 IDENTICAL on all three arms; the pp cells 0/9 beyond
+# the +-5% order-matched band, max |delta| 0.19%; the value cells
+# d4096/d8192 max |delta| 0.09%). The config default STAYS 2048; the
+# indexer all-gather is a small slice of a chunk at our depths (the
+# engine's own 1-2% receipt was at 128k depth, outside our profile).
+# The receipt lives in results/campaign-20261124-191142/35-indexsplitval.md;
+# the stage brief docs/STAGE_BRIEF_indexsplitval.md stays as the design record.
 
 if want summary; then
   log "=== summary"

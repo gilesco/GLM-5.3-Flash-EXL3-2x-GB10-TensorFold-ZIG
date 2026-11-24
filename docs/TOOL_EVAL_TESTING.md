@@ -1440,6 +1440,16 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
+- [x] **THE #4510 INDEXER-SPLIT KNOB** (round 161 cont. 2,
+  campaign-20261124-191142): CLOSED — the all-gather skip does NOT pay
+  at our shape. The three-arm order-matched bracket read the witness
+  80cc3802 IDENTICAL on all arms and the pp cells 0/9 beyond the ±5%
+  band (max |Δ| 0.19%; the value cells d4096/d8192 max |Δ| 0.09%).
+  `TF_GLM_INDEX_SPLIT` stays default-2048; the indexer all-gather is a
+  small slice of a chunk at our serving depths (upstream's own 1-2%
+  receipt was at 128k, outside our short-agent-prompt profile).
+
+
 - [x] **THE THINKING SERVER-DEFAULT KNOB** (the issue-1 arc, rounds 160
   cont. 1-2, campaign-20261123-134804): QUALIFIED — the five-arm verify
   (A standing-control/B server-off/C override-on/D override-off/E g1 on

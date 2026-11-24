@@ -4836,3 +4836,34 @@ thinkoffval phase retires with its receipt
 PIN_TAG=v1.3.4) or the user's next directive — no lever is on the
 desk; the divide-and-conquer sweep stands closed and the remaining
 horizon items are upstream-gated or user-parked.
+
+## (ROUND 161 CONT. 2) THE INDEXSPLITVAL WINDOW: THE #4510 ALL-GATHER SKIP DOES NOT PAY AT OUR SHAPE — THE QUESTION CLOSES, THE DEFAULT STAYS 2048 (2026-11-24)
+
+**The window** (campaign-20261124-191142, w2706126, rc=0; production
+restored 80 s): the three-arm order-matched bracket
+default(1) -> `TF_GLM_INDEX_SPLIT=32768` -> default(2) ran clean.
+
+**The gates all held and the value cells read in-band**:
+- The witness `80cc3802...` IDENTICAL on all three arms — the knob is
+  bit-safe at our shape exactly as upstream's receipt claimed.
+- **The pp cells: 0/9 beyond the ±5% order-matched band — max |Δ|
+  0.19% across all nine cells.** The d0 cells read flat exactly as the
+  brief predicted (below the default's own 2048 split); the VALUE cells
+  d4096/d8192 read max |Δ| 0.09% — the all-gather skip engages and
+  moves nothing measurable at our serving depths.
+- The mechanism's honest explanation: the indexer all-gather is a
+  small slice of a prompt chunk at our depths; upstream's own 1-2%
+  receipt was at 128k depth, far outside our short-agent-prompt
+  profile. The knob stays default-2048; the question closes with a
+  clean receipt (the window cost ~20 min of three arms).
+
+**The state docs**: the ledger's #4510 item closes; no anchors row
+moves; the indexsplitval phase retires with its receipt
+(results/campaign-20261124-191142/35-indexsplitval.md).
+
+**Next**: the composition candidates stand (the decode side:
+`TF_GLM_GRAPHS=1` #2279 waits on the release watch — 702 commits on
+main says a tag is gathering; the next-bump bundle: #4701's mainlined
+prompt-expert pipelining, #4565's wide expert tile, the resume bundle
+#1411/#4694/#4856). The loop waits on the release watch or the user's
+next directive.
