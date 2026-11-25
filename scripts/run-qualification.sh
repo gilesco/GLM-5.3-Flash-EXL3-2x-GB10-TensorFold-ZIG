@@ -1897,6 +1897,187 @@ PRODCOLD_RETIRED=1
 # The receipt lives in results/campaign-20261124-191142/35-indexsplitval.md;
 # the stage brief docs/STAGE_BRIEF_indexsplitval.md stays as the design record.
 
+# ---------------------------------------------------------------------------
+# phase: v135val (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_bump-val.md carries the value gate). The ELEVENTH
+# bump: the engine is v1.3.5 (02b324ae, 955 commits past v1.3.4). The
+# release carries for our line: TF_GLM_WIDE_EXPERT_TILE (#4565 — the
+# routed-expert down tile for 17+-row windows, bit-equal; the CANDIDATE
+# ARM rides this window's summary), the DFlash2 drafter graphs + QL span
+# (#4516 — TF_DFLASH_GRAPH/TF_DFLASH_QL_SPAN, the compose-with-PDL
+# candidates), the resume bundle (#1411's --learn-conversations rows
+# store, #4694's cancel-keeps-prefix), and the settings-doc registration
+# (#4963). NOT in the release: #2843's EXL3 decode-grid fix, #2856's
+# batched MTP, #4701's pipelined prompt experts — the watch continues.
+# The fp8-pages marriage HOLDS through the twelfth release gate (the
+# 001/003 regen receipts: the composed tree 02b324ae+{001..018} = the
+# round-trip byte-exact; the two hand-merges: 001's initNumerics beside
+# v1.3.5's installGroup from-param, 003's join + error arms among the
+# new-family registrations). The two-gate rule: the store AND the head's
+# TF_COMMIT flipped BEFORE this launch. The gates: the same-bits greedy
+# witness 80cc3802… IDENTICAL across the ELEVENTH bump, the §2 content
+# gates, hardmode 94 on the 3.1.0 frame (must HOLD), the vision 4/4, the
+# walls in band, the pool line. THE VALUE BRACKET rides order-matched
+# (the steady-state decode default(1) -> default(2)): in-band both sides
+# -> no row move (the row stands at the round-157 PDL mean 77.3). ANY
+# gate FAIL holds the pin at v1.3.4 until understood; the promotion sync
+# follows a QUALIFIED verdict.
+if want v135val && ! phase_done v135val; then
+  log "=== v135val (the v1.3.3 bump: the long-prompt step sharing / the"
+  log "leader join / the resume skip release; the value bracket rides)"
+  P="$OUT/32-v135val.md"; : > "$P"
+  echo "# v135val (v1.3.3 02b324ae + the re-anchored 16-patch store;" \
+    "the value bracket: the steady-state decode default(1) -> default(2))" \
+    >> "$P"
+  echo "- the brief: docs/STAGE_BRIEF_v135val.md" >> "$P"
+  log "v135val: explicit prepare (the fingerprint moved: TF_COMMIT + the" \
+    "patch bodies)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die \
+    "v135val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.3.5 engine + the re-anchored" \
+    "store)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" \
+      >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci \
+      "malformed\|BadSetting" || true)
+    echo "- strict-TF_ refusal lines at boot (the video-library note" \
+      "excluded): ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" \
+      | head -3 >> "$P" || true
+    req_file "$OUT/v135-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v135-req.json" > "$OUT/v135-greedy.json" || true
+    SHA=$(content_sha "$OUT/v135-greedy.json")
+    echo "- the greedy content sha: $SHA" >> "$P"
+    WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
+    WANTED+="0216a89e5a226566d"
+    if [ "$SHA" = "$WANTED" ]; then WITNESS=IDENTICAL; else
+      WITNESS=DIFFERENT; fi
+    echo "- the same-bits witness: $WITNESS" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "v135val: the qualification arm refused to serve"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v135 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    || true
+  echo "## hardmode (94 must HOLD on the 3.1.0 frame; --parallel 2)" \
+    >> "$P"
+  mkdir -p "$OUT/v135hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+    | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run \
+    --base-url "http://127.0.0.1:$PORT" --model "$model" \
+    --format openai --tokenizer "$MODEL_ID" --hardmode \
+    --label "v135val" --output-dir "$OUT/v135hm" --parallel 2 \
+    --json-file "$OUT/v135hm/hm.json" > "$OUT/v135hm/hm.log" 2>&1 \
+    || true
+  grep -o '"final_score": [0-9]*' "$OUT/v135hm/hm.json" \
+    >> "$P" 2>/dev/null || true
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v135hm/hm.json'))
+    print('- the bench version: %s' %
+          d.get('tool_eval_bench_version', 'NOT RECORDED'))
+except Exception: pass
+" >> "$P"
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v135vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/v135vision/vision.json" > "$OUT/v135vision/vision.log" \
+      2>&1 || true
+    tail -6 "$OUT/v135vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo \
+      "- the vision-suite runner is MISSING at" \
+      "scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the value bracket — order-matched (the steady-state decode)" \
+    >> "$P"
+  v135_decode_cell() {  # $1 tag — the steady-state decode probe per arm
+    local tag="$1" bf model S W
+    bf=$(mktemp /tmp/v135d.XXXXXX.json)
+    python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1],
+  'messages': [{'role': 'user',
+                'content': 'Write a 400-word essay about '
+                            'lighthouses.'}],
+  'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" \
+      "$SERVED_NAME" > "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+      | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys
+b = json.load(open(sys.argv[1]))
+b['model'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" \
+      -H 'Content-Type: application/json' \
+      --data @"$bf" -o "$OUT/v135-$tag-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v135-$tag-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s'
+          ' = %.1f tok/s (wall incl. prefill)'
+          % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  }
+  echo "### the default(1) arm (already serving)" >> "$P"
+  v135_decode_cell def1
+  log "v135val: the default(2) arm (the bracket's close)"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "### the default(2) arm (the bracket's close)" >> "$P"
+    v135_decode_cell def2
+  else
+    echo "- the default(2) arm's restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on v1.3.5)" \
+    >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 || \
+      { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS" \
+    "+ hardmode holds on the 3.1.0 frame (94)" \
+    "+ the vision 4/4 + the walls in band = the v1.3.3 bump QUALIFIES" \
+    "(the pin moves to 02b324ae; the promotion sync follows; the" \
+    "release watch's PIN_TAG moves). THE VALUE READ: the steady-state" \
+    "probe beyond the ±5% order-matched band with both bracket arms" \
+    "agreeing = the decode row re-dates (the receipt names the lever;" \
+    "a CLAIM needs a follow-up knob A/B — this battery cannot" \
+    "separate #3486 from #3693); in-band = no row move, the question" \
+    "closes; ANY gate FAIL holds the pin at v1.3.3 until understood" \
+    >> "$P"
+  touch "$OUT/.v135val.done"
+fi
+
+# ---------------------------------------------------------------------------
+
+
 if want summary; then
   log "=== summary"
   S="$OUT/CAMPAIGN.md"
