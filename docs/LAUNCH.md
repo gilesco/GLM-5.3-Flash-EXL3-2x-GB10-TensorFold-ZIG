@@ -4867,3 +4867,44 @@ main says a tag is gathering; the next-bump bundle: #4701's mainlined
 prompt-expert pipelining, #4565's wide expert tile, the resume bundle
 #1411/#4694/#4856). The loop waits on the release watch or the user's
 next directive.
+
+## (ROUND 161 CONT. 3) THE V1.3.5 BUMP QUALIFIED AND PROMOTED — THE ELEVENTH BUMP; TWO HAND-MERGES; THE POOL FREES A THIRD WINDOW (2026-11-25)
+
+**The window** (campaign-20261125-081420, w3641805, rc=0): the v135val
+battery on the eleventh bump — the engine v1.3.5 (02b324ae, 955 commits
+past v1.3.4) + the re-anchored store.
+
+**The gates ALL PASS**:
+- The witness `80cc3802…` IDENTICAL across the ELEVENTH bump (the
+  same-bits streak holds across every release since the witness was set).
+- The §2 content gates ALL PASS — the FORTY-FOURTH consecutive.
+- **Hardmode 94 HOLDS on the 3.1.0 frame**; the vision suite 4/4.
+- The walls 83/83 in band; strict-TF_ refusals 0.
+- The value bracket 75.9/75.9 IN-BAND — no decode row move; the row
+  stands at the round-157 PDL mean 77.3.
+- **The pool line re-shapes to 3 windows at 524288** (was 2 on v1.3.4):
+  v1.3.5 freed another window.
+
+**The compose**: two hand-merges only across the 955-commit gap — 001's
+initNumerics beside v1.3.5's installGroup from-param; 003's paged-KV
+join + error arms among the new-family registrations. The round-trip
+proven byte-exact (pristine v1.3.5 + the store = the composed tree,
+zero diffs). The regen lesson: the fork's patch headers quote
+`diff --git` inside their prose — the header cut must key on
+`--- a/` (the plain-diff marker), not the git-format string.
+
+**The release carried** (what the pre-staged brief predicted): the wide
+expert tile (#4565), the DFlash2 drafter graphs (#4516), the resume
+bundle (#1411/#4694). NOT carried: #2843, #2856, #4701 — the watch
+continues.
+
+**The promotion**: the pin `02b324ae`; production serves v1.3.5
+verified at /health (the promotion commit 133425d in the production
+repo); the release watch PIN_TAG -> v1.3.5; the state docs same-sitting
+(the README pin, the anchors dated line — no row moved; the phase
+retired with its receipt).
+
+**Next**: the candidate arms the release carried are queued — the
+wide-tile decode A/B and the DFlash2-drafter-graphs A/B (both knobs
+in the serving engine now, default-off; each its own window per the
+brief). The loop waits on the next directive.
