@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 : "${OPENCODE_UNIT:?set OPENCODE_UNIT (the opencode server systemd unit path) in scripts/local.sh}"
 LOG="$HOME/upstream-release-watch.log"
 MARKER="$HOME/.upstream-release-last-poked"
-PIN_TAG="v1.3.4"  # the promoted pin (the round-159 promotion: v1.3.4 12ebd414 + the re-anchored 16-patch store, serving verified on 8000; the rebase target when a newer tag lands)
+PIN_TAG="v1.3.5"  # the promoted pin (the round-161 promotion: v1.3.5 12ebd414 + the re-anchored 16-patch store, serving verified on 8000; the rebase target when a newer tag lands)
 PW=$(grep -oP 'OPENCODE_SERVER_PASSWORD=\K.*' "$OPENCODE_UNIT" 2>/dev/null | tr -d '"')
 [ -n "$PW" ] || { echo "$(date '+%F %T') no web password — cannot poke" >> \
   "$LOG"; exit 1; }
