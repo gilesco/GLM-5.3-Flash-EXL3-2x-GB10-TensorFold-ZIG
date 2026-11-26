@@ -76,6 +76,12 @@ the composed tree (branch compose-v136) — the before-state anchors at the
 tree the earlier members left; the round-trip verifies byte-exact
 (pristine v1.3.6 + the store = the composed tree, zero diffs).
 
+
+REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
+the composed tree (branch compose-v136) — the before-state anchors at the
+tree the earlier members left; the round-trip verifies byte-exact
+(pristine v1.3.6 + the store = the composed tree, zero diffs).
+
 diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
 index 27ec32eb9..b0183d9d2 100644
 --- a/zig/kernels/cuda/glm_glue.cu
@@ -252,7 +258,7 @@ index 000000000..7378c6ed4
 +}
 +
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index edeba2fcf..9c5003db4 100644
+index edeba2fcf..3701b3666 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
 @@ -77,6 +77,8 @@ pub const Engine = struct {
@@ -309,7 +315,7 @@ index edeba2fcf..9c5003db4 100644
          e.m.deinit();
          e.stream.deinit();
          e.gpa.free(e.spans);
-@@ -289,6 +297,46 @@ pub const Engine = struct {
+@@ -289,6 +297,36 @@ pub const Engine = struct {
          std.log.info("[tensorfold] glm: rank {d} of {d} ({s}) sums through the {t} collective (RoCE gathers {s})", .{ g.rank, g.world, from, e.collective.kind(), if (g.fast != null or g.multi != null) "on" else "off" });
      }
  
@@ -318,16 +324,6 @@ index edeba2fcf..9c5003db4 100644
 +        const n = e.settings.numerics;
 +        if (n.bits() == 0) return;
 +        std.log.warn("opt-in prompt numerics: absorb/expand {s}", .{if (n.absorb_mma) "tensor cores (TF_GLM_ABSORB_MMA)" else "SIMT"});
-+    }
-+
-+    pub fn exchange(e: *const Engine) fw.Exchange {
-+        return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .collective = e.collective } };
-+    }
-+
-+    pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
-+        out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
-+        const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
-+        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side, .moe_fuse = e.moe_fuse, .pair_experts = e.pair != null and e.settings.pair_experts };
 +    }
 +
 +    /// An on-by-default switch: off only when `name` is "0".
@@ -356,7 +352,16 @@ index edeba2fcf..9c5003db4 100644
      pub fn exchange(e: *const Engine) fw.Exchange {
          if (e.local.len > 0) return .local; // the held shares meet in this process
          return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .collective = e.collective } };
-@@ -453,7 +501,9 @@ pub const Engine = struct {
+@@ -297,7 +335,7 @@ pub const Engine = struct {
+     pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
+         out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
+         const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
+-        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = if (e.local.len > 0) held_shares.ranks(e, b) else out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .pair_experts = e.pair != null and e.settings.pair_experts };
++        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = if (e.local.len > 0) held_shares.ranks(e, b) else out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side, .moe_fuse = e.moe_fuse, .pair_experts = e.pair != null and e.settings.pair_experts };
+     }
+ 
+     /// Binds slot `slot`'s sequence for the steps that follow, making it (a zeroed state) on first use.
+@@ -453,7 +491,9 @@ pub const Engine = struct {
          if (last and f.prof != null) std.log.info("glm prof draw rank={d} slot={d} start={d} rows={d} wall_ms={d:.4}", .{ e.share.rank, e.slot, start, rows, prof_mod.Prof.elapsedMs(e.io, draw_started) });
          if (last) try e.holdPrompt(e.bp.fnormed + (rows - 1) * e.c.hidden * 2);
          stamp = prof_mod.span(f.prof, e.stream, .mtp);
@@ -367,7 +372,7 @@ index edeba2fcf..9c5003db4 100644
          stamp.end();
          if (f.prof) |p| p.mark(e.stream, .mtp);
          stamp = prof_mod.span(f.prof, e.stream, .commit);
-@@ -509,7 +559,7 @@ pub const Engine = struct {
+@@ -509,7 +549,7 @@ pub const Engine = struct {
              rows += p.ids.len;
          }
          var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
