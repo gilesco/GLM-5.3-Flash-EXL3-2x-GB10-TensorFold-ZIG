@@ -116,3 +116,45 @@
   round-155 class (the pin) has now burned TWO windows (round 155's
   auto-prepare drop, round 158's stale pin); it is the repeat offender to
   check first on any "patch does not apply against the pinned tree" receipt.
+
+## 2026-11-25 — the v1.3.5 rebase: the header-cut grep matched a quoted `diff --git` inside the fork's prose
+- Skill: tensorfold-patch-craft (extended)
+- Symptom: the regenerated 001 member died as "corrupt patch at line 3427" on replay; the composed tree meanwhile proved byte-exact — only the regen was broken.
+- Root cause: the fork's patch headers QUOTE `diff --git` inside their prose (the regen commands recorded there); `grep -m1 '^diff --git'` matched the quote, cut the header mid-prose, and the spliced body started at a line git read as a malformed hunk continuation. The fix: cut on `--- a/` (the plain-diff seam marker), which only matches the real boundary. Compounding: `git rev-parse v1.3.5` yields the tag OBJECT — the compose diff against it died "bad object" until peeled `<tag>^{commit}`.
+- Fix: regen v5 — the seam keyed on `--- a/`, the file list from the `--- a/` lines, the body as one `git diff <pre> <post> -- <files>` per member with the member's own apply-commit as the post-state; the round-trip verified byte-exact after.
+- Location: .opencode/skills/tensorfold-patch-craft/SKILL.md (the release-rebase section, rule 2)
+- Note: the sequential-commit compose (commit each member as it applies) is what made every later member's 3way find its base blobs — the blob-missing fallback failures on the first try were the diagnosis, not a dead end.
+
+## 2026-11-26 — the v1.3.6 rebase: the regen rule is derivable, not hand-rolled; the sync trap; the _m ABI
+
+Three lessons from the twelfth rebase:
+
+- **The regen rule is DERIVED from the proven store, not remembered**: body(M)
+  = `git diff apply(M)^ <compose tip> -- <M's file set>` where the file set
+  comes from the member's `^diff --git` lines (CREATED files included —
+  `--- a/` never matches `--- /dev/null` sections), and the header cut ends
+  BEFORE the `^diff --git` line that immediately precedes the first `^--- a/`
+  (the store's proven structure has the note stack then the body's first
+  `diff --git`+`index`+`--- a/` as one unit). This sitting's four false
+  starts (v6-v9) all guessed the seam or the pre-state; replaying the PROVEN
+  store onto pristine and testing the hypothesis against it settled every
+  choice in one pass. The round-trip gate (`git write-tree` equality vs the
+  compose tip) is the only verdict — byte diffs of patch text mislead.
+- **`git fetch` before every ff-only merge on the head** (this is the third
+  sync burn): the re-cut commit landed locally and pushed, but the head's
+  `git merge --ff-only origin/main` ran WITHOUT a fetch first, merged the
+  stale origin/main, and the compile gate built the OLD body — the errors
+  were byte-identical to attempt 1 and looked like the fix had failed. A
+  failed compile whose error text repeats EXACTLY after a fix landed means
+  check the build's input tree first (`grep` the fix marker in the repo the
+  build reads, not the repo you committed to).
+- **Upstream-new kernels calling fork-replaced helpers need ABI
+  reconciliation, not restore-or-rewrite**: v1.3.6's mixed-width `_m`
+  kernels call upstream's `prompt_gu<K2>` template and the 10-arg
+  `prompt_down<K2>`. The GU template restored verbatim (its body calls
+  `tgateup<TPM, K2>` whose signature our fork ground carries unchanged —
+  check the CALL site, not the name); the DOWN kernels were rewritten in
+  the compose tree's own prelude shape (the fork's ys/yrow ABI, the
+  per-thread rows_sh/smem setup) with the externs growing the fork's
+  args between the upstream ones. The zig caller's tuple is the ABI
+  contract — read it FIRST (`dn ++ .{l.down_k2}` names every arg).
