@@ -70,6 +70,12 @@ the composed tree (branch compose-v135) — the before-state anchors at the
 tree the earlier members left; the round-trip verifies byte-exact
 (pristine v1.3.5 + the store = the composed tree, zero diffs).
 
+
+REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
+the composed tree (branch compose-v136) — the before-state anchors at the
+tree the earlier members left; the round-trip verifies byte-exact
+(pristine v1.3.6 + the store = the composed tree, zero diffs).
+
 diff --git a/zig/kernels/cuda/glm_glue.cu b/zig/kernels/cuda/glm_glue.cu
 index 27ec32eb9..b0183d9d2 100644
 --- a/zig/kernels/cuda/glm_glue.cu
@@ -246,10 +252,10 @@ index 000000000..7378c6ed4
 +}
 +
 diff --git a/zig/src/families/glm/cuda_engine.zig b/zig/src/families/glm/cuda_engine.zig
-index f69e7f72e..08dc31c38 100644
+index edeba2fcf..fe9f9224b 100644
 --- a/zig/src/families/glm/cuda_engine.zig
 +++ b/zig/src/families/glm/cuda_engine.zig
-@@ -76,6 +76,8 @@ pub const Engine = struct {
+@@ -77,6 +77,8 @@ pub const Engine = struct {
      m: fw.Modules,
      stream: cuda.Stream,
      pieces: fw.Pieces,
@@ -258,21 +264,7 @@ index f69e7f72e..08dc31c38 100644
      w: weights.Weights,
      bp: fw.Buffers, // prompt chunks
      pair: ?prompt_pair.Pair = null, // TF_GLM_PROMPT_PAIR: a paired prompt step's second chunk
-@@ -163,10 +165,12 @@ pub const Engine = struct {
-         const joint_experts = pair and o.settings.pair_experts;
-         var pieces = try fw.Pieces.init(d, o.settings.pieces, pair);
-         errdefer pieces.deinit();
-+        var side = try sideStream(d);
-+        errdefer if (side) |*x| freeSide(x);
-         if (o.settings.layers > c.layers) return error.BadLayers;
-         const layers = try a.alloc(u32, if (o.settings.layers > 0) o.settings.layers else c.layers);
-         for (layers, 0..) |*l, i| l.* = @intCast(i);
--        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .mesh = place, .backend = backend, .collective = backend.collective(), .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
-+        e.* = .{ .gpa = gpa, .io = io, .heat_gate = .{ .bands = o.settings.heat, .root = @import("cuda_engine_prof.zig").heatRoot() }, .shared_buf = undefined, .d = d, .c = c, .share = share, .spans = spans, .lib = lib, .comm = comm, .mesh = place, .backend = backend, .collective = backend.collective(), .checkpoint_digest = checkpoint_digest, .settings = o.settings, .m = m, .stream = stream, .pieces = pieces, .side = side, .moe_fuse = envOn("TF_GLM_MOE_FUSE"), .w = undefined, .capacity = o.capacity, .bp = undefined, .bd = undefined, .bm = undefined, .pairs = undefined, .smp = undefined, .prompt_out = undefined, .mtp = o.mtp };
-         const has_packs = o.settings.dense_bits != 16 or o.settings.head_bits != 16;
-         if (has_packs and !o.settings.tiled) return error.PackedNeedsGlmMm;
-         const Tile = struct {
-@@ -202,6 +206,7 @@ pub const Engine = struct {
+@@ -197,6 +199,7 @@ pub const Engine = struct {
          }
          e.bp = if (joint_experts) try fw.Buffers.initPairExperts(d, &e.w, prompt_solo.bufferRows(o.settings.solo), o.capacity) else try fw.Buffers.init(d, &e.w, prompt_solo.bufferRows(o.settings.solo), true, o.capacity);
          errdefer e.bp.deinit();
@@ -280,7 +272,7 @@ index f69e7f72e..08dc31c38 100644
          if (o.settings.solo and rank == 0) std.log.info("glm: prompt passes of {d} rows, {d} while another stream decodes", .{ fw.solo_rows, fw.prefill_rows });
          if (world > 1 and rank == 0) std.log.info("glm: a prompt chunk's exchanges in {d} row pieces", .{o.settings.pieces});
          if (pair) e.pair = try prompt_pair.Pair.init(d, &e.w, &e.bp, &e.pieces, o.capacity, joint_experts);
-@@ -242,12 +247,14 @@ pub const Engine = struct {
+@@ -240,12 +243,14 @@ pub const Engine = struct {
          e.shared_buf = try cuda.DeviceBuffer.alloc(d, 8);
          errdefer e.shared_buf.free();
          errdefer @import("cuda_load_owner.zig").drain(stream, d);
@@ -292,10 +284,10 @@ index f69e7f72e..08dc31c38 100644
      pub fn deinit(e: *Engine) void {
          e.stream.synchronize() catch {};
 +        if (e.side) |x| x.s.synchronize() catch {}; // shared-expert work still in flight reads buffers and weights freed below
+         held_shares.deinit(e);
          e.gpa.free(e.packs.ptrs);
          e.gpa.free(e.packs.bits);
-         if (e.drafter) |dr| dr.deinit();
-@@ -273,6 +280,7 @@ pub const Engine = struct {
+@@ -272,6 +277,7 @@ pub const Engine = struct {
          if (e.l2pf) |*p| p.deinit();
          e.w.deinit();
          e.pieces.deinit();
@@ -303,53 +295,7 @@ index f69e7f72e..08dc31c38 100644
          e.m.deinit();
          e.stream.deinit();
          e.gpa.free(e.spans);
-@@ -290,6 +298,13 @@ pub const Engine = struct {
-         std.log.info("[tensorfold] glm: rank {d} of {d} ({s}) sums through the {t} collective (RoCE gathers {s})", .{ g.rank, g.world, from, e.collective.kind(), if (g.fast != null or g.multi != null) "on" else "off" });
-     }
- 
-+    /// The opt-in numerics flags (cuda_ranks.Numerics), named once at startup.
-+    fn initNumerics(e: *Engine) void {
-+        const n = e.settings.numerics;
-+        if (n.bits() == 0) return;
-+        std.log.warn("opt-in prompt numerics: absorb/expand {s}", .{if (n.absorb_mma) "tensor cores (TF_GLM_ABSORB_MMA)" else "SIMT"});
-+    }
-+
-     pub fn exchange(e: *const Engine) fw.Exchange {
-         return .{ .nccl = .{ .lib = e.lib, .comm = e.comm, .collective = e.collective } };
-     }
-@@ -297,7 +312,30 @@ pub const Engine = struct {
-     pub fn view(e: *Engine, b: *fw.Buffers, out: *[1]fw.Rank) fw.Forward {
-         out.* = .{.{ .w = &e.w, .st = &e.cur.st, .b = b }};
-         const im: ?fw.ImageRows = if (e.images) |v| .{ .v = v, .slot = e.slot } else null;
--        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .pair_experts = e.pair != null and e.settings.pair_experts };
-+        return .{ .d = e.d, .m = &e.m, .stream = e.stream, .ranks = out, .exchange = e.exchange(), .pieces = prompt_pair.piecesOf(e, b), .split = e.settings.split, .ring = e.settings.ring, .kda_wide = e.settings.kda_wide, .absorb_mma = e.settings.numerics.absorb_mma, .images = im, .taps = if (e.drafter) |dr| dr.taps(b == &e.bp) else null, .l2pf = if (e.l2pf) |*p| p else null, .side = if (b == &e.bp) null else e.side, .moe_fuse = e.moe_fuse, .pair_experts = e.pair != null and e.settings.pair_experts };
-+    }
-+
-+    /// An on-by-default switch: off only when `name` is "0".
-+    fn envOn(name: [*:0]const u8) bool {
-+        const v = std.c.getenv(name) orelse return true;
-+        return !std.mem.eql(u8, std.mem.span(v), "0");
-+    }
-+
-+    /// The decode windows' side stream for the MoE shared expert, unless TF_GLM_SHARED_SIDE=0.
-+    fn sideStream(d: *const cuda.Driver) !?@import("cuda_moe.zig").Side {
-+        if (std.c.getenv("TF_GLM_SHARED_SIDE")) |v| if (std.mem.eql(u8, std.mem.span(v), "0")) return null;
-+        var s = try cuda.Stream.init(d, false);
-+        errdefer s.deinit();
-+        var fork = try cuda.Event.init(d, false);
-+        errdefer fork.deinit();
-+        return .{ .s = s, .fork = fork, .join = try cuda.Event.init(d, false) };
-+    }
-+
-+    fn freeSide(x: *@import("cuda_moe.zig").Side) void {
-+        x.s.synchronize() catch {};
-+        x.join.deinit();
-+        x.fork.deinit();
-+        x.s.deinit();
-     }
- 
-     /// Binds slot `slot`'s sequence for the steps that follow, making it (a zeroed state) on first use.
-@@ -445,7 +483,9 @@ pub const Engine = struct {
+@@ -453,7 +459,9 @@ pub const Engine = struct {
          if (last and f.prof != null) std.log.info("glm prof draw rank={d} slot={d} start={d} rows={d} wall_ms={d:.4}", .{ e.share.rank, e.slot, start, rows, prof_mod.Prof.elapsedMs(e.io, draw_started) });
          if (last) try e.holdPrompt(e.bp.fnormed + (rows - 1) * e.c.hidden * 2);
          stamp = prof_mod.span(f.prof, e.stream, .mtp);
@@ -360,7 +306,7 @@ index f69e7f72e..08dc31c38 100644
          stamp.end();
          if (f.prof) |p| p.mark(e.stream, .mtp);
          stamp = prof_mod.span(f.prof, e.stream, .commit);
-@@ -500,7 +540,7 @@ pub const Engine = struct {
+@@ -509,7 +517,7 @@ pub const Engine = struct {
              rows += p.ids.len;
          }
          var one: [1]fw.Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = b, .segs = segs[0..parts.len] }};
@@ -370,10 +316,10 @@ index f69e7f72e..08dc31c38 100644
          if (e.drafter) |dr| for (parts, segs[0..parts.len], 0..) |p, g, i| try dr.noteVerify(p.slot, g.row0, g.rows, g.st.pos, i == 0);
          for (parts, segs[0..parts.len]) |p, g| {
 diff --git a/zig/src/families/glm/cuda_forward.zig b/zig/src/families/glm/cuda_forward.zig
-index fbfef10c6..23209b74a 100644
+index c74ec34b6..963430e91 100644
 --- a/zig/src/families/glm/cuda_forward.zig
 +++ b/zig/src/families/glm/cuda_forward.zig
-@@ -177,6 +177,9 @@ pub const Forward = struct {
+@@ -191,6 +191,9 @@ pub const Forward = struct {
      pair_experts: bool = false, // TF_GLM_PAIR_EXPERTS=1: paired NVFP4 MoE layers route both chunks together
      taps: ?taps_mod.Taps = null, // DFlash2 (--drafter): the tapped layers' rows, after each such layer
      index_split: bool = false, // TF_GLM_INDEX_SPLIT: this prompt chunk's indexer rows split across the ranks (rank 0's choice)
@@ -383,26 +329,8 @@ index fbfef10c6..23209b74a 100644
      l2pf: ?*const l2pf_mod.L2pf = null, // TF_GLM_L2PF: a decode window's sites read their next weights into L2
  
      /// TF_GLM_L2PF on this forward: a decode window of this process's one rank (a prompt chunk reads at full rate).
-@@ -185,7 +188,7 @@ pub const Forward = struct {
-     }
- 
-     pub fn set(f: *const Forward) glue.Set {
--        return .{ .glue = &f.m.glue, .index = if (f.m.index) |*x| x else null, .mm = if (f.m.tiled) &f.m.mm else null, .packs = f.m.packs, .prompt = f.ranks[0].b.prefill, .linear = .{ .lane = &f.m.lane }, .copy_rows = f.m.copy_rows, .dsel = f.m.dsel, .dscore = if (f.m.dscore) |*x| x else null, .mla = if (f.m.mla) |*x| x else null };
-+        return .{ .glue = &f.m.glue, .index = if (f.m.index) |*x| x else null, .mm = if (f.m.tiled) &f.m.mm else null, .packs = f.m.packs, .prompt = f.ranks[0].b.prefill, .linear = .{ .lane = &f.m.lane }, .copy_rows = f.m.copy_rows, .dsel = f.m.dsel, .dscore = if (f.m.dscore) |*x| x else null, .mla = if (f.m.mla) |*x| x else null, .absorb_mma = f.absorb_mma and f.ranks[0].b.prefill };
-     }
- 
-     /// The layer sums' boundary (cuda_boundary.zig): every rank's fp32 partial into every gathered buffer.
-@@ -275,7 +278,7 @@ pub const Forward = struct {
-     }
- 
-     pub fn moeKernels(f: *const Forward) moe.Kernels {
--        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof, .direct = f.m.moe_direct };
-+        return .{ .set = f.set(), .experts = &f.m.experts, .exl3 = &f.m.exl3, .put_slot = f.m.put_slot, .prof = f.prof, .side = if (f.ranks[0].b.prefill) null else f.side, .fuse = f.moe_fuse, .direct = f.m.moe_direct };
-     }
- 
-     pub const Site = enum { mixer, ffn };
 diff --git a/zig/src/families/glm/cuda_forward_pair.zig b/zig/src/families/glm/cuda_forward_pair.zig
-index 0453c2802..4af9226f8 100644
+index 693a52032..9ba1ed89d 100644
 --- a/zig/src/families/glm/cuda_forward_pair.zig
 +++ b/zig/src/families/glm/cuda_forward_pair.zig
 @@ -72,14 +72,14 @@ fn pairedMoe(a: *const Forward, b: *const Forward, m: moe.Layer, j: usize, ra: u
@@ -423,7 +351,7 @@ index 0453c2802..4af9226f8 100644
          try experts.runPair(k.experts, a.stream, m.routed, plan, ar.b.moe.pick, ar.b.normed, br.b.normed, d, ra, rb, ar.b.moe.eact, br.b.moe.eact, ar.b.moe.ey, br.b.moe.ey, @intCast(m.count));
      }
 diff --git a/zig/src/families/glm/cuda_glue.zig b/zig/src/families/glm/cuda_glue.zig
-index 597e220cf..5f6de74ae 100644
+index ae2857e02..307d42a9f 100644
 --- a/zig/src/families/glm/cuda_glue.zig
 +++ b/zig/src/families/glm/cuda_glue.zig
 @@ -7,6 +7,7 @@ const mm_mod = @import("cuda_mm.zig");
@@ -442,7 +370,7 @@ index 597e220cf..5f6de74ae 100644
      /// A decode window's index scores on glm_index_scores (TF_GLM_DSCORES; null keeps tf_glm_scores).
      dscore: ?*const index_mod.Kernels = null,
      /// Full GLM-5.3's roped latent rows (576): cuda.mla's absorb, rope and 16-head chunk tiles; GLM-5.3-Flash: none.
-@@ -49,6 +51,7 @@ pub const Kernels = struct {
+@@ -54,6 +56,7 @@ pub const Kernels = struct {
      swiglu_64: cuda.Function,
      group_sums: cuda.Function,
      topk: cuda.Function,
@@ -450,7 +378,7 @@ index 597e220cf..5f6de74ae 100644
      router_tile: cuda.Function,
      hc_partial: cuda.Function,
      hc_partial8: cuda.Function,
-@@ -58,6 +61,7 @@ pub const Kernels = struct {
+@@ -63,6 +66,7 @@ pub const Kernels = struct {
      expand_v: cuda.Function,
      lat_write: cuda.Function,
      lat_write_fp8: cuda.Function,
@@ -458,7 +386,7 @@ index 597e220cf..5f6de74ae 100644
      index_write: cuda.Function,
      pool_keys: cuda.Function,
      select_rows: cuda.Function,
-@@ -76,8 +80,12 @@ pub const Kernels = struct {
+@@ -81,8 +85,12 @@ pub const Kernels = struct {
      chunks_32: cuda.Function,
      chunks_16_fp8: cuda.Function,
      chunks_32_fp8: cuda.Function,
@@ -471,7 +399,7 @@ index 597e220cf..5f6de74ae 100644
  
      pub fn load(m: cuda.Module) !Kernels {
          var k: Kernels = undefined;
-@@ -88,6 +96,10 @@ pub const Kernels = struct {
+@@ -93,6 +101,10 @@ pub const Kernels = struct {
          try k.chunks_32.allowDynamicShared(chunksSmem(32));
          try k.chunks_16_fp8.allowDynamicShared(chunksSmem(16));
          try k.chunks_32_fp8.allowDynamicShared(chunksSmem(32));
@@ -482,7 +410,7 @@ index 597e220cf..5f6de74ae 100644
          return k;
      }
  };
-@@ -201,6 +213,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,
+@@ -208,6 +220,19 @@ pub fn select(set: Set, stream: cuda.Stream, logits: u64, bias: u64, pick: u64,
      try cuda_pdl.launch(set.glue.topk, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 32 } }, stream, &a);
  }
  
@@ -502,7 +430,7 @@ index 597e220cf..5f6de74ae 100644
  /// glue.combine: out [rows][d] fp32 = sum over slots in order of wts[r][k] y[r][k] (y fp32 in decode, bf16 in prefill).
  pub fn combine(set: Set, stream: cuda.Stream, y: u64, y_f32: bool, wts: u64, out: u64, rows: usize, d: usize, slots: usize) !void {
      var a: cuda.Args = .{};
-@@ -252,6 +277,8 @@ pub fn hcPost(set: Set, stream: cuda.Stream, x: u64, xout: u64, g: u64, post: u6
+@@ -259,6 +284,8 @@ pub fn hcPost(set: Set, stream: cuda.Stream, x: u64, xout: u64, g: u64, post: u6
      try rows8Launch(set.glue.hc_post, stream, &a, rows, d, .{ x, xout, g });
  }
  
@@ -633,10 +561,10 @@ index c79cc58f2..d9ade417b 100644
  
  /// latent.sparse_attention: rows with counts > 0 over their selected tokens (i32 [rows][w]); others left alone.
 diff --git a/zig/src/families/glm/cuda_prompts.zig b/zig/src/families/glm/cuda_prompts.zig
-index 6b04b3155..0541d0a24 100644
+index 44aa3696b..145bbc6bb 100644
 --- a/zig/src/families/glm/cuda_prompts.zig
 +++ b/zig/src/families/glm/cuda_prompts.zig
-@@ -38,7 +38,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
+@@ -39,7 +39,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
      }
      try e.gate(null);
      var one: [1]Rank = .{.{ .w = &e.w, .st = segs[0].st, .b = &e.bp, .segs = segs[0..parts.len] }};
@@ -645,7 +573,7 @@ index 6b04b3155..0541d0a24 100644
      try f.run(@ptrCast(ids[0..rows]));
      if (e.drafter) |dr| for (parts, segs[0..parts.len]) |p, g|
          try dr.promptSegment(e, p.slot, 0, g.rows, p.ids.len, g.row0);
-@@ -53,7 +53,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
+@@ -54,7 +54,7 @@ pub fn pass(e: anytype, parts: []const engine.Prompt, firsts: []u32, comptime Fo
      for (parts, segs[0..parts.len]) |p, g| {
          one[0] = .{ .w = &e.w, .st = g.st, .b = &e.bp };
          // decode._absorb_rows; the head's pass writes final-norm row 0, which the hold rows above already copied
@@ -655,10 +583,10 @@ index 6b04b3155..0541d0a24 100644
              try g.st.setMtpLen(e.stream, g.st.mtp_len + g.rows - 1);
          }
 diff --git a/zig/src/families/glm/cuda_ranks.zig b/zig/src/families/glm/cuda_ranks.zig
-index 1d0425452..e19d0dc26 100644
+index 85d4f590d..887ba837b 100644
 --- a/zig/src/families/glm/cuda_ranks.zig
 +++ b/zig/src/families/glm/cuda_ranks.zig
-@@ -25,6 +25,7 @@ pub const Settings = struct {
+@@ -26,6 +26,7 @@ pub const Settings = struct {
      layers: u32 = 0, // TF_GLM_LAYERS: the first this many layers only, a thin model for one-GPU checks (0: all)
      dense_bits: u8 = 16, // TF_GLM_DENSE_BITS: the dense linears packed at load to 4, 6 or 8 bits (16: bf16)
      head_bits: u8 = 16, // TF_GLM_HEAD_BITS: the head, likewise
@@ -666,7 +594,7 @@ index 1d0425452..e19d0dc26 100644
      roce_multi: bool = false, // TF_GLM_ROCE_MULTI: 1 (three ranks or more: small all-gathers on fabric/tp's multirank RoCE beside NCCL) or 0
      roce_wide: bool = false, // TF_ROCE=1: at three ranks or more the RoCE gather and the drafter MLP split (two ranks: always)
      kv_host: u8 = 0, // TF_GLM_KV_HOST=1: KV pages in host memory (1); with TF_GLM_KV_HOST_SHARED=1, one copy a host (2)
-@@ -151,6 +152,12 @@ pub const Settings = struct {
+@@ -158,6 +159,12 @@ pub const Settings = struct {
                  },
              };
          };
@@ -679,7 +607,7 @@ index 1d0425452..e19d0dc26 100644
          s.heat = heat.bandsFrom(get("TF_HEAT_HIGH"), get("TF_HEAT_LOW")) catch {
              problem.* = "TF_HEAT_HIGH and TF_HEAT_LOW: both or neither, in degrees, with low at or under high";
              return error.BadSetting;
-@@ -203,6 +210,16 @@ pub const Settings = struct {
+@@ -210,6 +217,16 @@ pub const Settings = struct {
      }
  };
  
@@ -696,24 +624,7 @@ index 1d0425452..e19d0dc26 100644
  /// The most ranks a world holds: rank 0's greedy pick gathers every rank's top-1 into one host array of this size.
  pub const max_world = 16;
  
-@@ -230,7 +247,7 @@ pub fn toolPieces(s: *Settings, comptime get: *const fn ([:0]const u8) ?[]const
- 
- /// What every rank must agree on, as bytes the communicator carries.
- pub const Fingerprint = extern struct {
--    layout: u32 = 23, // this struct's version (22, plus pair_experts)
-+    layout: u32 = 23, // this struct's version (21, main's roce_wide, plus numerics; 22, the draft_split pack field; 23, pair_experts)
-     world: u32,
-     rank: u32,
-     kv8: u32 = 0,
-@@ -258,6 +275,7 @@ pub const Fingerprint = extern struct {
-     solo: u32 = 0, // TF_GLM_CHUNK_SOLO: rank 0's solo passes need the wider prompt buffers on every rank
-     l2pf: [4]u32 = @splat(0), // TF_GLM_L2PF's words: every rank prefetches alike, so none waits on a slower one's windows
-     bits: u32 = 16 << 8 | 16, // TF_GLM_DENSE_BITS << 8 | TF_GLM_HEAD_BITS: every rank's matmuls read the same codes
-+    numerics: u32 = 0, // Settings.numerics: every rank's prompt kernels round alike
-     capacity: u64, // tokens a sequence holds
-     heat_high: f64, // the heat bands in degrees (0 and 0: off): every rank must wait alike
-     heat_low: f64,
-@@ -295,6 +313,7 @@ pub const Fingerprint = extern struct {
+@@ -304,6 +321,7 @@ pub const Fingerprint = extern struct {
          solo,
          l2pf,
          bits,
@@ -721,23 +632,7 @@ index 1d0425452..e19d0dc26 100644
          capacity,
          heat_high,
          heat_low,
-@@ -338,6 +357,7 @@ pub const Fingerprint = extern struct {
-             .solo = @intFromBool(s.solo),
-             .l2pf = s.l2pf.words(),
-             .bits = @as(u32, s.dense_bits) << 8 | s.head_bits,
-+            .numerics = s.numerics.bits(),
-             .capacity = capacity,
-             .heat_high = if (s.heat) |b| b.high_c else 0,
-             .heat_low = if (s.heat) |b| b.low_c else 0,
-@@ -383,6 +403,7 @@ pub fn mismatch(all: []const Fingerprint) ?Mismatch {
-             "solo",
-             "l2pf",
-             "bits",
-+            "numerics",
-             "capacity",
-             "heat_high",
-             "heat_low",
-@@ -510,6 +531,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
+@@ -522,6 +540,7 @@ fn explain(f: Fingerprint.Field) []const u8 {
          .solo => "TF_GLM_CHUNK_SOLO",
          .l2pf => "TF_GLM_L2PF, _MB, _CTAS or _PACE_GBPS",
          .bits => "TF_GLM_DENSE_BITS or TF_GLM_HEAD_BITS",
@@ -745,16 +640,3 @@ index 1d0425452..e19d0dc26 100644
          .capacity => "the sequence capacity (the context)",
          .heat_high => "TF_HEAT_HIGH",
          .heat_low => "TF_HEAT_LOW",
-diff --git a/zig/src/families/glm/cuda_ranks_test.zig b/zig/src/families/glm/cuda_ranks_test.zig
-index 739f8d263..ce1ffa712 100644
---- a/zig/src/families/glm/cuda_ranks_test.zig
-+++ b/zig/src/families/glm/cuda_ranks_test.zig
-@@ -190,7 +190,7 @@ test "every media limit is part of the ranks' agreement" {
- test "every scheduling and identity field that differs stops the ranks" {
-     const zero = Fingerprint.of(2, 0, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
-     const one = Fingerprint.of(2, 1, .{}, 8192, true, @splat(0), @splat(0), hashBytes("/same"));
--    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "roce_wide", "draft_split", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
-+    inline for (.{ "layout", "world", "rank", "pages", "split", "kda_wide", "kda_pad", "kv_live_half", "pieces", "solo", "pair", "layers", "mtp", "vision", "video_tokens", "max_images", "max_videos", "max_frames", "roce_multi", "roce_wide", "draft_split", "numerics", "kv_host", "capacity", "heat_high", "heat_low", "kv_host_gib" }) |name| {
-         var all = [_]Fingerprint{ zero, one };
-         @field(all[1], name) += 1;
-         try std.testing.expectEqual(@field(Fingerprint.Field, name), mismatch(&all).?.field);

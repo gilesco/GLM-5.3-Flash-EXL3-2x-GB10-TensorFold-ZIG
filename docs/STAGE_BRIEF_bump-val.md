@@ -1,87 +1,84 @@
-# STAGE BRIEF — the v1.3.5 bump window (pre-staged; launches when the
-# release watch fires)
+# STAGE BRIEF — the v1.3.6 bump window (updated at the fire, round 162)
 
-## The trigger
+## The trigger — fired: TensorFold v1.3.6 (f56b1420f), one day after v1.3.5
 
-`scripts/upstream-release-watch.sh` fires on a tag newer than v1.3.4
-(main's Unreleased section is carrying the candidates; 771 commits had
-climbed by 2026-11-24, the daily-release cadence through 1.3.0→1.3.4
-preceded this arc). On the watch's fire: this brief governs the bump
-window. Until then: no launch — every candidate knob is main-only, not
-in the v1.3.4 pin (verified 2026-11-24: `TF_GLM_WIDE_EXPERT_TILE` is in
-main's cuda_experts.zig + the env registry, absent from v1.3.4's tree;
-#2279's GLM graphs and #4701's pipelined prompt experts are likewise
-Unreleased).
+## What v1.3.6 actually carries (read from the changelog + the tree,
+## not the poke's template text)
 
-## The value-if-yes — what the bump carries FREE (no port work)
+1. **`TF_GLM_KEEP_SEQS=1`** — a released stream's sequence stays on its
+   slot: the next request starts with no allocation, fill or free
+   (#5122's test receipt upstream). The slot-reuse lever; default OFF.
+   Value question: the steady-state decode row (the anchors' 77.3) and
+   the resume/warm path. Candidate arm AFTER the bump qualifies.
+2. **The mHC pre-side kernels from `common/`** (`tf_glm_hc_partial`,
+   `tf_glm_hc_partial8`, `tf_glm_hc_finish`, `tf_glm_hc_finish_f32w`)
+   — refactored bodies of the kernels our ncu census measured at
+   p50 104-115µs. Perf-shape unknown; no knob. Rides the bump.
+3. **The mla 256-wide v-heads + sink-merge kernels**
+   (`tf_mla_expand_v_256`, `tf_mla_merge`) — attention-side kernels,
+   EXL3-neutral on our shape. Rides the bump.
+4. **`cuda_engine.zig` split to `cuda_engine_shares`** — the engine
+   refactor; the file our 001/003 hand-merges live in got reshuffled
+   (this is the compose's collision surface, the hand-merge work).
+5. **Input checks: GLM on CUDA refuses token IDs outside its embedding
+   on every path** — validation hardening, no perf claim.
+6. **The fingerprint layout moves 23 → 24** (keep_seqs) — every rank
+   must carry the same build; both ranks rebuild in the window.
 
-1. **`TF_GLM_WIDE_EXPERT_TILE` (#4565, MERGED into main)** — routed-
-   expert down for decode windows wider than 16 rows under the 64-pair
-   factored tile that matches gate-up; bit-equal by construction; a
-   DFlash2 block-16 + pending row = 17 rows engages it on every drafted
-   window. The value question: the decode row (the anchors' 77.3) — the
-   knob's own A/B (kill under +1%) is still to run upstream; OUR window
-   reads it as the candidate arm.
-2. **#4701's pipelined prompt experts (when it lands)** — the upstream
-   mainline of our own 013-zprompt: replaces the hand-port at the bump
-   (one fewer member to re-anchor every release) plus the newer SM121
-   pipelining (their isolated gu −24% at 4,096 rows).
-3. **The resume bundle** — #1411's rows store (`--learn-conversations`:
-   states read back after eviction/restart instead of a full re-prefill),
-   #4694's cancel-keeps-prefix, #4856's flush retain count. Value gate:
-   the resume rows, not the anchors' decode/prefill.
-4. **Watch free-riders**: #4516's DFlash2 drafter graphs + QL span are
-   MERGED for the drafter side (`TF_DFLASH_GRAPH=1`,
-   `TF_DFLASH_QL_SPAN=1`) — our decode is DFlash2-drafted, so these
-   compose with the adopted PDL on the target side. GLM- receipts
-   pending; they are candidate arms if they land GLM-side.
+NOT carried (the poke's template text was stale — desk-killed):
+#2843's EXL3 decode-grid fix, #2856's batched MTP, #3064 — none appear
+in v1.3.6's changelog (grep count 0). The fp8-pages marriage holds:
+the Fp8OnPages refusal is intact in v1.3.6's tree (3 sites).
+
+## The value-if-yes
+
+- The bump keeps the line current (the eleventh bump's value: upstream
+  correctness + the kernels) with the marriage intact and the witness
+  unmoved — the value is the release itself plus the keep_seqs /
+  mHC / mla-256 candidates now AVAILABLE on the qualified base.
+- The keep-seqs candidate arm (the release's own lever) rides AFTER
+  the bump qualifies — its own window, its own value read: the
+  steady-state decode row and the resume path.
 
 ## The window shape (the bump protocol, the two-gate staging rule)
 
-1. The watch fires → the tag's commit lands in `scripts/local.sh`
-   TF_COMMIT (gate 2) while the store regenerates onto the release
-   (gate 1) — the tensorfold-patch-craft discipline: the composed tree,
-   the byte-exact round-trip, the compile gate.
+1. The tag's commit lands in `scripts/local.sh` TF_COMMIT (gate 2)
+   while the store regenerates onto the release (gate 1) — the
+   tensorfold-patch-craft discipline: the composed tree, the
+   byte-exact round-trip (PROVEN: compose-v136 tree == pristine
+   v1.3.6 + the store, zero diffs), the compile gate on the head.
 2. The bumpval battery (the standing one) qualifies: the witness
-   `80cc3802…` IDENTICAL across the bump, the §2 gates, hardmode on the
-   3.1.0 frame, the vision suite, the walls, the value bracket.
-3. **The wide-tile candidate arm** rides the same window: after the
-   qualified base serves, one order-matched A/B
-   (default → `TF_GLM_WIDE_EXPERT_TILE=1` → default) with the decode
-   cells as the value read. The witness must hold on all three arms.
+   `80cc3802…` IDENTICAL across the bump, the §2 gates, hardmode on
+   the 3.1.0 frame, the vision suite, the walls, the value bracket.
+3. No candidate arms ride THIS window (the release's own lever,
+   keep_seqs, is default-off and takes its own window after — the
+   fewest-questions-per-window rule; the v1.3.5-carried wide-tile and
+   DFlash2-graph arms keep their queue places).
 4. Promotion per the round-157/159 shape: the pin moves, production
    serves, the state docs same-sitting.
 
 ## The kill criteria
 
-- ANY gate FAIL holds the pin at v1.3.4 until understood (the standing
-  bump rule).
-- The wide-tile arm's witness moves → the knob stays default-off; the
-  defect question opens with the receipt.
-- The wide-tile cells in-band → the knob stays default-off (the value
-  does not transfer at our shape; the bump itself stands or falls on
-  its own gates regardless).
+- ANY gate FAIL holds the pin at v1.3.5 until understood (the
+  standing bump rule; the one-day cadence makes holding cheap).
+- The composed tree refuses to compile on the head's build → the
+  bump holds until the member is fixed (the compile gate is the
+  pre-window witness; a compile failure voids a ~25-min window).
+- The keep-seqs arm is NOT in this window; a keep-seqs failure
+  cannot hold the bump.
 
 ## The prior instruments
 
-- The bump protocol: the v134val battery (campaign-20261122-232612),
-  the tenth bump — the witness discipline and the value bracket.
-- The candidate-arm shape: the indexsplitval window
-  (campaign-20261124-191142) — the three-arm order-matched bracket with
-  the value cells named up front. THE NAMED CELLS FOR THIS BRIEF: the
-  tg cells at depth (a DFlash2 block+pending row is 17 rows — the
-  wide-tile mechanism engages on drafted windows; the d0/d4096/d8192
-  tg cells are the value cells, the pp cells expected flat).
-- The composition lesson: the fp8-pages marriage — the bump's free
-  riders are adopted on the qualified base, never bundled blind.
+- The bump protocol: the v135val battery (campaign-20261125-081420),
+  the eleventh bump — the witness discipline and the value bracket.
+- The window shape: the v134val staging commit (cf5406dc) — the
+  v136val phase extracts from there, reheadered to v1.3.6.
 
-## The desk check before the launch (when the watch fires)
+## The desk check before the launch (all four must be green)
 
-- The two staging gates: the store regen AND `scripts/local.sh`
-  TF_COMMIT (the round-155/158 lesson: the stale head pin burned two
-  windows).
-- The new knobs reach the binary: grep the serve line for
-  `TF_GLM_WIDE_EXPERT_TILE` on the candidate arm; the env forwarding
-  prefix list covers `TF_GLM_*`.
+- The two staging gates: the store regen (DONE — the byte-exact
+  round-trip) AND `scripts/local.sh` TF_COMMIT → f56b1420f.
+- The compile gate on the head (the docker build's compile stage)
+  BEFORE the window: a failed compile is a voided window.
 - DRY_RUN green before the real launch; the continuation scanner on
   any new phase code; the launch is the last action of the sitting.
