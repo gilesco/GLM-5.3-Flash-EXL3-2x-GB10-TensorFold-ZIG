@@ -63,8 +63,14 @@ the composed tree (branch compose-v136) — the before-state anchors at the
 tree the earlier members left; the round-trip verifies byte-exact
 (pristine v1.3.6 + the store = the composed tree, zero diffs).
 
+
+REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
+the composed tree (branch compose-v136) — the before-state anchors at the
+tree the earlier members left; the round-trip verifies byte-exact
+(pristine v1.3.6 + the store = the composed tree, zero diffs).
+
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
-index 24736efa7..c4349ad5c 100644
+index 24736efa7..84a2faedc 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
 +++ b/zig/kernels/cuda/exl3_experts.cu
 @@ -7,6 +7,7 @@
@@ -254,7 +260,7 @@ index 24736efa7..c4349ad5c 100644
          const uint64_t* __restrict__ Tg, const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts,
          const int* __restrict__ members, const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d,
          half* __restrict__ xd, int K, int N, int xdiv, float limit, int act_mode, int skip) {
-@@ -294,34 +300,77 @@ __device__ __forceinline__ void prompt_gu(const half* __restrict__ Xg, const hal
+@@ -294,34 +300,95 @@ __device__ __forceinline__ void prompt_gu(const half* __restrict__ Xg, const hal
      const int e = items[3 * item];
      if (e == skip) return;
  
@@ -263,17 +269,17 @@ index 24736efa7..c4349ad5c 100644
      __shared__ int rows_sh[TPM];
 -    if (xdiv > 1) tgateup<TPM, K2>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
 -    else tgateup<2 * TPM, K2>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
-+    if (xdiv > 1) tgateup<TPM, 8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
-+    else tgateup<2 * TPM, 8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
- }
- 
+-}
+-
 -extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu(const half* __restrict__ Xg, const half* __restrict__ Xu,
 -        const uint64_t* __restrict__ Tg, const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts,
 -        const int* __restrict__ members, const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d,
 -        half* __restrict__ xd, int K, int N, int xdiv, float limit, int act_mode, int skip) {
 -    prompt_gu<8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, skip);
--}
--
++    if (xdiv > 1) tgateup<TPM, 8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
++    else tgateup<2 * TPM, 8>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
+ }
+ 
 -// The same at 3 bits: gate and up both 3-bit mcg (tile_words<6>: 96-byte tiles), the arguments tf_exl3_prompt_gu's.
 +// The same at 3 bits (upstream #3249's k6): the fork's ground at K2 6, the arguments tf_exl3_prompt_gu's.
  extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu_k6(const half* __restrict__ Xg, const half* __restrict__ Xu,
@@ -338,28 +344,10 @@ index 24736efa7..c4349ad5c 100644
 +
 +// Block (256 model-width columns, item): y[row][slot][:] = the down epilogue of the item's pairs (this rank's share).
 +extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
-         const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
--        float* __restrict__ y, int K, int D, int skip) {
-+        float* __restrict__ y, int K, int D, int skip, int ys, int yrow) {
- 
--    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<K2>()];
-+    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<8>()];
-     __shared__ int rows_sh[TPM];
-     const int cb = blockIdx.x, item = blockIdx.y;
-     if (item >= counts[0]) return;
-@@ -331,12 +380,58 @@ __device__ __forceinline__ void prompt_down(const half* __restrict__ Xd, const u
-     if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
-     __syncthreads();
-     const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
-+    prompt_down<8>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
-+}
-+
-+// The same at 3 bits (upstream #3249's k6), the arguments tf_exl3_prompt_down's.
-+extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_k6(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
 +        const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
 +        float* __restrict__ y, int K, int D, int skip, int ys, int yrow) {
 +
-+    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<6>()];
++    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<8>()];
 +    __shared__ int rows_sh[TPM];
 +    const int cb = blockIdx.x, item = blockIdx.y;
 +    if (item >= counts[0]) return;
@@ -369,6 +357,24 @@ index 24736efa7..c4349ad5c 100644
 +    if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
 +    __syncthreads();
 +    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
++    prompt_down<8>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
++}
++
++// The same at 3 bits (upstream #3249's k6), the arguments tf_exl3_prompt_down's.
++extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_k6(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
+         const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
+-        float* __restrict__ y, int K, int D, int skip) {
++        float* __restrict__ y, int K, int D, int skip, int ys, int yrow) {
+ 
+-    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<K2>()];
++    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<6>()];
+     __shared__ int rows_sh[TPM];
+     const int cb = blockIdx.x, item = blockIdx.y;
+     if (item >= counts[0]) return;
+@@ -331,12 +398,40 @@ __device__ __forceinline__ void prompt_down(const half* __restrict__ Xd, const u
+     if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
+     __syncthreads();
+     const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
 +    prompt_down<6>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
 +}
 +
@@ -408,7 +414,7 @@ index 24736efa7..c4349ad5c 100644
          __syncthreads();
          for (int i = warp; i < TPH && hf * TPH + i < cnt; i += TNW) {
              const int p = rows_sh[hf * TPH + i];
-@@ -355,19 +450,6 @@ __device__ __forceinline__ void prompt_down(const half* __restrict__ Xd, const u
+@@ -355,17 +450,25 @@ __device__ __forceinline__ void prompt_down(const half* __restrict__ Xd, const u
      }
  }
  
@@ -417,17 +423,96 @@ index 24736efa7..c4349ad5c 100644
 -        float* __restrict__ y, int K, int D, int skip) {
 -    prompt_down<8>(Xd, Td, items, counts, members, svh_d, y, K, D, skip);
 -}
--
++// The mixed kernels' widths template: gate and up of a layer's K2-bit experts, the
++// tf_exl3_prompt_gu body with the fork's tgateup ground (the K2's tiles/lanes are
++// tgateup's own template work; the skip guard is the caller's — the _m kernels call
++// this after their other_width gate).
++template <int K2>
++__device__ __forceinline__ void prompt_gu(const half* __restrict__ Xg, const half* __restrict__ Xu,
++        const uint64_t* __restrict__ Tg, const uint64_t* __restrict__ Tu, const int* __restrict__ items, const int* __restrict__ counts,
++        const int* __restrict__ members, const half* __restrict__ svh_g, const half* __restrict__ svh_u, const half* __restrict__ suh_d,
++        half* __restrict__ xd, int K, int N, int xdiv, float limit, int act_mode, int skip) {
+ 
 -// The same at 3 bits (3-bit mcg down), the arguments tf_exl3_prompt_down's.
 -extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_k6(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
 -        const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
 -        float* __restrict__ y, int K, int D, int skip) {
 -    prompt_down<6>(Xd, Td, items, counts, members, svh_d, y, K, D, skip);
--}
--
++    const int item = blockIdx.y;
++    if (item >= counts[0]) return;
++    const int e = items[3 * item];
++    if (e == skip) return;
++
++    __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<K2>()];   // one buffer for either instantiation
++    __shared__ int rows_sh[TPM];
++    if (xdiv > 1) tgateup<TPM, K2>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, xdiv, limit, act_mode, smem_raw, rows_sh);
++    else tgateup<2 * TPM, K2>(Xg, Xu, Tg, Tu, items, counts, members, svh_g, svh_u, suh_d, xd, K, N, 1, limit, act_mode, smem_raw, rows_sh);
+ }
+ 
  // Mixed widths (a K2 an expert: full GLM-5.3's EXL3): one launch a width over every item, the others' items left alone.
- template <int K2>
- __device__ __forceinline__ bool other_width(const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ k2, int skip) {
+@@ -404,20 +507,56 @@ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_gu_m8(const
+ // Down of the layer's 2-bit experts (tf_exl3_prompt_down's arguments, then each expert's width).
+ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_m4(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
+         const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
+-        float* __restrict__ y, int K, int D, int skip, const int* __restrict__ k2) {
+-    if (!other_width<4>(items, counts, k2, skip)) prompt_down<4>(Xd, Td, items, counts, members, svh_d, y, K, D, skip);
++        float* __restrict__ y, int K, int D, int skip, int ys, int yrow, const int* __restrict__ k2) {
++    if (!other_width<4>(items, counts, k2, skip)) {
++        __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<4>()];
++        __shared__ int rows_sh[TPM];
++        const int cb = blockIdx.x, item = blockIdx.y;
++        if (item >= counts[0]) return;
++        const int e = items[3 * item];
++        if (e == skip) return;
++        const int first = items[3 * item + 1], cnt = items[3 * item + 2];
++        if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
++        __syncthreads();
++        const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
++        prompt_down<4>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
++    }
+ }
+ 
+ // Down of the layer's 3-bit experts (tf_exl3_prompt_down's arguments, then each expert's width).
+ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_m6(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
+         const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
+-        float* __restrict__ y, int K, int D, int skip, const int* __restrict__ k2) {
+-    if (!other_width<6>(items, counts, k2, skip)) prompt_down<6>(Xd, Td, items, counts, members, svh_d, y, K, D, skip);
++        float* __restrict__ y, int K, int D, int skip, int ys, int yrow, const int* __restrict__ k2) {
++    if (!other_width<6>(items, counts, k2, skip)) {
++        __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<6>()];
++        __shared__ int rows_sh[TPM];
++        const int cb = blockIdx.x, item = blockIdx.y;
++        if (item >= counts[0]) return;
++        const int e = items[3 * item];
++        if (e == skip) return;
++        const int first = items[3 * item + 1], cnt = items[3 * item + 2];
++        if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
++        __syncthreads();
++        const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
++        prompt_down<6>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
++    }
+ }
+ 
+ // Down of the layer's 4-bit experts (tf_exl3_prompt_down's arguments, then each expert's width).
+ extern "C" __global__ void __launch_bounds__(256, 2) tf_exl3_prompt_down_m8(const half* __restrict__ Xd, const uint64_t* __restrict__ Td,
+         const int* __restrict__ items, const int* __restrict__ counts, const int* __restrict__ members, const half* __restrict__ svh_d,
+-        float* __restrict__ y, int K, int D, int skip, const int* __restrict__ k2) {
+-    if (!other_width<8>(items, counts, k2, skip)) prompt_down<8>(Xd, Td, items, counts, members, svh_d, y, K, D, skip);
++        float* __restrict__ y, int K, int D, int skip, int ys, int yrow, const int* __restrict__ k2) {
++    if (!other_width<8>(items, counts, k2, skip)) {
++        __shared__ __align__(16) unsigned char smem_raw[tsmem_bytes<8>()];
++        __shared__ int rows_sh[TPM];
++        const int cb = blockIdx.x, item = blockIdx.y;
++        if (item >= counts[0]) return;
++        const int e = items[3 * item];
++        if (e == skip) return;
++        const int first = items[3 * item + 1], cnt = items[3 * item + 2];
++        if (threadIdx.x < TPM) rows_sh[threadIdx.x] = (int)threadIdx.x < cnt ? members[first + threadIdx.x] : -1;
++        __syncthreads();
++        const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
++        prompt_down<8>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
++    }
+ }
 diff --git a/zig/src/cuda/exl3_prompt.zig b/zig/src/cuda/exl3_prompt.zig
 index a9733bf04..c9540dd69 100644
 --- a/zig/src/cuda/exl3_prompt.zig
