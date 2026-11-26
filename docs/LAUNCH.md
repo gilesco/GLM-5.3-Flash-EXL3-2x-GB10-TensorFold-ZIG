@@ -4908,3 +4908,103 @@ retired with its receipt).
 wide-tile decode A/B and the DFlash2-drafter-graphs A/B (both knobs
 in the serving engine now, default-off; each its own window per the
 brief). The loop waits on the next directive.
+
+## (round 162) THE TWELFTH BUMP STAGED: v1.3.6 REBASED BYTE-EXACT, THE
+## COMPILE GATE PRE-WINDOW, THE v136val PHASE READY (2026-11-26)
+
+**The release read** (the notes, not the poke's template text): v1.3.6
+(f56b1420f, one day after v1.3.5) carries `TF_GLM_KEEP_SEQS=1` — a
+released stream's sequence stays on its slot, the next request starts
+with no allocation, fill or free (#5122's test receipt upstream); the
+fingerprint layout moves 23 → 24 (keep_seqs beside
+numerics/draft_split/pair_experts). The mHC pre-side kernels
+(`tf_glm_hc_partial`, `_partial8`, `_finish`, `_finish_f32w`) moved
+their bodies to `common/`; the mla image gains 256-wide v heads
+(`tf_mla_expand_v_256`) and a sink-counting merge; `cuda_engine.zig`
+split to `cuda_engine_shares`; GLM on CUDA refuses out-of-embedding
+token IDs on every path. NOT carried (the poke's template text was
+stale — desk-killed against the actual changelog, grep count 0):
+#2843's EXL3 decode-grid fix, #2856's batched MTP, #3064's paged FP8
+KV (the fp8-pages marriage governs; the Fp8OnPages refusal is intact
+in v1.3.6's tree — the marriage holds through the thirteenth gate).
+The keep-seqs lever is a candidate arm AFTER the bump qualifies (its
+own window; the value read: the steady-state decode row, the resume
+path) — not bundled into the bump window (the fewest-questions rule).
+
+**The compose** (the scratch hosts were wiped between sittings; the
+store and the round-trip discipline rebuilt everything): the 17-member
+store applied sequentially onto pristine v1.3.6 in the compose branch,
+commit per member. 20 reject hunks in 10 files hand-merged
+(fork-primary): 001's fingerprint `numerics` field beside the
+keep_seqs/layout-24 lines and the engine's
+initNumerics/envOn/sideStream/freeSide fns beside the keep_seqs line;
+002's TF_GLM_EXL3P resolve branch beside the mixed-width m-kernels;
+003's pageBytesOf/pageCacheBytes beside the Shape refactor and the
+onPages kv8 layout beside the cacheAt refactor; 009's Side/Kernels
+beside the tfq3 field, v1.3.6's `shared()` replaced by the fork's
+(the slot param), the `forks()` helper defined.
+
+**The regen rule derived this sitting** (the v1.3.5 store's shape,
+reversed-engineered by replaying the proven store onto pristine
+v1.3.5 and comparing): body(M) = diff(apply(M)^, compose tip) scoped
+to M's OWN file set taken from the member's `^diff --git` lines —
+created files included (`--- a/` misses the `--- /dev/null` sections);
+the header cut BEFORE the `^diff --git` line that immediately precedes
+the first `^--- a/` (the seam keys on `--- a/`, never on `diff
+--git`). Every member's file set is disjoint across the store
+(verified), so the scoped diff carries exactly M's content — its
+apply hunks, its reject fixes, and late fixes folded into the compose
+branch before the regen. The round-trip PROVEN twice: pristine
+v1.3.6 + the store applied in stack order = the composed tree, ZERO
+diffs (git write-tree equality), from the regen dir AND from the
+store path itself.
+
+**The compile gate caught a real defect pre-window** (the first
+prepare failed; the gate doing its job): v1.3.6's new mixed-width
+`_m` kernels (`tf_exl3_prompt_gu_m4/_m6/_m8`,
+`tf_exl3_prompt_down_m*`) call upstream's `prompt_gu<K2>` template
+and the 10-arg `prompt_down<K2>` form — helpers our fork-ground rework
+replaced. The fix in the compose: the `prompt_gu<K2>` template
+restored verbatim (its body calls `tgateup<TPM, K2>`, whose signature
+the composed tree carries unchanged — the K2 tiles/lanes are the
+template's own work); the down `_m` kernels inline the composed
+tree's own prelude (the fork's `ys`/`yrow` slot-row ABI, the
+per-thread rows_sh/smem setup) and call the fork's `prompt_down<K2>`
+15-arg form; the externs grew `ys`/`yrow` between `skip` and `k2` to
+match the zig caller's tuple. The regen'd 002 body carries the fix;
+the round-trip re-proven after it.
+
+**The staging state**: the store committed (the rebase commit + the
+regen re-cuts), pushed, the head synced (ff-only, fetch first); gate 2
+flipped — the head's `scripts/local.sh` TF_COMMIT = f56b1420f; DRY_RUN
+green (the phase-name gate + phase-lint 0 findings) on `v136val rung`;
+**the compile gate GREEN pre-window** — `tensorfold-native 1.3.6`
+built with the full store (the prepared line's 17 patches), the image
+on both hosts. The gate's journey caught four defects before any
+window: (1) the _m-kernel ABI reconciliation (the first prepare), (2)
+the initNumerics/envOn/sideStream/freeSide fns lost by the
+cherry-pick squash (the third prepare), (3) the regen
+self-contamination — the store's own regen'd bodies fed back as
+origs, sweeping later members' file sets into every body (the fourth
+prepare refused the alphabetical apply), (4) the duplicate
+exchange/view from the restore block carrying v1.3.5's own fns beside
+v1.3.6's held-shares versions (the fifth prepare — the
+duplicate-struct-member class the skill log names). Each fix landed
+in the compose, the regen re-cut, the round-trip re-proven
+byte-exact, and the store re-committed before the next attempt.
+
+**The value gate** (the brief, updated at the fire): the bump keeps
+the line current with the marriage intact and the witness unmoved;
+the release's own lever (keep-seqs) takes its own window after. The
+battery: the witness `80cc3802…` IDENTICAL across the twelfth bump,
+the §2 gates, hardmode on the 3.1.0 frame, the vision suite, the
+walls, the steady-state value bracket default(1) → default(2)
+order-matched. ANY gate FAIL holds the pin at v1.3.5 until
+understood (the one-day release cadence makes holding cheap).
+
+**The launch**: `scripts/autonomous-launch.sh "v136val rung"` — the
+window qualifies the bump (the witness `80cc3802…` must stay
+IDENTICAL across the twelfth bump; the §2 gates; hardmode on the
+3.1.0 frame; the vision suite; the walls; the steady-state value
+bracket default(1) → default(2) order-matched; the production
+restore on every exit path). ANY gate FAIL holds the pin at v1.3.5.
