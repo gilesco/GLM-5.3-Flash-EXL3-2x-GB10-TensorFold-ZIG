@@ -2022,6 +2022,71 @@ PYHR
 fi
 
 # ---------------------------------------------------------------------------
+# phase: knob136 (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_bisect136.md carries the value gate). The bisect's
+# arm C: the knob bisect on the FULL composed stack (one image, no
+# re-prepare per arm — the fork knobs resolve the classic paths, each
+# receipted bit-identical on the v1.3.5 ground). The short-query probes
+# separate: coherent-off => that member's fused path carries the defect
+# (the suspect list narrows to one member); degenerate-off => the member's
+# BASE content (not its knob) carries it. Order: the four hand-merged
+# members' knobs first (003's KV8? none; 002's EXL3P; 009's SHARED_SIDE;
+# 012's MOE_FUSE; then the port chain PDL/SHFL/MM_P2).
+if want knob136 && ! phase_done knob136; then
+  log "=== knob136 (the bisect's arm C: the fork knobs off, one at a time)"
+  P="$OUT/34-knob136.md"; : > "$P"
+  echo "# knob136 (v1.3.6 f56b1420f + the full store; the fork knobs" \
+    "turned off one at a time — the classic paths)" >> "$P"
+  echo "- the bisect ground: arm A (pristine) COHERENT, arm B (001-008)" \
+    "pending; this arm reads the knob surface on the full stack" >> "$P"
+  probe_arm() {  # $1 the arm name, the env pairs from $2 on
+    log "knob136: restarting with $*"
+    if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+        PARALLEL=4 "$@"; then
+      echo "- arm $1: the restart REFUSED (the arm void)" >> "$P"
+      return 1
+    fi
+    local tag
+    for tag in identity reasoning; do
+      bf=$(mktemp /tmp/k136.XXXXXX.json)
+      printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' \
+        > "$bf"
+      printf '"content":"%s"}],"max_tokens":256,"temperature":0}' \
+        "Reply with exactly: coherent" > "$bf"
+      curl -sf -m 180 localhost:8001/v1/chat/completions \
+        -H "Content-Type: application/json" -d @"$bf" \
+        -o "$OUT/k136-$1-identity.json" || true
+      rm -f "$bf"
+      break
+    done
+    OUTTAG="$1" OUTDIR="$OUT" python3 - >> "$P" <<'PYKR'
+import json, os
+out, tag = os.environ["OUTDIR"], os.environ["OUTTAG"]
+try:
+    d = json.load(open(f"{out}/k136-{tag}-identity.json"))
+    m = d["choices"][0]["message"]
+    c = m.get("content") or ""
+    r = (m.get("reasoning_content") or "")[:80]
+    ok = bool(c.strip())
+    print(f"- arm {tag}: {'COHERENT' if ok else 'DEGENERATE/EMPTY'}"
+          f" :: content={c[:80]!r} reasoning={r!r}")
+except Exception as e:
+    print(f"- arm {tag}: FAILED :: {e}")
+PYKR
+  }
+  probe_arm moefuse-off TF_GLM_MOE_FUSE=0
+  probe_arm sharedside-off TF_GLM_SHARED_SIDE=0
+  probe_arm exl3p-off TF_GLM_EXL3P=0
+  probe_arm all-classic TF_GLM_MOE_FUSE=0 TF_GLM_SHARED_SIDE=0 \
+    TF_GLM_EXL3P=0 TF_EXL3_PDL=0 TF_EXL3_SHFL=0 TF_GLM_MM_P2=0
+  echo "- READ: the first COHERENT arm names its member's fused path;" \
+    "all DEGENERATE => the defect is in the members' base content" \
+    "(the half-store bisect continues)" >> "$P"
+  tail -10 "$P"
+  touch "$OUT/.knob136.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
 # re-anchored (the request-starts build step, the registry_joins

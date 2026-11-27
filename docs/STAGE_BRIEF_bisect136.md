@@ -66,3 +66,22 @@ next release's rebase work) and the keep-seqs candidate arm unlocks.
   (the witness 80cc3802, the §2 gates, hardmode, the vision suite,
   the walls, the bracket) — the short-query instrument narrows the
   bisect; it never qualifies a bump.
+
+## The arm C addendum (the knob bisect — staged after arm B's void)
+
+Arm B's first launch died rc=127 (the HALFSTORE wrap gotcha, fixed
+in a6ab14f) and its second died in prepare: `exl3_group.cuh` does not
+exist in a 001-008 cut — 002's include line needs the file 012
+creates, and 012's engine hunks need 009's field. The alphabetical
+stack carries include dependencies THROUGH later members: no clean
+prefix cut before 012 can build. The half-store bisect by file-cut
+is void as a design; arm C replaces it.
+
+**Arm C (knob136)**: the full composed stack, the fork's envOn knobs
+turned off one at a time — `TF_GLM_MOE_FUSE=0`, `TF_GLM_SHARED_SIDE=0`,
+`TF_GLM_EXL3P=0`, then all six classic-path knobs together. Each knob
+is receipted bit-identical on the v1.3.5 ground, so a coherent arm
+names its member's FUSED path as the defect carrier; all-degenerate
+moves the hunt to the members' base content (the remaining
+instrument there: the byte-level diff review of each member's
+hand-merged hunks against its v1.3.5 proven body).
