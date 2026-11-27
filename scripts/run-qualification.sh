@@ -2054,14 +2054,24 @@ if want knob136 && ! phase_done knob136; then
         > "$bf"
       printf '"content":"%s"}],"max_tokens":256,"temperature":0}' \
         "Reply with exactly: coherent" >> "$bf"
-      if ! curl -sf -m 180 localhost:8001/v1/chat/completions \
-        -H "Content-Type: application/json" -d @"$bf" \
-        -o "$OUT/k136-$arm-identity.json" 2>"$OUT/k136-$arm-curl.err"; then
-        echo "- arm $arm: the probe's curl FAILED (rc $(cat \
-          "$OUT/k136-$arm-curl.err" | tail -1)) — the arm is VOID," \
-          "no verdict from a dead value leg" >> "$P"
-      fi
+      local try rc=0
+      for try in 1 2 3; do
+        if curl -sSf -m 180 localhost:8001/v1/chat/completions \
+          -H "Content-Type: application/json" -d @"$bf" \
+          -o "$OUT/k136-$arm-identity.json" \
+          2>"$OUT/k136-$arm-curl.err"; then
+          rc=0; break
+        fi
+        rc=$?
+        echo "- arm $arm: the probe's curl try $try failed:" \
+          "$(tail -1 "$OUT/k136-$arm-curl.err")" >> "$P"
+        sleep 5
+      done
       rm -f "$OUT/k136-$arm-curl.err"
+      if [ "$rc" != "0" ]; then
+        echo "- arm $arm: the probe's curl FAILED after 3 tries — the" \
+          "arm is VOID, no verdict from a dead value leg" >> "$P"
+      fi
       rm -f "$bf"
       break
     done
