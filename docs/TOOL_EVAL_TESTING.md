@@ -1440,6 +1440,12 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
+- [ ] **THE v1.3.6 BUMP'S BISECT** (round 164, campaign-20261127-091432):
+  OPEN — the pristine-arm verdict landed COHERENT (the four short-query
+  probes on the unpatched v1.3.6 engine), so the degenerate-output defect
+  rides OUR store's compose, not the release. The bisect halves on the
+  hand-merged members (001/002/003/009, the risk concentration). The
+  promoted line stays v1.3.5; the incident's rollbacks hold.
 - [x] **THE #4510 INDEXER-SPLIT KNOB** (round 161 cont. 2,
   campaign-20261124-191142): CLOSED — the all-gather skip does NOT pay
   at our shape. The three-arm order-matched bracket read the witness
