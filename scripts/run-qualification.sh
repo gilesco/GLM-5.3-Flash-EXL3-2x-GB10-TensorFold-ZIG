@@ -2056,10 +2056,12 @@ if want knob136 && ! phase_done knob136; then
         "Reply with exactly: coherent" >> "$bf"
       if ! curl -sf -m 180 localhost:8001/v1/chat/completions \
         -H "Content-Type: application/json" -d @"$bf" \
-        -o "$OUT/k136-$arm-identity.json"; then
-        echo "- arm $arm: the probe's curl FAILED (rc $?) — the arm is" \
-          "VOID, no verdict from a dead value leg" >> "$P"
+        -o "$OUT/k136-$arm-identity.json" 2>"$OUT/k136-$arm-curl.err"; then
+        echo "- arm $arm: the probe's curl FAILED (rc $(cat \
+          "$OUT/k136-$arm-curl.err" | tail -1)) — the arm is VOID," \
+          "no verdict from a dead value leg" >> "$P"
       fi
+      rm -f "$OUT/k136-$arm-curl.err"
       rm -f "$bf"
       break
     done
