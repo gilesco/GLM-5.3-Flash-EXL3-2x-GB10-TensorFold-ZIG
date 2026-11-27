@@ -58,6 +58,23 @@ the Fp8OnPages refusal is intact in v1.3.6's tree (3 sites).
    keep_seqs, is default-off and takes its own window after — the
    fewest-questions-per-window rule; the v1.3.5-carried wide-tile and
    DFlash2-graph arms keep their queue places).
+
+## THE QUEUE'S DESK-KILLS (the round-165 close)
+
+- **The wide-tile arm DESK-KILLED** (the round-165 close): the
+  `TF_GLM_WIDE_EXPERT_TILE` knob routes the factored down-projection
+  through `runFact` behind `l.format == .nvfp4` — AND `plan.fact`
+  itself is the NVFP4 factored-tile plan. The fork's EXL3 layers
+  branch at `runGrouped`/`run`/`runDirect` in cuda_moe.zig and never
+  touch `experts.run`'s fact path: the lever is NVFP4-route-scoped by
+  construction and CANNOT engage on the EXL3 line. The same class as
+  the #4493/#4619 pair-experts finding (round 160). No window spent.
+- **The DFlash2-graphs arm stays DESK-KILLED** (the round-162 read,
+  reaffirmed): `TF_DFLASH_GRAPH`/`TF_DFLASH_QL_SPAN` live in the
+  qwen3_5 family only — GLM never wired them.
+- **The keep-seqs arm CLOSED WITHOUT ADOPTION** (the round-165
+  bracket: the witness reproduced on both fresh-serve arms, the value
+  cells moved nothing — the ledger carries the closure).
 4. Promotion per the round-157/159 shape: the pin moves, production
    serves, the state docs same-sitting.
 
