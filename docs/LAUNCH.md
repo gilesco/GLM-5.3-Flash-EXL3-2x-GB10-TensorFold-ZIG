@@ -5311,3 +5311,38 @@ The instrument note for the record: the decode cells must record
 their wall time (tok/s) next bracket; the same-bits read compares
 substance (the markdown wrapper is serve-generation noise, now
 receipted as such).
+
+## (round 166) THE AGENT-TRAFFIC DIRECTION: THE REPRODUCE PROBE CLEAN —
+## THE CLASS IS NOT LIVE ON OUR LINE; THE PORT IS DROPPED FOR ONE PROBE
+## (2026-11-27)
+
+**The probe** (campaign-20261127-161234, the agenttraffic phase —
+probe-only, no port before the failure shows live): three
+agent-shaped turns at greedy with a generous budget (task-summary,
+agent-closing, minimal) on the promoted v1.3.6 serve on the
+testing port — ALL THREE ended cleanly (`finish=stop`, no
+close-marker-as-text, no second-turn shape). The brief's kill
+criterion fires: **the EXTRA_EOS port is DROPPED. One probe
+spent.** The failure class Mia's #36 hit (the model writing the
+close token as text, the reply continuing to the length cap) is
+not live on our template+checkpoint+engine shape.
+
+**The instrument finding** (the greedy sha): this window's probe
+read 098f6e35 on a FRESH serve — the round-165 "fresh-serve =
+80cc3802" generalization was wrong; the formatting
+nondeterminism is not serve-generation-dependent, both forms
+appear regardless of serve age. The corrected statement: the
+greedy content's markdown wrapper varies serve-to-serve at
+temperature 0; the cross-bump witness works because the
+BATTERY's serve+probe context is identical across bumps, not
+because the prompt determines the form. The witness discipline
+stands unchanged (the battery's context is the gate).
+
+**The direction's disposition**: no live failure class on our
+line for any of the four ranked items (EXTRA_EOS clean here; the
+tool-call guard and THINK_OFF_SPLIT watch-triggered on our own
+evidence, none exists; the effort line parked). The
+agent-traffic direction CLOSES with one window spent — no port
+code written for classes that are not live here. The watch
+triggers stay in the brief: agent-loop tool-call or double-turn
+failures on our line reopen it.
