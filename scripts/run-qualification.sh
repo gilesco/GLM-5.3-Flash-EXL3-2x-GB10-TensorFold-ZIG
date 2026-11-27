@@ -2321,11 +2321,11 @@ if want keepseqval && ! phase_done keepseqval; then
   decode_cell() {  # $1 the arm tag
     bf=$(mktemp /tmp/kseq.XXXXXX.json)
     python3 - "$OUT/kseq-$1-decode-body.json" <<'PYKB'
-import json, os
+import json, os, sys
 json.dump({"model": "GLM-5.3-Flash-EXL3",
   "messages": [{"role": "user",
                 "content": "Write a 600-word essay about rivers."}],
-  "max_tokens": 2048, "temperature": 0}, open(os.argv[1], "w"))
+  "max_tokens": 2048, "temperature": 0}, open(sys.argv[1], "w"))
 PYKB
     S=$(date +%s)
     curl -sSf -m 600 localhost:8001/v1/chat/completions \
@@ -2348,11 +2348,11 @@ PYKQ
   # the resume/warm probe: two turns, the second reuses the first's state
   resume_cell() {  # $1 the arm tag
     python3 - "$OUT/kseq-$1-turn1-body.json" <<'PYKT'
-import json, os
+import json, os, sys
 json.dump({"model": "GLM-5.3-Flash-EXL3",
   "messages": [{"role": "user",
                 "content": "Remember the number 4711. Say ready."}],
-  "max_tokens": 256, "temperature": 0}, open(os.argv[1], "w"))
+  "max_tokens": 256, "temperature": 0}, open(sys.argv[1], "w"))
 PYKT
     curl -sSf -m 120 localhost:8001/v1/chat/completions \
       -H "Content-Type: application/json" \
@@ -2361,11 +2361,11 @@ PYKT
       echo "- arm $1: turn1 FAILED" >> "$P"; return 1
     }
     python3 - "$OUT/kseq-$1-turn2-body.json" <<'PYKT2'
-import json, os
+import json, os, sys
 json.dump({"model": "GLM-5.3-Flash-EXL3",
   "messages": [{"role": "user",
                 "content": "What number did I ask you to remember?"}],
-  "max_tokens": 256, "temperature": 0}, open(os.argv[1], "w"))
+  "max_tokens": 256, "temperature": 0}, open(sys.argv[1], "w"))
 PYKT2
     S=$(date +%s)
     curl -sSf -m 120 localhost:8001/v1/chat/completions \
