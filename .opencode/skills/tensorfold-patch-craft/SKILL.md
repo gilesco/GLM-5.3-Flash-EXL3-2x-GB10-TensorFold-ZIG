@@ -273,7 +273,14 @@ named:
    positions). REGEN FROM GIT BLOBS (`git show <commit>:patches/x.patch`),
    never from the store path itself — the store path holds your own last
    output and every rerun self-contaminates (this cost four false starts in
-   one sitting).
+   one sitting). **Find the header/body seam by `--- a/`, never by
+   `diff --git`** (the round-161/cont-3 lesson: the fork's patch headers
+   QUOTE `diff --git` inside their prose — a `grep '^diff --git'` on the
+   member matched the quote, truncated the header mid-prose, and the
+   spliced body died as "corrupt patch"; the plain-diff marker `--- a/`
+   only matches the real seam). The tag peel rule compounds here: a rev
+   fed from `git rev-parse <tag>` is the TAG OBJECT (the compose diff
+   against it died "bad object"); peel `<tag>^{commit}` first.
 3. **The round-trip is the ground truth, and the PIN is the second gate**:
    prove `pristine tag + the store = the composed tree` (zero diffs) BEFORE
    any window. Then flip BOTH fingerprint gates before launching: the store
