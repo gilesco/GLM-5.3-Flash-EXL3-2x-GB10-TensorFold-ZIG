@@ -94,3 +94,30 @@ file, `|| true` swallowed it, the reader found nothing. The
 dead-race gate class: a value leg that fails silently. Fixed (the
 append restored) AND hardened (the curl's rc is now receipted; an
 arm whose curl fails is VOIDed loudly, never a silent verdict).
+
+## THE ROOT CAUSE NAMED (the knob136 matrix + the code archaeology)
+
+The knob136 matrix: moefuse-off COHERENT, sharedside-off COHERENT
+(the value legs for exl3p-off/all-classic voided on their curls —
+receipted loudly by the hardening). The code archaeology completes
+it: **v1.3.6 split `Layer.uniform_k2` into three fields**
+(`uniform_k2`, `uniform_k2_gu`, `uniform_k2_d`) and made the
+grouped/decode path read the per-projection widths
+(exl3_prompt.zig's `widths()`: `verified(group, uniform)` — the
+group's own field, else uniform_k2, 0 when they disagree). Our fork's
+`tilesFor` (015-zshfl/016-zstep's surface) still reads the ONE-field
+ground: `const k2 = l.uniform_k2` as "every projection at one width".
+Our pack IS mixed-width (the boot line: `expert form (kept): classic,
+factored at 6, 12 and 16 rows`) — so the fork's selection picks the
+wrong single-width tile twins and every routed expert's decode reads
+the wrong trellis layout: deterministic garbage. The fuse-off arm's
+coherence is the expected behavior (that path skips the broken
+selection entirely).
+
+**The fix direction**: the composed `tilesFor` reads the per-
+projection widths the v1.3.6 way — `verified(uniform_k2_gu,
+uniform_k2)` for gate/up, `verified(uniform_k2_d, uniform_k2)` for
+down — and the shfl/pdl twins engage only when BOTH projections are
+uniform at their own width (the twins were measured at uniform
+widths; a mixed layer takes the generic `grouped[codebook]` path
+exactly as upstream's runWith does).
