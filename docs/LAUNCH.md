@@ -5008,3 +5008,96 @@ IDENTICAL across the twelfth bump; the §2 gates; hardmode on the
 3.1.0 frame; the vision suite; the walls; the steady-state value
 bracket default(1) → default(2) order-matched; the production
 restore on every exit path). ANY gate FAIL holds the pin at v1.3.5.
+
+## (round 163) THE TWELFTH BUMP VOID — THE INCIDENT, THE ROOT CAUSE, THE
+## ROLLBACK, THE RESTORE (2026-11-27, (user) directed)
+
+**The incident**: the v136val window's battery caught the composed
+v1.3.6 stack serving DEGENERATE output from its first probe — the
+greedy witness response: content EMPTY, reasoning_content "The user
+user user user user user… then, then, then…"; the same-bits witness
+DIFFERENT (the first witness break in twelve bumps); g3 FAIL
+(resumed/fresh both empty); hardmode final_score 0 on both runs; the
+vision suite hit connection refused (the serve died mid-battery); the
+rung's 8k-depth probe 0/3 facts retrieved. The reboot (the user,
+~01:05) killed the window mid-bracket — the receipt survives
+(results/campaign-20261126-221306/32-v136val.md); NO promotion ever
+happened (no round-163 digest before the incident).
+
+**The root cause — the poisoned image tag, one defect two stacks**:
+BOTH repos tag their runtime image `glm53-native-tf:commit` (both pin
+commits, so both resolve the same tag). The round-162 testing prepare
+(22:10) overwrote the tag with the v1.3.6 build. The production
+container's post-reboot restart (01:05, the crash-net) served the
+POISONED image as production: the user's real traffic (176K-token
+prompts) streamed gibberish — `reason=client-left` three times — and
+the thinking loops burned max_tokens with empty content (the same
+signature the battery caught). Production's engine bits had been
+clean (44 consecutive windows); the model files unchanged since Nov 7
+(mtime-verified) — the model is innocent. The evidence chain: the
+production container's docker logs (the client-left lines, the
+rank-1-died error at 01:14:37), the campaign receipt, the image
+listing (glm53-native-tf:commit created 2026-11-26 22:10 = the
+testing prepare).
+
+**The rollback** ((user): "pin production back to v1.3.5, undo any
+rash stuff", "do not re-instate anything that was causing these
+issues"):
+- The store restored to the v1.3.5-proven bodies (git checkout
+  6906928^ -- patches/) — the v1.3.6-regen'd members reverted; the
+  v1.3.6 rebase remains in git history as the record, not the state.
+- The v136val phase RETIRED with the void receipt (the block
+  extracted to history; the re-evaluation re-stages from the v134val
+  block when the compose defect is understood).
+- The head's testing repo TF_COMMIT back to 02b324ae (v1.3.5).
+- The release watch's PIN_TAG stays v1.3.5 (never moved — verified).
+- The crash-net cron stays COMMENTED ((user)'s action; re-enabling is
+  the user's call after the restore verifies).
+
+**The restore** (scripted — the agent rides the fallback
+spark-vllm-docker and goes dark during the swap, (user) directive):
+the production repo's prepare.sh re-runs FIRST (the image rebuild
+from the production pin — the poisoned tag replaced by the promoted
+v1.3.5 bits; the docker cache holds the v1.3.5 layers), THEN the
+detached swap: stop the head's fallback vLLM (vllm_node — the agent's
+serving path), start the production stack (the production repo's own
+start.sh, both ranks), health-wait, a coherence curl; ON ANY FAILURE
+the fallback restarts (the user and the agent are never stranded).
+The script: scripts/restore-production.sh (this repo; runs on the
+head; detached by design — setsid nohup survives the agent's dark
+gap).
+
+**The re-evaluation (the NEXT sitting's desk work, not launched
+here)**:
+1. The v1.3.6 compose defect's bisect: the composed tree serves
+   degenerate output; the suspects in order — (a) the fork's
+   ys/yrow down-ABI path under v1.3.6's mixed-width resolve (the _m
+   reconciliation changed the externs' signatures — if the zig
+   caller's tuple mismatches at RUNTIME, the down reads garbage
+   args), (b) the engine_shares refactor's interaction with 001's
+   side-stream wiring, (c) v1.3.6's own mHC/ma-256 changes on our
+   shape. The instrument: the composed tree with members peeled
+   (the store-minus-member replay), the greedy witness as the
+   read — a CPU-window bisect, no GPU needed until the peel
+   isolates the member.
+2. **The structural fix this incident demands**: the IMAGE_NAME
+   collision — the testing repo's image tag must diverge
+   (glm53-native-tf-test) so a testing prepare can NEVER overwrite
+   production's image again. The round-138 note fixed the CONTAINER
+   names; the IMAGE names stayed shared — the incident is the
+   receipt. Stage the config change + the prepare flow's verification
+   in the next sitting BEFORE any window.
+3. The v1.3.6 bump re-attempt only after the bisect names the defect
+   and the fix is composed + round-tripped + compile-gated.
+
+**The user's testing instructions** (after the restore completes):
+- The serve line: `curl -s localhost:8000/health` on the head (200 =
+  up; the serve line's model/tf fields name v1.3.5's commit).
+- A coherence check: any small chat request must return coherent
+  text (the degenerate signature was empty content / "user user
+  user" reasoning loops).
+- If gibberish recurs: `docker stop glm53-native-tf` on the head AND
+  the worker (the rank pair stops together); the fallback restarts
+  with `docker start vllm_node`; report to the agent.
+- The crash-net cron on the head stays commented until the user
+  re-enables it (the line: scripts/autonomous-cron.sh in crontab).

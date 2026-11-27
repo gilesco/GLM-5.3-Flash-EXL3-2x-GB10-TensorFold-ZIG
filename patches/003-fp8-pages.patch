@@ -84,14 +84,8 @@ the composed tree (branch compose-v135) — the before-state anchors at the
 tree the earlier members left; the round-trip verifies byte-exact
 (pristine v1.3.5 + the store = the composed tree, zero diffs).
 
-
-REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
-the composed tree (branch compose-v136) — the before-state anchors at the
-tree the earlier members left; the round-trip verifies byte-exact
-(pristine v1.3.6 + the store = the composed tree, zero diffs).
-
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
-index 210a0270b..4e13b2e1d 100644
+index 7c570d32d..fbdbba7d5 100644
 --- a/zig/build/glm_family_host.zig
 +++ b/zig/build/glm_family_host.zig
 @@ -89,6 +89,7 @@ pub fn steps(b: *std.Build, cuda: *std.Build.Module, glm: *std.Build.Module, mod
@@ -103,7 +97,7 @@ index 210a0270b..4e13b2e1d 100644
      const request_starts = b.addRunArtifact(b.addTest(.{ .root_module = glm, .filters = &.{"glm request starts:"} }));
      b.step("test-glm-request-starts-host", "GLM message-start prompt cuts and the shared-KV startup refusal without devices").dependOn(&request_starts.step);
 diff --git a/zig/glm_snapshot_host.zig b/zig/glm_snapshot_host.zig
-index 028fcd35d..9dba1dc09 100644
+index b4e538db4..1a2c9925c 100644
 --- a/zig/glm_snapshot_host.zig
 +++ b/zig/glm_snapshot_host.zig
 @@ -597,3 +597,144 @@ test "GLM snapshots: TF_KV_SHARE's adapter reads GLM's decls as the store it rep
@@ -253,7 +247,7 @@ index 028fcd35d..9dba1dc09 100644
 +}
 \ No newline at end of file
 diff --git a/zig/kernels/cuda/common/mla.cuh b/zig/kernels/cuda/common/mla.cuh
-index 2097ea5ab..bfd25cb62 100644
+index 782884202..4efe0e5ea 100644
 --- a/zig/kernels/cuda/common/mla.cuh
 +++ b/zig/kernels/cuda/common/mla.cuh
 @@ -43,8 +43,15 @@ constexpr int wide_smem() {
@@ -512,10 +506,10 @@ index 56af8cdf4..75331f429 100644
      .{ .name = "norms tf_slerp_rows", .usage = .{ .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 } } },
      .{ .name = "qk_rows tf_qk_rows at dim 256", .usage = .{ .{ .regs = 30, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 } } },
 diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry.zig
-index f57bfe270..09262f0da 100644
+index ba1cfebd4..047906697 100644
 --- a/zig/src/core/contract/registry.zig
 +++ b/zig/src/core/contract/registry.zig
-@@ -489,6 +489,7 @@ test {
+@@ -488,6 +488,7 @@ test {
      _ = @import("exl3_prompt_pending.zig");
      _ = @import("registry_pending_test.zig");
      _ = @import("flashnext_pages_pending.zig");
@@ -524,10 +518,10 @@ index f57bfe270..09262f0da 100644
  }
  test "unmeasured CUDA records cannot pass a compiled resource check" {
 diff --git a/zig/src/core/contract/registry_joins.zig b/zig/src/core/contract/registry_joins.zig
-index 796370336..2d7eabb07 100644
+index 7f78b593a..763e7d5b7 100644
 --- a/zig/src/core/contract/registry_joins.zig
 +++ b/zig/src/core/contract/registry_joins.zig
-@@ -66,6 +66,7 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
+@@ -60,6 +60,7 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
      @import("weight_only_records.zig").cuda ++
      @import("hc_activation_records.zig").cuda ++
      @import("qwen4_records.zig").cuda ++
@@ -536,22 +530,22 @@ index 796370336..2d7eabb07 100644
      @import("ricursive_prep_records.zig").cuda ++
      @import("ricursive_attn_records.zig").cuda ++
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
-index 23b5f9689..418672111 100644
+index 8129f4c94..92b0d7b84 100644
 --- a/zig/src/families/glm/cuda.zig
 +++ b/zig/src/families/glm/cuda.zig
-@@ -24,6 +24,7 @@ pub const shard = @import("cuda_shard.zig");
+@@ -23,6 +23,7 @@ pub const shard = @import("cuda_shard.zig");
  pub const weights = @import("cuda_weights.zig");
  pub const tile = @import("cuda_tile.zig");
  pub const forward = @import("cuda_forward.zig");
 +pub const state = @import("cuda_state.zig");
  pub const relay = @import("cuda_relay.zig");
  pub const config = @import("config.zig");
- pub const config_dsa = @import("config_dsa.zig");
+ pub const quant = @import("cuda_quant.zig");
 diff --git a/zig/src/families/glm/cuda_dsa_block.zig b/zig/src/families/glm/cuda_dsa_block.zig
-index b85b328a4..9d7eb782d 100644
+index cf9e10e77..c7a9323c5 100644
 --- a/zig/src/families/glm/cuda_dsa_block.zig
 +++ b/zig/src/families/glm/cuda_dsa_block.zig
-@@ -295,8 +295,9 @@ fn denseAttention(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scrat
+@@ -278,8 +278,9 @@ fn denseAttention(k: Kernels, stream: cuda.Stream, l: Layer, c: Caches, s: Scrat
  fn tables(l: Layer, c: Caches) !struct { latent.Table, latent.Table } {
      const rb = l.row() * 2;
      if (c.ps % rb != 0) return error.LatentShape; // pages whole latent rows apart (the token lists' unit)
@@ -802,7 +796,7 @@ index 8c17a3261..5fbbb9489 100644
  
  const Ops = struct {
 diff --git a/zig/src/families/glm/cuda_lanes.zig b/zig/src/families/glm/cuda_lanes.zig
-index b3645004a..f18f630d8 100644
+index c38cfbeb0..7f4dff5a8 100644
 --- a/zig/src/families/glm/cuda_lanes.zig
 +++ b/zig/src/families/glm/cuda_lanes.zig
 @@ -353,7 +353,7 @@ pub const Lanes = struct {
@@ -815,10 +809,10 @@ index b3645004a..f18f630d8 100644
      }
  
 diff --git a/zig/src/families/glm/cuda_native.zig b/zig/src/families/glm/cuda_native.zig
-index 810b89e55..c5693d5d1 100644
+index 5015f7c4b..241076b9f 100644
 --- a/zig/src/families/glm/cuda_native.zig
 +++ b/zig/src/families/glm/cuda_native.zig
-@@ -500,6 +500,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
+@@ -499,6 +499,8 @@ pub fn explain(_: ?*anyopaque, err: anyerror) ?[]const u8 {
          error.MasterTooLong => "--master: too long for NCCL's root address (host:port in 320 bytes); give rank 0's address",
          error.RankMismatch => "the ranks' settings differ (each rank's log names the one): start them alike",
          error.Fp8OnPages => "--kv-cache fp8 keeps a window per stream: unset TF_KV_PAGES, or set it to auto or off",
@@ -827,7 +821,7 @@ index 810b89e55..c5693d5d1 100644
          error.BadKvShare => "TF_KV_SHARE: give how many states the prompt store over the KV pages keeps, or 0 or unset for off",
          error.GlmKvShareMoved => "TF_GLM_KV_SHARE is now TF_KV_SHARE, the prompt store every family on the KV pool shares: set that instead",
          error.GlmRequestStartsWithSharedKv => "TF_GLM_REQUEST_STARTS=1 cannot be used with TF_KV_SHARE above 0: unset request starts or disable shared KV",
-@@ -545,18 +547,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
+@@ -541,18 +543,21 @@ test "TF_KV_PAGES: auto pages from two ranks, off and 0 give windows, all and ot
          try std.testing.expect(!try paging("off", w, false));
          try std.testing.expect(!try paging("0", w, false));
          try std.testing.expect(try paging("all", w, false));
@@ -966,10 +960,10 @@ index a3d1a4a96..1ee955718 100644
          const page = p.page;
          if (p.poison) for (ids[kept..]) |id| try p.e.d.check(p.e.d.api.cuMemsetD32Async(p.base() + id * page, 0xFFFF_FFFF, page / 4, p.e.stream.handle), "cuMemsetD32Async");
 diff --git a/zig/src/families/glm/cuda_pages_test.zig b/zig/src/families/glm/cuda_pages_test.zig
-index 243e81118..3fe9647dd 100644
+index a84a95863..b07885098 100644
 --- a/zig/src/families/glm/cuda_pages_test.zig
 +++ b/zig/src/families/glm/cuda_pages_test.zig
-@@ -91,6 +91,7 @@ const Fake = struct {
+@@ -90,6 +90,7 @@ const Fake = struct {
          f.e.pages = null;
          f.e.images = null;
          f.e.settings = .{};
@@ -977,7 +971,7 @@ index 243e81118..3fe9647dd 100644
          f.e.w = undefined;
          f.e.w.config = .{};
          f.e.w.share = try shard.Share.of(&f.e.w.config, 0, 2);
-@@ -537,3 +538,40 @@ test "capacity keeps a verify window past the context and a multiple of 64" {
+@@ -536,3 +537,40 @@ test "capacity keeps a verify window past the context and a multiple of 64" {
      try expectEqual(@as(usize, 330624), native.capacity(330529));
      try expect(native.capacity(330529) % 64 == 0);
  }
@@ -1019,12 +1013,12 @@ index 243e81118..3fe9647dd 100644
 +    try expect(p.fits(600, 100));
 +}
 diff --git a/zig/src/families/glm/cuda_snapshot_layout.zig b/zig/src/families/glm/cuda_snapshot_layout.zig
-index 384b54df5..6932bdbda 100644
+index f31cec74b..1fc96851b 100644
 --- a/zig/src/families/glm/cuda_snapshot_layout.zig
 +++ b/zig/src/families/glm/cuda_snapshot_layout.zig
 @@ -90,8 +90,9 @@ pub const Plan = struct {
          const latent = try std.math.mul(usize, at, s.row * @as(usize, if (x.ls == 0) 2 else 1));
-         const ring = if (x.pk_rows == 0) 0 else try std.math.mul(usize, @min(at, st.ring_rows), st.ring_row); // shared: none
+         const ring = try std.math.mul(usize, @min(at, st.ring_rows), st.ring_row);
          const pooled = try std.math.mul(usize, @min(at / s.pool + 2, x.pk_rows), s.i_dim * 2);
 -        try p.addCache(st, x, x.lc, latent, s.latentBytes(), x.ps);
 -        if (x.ls != 0) try p.add(st, x.ls, try std.math.mul(usize, at, @sizeOf(f32)));
@@ -1121,35 +1115,43 @@ index 3b7fff9f2..54341b9f0 100644
          try std.testing.expect(w.connected[0]);
          try std.testing.expect(w.constructed[0]);
 diff --git a/zig/src/families/glm/cuda_state.zig b/zig/src/families/glm/cuda_state.zig
-index 1bd875aaa..729b99d16 100644
+index b2cd0a738..a6320140b 100644
 --- a/zig/src/families/glm/cuda_state.zig
 +++ b/zig/src/families/glm/cuda_state.zig
-@@ -78,14 +78,31 @@ pub fn pkPageBytes(w: *const weights.Weights) u64 {
+@@ -66,6 +66,11 @@ pub fn mlaLayers(w: *const weights.Weights) usize {
+     return nd;
  }
  
- /// A page's bytes: every DSA layer's part, then the MTP layer's.
++/// One cache's part of a page: its latent rows (bf16, or E4M3 codes then their fp32 scales), then their pools' keys.
++fn pageCacheBytes(c: anytype, kv8: bool) usize {
++    const latent_row: usize = if (kv8) c.kv_lora + 4 else c.kv_lora * 2;
++    return page_rows * latent_row + page_rows / sparse.pool * c.i_dim * 2;
++}
+ /// The latent caches' shape: their count (DSA layers and the MTP layer's), a row's values, index key dims, pool rows.
+ pub const Shape = struct {
+     caches: usize,
+@@ -112,15 +117,26 @@ pub fn pkPageBytes(w: *const weights.Weights) u64 {
+     return shapeOf(w).pkPageBytes();
+ }
+ 
+-/// A page's bytes: every DSA layer's part, then the MTP layer's.
 +/// A page's bytes: every DSA layer's part, then the MTP layer's (bf16; the fp8-pages path sizes its own below).
  pub fn pageBytes(w: *const weights.Weights) u64 {
 -    return shapeOf(w).pageBytes();
 +    return pageBytesOf(w, false, true);
- }
- 
--/// Cache `j`'s rows on pages: its part of page 0 at `p.kv`, the others through the table.
--fn onPages(x: *dsa_block.Caches, s: Shape, p: Paged, table: u64, j: usize) void {
--    x.lc = p.kv + s.cacheAt(j);
--    x.pk = if (!s.pooled(j)) 0 else if (p.pk != 0) p.pk + s.pooledBefore(j) * s.pkBytes() else x.lc + s.latentBytes();
++}
++
 +/// A page's bytes for this cache format: every DSA layer's part, then the target MTP head's if it is loaded
 +/// (bf16 13,056 a row, E4M3 6,960; 11,968 and 6,380 without the head, as beside DFlash2). The fp8-pages path's
 +/// sizing (the fork's 003 ground; upstream refuses fp8 on pages) — Shape's is the bf16 one.
 +pub fn pageBytesOf(w: *const weights.Weights, kv8: bool, head: bool) u64 {
 +    return (mlaLayers(w) + @intFromBool(head)) * pageCacheBytes(&w.config, kv8);
-+}
-+
-+fn pageCacheBytes(c: anytype, kv8: bool) usize {
-+    const latent_row: usize = if (kv8) c.kv_lora + 4 else c.kv_lora * 2;
-+    return page_rows * latent_row + page_rows / sparse.pool * c.i_dim * 2;
-+}
-+
+ }
+ 
+-/// Cache `j`'s rows on pages: its part of page 0 at `p.kv`, the others through the table.
+-fn onPages(x: *dsa_block.Caches, s: Shape, p: Paged, table: u64, j: usize) void {
+-    x.lc = p.kv + j * s.cacheBytes();
+-    x.pk = if (p.pk != 0) p.pk + j * s.pkBytes() else x.lc + s.latentBytes();
 +/// Cache `j`'s rows on pages: its part of page 0 at `p.kv`, the others through the table; E4M3's codes and scales
 +/// a cache's part too (the fp8-pages path's layout).
 +fn onPages(x: *dsa_block.Caches, s: Shape, p: Paged, table: u64, j: usize, kv8: bool) void {
@@ -1161,7 +1163,7 @@ index 1bd875aaa..729b99d16 100644
      x.pks = p.pk_page;
      x.pt = table;
      x.ps = p.page_bytes;
-@@ -429,6 +446,8 @@ pub const State = struct {
+@@ -444,6 +460,8 @@ pub const State = struct {
      mtp_base: usize = 0,
      prompt_hidden: u64, // first-draft row owned and charged by this sequence arena
      table: u64 = 0, // on pages: its page table (i32, `pages` entries), else 0
@@ -1170,7 +1172,7 @@ index 1bd875aaa..729b99d16 100644
      pages: []const u32 = &.{}, // on pages: the page ids its table holds, in row order (none while no stream holds it)
  
      pub fn init(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize) !State {
-@@ -436,16 +455,29 @@ pub const State = struct {
+@@ -451,16 +469,29 @@ pub const State = struct {
      }
  
      pub fn initFormat(gpa: std.mem.Allocator, d: *const cuda.Driver, w: *const weights.Weights, capacity: usize, kv8: bool) !State {
@@ -1202,7 +1204,7 @@ index 1bd875aaa..729b99d16 100644
          const sizes = try stateSizes(gpa, w, capacity, false, pages);
          defer gpa.free(sizes);
          var total: usize = 0;
-@@ -453,7 +485,7 @@ pub const State = struct {
+@@ -468,7 +499,7 @@ pub const State = struct {
          return total;
      }
  
@@ -1211,7 +1213,7 @@ index 1bd875aaa..729b99d16 100644
          const c = &w.config;
          const s = &w.share;
          const nk = w.layers.len - mlaLayers(w);
-@@ -477,8 +509,7 @@ pub const State = struct {
+@@ -491,8 +522,7 @@ pub const State = struct {
          const rings = try gpa.alloc(u64, 2 * (nd + 1));
          for (0..nd + 1) |j| rings[2 * j ..][0..2].* = .{ p[9 + 4 * j], p[10 + 4 * j] };
          const ring_rows = @min(capacity, shapeOf(w).keys);
@@ -1221,7 +1223,7 @@ index 1bd875aaa..729b99d16 100644
              st.table = p[14 + 4 * nd];
              st.capacity = 0; // no rows until a stream's pages are mapped
              st.place(w, q);
-@@ -489,8 +520,8 @@ pub const State = struct {
+@@ -503,8 +533,8 @@ pub const State = struct {
      /// A paged sequence's caches on the pages of `p` (the engine's own, made before its pool, placed when it is made).
      pub fn place(st: *State, w: *const weights.Weights, p: Paged) void {
          const s = shapeOf(w);

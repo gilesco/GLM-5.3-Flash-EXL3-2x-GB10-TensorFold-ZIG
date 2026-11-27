@@ -1,4 +1,8 @@
-# STAGE BRIEF — the v1.3.6 bump window (updated at the fire, round 162)
+# STAGE BRIEF — the v1.3.6 bump window (VOIDED 2026-11-27 — the battery
+# caught the composed stack serving degenerate output; the store rolled
+# back to the v1.3.5-proven bodies; see docs/LAUNCH.md round 163. The
+# re-evaluation re-stages from the v134val block after the bisect names
+# the defect.)
 
 ## The trigger — fired: TensorFold v1.3.6 (f56b1420f), one day after v1.3.5
 
