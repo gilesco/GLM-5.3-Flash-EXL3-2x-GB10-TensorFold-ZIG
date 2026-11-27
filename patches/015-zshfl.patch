@@ -47,3 +47,8 @@ Content-Transfer-Encoding: 8bit
 
 REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body is EMPTY — this patch's content is fully carried by the member that lands its shared files in the composed stack; the end-state replay verifies byte-exact. The concern's record, receipts and original port provenance stay in this header and patches/README.md.
 
+REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
+the composed tree (branch compose-v136) — the before-state anchors at the
+tree the earlier members left; the round-trip verifies byte-exact
+(pristine v1.3.6 + the store = the composed tree, zero diffs).
+

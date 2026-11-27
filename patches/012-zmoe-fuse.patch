@@ -94,10 +94,83 @@ new file mode 100644
 +}
 +
 +}  // namespace tf_exl3
+
+REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
+the composed tree (branch compose-v136) — the before-state anchors at the
+tree the earlier members left; the round-trip verifies byte-exact
+(pristine v1.3.6 + the store = the composed tree, zero diffs).
+
+diff --git a/zig/kernels/cuda/exl3_group.cuh b/zig/kernels/cuda/exl3_group.cuh
+new file mode 100644
+index 000000000..b354caa33
+--- /dev/null
++++ b/zig/kernels/cuda/exl3_group.cuh
+@@ -0,0 +1,60 @@
++// EXL3 routed experts' grouping in one block, shared by tf_exl3_group and the decode router's fused top-k.
++#pragma once
++
++namespace tf_exl3 {
++
++// Grouping in one block: distinct experts (< E) in id order, members row * 32 + slot in row order, -1 after the last.
++constexpr int GROUP_THREADS = 1024;
++constexpr int GROUP_PER_THREAD = 4;
++
++// The grouping of `n` picks (`slots` a row) already in shared memory: every thread of a GROUP_THREADS block calls it.
++__device__ __forceinline__ void group_rows(const int* sh_pick, int n, int slots, int experts, int maxm, int* uids, int* ucount,
++                                           int* members) {
++    __shared__ int warp_tot[GROUP_THREADS / 32];
++    int cnt[GROUP_PER_THREAD];
++    int used = 0;
++#pragma unroll
++    for (int q = 0; q < GROUP_PER_THREAD; ++q) {
++        const int e = threadIdx.x * GROUP_PER_THREAD + q;
++        int c = 0;
++        if (e < experts)
++            for (int i = 0; i < n; ++i) c += sh_pick[i] == e;
++        cnt[q] = c;
++        used += c > 0;
++    }
++    // exclusive scan of `used` over threads
++    const int lane = threadIdx.x & 31, warp = threadIdx.x >> 5;
++    int inc = used;
++#pragma unroll
++    for (int o = 1; o < 32; o <<= 1) {
++        int v = __shfl_up_sync(0xffffffffu, inc, o);
++        if (lane >= o) inc += v;
++    }
++    if (lane == 31) warp_tot[warp] = inc;
++    __syncthreads();
++    if (warp == 0) {
++        int v = warp_tot[lane];
++        int s = v;
++        for (int o = 1; o < 32; o <<= 1) {
++            int x = __shfl_up_sync(0xffffffffu, s, o);
++            if (lane >= o) s += x;
++        }
++        warp_tot[lane] = s - v; // exclusive per warp
++        if (lane == 31) ucount[0] = s;
++    }
++    __syncthreads();
++    int place = warp_tot[warp] + inc - used;
++#pragma unroll
++    for (int q = 0; q < GROUP_PER_THREAD; ++q) {
++        if (cnt[q] == 0) continue;
++        const int e = threadIdx.x * GROUP_PER_THREAD + q;
++        uids[place] = e;
++        int j = 0;
++        for (int i = 0; i < n && j < maxm; ++i)
++            if (sh_pick[i] == e) members[place * maxm + j++] = (i / slots) * 32 + (i % slots);
++        for (; j < maxm; ++j) members[place * maxm + j] = -1;
++        ++place;
++    }
++}
++
++}  // namespace tf_exl3
 diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.cuh
+index 930700d96..88a39a6b2 100644
 --- a/zig/kernels/cuda/exl3_grouped.cuh
 +++ b/zig/kernels/cuda/exl3_grouped.cuh
-@@ -23,8 +23,22 @@
+@@ -23,8 +23,22 @@ struct GroupedArgs {
      int k, n, p, sk, maxm, slots, nexp_max, mats, ns, standard, skip;
  };
  
@@ -122,7 +195,7 @@ diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.c
  
  // One warp's k tiles [kt0, kt0 + nkt) of an expert matrix into acc: per-lane loads and the shared decode (same bits).
  template <int CB, int K2, int NT, int LOAD>
-@@ -69,6 +83,107 @@
+@@ -69,6 +83,107 @@ __device__ __forceinline__ void warp_tiles(const uint32_t* T, int ntiles, int kt
      }
  }
  
@@ -230,17 +303,10 @@ diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.c
  // Program (expert u, n block, split, member tile): 16 members times W_q over the split's K range, summed in warp order.
  template <int CB, int NT, int W, int LOAD>
  __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nblock, int zz) {
-@@ -152,6 +267,122 @@
-         const int row = idx / (NT * 16), col = idx % (NT * 16);
-         const int r = rows_sh[row];
-         if (r < 0) continue;
-+        float s = red[0][row][col];
-+#pragma unroll
-+        for (int w = 1; w < W; ++w) s += red[w][row][col];
-+        a.z[(((size_t)mat * a.sk + split) * a.p + r) * a.n + nt0 * 16 + col] = s;
-+    }
-+}
-+
+@@ -159,4 +274,120 @@ __device__ __forceinline__ void grouped_body(const GroupedArgs a, int u, int nbl
+     }
+ }
+ 
 +// grouped_body at one trellis width K2F (no width switch: fewer registers) and RR reduction rows (a member tile of at
 +// most RR rows: decode windows); every column keeps its k slices and warp-order sum, so the bits are grouped_body's.
 +// SHFL_PDL (a dependent launch): before its wait a block reads only the plan (uids, count, members: from the router two
@@ -350,10 +416,16 @@ diff --git a/zig/kernels/cuda/exl3_grouped.cuh b/zig/kernels/cuda/exl3_grouped.c
 +        const int row = idx / (NT * 16), col = idx % (NT * 16);
 +        const int r = rows_sh[row];
 +        if (r < 0) continue;
-         float s = red[0][row][col];
- #pragma unroll
-         for (int w = 1; w < W; ++w) s += red[w][row][col];
++        float s = red[0][row][col];
++#pragma unroll
++        for (int w = 1; w < W; ++w) s += red[w][row][col];
++        a.z[(((size_t)mat * a.sk + split) * a.p + r) * a.n + nt0 * 16 + col] = s;
++    }
++}
++
+ }  // namespace tf_exl3
 diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.cuh
+index e880f345d..e464834e9 100644
 --- a/zig/kernels/cuda/glm_glue_moe.cuh
 +++ b/zig/kernels/cuda/glm_glue_moe.cuh
 @@ -2,6 +2,7 @@
@@ -364,7 +436,7 @@ diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.c
  
  #include "glm_triton.cuh"
  
-@@ -22,14 +23,13 @@
+@@ -22,14 +23,13 @@ extern "C" __global__ void __launch_bounds__(128)
    if ((threadIdx.x & 7) == 0 && g < kg) xs[m * kg + g] = s;
  }
  
@@ -385,7 +457,7 @@ diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.c
    float score[MAXE], choice[MAXE];
    for (int i = 0; i < MAXE; ++i) {
      const int e = i * 32 + lane;
-@@ -62,10 +62,35 @@
+@@ -62,10 +62,35 @@ extern "C" __global__ void __launch_bounds__(32)
    if (lane < top_k) {
      const float v = norm ? div_full(mine, total + 1e-20f) : mine;
      pick[r * (top_k + 1) + lane] = mine_id;
@@ -423,9 +495,10 @@ diff --git a/zig/kernels/cuda/glm_glue_moe.cuh b/zig/kernels/cuda/glm_glue_moe.c
 +  tf_exl3::group_rows(sh_pick, n, top_k, ne, rows, uids, ucount, members);
 +}
 diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
+index 9b8da843d..ae2dec11d 100644
 --- a/zig/src/cuda/exl3_experts.zig
 +++ b/zig/src/cuda/exl3_experts.zig
-@@ -139,6 +139,12 @@
+@@ -141,6 +141,12 @@ pub const Experts = struct {
      group: Function,
      rot_in: Function,
      grouped: [3]Function, // one per codebook
@@ -438,7 +511,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
      gateup: Function,
      down_combine: Function,
      prompt: prompt.Kernels = undefined,
-@@ -153,6 +159,8 @@
+@@ -155,6 +161,8 @@ pub const Experts = struct {
              .group = undefined,
              .rot_in = undefined,
              .grouped = undefined,
@@ -447,7 +520,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
              .gateup = undefined,
              .down_combine = undefined,
          };
-@@ -169,6 +177,12 @@
+@@ -171,6 +179,12 @@ pub const Experts = struct {
              try e.mod.function("tf_exl3_grouped_1"),
              try e.mod.function("tf_exl3_grouped_2"),
          };
@@ -460,7 +533,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
          e.gateup = try e.mod.function("tf_exl3_gateup_epilogue");
          e.down_combine = try e.mod.function("tf_exl3_down_combine");
          return e;
-@@ -185,7 +199,9 @@
+@@ -187,7 +201,9 @@ pub const Experts = struct {
  
      /// The routed experts of `rows` rows: group, rotate in, grouped gate/up, SwiGLU, grouped down, wts-weighted sum.
      pub fn run(e: *const Experts, s: Stream, l: Layer, x: u64, x_stride: usize, x_dtype: DType, pick: u64, wts: u64, rows: usize, out: u64, sc: Scratch) !void {
@@ -471,7 +544,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
      }
  
      /// run() on a decode window's item plan (`it`): the grouped kernels in standard mode, the slot rows in `ey`.
-@@ -202,11 +218,6 @@
+@@ -204,11 +220,6 @@ pub const Experts = struct {
          const p = rows * slots;
          const maxu = @min(p, l.experts);
          const mt = (rows + 15) / 16;
@@ -483,7 +556,7 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
          // A decode window's item plan: the picks grouped into 16-pair items, the grouped kernels in standard mode.
          const items = it != null; // one codebook a launch, a plan, and ey to write the slot rows into: nothing else
          if (items and (l.codebook != .mcg or wts != 0 or out != 0 or ey == 0 or it.?.plan.members == 0 or it.?.plan.items == 0 or it.?.plan.counts == 0)) return error.TileNotBuilt;
-@@ -325,8 +336,185 @@
+@@ -327,8 +338,192 @@ pub const Experts = struct {
          cb.add(i32d(slots));
          try launch_.launch(e.down_combine, .{ .grid = .{ .x = @intCast(rows), .y = @intCast(d / 128), .z = 1 }, .block = .{ .x = @intCast(32 * slots), .y = 1, .z = 1 } }, s, &cb);
      }
@@ -603,7 +676,14 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
 +    fn tilesFor(e: *const Experts, l: Layer, rows: usize, which: enum { gate_up, down }) struct { f: Function, nt: usize, pdl: bool = false } {
 +        const n = if (which == .gate_up) l.width else l.dims;
 +        if (l.codebook != .mcg or rows > 32 or n % 64 != 0) return .{ .f = e.grouped[@backingInt(l.codebook)], .nt = 8 };
-+        const k2 = l.uniform_k2; // our Layer keeps one width field: the loader verified EVERY projection (the fork splits gate/up from down)
++        // the per-projection widths (v1.3.6's split Layer): the group's own field,
++        // else uniform_k2, 0 when unverified or the two disagree — the fork's
++        // single-field read picked wrong tile twins for a mixed-width pack
++        // (round 163's degenerate output; the brief docs/STAGE_BRIEF_bisect136.md).
++        const gu_w = if (l.uniform_k2_gu == 0) l.uniform_k2 else if (l.uniform_k2 == 0 or l.uniform_k2 == l.uniform_k2_gu) l.uniform_k2_gu else 0;
++        const d_w = if (l.uniform_k2_d == 0) l.uniform_k2 else if (l.uniform_k2 == 0 or l.uniform_k2 == l.uniform_k2_d) l.uniform_k2_d else 0;
++        const k2 = if (which == .gate_up) gu_w else d_w;
++        if (k2 == 0) return .{ .f = e.grouped[@backingInt(l.codebook)], .nt = 8 }; // unverified/mixed: the generic path
 +        if (e.shfl and k2 == 8) return .{ .f = (if (e.pdl) e.grouped_p else e.grouped_s)[@intFromBool(rows > 8)], .nt = 4, .pdl = e.pdl };
 +        if (rows <= 8 and (k2 == 6 or k2 == 8)) return .{ .f = e.grouped_r8[@intFromBool(k2 == 8)], .nt = 4 };
 +        const four = switch (which) {
@@ -670,9 +750,10 @@ diff --git a/zig/src/cuda/exl3_experts.zig b/zig/src/cuda/exl3_experts.zig
      try std.testing.expectEqual(@as(u32, 4), try plan(4096, 2048, true)); // GLM_GATEUP
      try std.testing.expectEqual(@as(u32, 1), try plan(2048, 4096, false)); // GLM_DOWN
 diff --git a/zig/src/families/glm/cuda_kda_block.zig b/zig/src/families/glm/cuda_kda_block.zig
+index cb339aec2..50211eed6 100644
 --- a/zig/src/families/glm/cuda_kda_block.zig
 +++ b/zig/src/families/glm/cuda_kda_block.zig
-@@ -119,6 +119,12 @@
+@@ -129,6 +129,12 @@ pub fn project(set: glue.Set, stream: cuda.Stream, l: Layer, s: Scratch, x: u64,
              if (!one) try columns(set, stream, s.tmp, w - fa, s.p + fa * 2, w, rows);
          },
      }
