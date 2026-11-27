@@ -2288,11 +2288,12 @@ fi
 # candidate arm (v1.3.6's own lever, the round-162 read): TF_GLM_KEEP_SEQS=1
 # keeps a released stream's sequence on its slot — the next request starts
 # with no allocation, fill or free. The value question: the steady-state
-# decode row (the anchors' 77.3, the bracket's 75.9) and the resume/warm
-# path. The bracket: the three-arm order-matched shape (the indexsplitval
-# pattern) — default(1) -> KEEP_SEQS=1 -> default(2); the witness must hold
-# on all three arms (the knob is claimed bit-safe upstream; the greedy
-# content must not move).
+# decode row (the bracket's 75.9/75.9 ground) and the resume/warm path.
+# The bracket: the three-arm order-matched shape (the indexsplitval
+# pattern) — default(1) -> KEEP_SEQS=1 -> default(2); the witness probe is
+# the BATTERY'S OWN (the REF_PROMPT shape, max_tokens 1024): the greedy
+# content sha must be the witness 80cc3802 on all three arms — the knob is
+# claimed bit-safe upstream and the deterministic probes must not move.
 if want keepseqval && ! phase_done keepseqval; then
   log "=== keepseqval (the keep-seqs candidate arm: the three-arm" \
     "order-matched bracket)"
@@ -2303,81 +2304,80 @@ if want keepseqval && ! phase_done keepseqval; then
   echo "- the brief: docs/STAGE_BRIEF_bump-val.md (the keep-seqs value" \
     "question: the steady-state decode row, the resume/warm path)" >> "$P"
   echo "- the bracket arms: order-matched (the indexsplitval pattern);" \
-    "the witness 80cc3802 must hold on all three" >> "$P"
-  short_query() {  # $1 the arm tag — one greedy probe, the same shape as
-                   # the battery's witness probe
-    bf=$(mktemp /tmp/kseq.XXXXXX.json)
-    printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' \
-      > "$bf"
-    printf '"content":"%s"}],"max_tokens":1024,"temperature":0}' \
-      "$WITNESS_PROMPT" >> "$bf"
-    curl -sSf -m 300 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" -d @"$bf" \
-      -o "$OUT/kseq-$1-greedy.json" || {
-      echo "- arm $1: the probe FAILED (rc $?)" >> "$P"; rm -f "$bf"; return 1
-    }
-    rm -f "$bf"
+    "the witness probe is the battery's own: the greedy content sha must" \
+    "be 80cc3802 on all three arms" >> "$P"
+  # the witness probe: the battery's own shape (the req_file/chat/
+  # content_sha helpers, the REF_PROMPT text, max_tokens 1024) — the arms
+  # compare against the witness 80cc3802, not against each other
+  witness_probe() {  # $1 the arm tag
+    req_file "$OUT/kseq-$1-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/kseq-$1-req.json" > "$OUT/kseq-$1-greedy.json" || true
     SHA=$(content_sha "$OUT/kseq-$1-greedy.json")
-    echo "- arm $1: the greedy sha ${SHA:0:16}" >> "$P"
+    echo "- arm $1: the greedy content sha ${SHA:0:16}" >> "$P"
   }
-  decode_cell() {  # $1 the arm tag — the steady-state decode probe
+  # the steady-state decode probe: the battery's own v136_decode_cell
+  # shape (2048 tokens, the essay prompt, the wall-clock read)
+  decode_cell() {  # $1 the arm tag
     bf=$(mktemp /tmp/kseq.XXXXXX.json)
-    printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' \
-      > "$bf"
-    printf '"content":"Write a 600-word essay on rivers.",' \
-      '"max_tokens":2048,"temperature":0}}' >> "$bf"
+    python3 - "$OUT/kseq-$1-decode-body.json" <<'PYKB'
+import json, os
+json.dump({"model": "GLM-5.3-Flash-EXL3",
+  "messages": [{"role": "user",
+                "content": "Write a 600-word essay about rivers."}],
+  "max_tokens": 2048, "temperature": 0}, open(os.argv[1], "w"))
+PYKB
     S=$(date +%s)
     curl -sSf -m 600 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" -d @"$bf" \
+      -H "Content-Type: application/json" \
+      -d @"$OUT/kseq-$1-decode-body.json" \
       -o "$OUT/kseq-$1-decode.json" || {
-      echo "- arm $1: the decode probe FAILED" >> "$P"; rm -f "$bf"; return 1
+      echo "- arm $1: the decode probe FAILED" >> "$P"; return 1
     }
-    rm -f "$bf"
     OUTTAG="$1" OUTDIR="$OUT" python3 - >> "$P" <<'PYKQ'
 import json, os
 out, tag = os.environ["OUTDIR"], os.environ["OUTTAG"]
 d = json.load(open(f"{out}/kseq-{tag}-decode.json"))
 m = d["choices"][0]["message"]
 c = m.get("content") or ""
-u = d.get("usage", {})
-ct = u.get("completion_tokens", 0)
+ct = d.get("usage", {}).get("completion_tokens", 0)
 print(f"- arm {tag}: the steady-state decode {ct} tokens"
       f" (the content {len(c)} chars)")
 PYKQ
   }
-  resume_cell() {  # $1 the arm tag — the resume/warm path: two turns, the
-                   # second reuses the first's state
-    bf=$(mktemp /tmp/kseq.XXXXXX.json)
-    printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' \
-      > "$bf"
-    printf '"content":"Remember the number 4711. Say ready."},' \
-      '"max_tokens":256,"temperature":0}}' >> "$bf"
+  # the resume/warm probe: two turns, the second reuses the first's state
+  resume_cell() {  # $1 the arm tag
+    python3 - "$OUT/kseq-$1-turn1-body.json" <<'PYKT'
+import json, os
+json.dump({"model": "GLM-5.3-Flash-EXL3",
+  "messages": [{"role": "user",
+                "content": "Remember the number 4711. Say ready."}],
+  "max_tokens": 256, "temperature": 0}, open(os.argv[1], "w"))
+PYKT
     curl -sSf -m 120 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" -d @"$bf" \
+      -H "Content-Type: application/json" \
+      -d @"$OUT/kseq-$1-turn1-body.json" \
       -o "$OUT/kseq-$1-turn1.json" || {
-      echo "- arm $1: turn1 FAILED" >> "$P"; rm -f "$bf"; return 1
+      echo "- arm $1: turn1 FAILED" >> "$P"; return 1
     }
-    T1=$(python3 -c "
-import json
-d = json.load(open('$OUT/kseq-$1-turn1.json'))
-print(d['id'])")
-    printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' \
-      > "$bf"
-    printf '"content":"What number did I ask you to remember?"},' \
-      '"max_tokens":256,"temperature":0}}' >> "$bf"
+    python3 - "$OUT/kseq-$1-turn2-body.json" <<'PYKT2'
+import json, os
+json.dump({"model": "GLM-5.3-Flash-EXL3",
+  "messages": [{"role": "user",
+                "content": "What number did I ask you to remember?"}],
+  "max_tokens": 256, "temperature": 0}, open(os.argv[1], "w"))
+PYKT2
     S=$(date +%s)
     curl -sSf -m 120 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" -d @"$bf" \
+      -H "Content-Type: application/json" \
+      -d @"$OUT/kseq-$1-turn2-body.json" \
       -o "$OUT/kseq-$1-turn2.json" || {
-      echo "- arm $1: turn2 FAILED" >> "$P"; rm -f "$bf"; return 1
+      echo "- arm $1: turn2 FAILED" >> "$P"; return 1
     }
     echo "- arm $1: the warm turn $(( $(date +%s) - S )) s" >> "$P"
-    rm -f "$bf"
   }
   # arm 1: the default (already serving — the promoted stack on 8001)
-  WITNESS_PROMPT="Explain in one paragraph why the sky is blue."
   log "keepseqval: arm 1 (the default, already serving)"
-  short_query def1
+  witness_probe def1
   decode_cell def1
   resume_cell def1
   # arm 2: the candidate
@@ -2388,7 +2388,7 @@ print(d['id'])")
     touch "$OUT/.keepseqval.done"
     die "keepseqval: the candidate restart failed"
   fi
-  short_query keep
+  witness_probe keep
   decode_cell keep
   resume_cell keep
   # arm 3: the default again (the bracket's close)
@@ -2396,9 +2396,10 @@ print(d['id'])")
   if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
       PARALLEL=4; then
     echo "- arm 3: the restart REFUSED — the bracket's close VOID" >> "$P"
-    touch "$OUT/.keepseqval.done"; die "keepseqval: the close restart failed"
+    touch "$OUT/.keepseqval.done"
+    die "keepseqval: the close restart failed"
   fi
-  short_query def2
+  witness_probe def2
   decode_cell def2
   resume_cell def2
   # the verdict: the witness across the arms + the decode/resume reads
@@ -2406,34 +2407,31 @@ print(d['id'])")
 import hashlib, json, os
 out = os.environ["OUTDIR"]
 WANTED = "80cc3802da241e4c8236e943f33f12028608cf706be8a9f0216a89e5a226566d"
+import hashlib, re
 shas = {}
 for tag in ("def1", "keep", "def2"):
     try:
-        d = json.load(open(f"{out}/kseq-{tag}-greedy.json"))
-        m = d["choices"][0]["message"]
-        blob = (m.get("content") or "") + "|" \
-          + (m.get("reasoning_content") or "")
-        shas[tag] = hashlib.sha256(blob.encode()).hexdigest()
+        m = json.load(open(f"{out}/kseq-{tag}-greedy.json"))
+        c = m["choices"][0]["message"].get("content") or ""
+        shas[tag] = hashlib.sha256(
+            re.sub(r"\s+", " ", c).strip().encode()).hexdigest()
     except Exception as e:
         shas[tag] = f"ERR {e}"
 print("## the witness across the bracket")
-first = list(shas.values())[0]
-same = len(set(shas.values())) == 1 and WANTED.startswith(first[:16])
-for tag, s in shas.items():
-    print(f"- {tag}: {s[:16]}")
+for tag, sh in shas.items():
+    print(f"- {tag}: {sh[:16]}")
+same = len(set(shas.values())) == 1 and list(shas.values())[0] == WANTED
 if same:
     print("- VERDICT: the witness IDENTICAL on all three arms — the knob"
           " is bit-safe at our shape; the decode/resume cells decide the"
           " value question")
 else:
-    print("- VERDICT: the witness MOVED — the knob stays default-off;"
-          " the kill criterion fired (the receipt opens the defect"
-          " question)")
+    print("- VERDICT: the witness MOVED or a probe failed — the knob"
+          " stays default-off; the receipt names what moved")
 PYKV
   tail -12 "$P"
   touch "$OUT/.keepseqval.done"
 fi
-
 # ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
