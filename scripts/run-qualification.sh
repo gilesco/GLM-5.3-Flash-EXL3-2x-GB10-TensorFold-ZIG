@@ -1962,10 +1962,9 @@ if want half136a && ! phase_done half136a; then
   echo "- the bisect: arm A (pristine) was COHERENT — the defect rides" \
     "the store; this arm halves it" >> "$P"
   log "half136a: prepare with the half-store (the first eight members)"
-  HALFSTORE="001-absorb-mma.patch 002-exl3prompt.patch" \
-    "003-fp8-pages.patch 004-packed-s2.patch" \
-    "005-pagerows-fix.patch 006-selist-fix.patch" \
-    "007-attnfetch8.patch 008-loaddirect.patch"
+  HALFSTORE="001-absorb-mma.patch 002-exl3prompt.patch 003-fp8-pages.patch \
+004-packed-s2.patch 005-pagerows-fix.patch 006-selist-fix.patch \
+007-attnfetch8.patch 008-loaddirect.patch"
   PATCHES="$HALFSTORE" scripts/prepare.sh </dev/null >>"$LOG" 2>&1 || die \
     "half136a: the image rebuild (prepare) failed - see the log"
   echo "## the standing restart (v1.3.6 + the store's first half)" >> "$P"
