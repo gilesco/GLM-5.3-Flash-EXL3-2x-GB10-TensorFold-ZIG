@@ -65,8 +65,14 @@ the composed tree (branch compose-v136) — the before-state anchors at the
 tree the earlier members left; the round-trip verifies byte-exact
 (pristine v1.3.6 + the store = the composed tree, zero diffs).
 
+
+REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
+the composed tree (branch compose-v136) — the before-state anchors at the
+tree the earlier members left; the round-trip verifies byte-exact
+(pristine v1.3.6 + the store = the composed tree, zero diffs).
+
 diff --git a/zig/src/families/glm/cuda_moe.zig b/zig/src/families/glm/cuda_moe.zig
-index 32dd099b6..a42752a35 100644
+index 32dd099b6..14493f0c6 100644
 --- a/zig/src/families/glm/cuda_moe.zig
 +++ b/zig/src/families/glm/cuda_moe.zig
 @@ -43,17 +43,30 @@ pub const Scratch = struct {
@@ -119,7 +125,45 @@ index 32dd099b6..a42752a35 100644
  pub fn prepare(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, rows: usize, pick: u64, flat_picks: ?u64) !void {
      const d = l.routed.dims;
      const stamp = prof_mod.span(k.prof, stream, .router);
-@@ -96,27 +110,6 @@ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
+@@ -78,14 +92,33 @@ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
+     const d = l.routed.dims;
+     const slots = l.top_k + 1;
+     const shared_id: i32 = @intCast(l.count);
++    const g = grouped(k, l, rows, prompt);
+     const flat = direct(k, l, rows, prompt);
+-    try prepare(k, stream, l, s, x, x_stride, rows, s.pick, if (flat) s.x3.picks else null);
+-    const stamp = prof_mod.span(k.prof, stream, .experts);
+-    defer stamp.end();
++    // the fork's side stream (009): the shared expert of every row beside the block's input, from the
++    // state as it stands now — a failure from the fork on leaves no side work behind it
++    errdefer if (k.side) |sd| sd.s.synchronize() catch {};
++    if (k.side) |sd| { // the shared expert of every row on the side stream, from the block's input as it stands now
++        try sd.fork.record(stream);
++        try sd.s.wait(sd.fork);
++        try shared(k, sd.s, l, s, x, x_stride, 0, rows, prompt, !g);
++        try sd.join.record(sd.s);
++    }
++    var stamp = prof_mod.span(k.prof, stream, .router);
++    try glue.router(k.set, stream, x, x_stride, l.router, s.mlog, s.router_part, rows, d, l.count);
++    if (g) { // the fused select (012): the compact picks and the grouping in one launch — no copy, no group launch
++        const sc = (try exl3.decodeScratch(l.exl3.?, s.x3, rows, l.count, d, l.routed.width, l.routed.limit)) orelse return error.BadWindow;
++        try glue.selectGroup(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, s.x3.picks, sc.ids, sc.count, sc.members);
++    } else try glue.select(k.set, stream, s.mlog, l.bias, s.pick, s.wts, rows, l.top_k, l.count, l.scale, l.norm, if (flat) s.x3.picks else null);
++    stamp.end();
++    const stamp2 = prof_mod.span(k.prof, stream, .experts);
++    defer stamp2.end();
+     if (k.prof) |p| p.mark(stream, .router);
+     defer if (k.prof) |p| p.mark(stream, .routed);
+     if (flat) return exl3.runDirect(k.exl3, stream, l.exl3.?, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
+-    if (l.exl3) |w| return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
++    if (l.exl3) |w| {
++        if (g) return exl3.runGrouped(k.exl3, stream, w, s.x3, x, x_stride, rows, l.count, d, l.routed.width, l.routed.limit);
++        return exl3.run(k.exl3, k.experts, stream, w, s.x3, s.plan, x, x_stride, s.pick, slots, rows, l.count, d, l.routed.width, l.routed.limit, prompt, s.ey, s.eact);
++    }
+     if (l.tfq3) |tl| {
+         const tk = k.tfq3 orelse return error.FormatNotLoaded;
+         return tk.moe(stream, tl, x, x_stride, s.pick, @intCast(slots), s.ey, @intCast(slots), rows, @intCast(l.top_k), l.routed.limit, 0, true);
+@@ -96,27 +129,6 @@ pub fn body(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_str
      try experts.run(k.experts, stream, if (prompt) .down else .down_f32, l.routed, plan, s.eact, l.routed.width, rows, s.ey, shared_id);
  }
  
@@ -147,7 +191,7 @@ index 32dd099b6..a42752a35 100644
  /// The already-filled slot rows, summed in slot order into out fp32 (any range, same bits).
  pub fn combine(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, lo: usize, hi: usize, prompt: bool, out: u64) !void {
      const bf16_slots = prompt and l.exl3 == null and l.tfq3 == null;
-@@ -128,11 +121,42 @@ pub fn combine(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, lo: usize,
+@@ -128,11 +140,42 @@ pub fn combine(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, lo: usize,
  pub fn fill(k: Kernels, stream: cuda.Stream, l: Layer, s: Scratch, x: u64, x_stride: usize, lo: usize, hi: usize, prompt: bool, out: u64) !void {
      const stamp = prof_mod.span(k.prof, stream, .shared_expert);
      defer stamp.end();
