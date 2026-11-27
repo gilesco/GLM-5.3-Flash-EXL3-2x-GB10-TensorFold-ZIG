@@ -1452,6 +1452,15 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
   geometry — the follow-up work item; never set by config or the
   battery). The promoted line is v1.3.6; the round-163 structural fixes
   hold (the -test image tag; the pin gate; the restore playbook).
+- [x] **THE KEEP-SEQS CANDIDATE ARM** (round 165,
+  campaign-20261127-150052): CLOSED WITHOUT ADOPTION — the
+  three-arm order-matched bracket completed (default(1) ->
+  TF_GLM_KEEP_SEQS=1 -> default(2)): the witness 80cc3802 reproduced
+  on BOTH fresh-serve arms (the knob is bit-safe in substance — the
+  def1 arm's markdown-wrapper difference is serve-generation noise,
+  receipted), and the value cells moved nothing (the warm turns
+  5/4/4 s; the steady-state decode flat). The no-allocation lever
+  buys nothing measurable at our shape; the knob stays default-off.
 - [x] **THE #4510 INDEXER-SPLIT KNOB** (round 161 cont. 2,
   campaign-20261124-191142): CLOSED — the all-gather skip does NOT pay
   at our shape. The three-arm order-matched bracket read the witness

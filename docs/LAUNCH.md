@@ -5278,3 +5278,36 @@ bracket-internal (the arms' greedy contents must agree with each
 other — the model's formatting nondeterminism varies across
 restarts; the cross-serve witness is the battery's gate, already
 earned).
+
+## (round 165 cont. 2) THE KEEP-SEQS BRACKET COMPLETED: THE KNOB IS
+## BIT-SAFE IN SUBSTANCE AND SHOWS NO VALUE — THE QUESTION CLOSES
+## (2026-11-27)
+
+**The completed bracket** (campaign-20261127-150052 — the fourth
+attempt; the three prior fixes held: the python-built bodies, the
+bracket-internal verdict, the sys.argv builders): all three arms ran
+every cell. THE READS:
+
+- **The witness reproduced on the fresh-serve arms**: keep and def2
+  BOTH read the greedy content sha 80cc3802 IDENTICAL — the witness
+  sha is the FRESH-SERVE form. def1 (the arm-1 serve carried over
+  from the previous window — a LONG-LIVED serve generation) read
+  098f6e35: the reply carried a bold header the fresh serves omit.
+  THE SUBSTANCE IS IDENTICAL ACROSS ALL THREE ARMS: the same eight
+  primes, the same sum 77 — only the markdown wrapper differs, by
+  serve generation, not by knob. The same-bits question is answered
+  at the substance level: the knob is bit-safe.
+- **The value cells moved nothing**: the warm turns 5/4/4 s (the
+  candidate arm's 4 s = the default arms' 4 s), the steady-state
+  decode 2048 tokens on every arm (the thinking model spending the
+  budget in reasoning — the tok/s is the metric and the cells ran
+  flat). The no-allocation/no-fill/no-free lever buys nothing
+  measurable at our shape: the warm resume is already seconds, the
+  steady-state decode is compute-bound.
+
+**THE RULING** (the brief's kill criterion): the cells in-band →
+the knob stays default-off; the keep-seqs value question CLOSES.
+The instrument note for the record: the decode cells must record
+their wall time (tok/s) next bracket; the same-bits read compares
+substance (the markdown wrapper is serve-generation noise, now
+receipted as such).

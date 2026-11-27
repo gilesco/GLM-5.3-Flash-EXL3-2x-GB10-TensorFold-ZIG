@@ -423,3 +423,4 @@
 | [(round 164 cont. 2) THE BISECT'S TWO STA] (round 164 cont. 2) THE BISECT'S TWO STAGING-VOID RECEIPTS AND THE PIN | docs/LAUNCH.md | — | VOID |
 | [(round 164 cont. 4) THE TWELFTH BUMP QUA] (round 164 cont. 4) THE TWELFTH BUMP QUALIFIES AND PROMOTES: v1.3.6 | docs/LAUNCH.md | — | qualified |
 | [round 165] (round 165) THE KEEP-SEQS CANDIDATE ARM: THE FIRST BRACKET VOIDED ON | docs/LAUNCH.md | — | — |
+| [(round 165 cont. 2) THE KEEP-SEQS BRACKE] (round 165 cont. 2) THE KEEP-SEQS BRACKET COMPLETED: THE KNOB IS | docs/LAUNCH.md | — | — |
