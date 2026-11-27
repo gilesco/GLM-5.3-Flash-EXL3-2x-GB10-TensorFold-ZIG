@@ -5237,3 +5237,32 @@ the release watch's PIN_TAG moves to v1.3.6; the head's testing
 repo local.sh keeps f56b1420f AS THE PROMOTED PIN now (the bisect
 label retired). The crash-net cron stays commented (the user's call
 to re-enable).
+
+## (round 165) THE KEEP-SEQS CANDIDATE ARM: THE FIRST BRACKET VOIDED ON
+## THE PROBE BODY BUG, REBUILT AND RELAUNCHED (2026-11-27)
+
+**The void** (campaign-20261127-140608): the keepseqval phase's arm-1
+value probes failed instantly — the decode/resume probe bodies were
+MALFORMED JSON (the message object never opened; one closing brace
+too many), the serve answered 400, the probes recorded FAILED. The
+same body-builder class as knob136's first void — the phase exited
+rc=1 before arm 2's restart; the exit trap restored production
+(healthy after 81 s; the flag cleared; the autonomous workflow rules
+held exactly as designed).
+
+**The rebuild** (the second design flaw found while finishing): the
+first bracket's witness comparison compared the arms' greedy shas
+against the witness 80cc3802 — but the probe used its OWN prompt, so
+the comparison could never pass even on a bit-safe knob. The rebuilt
+block: the witness probe is the BATTERY'S OWN shape (the REF_PROMPT
+text via the req_file/chat/content_sha helpers — the deterministic
+probes the twelve bumps have kept identical), the value probes'
+bodies built by python json.dump (the malformed-body class dead),
+the verdict computing the shas itself, the old block's orphaned
+tail removed.
+
+**The window relaunched** — the three-arm order-matched bracket
+(default(1) -> TF_GLM_KEEP_SEQS=1 -> default(2)): the witness must
+hold on all three arms; the steady-state decode and the warm-resume
+cells read the value question. The promoted line is v1.3.6; the
+keep-seqs lever is the release's own (the round-162 read).
