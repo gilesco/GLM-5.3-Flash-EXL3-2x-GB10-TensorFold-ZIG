@@ -5266,3 +5266,15 @@ tail removed.
 hold on all three arms; the steady-state decode and the warm-resume
 cells read the value question. The promoted line is v1.3.6; the
 keep-seqs lever is the release's own (the round-162 read).
+
+**The keepseqval void #2 and #3** (campaigns 142703, 144308): the
+first reran the rebuilt bracket but the value probes died again —
+the PYKB heredoc's body builder used `os.argv` (a nonexistent Python
+attribute; `sys.argv` is the real one) and under `set -e` the phase
+died before the curl each time. Fixed and verified live (the
+heredoc python runs green against the fixed import). The
+re-scoping from void #1 stands: the same-bits read is
+bracket-internal (the arms' greedy contents must agree with each
+other — the model's formatting nondeterminism varies across
+restarts; the cross-serve witness is the battery's gate, already
+earned).
