@@ -103,3 +103,34 @@ the Fp8OnPages refusal is intact in v1.3.6's tree (3 sites).
   BEFORE the window: a failed compile is a voided window.
 - DRY_RUN green before the real launch; the continuation scanner on
   any new phase code; the launch is the last action of the sitting.
+
+## THE _CL FOLLOW-UP'S DESK ANALYSIS (the round-165 close; staged-ready)
+
+The latent `TF_GLM_EXL3P=0` defect's mechanism, narrowed to the
+instrument that will catch it:
+
+- **The fault line is asynchronous** — the worker's log shows
+  `cuLaunchKernelEx ... grid 32x1x1, block 256x1x1, shared 37120 B,
+  pdl`. The prompt kernels NEVER launch with PDL (`go()` in
+  exl3_prompt.zig sets no `.pdl`): the faulting launch was a
+  decode-side PDL twin. The classic pattern: the prompt path
+  CORRUPTS memory; the fault surfaces on the NEXT PDL-tagged
+  launch (the decode twins or the next request's prompt-rotate).
+  The corruption source: the `_cl` bodies (`tmain_cl<2, XR>`
+  hardcodes the 4-bit trellis geometry; the mixed pack's per-
+  projection widths disagree on some layer).
+- **The eligible() gate now carries v1.3.6's semantics** —
+  `widths(l)` returns `verified(group, uniform)`: for our pack the
+  per-projection fields make `w.gu`/`w.d` both built, so the gate
+  PASSES the mixed layer through to the `_cl` twins. The v1.3.6
+  gate protects upstream's NVFP4 route; it cannot see the fork's
+  `_cl` width assumptions.
+- **The instrument when this opens**: a compute-sanitizer
+  (memcheck) replay of the EXL3P=0 arm on the composed engine —
+  it names the faulting kernel AND the corrupting allocation
+  directly, no bisect windows needed. The replay is GPU work
+  (the sanitizer runs the engine under the tool; minutes, not
+  hours) and wants its own window with the stage brief quoting
+  this analysis as the instrument's ground.
+- **The scope holds**: default-on exl3p never touches the `_cl`
+  bodies; the fix blocks nothing on the promoted line.
