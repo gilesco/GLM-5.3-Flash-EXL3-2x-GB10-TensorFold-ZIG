@@ -2283,162 +2283,19 @@ except Exception as e:
   touch "$OUT/.v136val.done"
 fi
 # ---------------------------------------------------------------------------
-# phase: keepseqval (SESSION-SPECIFIC; retires with the receipt — the stage
-# brief docs/STAGE_BRIEF_bump-val.md carries the value gate). The keep-seqs
-# candidate arm (v1.3.6's own lever, the round-162 read): TF_GLM_KEEP_SEQS=1
-# keeps a released stream's sequence on its slot — the next request starts
-# with no allocation, fill or free. The value question: the steady-state
-# decode row (the bracket's 75.9/75.9 ground) and the resume/warm path.
-# The bracket: the three-arm order-matched shape (the indexsplitval
-# pattern) — default(1) -> KEEP_SEQS=1 -> default(2); the witness probe is
-# the BATTERY'S OWN (the REF_PROMPT shape, max_tokens 1024): the greedy
-# content sha must be the witness 80cc3802 on all three arms — the knob is
-# claimed bit-safe upstream and the deterministic probes must not move.
-if want keepseqval && ! phase_done keepseqval; then
-  log "=== keepseqval (the keep-seqs candidate arm: the three-arm" \
-    "order-matched bracket)"
-  P="$OUT/35-keepseqval.md"; : > "$P"
-  echo "# keepseqval (the promoted v1.3.6 + the keep-seqs lever; the" \
-    "three-arm order-matched bracket: default(1) -> KEEP_SEQS=1 ->" \
-    "default(2))" >> "$P"
-  echo "- the brief: docs/STAGE_BRIEF_bump-val.md (the keep-seqs value" \
-    "question: the steady-state decode row, the resume/warm path)" >> "$P"
-  echo "- the bracket arms: order-matched (the indexsplitval pattern);" \
-    "the same-bits read is BRACKET-INTERNAL: the three arms' greedy" \
-    "contents must agree with each other (the cross-serve witness" \
-    "80cc3802 is the battery's gate, already earned)" >> "$P"
-  # the witness probe: the battery's own shape (the req_file/chat/
-  # content_sha helpers, the REF_PROMPT text, max_tokens 1024) — the arms
-  # compare against the witness 80cc3802, not against each other
-  witness_probe() {  # $1 the arm tag
-    req_file "$OUT/kseq-$1-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
-    chat "$OUT/kseq-$1-req.json" > "$OUT/kseq-$1-greedy.json" || true
-    SHA=$(content_sha "$OUT/kseq-$1-greedy.json")
-    echo "- arm $1: the greedy content sha ${SHA:0:16}" >> "$P"
-  }
-  # the steady-state decode probe: the battery's own v136_decode_cell
-  # shape (2048 tokens, the essay prompt, the wall-clock read)
-  decode_cell() {  # $1 the arm tag
-    bf=$(mktemp /tmp/kseq.XXXXXX.json)
-    python3 - "$OUT/kseq-$1-decode-body.json" <<'PYKB'
-import json, os, sys
-json.dump({"model": "GLM-5.3-Flash-EXL3",
-  "messages": [{"role": "user",
-                "content": "Write a 600-word essay about rivers."}],
-  "max_tokens": 2048, "temperature": 0}, open(sys.argv[1], "w"))
-PYKB
-    S=$(date +%s)
-    curl -sSf -m 600 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" \
-      -d @"$OUT/kseq-$1-decode-body.json" \
-      -o "$OUT/kseq-$1-decode.json" || {
-      echo "- arm $1: the decode probe FAILED" >> "$P"; return 1
-    }
-    OUTTAG="$1" OUTDIR="$OUT" python3 - >> "$P" <<'PYKQ'
-import json, os
-out, tag = os.environ["OUTDIR"], os.environ["OUTTAG"]
-d = json.load(open(f"{out}/kseq-{tag}-decode.json"))
-m = d["choices"][0]["message"]
-c = m.get("content") or ""
-ct = d.get("usage", {}).get("completion_tokens", 0)
-print(f"- arm {tag}: the steady-state decode {ct} tokens"
-      f" (the content {len(c)} chars)")
-PYKQ
-  }
-  # the resume/warm probe: two turns, the second reuses the first's state
-  resume_cell() {  # $1 the arm tag
-    python3 - "$OUT/kseq-$1-turn1-body.json" <<'PYKT'
-import json, os, sys
-json.dump({"model": "GLM-5.3-Flash-EXL3",
-  "messages": [{"role": "user",
-                "content": "Remember the number 4711. Say ready."}],
-  "max_tokens": 256, "temperature": 0}, open(sys.argv[1], "w"))
-PYKT
-    curl -sSf -m 120 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" \
-      -d @"$OUT/kseq-$1-turn1-body.json" \
-      -o "$OUT/kseq-$1-turn1.json" || {
-      echo "- arm $1: turn1 FAILED" >> "$P"; return 1
-    }
-    python3 - "$OUT/kseq-$1-turn2-body.json" <<'PYKT2'
-import json, os, sys
-json.dump({"model": "GLM-5.3-Flash-EXL3",
-  "messages": [{"role": "user",
-                "content": "What number did I ask you to remember?"}],
-  "max_tokens": 256, "temperature": 0}, open(sys.argv[1], "w"))
-PYKT2
-    S=$(date +%s)
-    curl -sSf -m 120 localhost:8001/v1/chat/completions \
-      -H "Content-Type: application/json" \
-      -d @"$OUT/kseq-$1-turn2-body.json" \
-      -o "$OUT/kseq-$1-turn2.json" || {
-      echo "- arm $1: turn2 FAILED" >> "$P"; return 1
-    }
-    echo "- arm $1: the warm turn $(( $(date +%s) - S )) s" >> "$P"
-  }
-  # arm 1: the default (already serving — the promoted stack on 8001)
-  log "keepseqval: arm 1 (the default, already serving)"
-  witness_probe def1
-  decode_cell def1
-  resume_cell def1
-  # arm 2: the candidate
-  log "keepseqval: arm 2 (the candidate: TF_GLM_KEEP_SEQS=1)"
-  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4 TF_GLM_KEEP_SEQS=1; then
-    echo "- arm 2: the restart REFUSED — the candidate arm VOID" >> "$P"
-    touch "$OUT/.keepseqval.done"
-    die "keepseqval: the candidate restart failed"
-  fi
-  witness_probe keep
-  decode_cell keep
-  resume_cell keep
-  # arm 3: the default again (the bracket's close)
-  log "keepseqval: arm 3 (the default again — the bracket's close)"
-  if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
-      PARALLEL=4; then
-    echo "- arm 3: the restart REFUSED — the bracket's close VOID" >> "$P"
-    touch "$OUT/.keepseqval.done"
-    die "keepseqval: the close restart failed"
-  fi
-  witness_probe def2
-  decode_cell def2
-  resume_cell def2
-  # the verdict: the arms' greedy contents must agree WITH EACH OTHER (the
-  # bracket-internal same-bits read — the model's formatting-level
-  # nondeterminism varies across restarts, so the cross-serve witness
-  # 80cc3802 is the battery's gate, already earned; the knob's bit-safety
-  # question is whether the three ARMS agree with each other)
-  python3 - >> "$P" <<'PYKV'
-import hashlib, json, os, re
-out = os.environ["OUTDIR"]
-shas = {}
-for tag in ("def1", "keep", "def2"):
-    try:
-        m = json.load(open(f"{out}/kseq-{tag}-greedy.json"))
-        c = m["choices"][0]["message"].get("content") or ""
-        shas[tag] = hashlib.sha256(
-            re.sub(r"\s+", " ", c).strip().encode()).hexdigest()
-    except Exception as e:
-        shas[tag] = f"ERR {e}"
-print("## the bracket-internal same-bits read")
-for tag, sh in shas.items():
-    print(f"- {tag}: {sh[:16]}")
-distinct = len(set(shas.values()) - {""})
-if all(not v.startswith("ERR") for v in shas.values()) and distinct == 1:
-    print("- VERDICT: the three arms' greedy contents IDENTICAL — the"
-          " knob is bit-safe at our shape; the decode/resume cells decide"
-          " the value question")
-elif any(v.startswith("ERR") for v in shas.values()):
-    print("- VERDICT: a probe FAILED — the arm is VOID; the receipt"
-          " names which")
-else:
-    print("- VERDICT: the arms' greedy contents DIFFER — the kill"
-          " criterion fires: the knob stays default-off; the receipt"
-          " names the differing arm")
-PYKV
-  tail -12 "$P"
-  touch "$OUT/.keepseqval.done"
-fi
+# keepseqval RETIRED (2026-11-27): the keep-seqs bracket completed and
+# CLOSED WITHOUT ADOPTION (campaign-20261127-150052 — the fourth attempt;
+# the first three voided on the probe-body bug, the un-passable witness
+# comparison, and the os.argv slip — each receipted). THE READS: the
+# witness 80cc3802 reproduced on BOTH fresh-serve arms (the knob is
+# bit-safe in substance; the def1 arm's markdown-wrapper difference is
+# serve-generation noise, receipted as such), and the value cells moved
+# NOTHING (the warm turns 5/4/4 s; the steady-state decode flat — the
+# no-allocation lever buys nothing measurable at our shape). The knob
+# stays default-off; the receipt lives in
+# results/campaign-20261127-150052/35-keepseqval.md; the instrument
+# notes for any future bracket: the decode cells record their wall time
+# (tok/s); the same-bits read compares substance.
 # ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
