@@ -5188,9 +5188,19 @@ the tilesFor fix's first live test (the mixed-width pack takes the
 generic grouped path; the shfl/pdl twins engage only at their
 verified uniform widths).
 
-## (round 164 cont. 3) THE BISECT COMPLETE: THE DECODE DEFECT FIXED AND
-## VERIFIED; THE PROMPT-PATH DEFECT SCOPED LATENT; THE BUMP RE-STAGES
+## (round 164 cont. 4) THE TWELFTH BUMP QUALIFIES AND PROMOTES: v1.3.6
+## WITH THE BISECT'S TWO FIXES — THE WITNESS IDENTICAL, EVERY GATE GREEN
 ## (2026-11-27)
+
+**The battery** (campaign-20261127-123738, the v136val phase on the
+fixed compose): the same-bits greedy witness 80cc3802 IDENTICAL
+(the TWELFTH consecutive bump crossing); the section-2 content
+gates ALL PASS (g1 determinism, g2 drafted=plain, g3 resumed=fresh
+with the answer coherent, g4 concurrent=solo); hardmode 94/94 on
+the 3.1.0 frame; the vision suite 4/4; the load walls 83/83 s in
+band; the steady-state value bracket 75.9/75.9 tok/s — IN BAND, no
+decode row move (the anchors' decode row stands; no perf-anchors
+edit, no chart re-render). VERDICT: the v1.3.6 bump QUALIFIES.
 
 **The 122116 matrix's decisive read** (the probe's stderr finally
 naming the failure): arms 1/2 COHERENT again (the third honest
