@@ -25,7 +25,8 @@ PROD=~/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-production
 TEST=~/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-ZIG-testing
 FALLBACK_CONTAINER=vllm_node
 say() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$LOG"; }
-WORKER_NAME=$(grep -oP '^WORKER="\K[^"]+' "$PROD/config.sh" | head -1)
+WORKER_NAME=$(grep -oP '^WORKER=\K.*' "$PROD/scripts/local.sh" 2>/dev/null \
+  | head -1 | tr -d '"' | tr -d ' ')
 
 phase="${1:-}"
 case "$phase" in
@@ -65,7 +66,7 @@ swap)
   # 2. capture BOTH fallbacks' run configs (they run --rm: a stop removes
   #    them; the failure path rebuilds the containers from these captures)
   for side in head worker; do
-    local T=""
+    T=""
     if [ "$side" = worker ]; then
       T="ssh -o ConnectTimeout=5 $WORKER_NAME"
     fi
