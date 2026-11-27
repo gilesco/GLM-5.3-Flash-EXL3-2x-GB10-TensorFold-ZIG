@@ -5049,7 +5049,10 @@ issues"):
 - The v136val phase RETIRED with the void receipt (the block
   extracted to history; the re-evaluation re-stages from the v134val
   block when the compose defect is understood).
-- The head's testing repo TF_COMMIT back to 02b324ae (v1.3.5).
+- The head's testing repo TF_COMMIT back to 02b324ae (v1.3.5) —
+  flipped at the restore's close (the incident's second staging-gate
+  miss: the rollback entry recorded the intent but the sitting's
+  close caught it unflipped; the verify sweep found it).
 - The release watch's PIN_TAG stays v1.3.5 (never moved — verified).
 - The crash-net cron stays COMMENTED ((user)'s action; re-enabling is
   the user's call after the restore verifies).
@@ -5110,7 +5113,9 @@ to /tmp/restart-fallback.sh and stopped, the production stack healthy
 after 80 s, and the coherence curl returned exactly `restored` with
 coherent reasoning — the promoted v1.3.5 stack is serving production
 again (the container glm53-native-tf on both ranks, the image
-701396462fb4 built from the production repo's own pin). The user
+701396462fb4 built from the production repo's own pin). The staging
+gates all verify v1.3.5: the head's TF_COMMIT 02b324ae, the watch's
+PIN_TAG v1.3.5 (never moved), the store at the proven bodies. The user
 restarted the fallback spark-vLLM during the attempts (the capture
 notes the in-container serve is the user's command). The restore
 script stays as the incident's playbook.
