@@ -2310,6 +2310,193 @@ fi
 # The watch triggers (the agent-loop tool-call / double-turn failures on
 # our line) live in docs/STAGE_BRIEF_agent-traffic.md.
 
+# phase: v137val (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_bump137.md carries the value gate). The v1.3.7
+# bump: the engine is v1.3.7 (b33665493, released 2026-11-27 22:51Z,
+# 355 commits past v1.3.6). The release carries for our line: the PDL
+# launch guard (#5381 — the crash-class defense our rounds 163-164
+# chased, now upstream-enforced at launch time), the #5256 GLM load
+# read-ahead prefix fix, the TFQ3 records consolidation (#5281), the
+# EXL3 grouped-kernel 32-member tiles + the softcapped epilogue (the
+# EXISTING instantiations compile to the same SASS — upstream's own
+# claim; our greedy witness is the check), the router-tiles 32-bit-word
+# PTX stability (#5360), the TF_CUDA_SCHED knob (opt-in, default off),
+# and the prompt-cache pressure reporting (#5312). The release's own
+# GB10 read: GLM-5.3-Flash NVFP4 at TP=2 within 0.7% — the perf
+# expectation is FLAT; the value is the guard class + the load fix +
+# release currency. The fork ground held: the fp8-pages marriage stays
+# (upstream STILL refuses fp8-on-pages), the exl3p NBA ground primary
+# at 4 bits, the fused-select group stays; the store's members whose
+# regions upstream touched re-cut (002/003/012 + the replay chain).
+ 23 carries pair_experts beside numerics/
+# draft_split. The rebase: four members + the bisect's two fixes under the
+# state-machine discipline; 011's body retired EMPTY (its value-aware
+# closer rode the 010 regen — the tool-parse module split collapsed the
+# shared file set); the round-trip PROVEN byte-exact (pristine v1.3.7 +
+# the store = the composed tree 1c599da60, ZERO diffs). The head's pin
+# flipped BEFORE the launch (the two-gate rule). The gates: the
+# same-bits greedy witness 80cc3802… IDENTICAL (the NINTH -> TENTH
+# bump), the §2 content gates, hardmode 94 on the 3.1.0 frame (must
+# HOLD), the vision 4/4, the walls in band, the pool line. THE VALUE
+# BRACKET rides order-matched (the steady-state decode probe
+# default(1) -> default(2)): in-band both sides -> no row move (the row
+# stands at the round-157 PDL mean 77.3). ANY gate FAIL holds the pin
+# at v1.3.7 until understood; the promotion sync follows a QUALIFIED
+# verdict.
+# ---------------------------------------------------------------------------
+if want v137val && ! phase_done v137val; then
+  log "=== v137val (the v1.3.7 bump: the long-prompt step sharing / the"
+  log "leader join / the resume skip release; the value bracket rides)"
+  P="$OUT/32-v137val.md"; : > "$P"
+  echo "# v137val (v1.3.7 b33665493 + the re-anchored 17-member store;" \
+    "the value bracket: the steady-state decode default(1) -> default(2))" \
+    >> "$P"
+  echo "- the brief: docs/STAGE_BRIEF_v137val.md" >> "$P"
+  log "v137val: explicit prepare (the fingerprint moved: TF_COMMIT + the" \
+    "patch bodies)"
+  if ! scripts/prepare.sh </dev/null >>"$LOG" 2>&1; then die \
+    "v137val: the image rebuild (prepare) failed - see the log"; fi
+  echo "## the standing restart (the v1.3.7 engine + the re-anchored" \
+    "store)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s (first load after prepare)" \
+      >> "$P"
+    echo "- the serve line: $(serve_line)" >> "$P"
+    N=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -ci \
+      "malformed\|BadSetting" || true)
+    echo "- strict-TF_ refusal lines at boot (the video-library note" \
+      "excluded): ${N:-0}" >> "$P"
+    docker logs "$CONTAINER_NAME" 2>&1 | grep -i "malformed\|BadSetting" \
+      | head -3 >> "$P" || true
+    req_file "$OUT/v137-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+    chat "$OUT/v137-req.json" > "$OUT/v137-greedy.json" || true
+    SHA=$(content_sha "$OUT/v137-greedy.json")
+    echo "- the greedy content sha: $SHA" >> "$P"
+    WANTED="80cc3802da241e4c8236e943f33f12028608cf706be8a9f"
+    WANTED+="0216a89e5a226566d"
+    if [ "$SHA" = "$WANTED" ]; then WITNESS=IDENTICAL; else
+      WITNESS=DIFFERENT; fi
+    echo "- the same-bits witness: $WITNESS" >> "$P"
+  else
+    echo "- REFUSED (the prepare/start log's tail):" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+    die "v137val: the qualification arm refused to serve"
+  fi
+  echo "## the section-2 content gates" >> "$P"
+  run_gates v137 DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+    || true
+  echo "## hardmode (94 must HOLD on the 3.1.0 frame; --parallel 2)" \
+    >> "$P"
+  mkdir -p "$OUT/v134hm"
+  model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+    | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+  PYTHONUNBUFFERED=1 "$BENCH" run \
+    --base-url "http://127.0.0.1:$PORT" --model "$model" \
+    --format openai --tokenizer "$MODEL_ID" --hardmode \
+    --label "v137val" --output-dir "$OUT/v134hm" --parallel 2 \
+    --json-file "$OUT/v134hm/hm.json" > "$OUT/v134hm/hm.log" 2>&1 \
+    || true
+  grep -o '"final_score": [0-9]*' "$OUT/v134hm/hm.json" \
+    >> "$P" 2>/dev/null || true
+  python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v134hm/hm.json'))
+    print('- the bench version: %s' %
+          d.get('tool_eval_bench_version', 'NOT RECORDED'))
+except Exception: pass
+" >> "$P"
+  echo "## the vision suite (4/4 must hold)" >> "$P"
+  mkdir -p "$OUT/v134vision"
+  if [ -f scripts/vision-suite-probe.py ]; then
+    python3 scripts/vision-suite-probe.py "http://127.0.0.1:$PORT" \
+      "$OUT/v134vision/vision.json" > "$OUT/v134vision/vision.log" \
+      2>&1 || true
+    tail -6 "$OUT/v134vision/vision.log" >> "$P" 2>/dev/null || true
+  else
+    echo \
+      "- the vision-suite runner is MISSING at" \
+      "scripts/vision-suite-probe.py" >> "$P"
+  fi
+  echo "## the value bracket — order-matched (the steady-state decode)" \
+    >> "$P"
+  v134_decode_cell() {  # $1 tag — the steady-state decode probe per arm
+    local tag="$1" bf model S W
+    bf=$(mktemp /tmp/v134d.XXXXXX.json)
+    python3 -c "
+import json, sys
+print(json.dumps({'model': sys.argv[1],
+  'messages': [{'role': 'user',
+                'content': 'Write a 400-word essay about '
+                            'lighthouses.'}],
+  'max_tokens': 2048, 'temperature': 0, 'seed': 42}))" \
+      "$SERVED_NAME" > "$bf"
+    model=$(curl -s -m 10 "http://127.0.0.1:$PORT/v1/models" \
+      | python3 -c '
+import json, sys
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: print("")' 2>/dev/null) || model=""
+    python3 -c "import json,sys
+b = json.load(open(sys.argv[1]))
+b['model'] = sys.argv[2]
+json.dump(b, open(sys.argv[1], 'w'))" "$bf" "$model"
+    S=$(date +%s)
+    curl -s -m 300 "http://127.0.0.1:$PORT/v1/chat/completions" \
+      -H 'Content-Type: application/json' \
+      --data @"$bf" -o "$OUT/v137-$tag-decode.json" || true
+    W=$(( $(date +%s) - S )); rm -f "$bf"
+    python3 -c "
+import json
+try:
+    d = json.load(open('$OUT/v137-$tag-decode.json'))
+    ct = d['usage']['completion_tokens']
+    print('- steady-state decode: %d tokens in %d s'
+          ' = %.1f tok/s (wall incl. prefill)'
+          % (ct, $W, ct / max($W, 1)))
+except Exception as e:
+    print('- the decode probe FAILED: ' + repr(e))
+" >> "$P"
+  }
+  echo "### the default(1) arm (already serving)" >> "$P"
+  v134_decode_cell def1
+  log "v137val: the default(2) arm (the bracket's close)"
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "### the default(2) arm (the bracket's close)" >> "$P"
+    v134_decode_cell def2
+  else
+    echo "- the default(2) arm's restart REFUSED" >> "$P"
+    tail -6 "$LOG" | sed 's/^/  /' >> "$P"
+  fi
+  echo "## the timed load walls (the loading row's re-take on v1.3.7)" \
+    >> "$P"
+  for r in a b; do
+    ./scripts/stop.sh </dev/null >/dev/null 2>&1 || true
+    S=$(date +%s)
+    restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4 || \
+      { echo "- wall $r: the restart REFUSED" >> "$P"; continue; }
+    echo "- wall $r: $(( $(date +%s) - S )) s" >> "$P"
+  done
+  echo "- VERDICT: the same-bits greedy + the gates content-PASS" \
+    "+ hardmode holds on the 3.1.0 frame (94)" \
+    "+ the vision 4/4 + the walls in band = the v1.3.7 bump QUALIFIES" \
+    "(the pin moves to b33665493; the promotion sync follows; the" \
+    "release watch's PIN_TAG moves). THE VALUE READ: the steady-state" \
+    "probe beyond the ±5% order-matched band with both bracket arms" \
+    "agreeing = the decode row re-dates (the receipt names the lever;" \
+    "a CLAIM needs a follow-up knob A/B — this battery cannot" \
+    "separate #3486 from #3693); in-band = no row move, the question" \
+    "closes; ANY gate FAIL holds the pin at v1.3.7 until understood" \
+    >> "$P"
+  touch "$OUT/.v137val.done"
+fi
+
 # ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
