@@ -1946,6 +1946,83 @@ PYQR
 fi
 
 # ---------------------------------------------------------------------------
+# phase: half136a (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_bisect136.md carries the value gate). The bisect's
+# arm B: the store's FIRST HALF (001-008: the absorb-mma port, the exl3p
+# prompt rework, the fp8-pages marriage, packed-s2, the meta-only members,
+# loaddirect — the four hand-merged members' first contacts). The fast
+# instrument: the four short-query coherence probes (the plain136 shape).
+# Coherent -> the defect rides the SECOND half (009-018); degenerate -> the
+# defect rides the first half, and arm C halves again within it.
+if want half136a && ! phase_done half136a; then
+  log "=== half136a (the bisect's arm B: the store's first half, 001-008)"
+  P="$OUT/33-half136a.md"; : > "$P"
+  echo "# half136a (v1.3.6 f56b1420f + the store's first half 001-008;" \
+    "the short-query coherence read)" >> "$P"
+  echo "- the bisect: arm A (pristine) was COHERENT — the defect rides" \
+    "the store; this arm halves it" >> "$P"
+  log "half136a: prepare with the half-store (the first eight members)"
+  HALFSTORE="001-absorb-mma.patch 002-exl3prompt.patch" \
+    "003-fp8-pages.patch 004-packed-s2.patch" \
+    "005-pagerows-fix.patch 006-selist-fix.patch" \
+    "007-attnfetch8.patch 008-loaddirect.patch"
+  PATCHES="$HALFSTORE" scripts/prepare.sh </dev/null >>"$LOG" 2>&1 || die \
+    "half136a: the image rebuild (prepare) failed - see the log"
+  echo "## the standing restart (v1.3.6 + the store's first half)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+  else
+    echo "- the serve never came healthy - the battery VOID" >> "$P"
+    touch "$OUT/.half136a.done"; die "half136a: the restart failed"
+  fi
+  # the four short-query probes (the plain136 shape)
+  short_query() {  # $1 tag, $2 the prompt, $3 max_tokens
+    bf=$(mktemp /tmp/h136.XXXXXX.json)
+    printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' > "$bf"
+    printf '"content":%s}],"max_tokens":%s,"temperature":0}' \
+      "$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$2")" \
+      "$3" >> "$bf"
+    curl -sf -m 180 localhost:8001/v1/chat/completions \
+      -H "Content-Type: application/json" -d @"$bf" \
+      -o "$OUT/h136a-$1.json" || true
+    rm -f "$bf"
+  }
+  short_query identity "Reply with exactly: coherent" 256
+  short_query reasoning "What is 17 * 23? Give just the number." 256
+  short_query colors "Name three primary colors, one per line." 256
+  short_query sea "Write one sentence about the sea." 512
+  OUTDIR="$OUT" python3 - >> "$P" <<'PYHR'
+import json, os
+out = os.environ["OUTDIR"]
+print("## the short-query coherence read")
+allok = True
+for tag in ("identity", "reasoning", "colors", "sea"):
+    try:
+        d = json.load(open(f"{out}/h136a-{tag}.json"))
+        m = d["choices"][0]["message"]
+        c = m.get("content") or ""
+        r = (m.get("reasoning_content") or "")[:80]
+        ok = bool(c.strip())
+        print(f"- {tag}: {'COHERENT' if ok else 'DEGENERATE/EMPTY'}"
+              f" :: content={c[:80]!r} reasoning={r!r}")
+    except Exception as e:
+        ok = False
+        print(f"- {tag}: FAILED :: {e}")
+    allok = allok and ok
+if allok:
+    print("- VERDICT: the FIRST HALF (001-008) is CLEAN — the defect rides"
+          " the SECOND half (009-018)")
+else:
+    print("- VERDICT: the FIRST HALF CARRIES the defect — arm C halves"
+          " within 001-008")
+PYHR
+  tail -8 "$P"
+  touch "$OUT/.half136a.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
 # re-anchored (the request-starts build step, the registry_joins
