@@ -57,6 +57,20 @@ if [[ "$DRY" != 1 ]]; then
       "scripts/prepare.sh"
     ./scripts/prepare.sh
   fi
+  # the pin gate (the round-163 bisect's lesson, twice burned): TF_COMMIT is
+  # NOT in config_line's fingerprint (it is the resolved OUTPUT), so a pin
+  # flip alone leaves the marker matching and start.sh serves the STALE
+  # image — the 105428 window's arms measured the v1.3.5 engine while the
+  # bisect believed it measured the v1.3.6 compose. The pin must match the
+  # marker's resolved commit, or the image re-prepares.
+  _pin_commit="$(grep -oP '^TF_COMMIT=\K[0-9a-f]+' \
+    scripts/local.sh 2>/dev/null | head -1)"
+  if [[ -n "$_pin_commit" && -f "$STATE_DIR/prepared" ]] \
+    && ! grep -q "$_pin_commit" "$STATE_DIR/prepared"; then
+    log "the pin ($_pin_commit) differs from the prepared marker's" \
+      "commit - running scripts/prepare.sh"
+    ./scripts/prepare.sh
+  fi
   resolved_from_marker || die \
     "prepared marker has no resolved version; run scripts/prepare.sh"
   log "TensorFold $TF_RESOLVED_REF ($TF_RESOLVED_COMMIT)"
