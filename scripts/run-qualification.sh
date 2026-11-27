@@ -2040,7 +2040,8 @@ if want knob136 && ! phase_done knob136; then
   echo "- the bisect ground: arm A (pristine) COHERENT, arm B (001-008)" \
     "pending; this arm reads the knob surface on the full stack" >> "$P"
   probe_arm() {  # $1 the arm name, the env pairs from $2 on
-    log "knob136: restarting with $*"
+    local arm="$1"; shift
+    log "knob136: restarting the arm $arm with $*"
     if ! restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
         PARALLEL=4 "$@"; then
       echo "- arm $1: the restart REFUSED (the arm void)" >> "$P"
@@ -2055,11 +2056,11 @@ if want knob136 && ! phase_done knob136; then
         "Reply with exactly: coherent" > "$bf"
       curl -sf -m 180 localhost:8001/v1/chat/completions \
         -H "Content-Type: application/json" -d @"$bf" \
-        -o "$OUT/k136-$1-identity.json" || true
+        -o "$OUT/k136-$arm-identity.json" || true
       rm -f "$bf"
       break
     done
-    OUTTAG="$1" OUTDIR="$OUT" python3 - >> "$P" <<'PYKR'
+    OUTTAG="$arm" OUTDIR="$OUT" python3 - >> "$P" <<'PYKR'
 import json, os
 out, tag = os.environ["OUTDIR"], os.environ["OUTTAG"]
 try:
