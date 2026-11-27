@@ -5101,3 +5101,24 @@ here)**:
   with `docker start vllm_node`; report to the agent.
 - The crash-net cron on the head stays commented until the user
   re-enables it (the line: scripts/autonomous-cron.sh in crontab).
+
+**The restore VERIFIED** (2026-11-27 08:49, the swap's third attempt:
+the first died on the worker's fallback holding rank 1's memory, the
+second on `local` outside a function body — set -u with stderr to
+/dev/null): the image-ID gate passed, BOTH hosts' fallbacks captured
+to /tmp/restart-fallback.sh and stopped, the production stack healthy
+after 80 s, and the coherence curl returned exactly `restored` with
+coherent reasoning — the promoted v1.3.5 stack is serving production
+again (the container glm53-native-tf on both ranks, the image
+701396462fb4 built from the production repo's own pin). The user
+restarted the fallback spark-vLLM during the attempts (the capture
+notes the in-container serve is the user's command). The restore
+script stays as the incident's playbook.
+
+**The structural fix staged** (the incident's demand): the testing
+repo's IMAGE_NAME now defaults `glm53-native-tf-test` (the round-138
+fix renamed the containers; the image tags stayed shared — the
+incident is the receipt), and prepare.sh carries the image-identity
+gate: a testing-port prepare with an unsuffixed IMAGE_NAME refuses
+before any build. The next testing prepare builds a SEPARATE image;
+production's tag can never be overwritten from this repo again.

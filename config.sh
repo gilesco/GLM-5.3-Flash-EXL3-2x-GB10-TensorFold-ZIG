@@ -116,7 +116,7 @@ NCCL_IB_HCA="${NCCL_IB_HCA:-}"
 ZIG_VERSION="${ZIG_VERSION:-0.17.0}"                     # TensorFold's .zig-version (still 0.17.0 at v1.1.0)
 SM_ARCH="${SM_ARCH:-121}"                                # GB10
 BASE_IMAGE="${BASE_IMAGE:-nvcr.io/nvidia/pytorch:26.07-py3}"
-IMAGE_NAME="${IMAGE_NAME:-glm53-native-tf}"   # the runtime image; prepare.sh tags it <name>:<resolved version>
+IMAGE_NAME="${IMAGE_NAME:-glm53-native-tf-test}"   # the testing image tag (the round-163 incident: BOTH repos tagged glm53-native-tf:commit — both pin commits — so the testing prepare overwrote PRODUCTION's image and the crash-net's post-reboot restart served the broken v1.3.6 compose AS PRODUCTION; the round-138 fix renamed the CONTAINERS, the image tags stayed shared, and this incident is the receipt; production's own repo carries the unsuffixed glm53-native-tf)
 CONTAINER_NAME="${CONTAINER_NAME:-glm53-native-tf-test}"      # the -test suffix (the round-138 promotion fix): the PROMOTED production owns glm53-native-tf on port 8000 — the two stacks share this repo's scripts, so the testing stack MUST have its own name (the name-shared 12:15 window died on the prod_running guard firing on the testing stack itself). Production's own repo carries the unsuffixed name.
 
 # Checkpoint and binary locations (host paths; the container mounts the HF cache read-write so

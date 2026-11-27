@@ -29,6 +29,19 @@ fi
 
 source ./config.sh
 
+# The image-identity gate (the round-163 incident): a testing-stack prepare
+# that builds into production's image tag overwrites the serving engine's
+# bits — the crash-net then serves the testing build AS PRODUCTION. Refuse
+# the collision before any build (the round-154 guard exists; it was not
+# wired into the direct prepare path).
+if [ "${PORT:-}" = "8001" ] && [[ "$IMAGE_NAME" != *-test ]]; then
+  echo "IDENTITY GUARD: the testing port (8001) with an unsuffixed" \
+    "IMAGE_NAME ($IMAGE_NAME) would build into production's image" \
+    "tag — the round-163 incident's shape. Set IMAGE_NAME with a" \
+    "-test suffix." >&2
+  exit 1
+fi
+
 # --- 1. resolve the version
 # --------------------------------------------------------------
 resolve_version() {
