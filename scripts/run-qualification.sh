@@ -2297,6 +2297,114 @@ fi
 # notes for any future bracket: the decode cells record their wall time
 # (tok/s); the same-bits read compares substance.
 # ---------------------------------------------------------------------------
+# phase: agenttraffic (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_agent-traffic.md carries the value gate). The
+# reproduce probe for the agent-traffic surface's FIRST item (Mia 1104's
+# EXTRA_EOS, their #36): the engine's GLM stop list is a fixed 3 slots from
+# generation_config.json (config.zig:54; <|
+# assistant|> not among them), and the model can write <|
+# assistant|> as TEXT to close a reply — the token reaches the reply and the
+# model writes a second turn until the length cap. This phase REPRODUCES the
+# failure on our line before any port: agent-shaped turns at greedy with a
+# generous budget, each reply checked for the literal close marker in its
+# content and for a repeated-turn pattern; the tokenizer's id for <|
+# assistant|> is read so a port names the right token. NO PORT in this
+# window: the failure either reproduces (the value question opens) or the
+# item dies for the cost of one probe (the template's stop semantics may
+# differ from their kit's). The witness probe rides the same window: the
+# fresh-serve form is expected on the promoted stack (the round-165
+# finding).
+if want agenttraffic && ! phase_done agenttraffic; then
+  log "=== agenttraffic (the reproduce probe: the close-token failure"
+  log "class on our line; no port in this window)"
+  P="$OUT/36-agenttraffic.md"; : > "$P"
+  echo "# agenttraffic (the reproduce probe: the close-token failure class;" \
+    "the promoted v1.3.6 serve on the testing port)" >> "$P"
+  echo "- the brief: docs/STAGE_BRIEF_agent-traffic.md (EXTRA_EOS first:" \
+    "reproduce before port)" >> "$P"
+  echo "- the failure class: the model writes <|" \
+    "assistant|> as text to close a reply; the checkpoint's eos list" \
+    "[154820, 154827, 154829] does not hold it; the reply continues" >> "$P"
+  # the close-token id from the tokenizer: the engine's /tokenize endpoint
+  # names it if it exists; the offline check is the tokenizer.json
+  TOKENIZER_ID=$(docker exec glm53-native-tf-test python3 -c "
+import json
+repo = 'models--Mia-AiLab--GLM-5.3-Flash-EXL3-4bpw-TensorFold'
+hub = '/root/.cache/huggingface/hub/' + repo + '/snapshots'
+t = json.load(open(hub + '/' + __import__('os').listdir(hub)[0]
+                   + '/tokenizer.json'))
+v = t['vocab']
+print(v.get('<|assistant|>', 'NOT-IN-VOCAB'),
+      v.get('<|user|>', 'no-user'), v.get('<|observation|>', 'no-obs'))
+" 2>/dev/null || echo "the tokenizer read failed")
+  echo "- the tokenizer's ids: $TOKENIZER_ID" >> "$P"
+  # the reproduce probes: agent-shaped turns, greedy, a generous budget.
+  # A reply that closes itself and then writes a SECOND turn (or carries
+  # the close marker as text) is the failure.
+  probe_turn() {  # $1 the tag, $2 the prompt
+    python3 - "$OUT/at-$1-body.json" "$2" <<'PYAT'
+import json, os, sys
+json.dump({"model": "GLM-5.3-Flash-EXL3",
+  "messages": [{"role": "user", "content": sys.argv[2]}],
+  "max_tokens": 4096, "temperature": 0},
+  open(sys.argv[1], "w"))
+PYAT
+    S=$(date +%s)
+    curl -sSf -m 600 localhost:8001/v1/chat/completions \
+      -H "Content-Type: application/json" \
+      -d @"$OUT/at-$1-body.json" \
+      -o "$OUT/at-$1-reply.json" 2>"$OUT/at-$1-curl.err" || {
+      ERR=$(tail -1 "$OUT/at-$1-curl.err")
+      echo "- turn $1: the request FAILED ($ERR)" >> "$P"
+      return 0
+    }
+    W=$(( $(date +%s) - S ))
+    OUTW="$W" OUTT="$1" OUTDIR="$OUT" python3 - >> "$P" <<'PYAC'
+import json, os
+out, tag, w = os.environ["OUTDIR"], os.environ["OUTT"], os.environ["OUTW"]
+d = json.load(open(f"{out}/at-{tag}-reply.json"))
+m = d["choices"][0]["message"]
+c = m.get("content") or ""
+r = m.get("reasoning_content") or ""
+fin = d["choices"][0].get("finish_reason")
+ct = d.get("usage", {}).get("completion_tokens", 0)
+marker = "<|assistant|>" in c
+# a second turn: the close marker as text, or the reply's tail repeating
+# the opening's shape (the model answering twice)
+tail_repeat = False
+if len(c) > 400:
+    head, tail = c[:200], c[-200:]
+    tail_repeat = c.count("\n\n") > 6 and head[:40] in c[400:]
+hit = marker or tail_repeat
+print(f"- turn {tag}: finish={fin} tokens={ct} wall={w}s"
+      f" close-marker-as-text={'YES' if marker else 'no'}"
+      f" second-turn-shape={'YES' if tail_repeat else 'no'}")
+print(f"  content[:200]: {c[:200]!r}")
+if hit:
+    print(f"  >>> THE FAILURE REPRODUCED on turn {tag}")
+PYAC
+  }
+  probe_turn t1 "Complete this task and then stop: write a one-line
+summary of the file /etc/hostname. When the task is done, end your
+reply."
+  probe_turn t2 "You are an agent. Your job is done — the build passed
+and the report is filed. Close your turn now."
+  probe_turn t3 "Reply with exactly: done"
+  # the witness probe (the battery's own shape) on this serve generation:
+  # the fresh-serve form is expected (the round-165 finding)
+  req_file "$OUT/at-req.json" "$REF_PROMPT" '{"max_tokens": 1024}'
+  chat "$OUT/at-req.json" > "$OUT/at-greedy.json" || true
+  ASHA=$(content_sha "$OUT/at-greedy.json")
+  echo "- the serve generation's greedy sha: ${ASHA:0:16}" >> "$P"
+  echo "- READ: a close-marker-as-text or a second-turn shape on any turn" \
+    "= the failure is LIVE on our line and the EXTRA_EOS port opens;" \
+    "all clean = the class is not live here (our template's stop" \
+    "semantics differ) and the item dies for one probe" >> "$P"
+  tail -20 "$P"
+  touch "$OUT/.agenttraffic.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
 # re-anchored (the request-starts build step, the registry_joins
