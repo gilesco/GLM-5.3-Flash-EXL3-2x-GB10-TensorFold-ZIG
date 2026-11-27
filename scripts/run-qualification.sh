@@ -1870,6 +1870,82 @@ PRODCOLD_RETIRED=1
 
 
 # ---------------------------------------------------------------------------
+# phase: plain136 (SESSION-SPECIFIC; retires with the receipt — the stage
+# brief docs/STAGE_BRIEF_bump-val.md carries the value gate). The bisect's
+# arm A: PRISTINE upstream v1.3.6 (the store OPTED OUT — PATCHES=""; the
+# image-identity gate keeps the -test tag). The user's fast instrument: a
+# few short queries on the testing serve read the coherence — the same-bits
+# witness CANNOT hold here (no fork patches), the question is narrower: does
+# v1.3.6 ITSELF serve coherent at our shape on both ranks? Coherent -> the
+# defect rides OUR store's compose; degenerate -> the defect is upstream's
+# or the config's, and the bisect pivots. The kill: the battery refuses to
+# conclude anything from a window whose serve never came healthy.
+if want plain136 && ! phase_done plain136; then
+  log "=== plain136 (the v1.3.6 bisect arm A: the PRISTINE upstream v1.3.6"
+  log "engine, no store; the short-query coherence read)"
+  P="$OUT/33-plain136.md"; : > "$P"
+  echo "# plain136 (v1.3.6 f56b1420f pristine — the store opted out;" \
+    "the short-query coherence read)" >> "$P"
+  log "plain136: explicit prepare (the fingerprint moved: no store + the" \
+    "-test image)"
+  PATCHES="" scripts/prepare.sh </dev/null >>"$LOG" 2>&1 || die \
+    "plain136: the image rebuild (prepare) failed - see the log"
+  echo "## the standing restart (the pristine v1.3.6 engine)" >> "$P"
+  S=$(date +%s)
+  if restart DENSE_BITS=4 HEAD_BITS=4 KV_CACHE=fp8 CONTEXT=524288 \
+      PARALLEL=4; then
+    echo "- load $(( $(date +%s) - S )) s" >> "$P"
+  else
+    echo "- the serve never came healthy - the battery VOID" >> "$P"
+    touch "$OUT/.plain136.done"; die "plain136: the restart failed"
+  fi
+  # the short-query coherence read (the user's instrument: fast, not the
+  # hardmode run) — four probes at four shapes, each must be coherent text
+  short_query() {  # $1 tag, $2 the prompt, $3 max_tokens
+    bf=$(mktemp /tmp/p136.XXXXXX.json)
+    printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' > "$bf"
+    printf '"content":%s}],"max_tokens":%s,"temperature":0}' \
+      "$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$2")" \
+      "$3" >> "$bf"
+    curl -sf -m 180 localhost:8001/v1/chat/completions \
+      -H "Content-Type: application/json" -d @"$bf" \
+      -o "$OUT/p136-$1.json" || true
+    rm -f "$bf"
+  }
+  short_query identity "Reply with exactly: coherent" 256
+  short_query reasoning "What is 17 * 23? Give just the number." 256
+  short_query colors "Name three primary colors, one per line." 256
+  short_query sea "Write one sentence about the sea." 512
+  OUTDIR="$OUT" python3 - >> "$P" <<'PYQR'
+import json, os
+out = os.environ["OUTDIR"]
+print("## the short-query coherence read")
+allok = True
+for tag in ("identity", "reasoning", "colors", "sea"):
+    try:
+        d = json.load(open(f"{out}/p136-{tag}.json"))
+        m = d["choices"][0]["message"]
+        c = m.get("content") or ""
+        r = (m.get("reasoning_content") or "")[:80]
+        ok = bool(c.strip())
+        print(f"- {tag}: {'COHERENT' if ok else 'DEGENERATE/EMPTY'}"
+              f" :: content={c[:80]!r} reasoning={r!r}")
+    except Exception as e:
+        ok = False
+        print(f"- {tag}: FAILED :: {e}")
+    allok = allok and ok
+if allok:
+    print("- VERDICT: the PRISTINE v1.3.6 serves COHERENT —"
+          " the defect rides OUR store's compose")
+else:
+    print("- VERDICT: the PRISTINE v1.3.6 also DEGENERATES —"
+          " the bisect pivots to upstream/config")
+PYQR
+  tail -8 "$P"
+  touch "$OUT/.plain136.done"
+fi
+
+# ---------------------------------------------------------------------------
 # phase: v127val (SESSION-SPECIFIC; retires with the receipt). The v1.2.7
 # bump validation: the engine is now v1.2.7 (93a2e93) + the 16-patch stack
 # re-anchored (the request-starts build step, the registry_joins
