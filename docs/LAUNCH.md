@@ -5229,3 +5229,11 @@ fused-select restoration (the illegal-address crash). The battery
 re-stages with the FULL bump gates: the witness 80cc3802 IDENTICAL,
 the §2 gates, hardmode on the 3.1.0 frame, the vision suite, the
 walls, the steady-state value bracket.
+
+**The promotion** (the battery's verdict executed): the pin
+f56b1420f promoted; production's repo carries the promotion commit
+(the round-157/159/161 pattern: the pin, the README's engine line);
+the release watch's PIN_TAG moves to v1.3.6; the head's testing
+repo local.sh keeps f56b1420f AS THE PROMOTED PIN now (the bisect
+label retired). The crash-net cron stays commented (the user's call
+to re-enable).
