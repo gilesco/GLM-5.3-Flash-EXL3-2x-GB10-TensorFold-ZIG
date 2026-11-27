@@ -5127,3 +5127,29 @@ incident is the receipt), and prepare.sh carries the image-identity
 gate: a testing-port prepare with an unsuffixed IMAGE_NAME refuses
 before any build. The next testing prepare builds a SEPARATE image;
 production's tag can never be overwritten from this repo again.
+
+## (round 164) THE BISECT'S ARM A: PRISTINE v1.3.6 SERVES COHERENT — THE
+## DEFECT RIDES OUR STORE'S COMPOSE, NOT THE RELEASE (2026-11-27)
+
+**The window** (campaign-20261127-091432, the plain136 phase — the
+user's fast instrument: four short-query coherence probes instead of
+the hour-plus hardmode run): the PRISTINE upstream v1.3.6 engine
+(the store opted out, PATCHES=""), the four probes ALL COHERENT —
+'coherent' verbatim, 17*23=391 correct, three primary colors one per
+line, a fluent sea sentence. VERDICT: the defect rides OUR store's
+compose. The user's suspicion (from the round-163 incident arc) held.
+
+**The page-count reconciliation** (the round-163 entry's unexplained
+29% KV delta): v1.3.5's qualified boot 3201 pages; the v1.3.6
+PRISTINE arm 4103; the broken compose 4126. The ~900-page jump is
+v1.3.6's OWN baseline change (upstream, likely the keep-seqs slot
+reservation) — NOT our compose's defect marker; the compose adds
++23 pages on top. The page-layout desk-kills of round 163 stand.
+
+**The upstream scan** ((user) requested): 203 issues, 50 open GLM
+CUDA — ZERO degenerate-output reports on GLM-5.3-Flash CUDA. No
+upstream match; the defect is ours to bisect.
+
+**The bisect continues** (the round-163 plan): the four hand-merged
+members (001/002/003/009) are the risk concentration — all live in
+the store's first nine. The next arm halves there.
