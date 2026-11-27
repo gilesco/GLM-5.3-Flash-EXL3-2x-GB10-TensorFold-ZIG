@@ -420,3 +420,4 @@
 | [round 162] (round 162) THE TWELFTH BUMP STAGED: v1.3.6 REBASED BYTE-EXACT, THE | docs/LAUNCH.md | — | — |
 | [round 163] (round 163) THE TWELFTH BUMP VOID — THE INCIDENT, THE ROOT CAUSE, THE | docs/LAUNCH.md | — | VOID |
 | [round 164] (round 164) THE BISECT'S ARM A: PRISTINE v1.3.6 SERVES COHERENT — THE | docs/LAUNCH.md | — | — |
+| [(round 164 cont. 2) THE BISECT'S TWO STA] (round 164 cont. 2) THE BISECT'S TWO STAGING-VOID RECEIPTS AND THE PIN | docs/LAUNCH.md | — | VOID |

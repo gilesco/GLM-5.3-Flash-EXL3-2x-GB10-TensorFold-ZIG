@@ -5153,3 +5153,37 @@ upstream match; the defect is ours to bisect.
 **The bisect continues** (the round-163 plan): the four hand-merged
 members (001/002/003/009) are the risk concentration — all live in
 the store's first nine. The next arm halves there.
+
+## (round 164 cont. 2) THE BISECT'S TWO STAGING-VOID RECEIPTS AND THE PIN
+## GATE — THE HONEST MATRIX RELAUNCHED (2026-11-27)
+
+**The 103619 knob136 window VOID** (the first matrix): the arms
+measured the v1.3.5 ENGINE — the d47bad0 rollback had swept the
+v1.3.5-anchored store bodies over the round-trip-proven v1.3.6 ones
+AND the head's TF_COMMIT pin stayed reverted; config_line's
+fingerprint deliberately excludes the pin, so start.sh served the
+stale prepared image without re-preparing. The "moefuse-off
+COHERENT" verdicts measured the proven stack, not the v1.3.6
+compose — the root-cause reading on that evidence was PREMATURE.
+
+**The repair**: the store restored from 6752285 (the round-trip-
+proven v1.3.6 bodies) plus the tilesFor fix re-composed through
+012's body; the byte-exact round-trip re-proven from the store; the
+pin flipped to f56b1420f for the bisect only (labeled in local.sh;
+the promoted line stays v1.3.5).
+
+**THE PIN GATE** (the structural fix, twice burned): start.sh now
+compares TF_COMMIT against the prepared marker's resolved commit and
+re-prepares on a mismatch — the config_line fingerprint cannot see
+the pin by design, so the gate must read the pin itself. The 105428
+window's second void (the same stale-image class, caught by the
+commit line in the campaign log) is the receipt that forced the
+gate's shape.
+
+**The honest matrix relaunched**: the pin gate fires (the marker
+02b324ae vs the pin f56b1420f), the window re-prepares the v1.3.6
+image with the fixed store, and the four arms measure the compose
+for the first time — including the all-classic arm, which doubles as
+the tilesFor fix's first live test (the mixed-width pack takes the
+generic grouped path; the shfl/pdl twins engage only at their
+verified uniform widths).
