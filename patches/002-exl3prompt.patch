@@ -62,7 +62,6 @@ REGEN-NOTE (2026-11-26, the v1.3.6 rebase): the body regenerated from
 the composed tree (branch compose-v136) — the before-state anchors at the
 tree the earlier members left; the round-trip verifies byte-exact
 (pristine v1.3.6 + the store = the composed tree, zero diffs).
-
 diff --git a/zig/kernels/cuda/exl3_experts.cu b/zig/kernels/cuda/exl3_experts.cu
 index 24736efa7..84a2faedc 100644
 --- a/zig/kernels/cuda/exl3_experts.cu
@@ -197,9 +196,8 @@ index 24736efa7..84a2faedc 100644
      const int p = blockIdx.x, blk = blockIdx.y, mat = blockIdx.z;
      const int e = a.pick[p];
      if (e < 0 || e >= a.experts) return;
-@@ -146,6 +141,8 @@ struct GateUpArgs {
- };
- 
+@@ -176,5 +171,7 @@ void gateup_store(const GateUpArgs& a, int p, int n, int lane, float (&v)[4]);
+
  extern "C" __global__ void tf_exl3_gateup_epilogue(const GateUpArgs a) {
 +    pdl_wait();  // a dependent launch on the decode chain: z is the grid before's; no-op otherwise
 +    pdl_trigger();
@@ -507,6 +505,7 @@ index 24736efa7..84a2faedc 100644
 +        prompt_down<8>(Xd, Td, svh_d, y, K, D, ys, yrow, smem_raw, rows_sh, cb, e, cnt, warp, lane);
 +    }
  }
+
 diff --git a/zig/src/cuda/exl3_prompt.zig b/zig/src/cuda/exl3_prompt.zig
 index a9733bf04..c9540dd69 100644
 --- a/zig/src/cuda/exl3_prompt.zig
@@ -562,6 +561,7 @@ index a9733bf04..c9540dd69 100644
          if (built(w.d)) {
              try go(if (w.d == 6) k.down_k6 else k.down, s, .{ l.dims / 256, items, 1 }, 256, dn);
          } else for (k.down_m, mixed_widths) |f, k2| {
+
 diff --git a/zig/src/families/glm/cuda_exl3.zig b/zig/src/families/glm/cuda_exl3.zig
 index fe7b80e8e..4c732e04b 100644
 --- a/zig/src/families/glm/cuda_exl3.zig
