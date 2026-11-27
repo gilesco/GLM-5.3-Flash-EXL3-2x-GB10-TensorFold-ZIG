@@ -1440,18 +1440,18 @@ served-default swap (Focus -> TR3) is asked of the user with the cards.
 
 ## Open items
 
-- [ ] **THE v1.3.6 BUMP'S BISECT** (rounds 163-164): the DECODE defect is
-  FIXED and verified (the body()'s fused-select region lost in the 012
-  hand-merge against v1.3.6's prepare() refactor — restored; arms 1/2
-  coherent across three honest windows, zero engine crashes; the tilesFor
-  per-projection widths composed too). The PROMPT-PATH defect is SCOPED
-  LATENT: `TF_GLM_EXL3P=0`'s classic path carries its own out-of-bounds
-  against v1.3.6's mixed-width geometry (the _cl twins' hardcoded width
-  constants — the 500-then-death signature, campaign-20261127-122116);
-  the knob is never set by config or the battery — the fix is the
-  follow-up work item, not a bump blocker. The bump re-stages on the fixed
-  compose; the promoted line stays v1.3.5 until the full battery
-  qualifies.
+- [x] **THE v1.3.6 BUMP'S BISECT** (rounds 163-164): CLOSED — the twelfth
+  bump QUALIFIED and PROMOTED (campaign-20261127-123738: the witness
+  80cc3802 IDENTICAL — the twelfth consecutive; the section-2 gates PASS;
+  hardmode 94/94; the vision 4/4; the walls 83/83; the bracket 75.9/75.9
+  in band). The decode defect fixed (the body()'s fused-select region
+  lost in the 012 hand-merge against v1.3.6's prepare() refactor —
+  restored; the tilesFor per-projection widths composed too); the
+  prompt-path defect scoped LATENT (the TF_GLM_EXL3P=0 knob's classic
+  path carries its own out-of-bounds against v1.3.6's mixed-width
+  geometry — the follow-up work item; never set by config or the
+  battery). The promoted line is v1.3.6; the round-163 structural fixes
+  hold (the -test image tag; the pin gate; the restore playbook).
 - [x] **THE #4510 INDEXER-SPLIT KNOB** (round 161 cont. 2,
   campaign-20261124-191142): CLOSED — the all-gather skip does NOT pay
   at our shape. The three-arm order-matched bracket read the witness
