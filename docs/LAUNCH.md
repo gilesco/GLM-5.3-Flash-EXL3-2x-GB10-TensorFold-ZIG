@@ -5187,3 +5187,35 @@ for the first time — including the all-classic arm, which doubles as
 the tilesFor fix's first live test (the mixed-width pack takes the
 generic grouped path; the shfl/pdl twins engage only at their
 verified uniform widths).
+
+## (round 164 cont. 3) THE BISECT COMPLETE: THE DECODE DEFECT FIXED AND
+## VERIFIED; THE PROMPT-PATH DEFECT SCOPED LATENT; THE BUMP RE-STAGES
+## (2026-11-27)
+
+**The 122116 matrix's decisive read** (the probe's stderr finally
+naming the failure): arms 1/2 COHERENT again (the third honest
+window agreeing — the fused-select restoration HOLDS on the fixed
+compose); arms 3/4's failures were NOT races — `curl: (22) error:
+500` then `Failed to connect`: the FIRST REQUEST under
+`TF_GLM_EXL3P=0` returns a 500 and KILLS the engine (the worker's
+rank-1 log: `cuLaunchKernelEx: CUDA_ERROR_ILLEGAL_ADDRESS ... pdl`
+— the classic prompt-expert path carries its own out-of-bounds
+against v1.3.6's mixed-width geometry; the _cl twins' hardcoded
+width constants are the suspect).
+
+**The scope ruling**: the `_cl` path exists only behind the
+`TF_GLM_EXL3P=0` debug knob — the engine default (exl3p ON) is the
+adopted optimum (the exl3pqual receipt: the prefill lever), the
+config never sets the knob, and the standing battery never touches
+it. The decode-path defect was the production-path defect; the
+prompt-path defect is LATENT. The bump re-stages on the fixed
+compose; the `_cl` fix opens as a follow-up work item (the
+ledger's open item).
+
+**The fixes carried** (both byte-exact round-tripped, compile-
+gated, twice live-verified): the tilesFor per-projection widths
+(the mixed-width pack's tile selection) and the body()'s
+fused-select restoration (the illegal-address crash). The battery
+re-stages with the FULL bump gates: the witness 80cc3802 IDENTICAL,
+the §2 gates, hardmode on the 3.1.0 frame, the vision suite, the
+walls, the steady-state value bracket.
