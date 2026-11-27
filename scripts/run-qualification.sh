@@ -2053,10 +2053,13 @@ if want knob136 && ! phase_done knob136; then
       printf '{"model":"GLM-5.3-Flash-EXL3","messages":[{"role":"user",\n' \
         > "$bf"
       printf '"content":"%s"}],"max_tokens":256,"temperature":0}' \
-        "Reply with exactly: coherent" > "$bf"
-      curl -sf -m 180 localhost:8001/v1/chat/completions \
+        "Reply with exactly: coherent" >> "$bf"
+      if ! curl -sf -m 180 localhost:8001/v1/chat/completions \
         -H "Content-Type: application/json" -d @"$bf" \
-        -o "$OUT/k136-$arm-identity.json" || true
+        -o "$OUT/k136-$arm-identity.json"; then
+        echo "- arm $arm: the probe's curl FAILED (rc $?) — the arm is" \
+          "VOID, no verdict from a dead value leg" >> "$P"
+      fi
       rm -f "$bf"
       break
     done

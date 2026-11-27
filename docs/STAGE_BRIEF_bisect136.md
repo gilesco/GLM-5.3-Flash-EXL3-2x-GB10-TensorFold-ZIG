@@ -85,3 +85,12 @@ names its member's FUSED path as the defect carrier; all-degenerate
 moves the hunt to the members' base content (the remaining
 instrument there: the byte-level diff review of each member's
 hand-merged hunks against its v1.3.5 proven body).
+
+**The knob136 first-run void** (campaign-20261127-102038): all four
+arms' probes silent — the probe body builder OVERWROTE its request
+body's first line (`>` where plain136's proven shape appends `>>`),
+the serve answered 400 Bad Request, `curl -f` rc=22 with no output
+file, `|| true` swallowed it, the reader found nothing. The
+dead-race gate class: a value leg that fails silently. Fixed (the
+append restored) AND hardened (the curl's rc is now receipted; an
+arm whose curl fails is VOIDed loudly, never a silent verdict).
