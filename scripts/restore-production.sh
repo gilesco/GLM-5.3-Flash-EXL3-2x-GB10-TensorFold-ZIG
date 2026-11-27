@@ -25,6 +25,7 @@ PROD=~/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-production
 TEST=~/GLM-5.3-Flash-EXL3-2x-GB10-TensorFold-ZIG-testing
 FALLBACK_CONTAINER=vllm_node
 say() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$LOG"; }
+WORKER_NAME=$(grep -oP '^WORKER="\K[^"]+' "$PROD/config.sh" | head -1)
 
 phase="${1:-}"
 case "$phase" in
@@ -61,18 +62,54 @@ swap)
     say "REFUSING: the image is not the phase-A build."
     say "re-run prepare"; exit 1
   fi
-  # 2. stop the fallback (the agent's serving path)
-  say "stopping the fallback ($FALLBACK_CONTAINER) — serving goes dark"
-  docker stop "$FALLBACK_CONTAINER" >>"$LOG" 2>&1 \
-    || say "the fallback stop returned $? (continuing)"
+  # 2. capture BOTH fallbacks' run configs (they run --rm: a stop removes
+  #    them; the failure path rebuilds the containers from these captures)
+  for side in head worker; do
+    local T=""
+    if [ "$side" = worker ]; then
+      T="ssh -o ConnectTimeout=5 $WORKER_NAME"
+    fi
+    $T "docker inspect --format '{{range .Config.Env}}{{.}}
+{{end}}' vllm_node > /tmp/vllm-fallback.env" >>"$LOG" 2>&1 \
+      || say "the $side fallback env capture failed (continuing)"
+    $T "cat > /tmp/restart-fallback.sh <<'RB'
+#!/usr/bin/env bash
+docker run -d --rm --name vllm_node --network host --gpus all \\
+  --env-file /tmp/vllm-fallback.env \\
+  -v /home/giles/.cache/b12x:/root/.cache/b12x \\
+  -v /home/giles/.triton:/root/.triton \\
+  -v /home/giles/.tilelang:/root/.tilelang \\
+  -v /home/giles/.cache/huggingface:/root/.cache/huggingface \\
+  -v /home/giles/.cache/vllm:/root/.cache/vllm \\
+  -v /home/giles/.cache/flashinfer:/root/.cache/flashinfer \\
+  vllm-node-b12x sleep infinity
+RB
+chmod +x /tmp/restart-fallback.sh" >>"$LOG" 2>&1 \
+      || say "the $side fallback rebuild script failed (continuing)"
+  done
+  say "both fallbacks captured to /tmp/restart-fallback.sh on each host"
+  # 3. stop the fallbacks on BOTH hosts (the worker's holds rank 1's
+  #    memory — the 02:00 start refusal's cause)
+  say "stopping the fallback on the head — serving goes dark"
+  docker stop vllm_node >>"$LOG" 2>&1 || say "the head stop: $? (continuing)"
+  say "stopping the fallback on the worker (it holds rank 1's memory)"
+  ssh -o ConnectTimeout=5 "$WORKER_NAME" "docker stop vllm_node" >>"$LOG" 2>&1 \
+    || say "the worker stop: $? (continuing)"
   sleep 3
-  # 3. start production (both ranks) through the production repo's own scripts
+  # 4. start production (both ranks) through the production repo's own scripts
   say "starting the production stack (the production repo's start.sh)"
   cd "$PROD" || exit 1
   if ! scripts/start.sh </dev/null >>"$LOG" 2>&1; then
-    say "PRODUCTION START FAILED — restarting the fallback"
-    docker start "$FALLBACK_CONTAINER" >>"$LOG" 2>&1
-    say "the fallback is back; read $LOG"; exit 1
+    say "PRODUCTION START FAILED — rebuilding both fallbacks"
+    docker start vllm_node >>"$LOG" 2>&1 \
+      || bash /tmp/restart-fallback.sh >>"$LOG" 2>&1 \
+      || say "the head fallback could not restart"
+    ssh -o ConnectTimeout=5 "$WORKER_NAME" \
+      "docker start vllm_node 2>/dev/null || bash /tmp/restart-fallback.sh" \
+      >>"$LOG" 2>&1 || say "the worker fallback could not restart"
+    say "NOTE: the fallback containers sleep — the vLLM serve inside them is"
+    say "the user's own command and may need their restart. Read $LOG."
+    exit 1
   fi
   # 4. health-wait (the weights load in minutes)
   ok=""
@@ -83,10 +120,18 @@ swap)
     fi
   done
   if [ -z "$ok" ]; then
-    say "HEALTH WAIT TIMED OUT (10 min) — restarting the fallback"
+    say "HEALTH WAIT TIMED OUT (10 min) — rebuilding the fallbacks"
     docker stop glm53-native-tf >/dev/null 2>&1
-    docker start "$FALLBACK_CONTAINER" >>"$LOG" 2>&1
-    say "the fallback is back; read $LOG"; exit 1
+    ssh -o ConnectTimeout=5 "$WORKER_NAME" \
+      "docker stop glm53-native-tf" >/dev/null 2>&1
+    docker start vllm_node >>"$LOG" 2>&1 \
+      || bash /tmp/restart-fallback.sh >>"$LOG" 2>&1
+    ssh -o ConnectTimeout=5 "$WORKER_NAME" \
+      "docker start vllm_node 2>/dev/null || bash /tmp/restart-fallback.sh" \
+      >>"$LOG" 2>&1
+    say "NOTE: the fallback containers sleep — the vLLM serve inside is"
+    say "the user's own command and may need their restart. Read $LOG."
+    exit 1
   fi
   say "production /health is UP after $((i * 10)) s"
   # 5. a coherence curl: a tiny prompt, the content must be non-empty
