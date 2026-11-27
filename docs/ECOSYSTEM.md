@@ -442,6 +442,76 @@ qualification receipts.
   callbacks) is the path to production-class resume times on the native line. Nothing
   posted upstream.
 
+## The Mia 1104 recipe re-read (the (user) 2026-11-27 question; the fourth read of this repo)
+
+**MiaAI-Lab/GLM-5.3-Flash-DGX-Sparks-1104** (the sibling two-Spark recipe,
+TensorFold **1.1.9** `f350cd3e` + **121 engine patches** — a DIFFERENT
+engine lineage from ours: their pin predates the PDL/1.3.x
+reworks; ours is v1.3.6 `f56b1420f` + 17 members): moved to TP=4
+(four Sparks on a ring or a switch), a cache-first memory plan,
+KV sharding at TP=2 (their 0114, toward upstream #1431), the
+#2257 32-row verify windows (their 0115), the L2PF weight
+prefetch (their 0117, built into 1.3.0+ upstream), and a large
+agent-traffic surface (the tool-call guard 0111, EXTRA_EOS 0120,
+THINK_OFF_SPLIT 0121, the effort-line template 0121, DFlash2
+selector crash-fixes 0014-0016, learned conversations 0113,
+CONTEXT=auto, PROMPT_CACHE_MIN_GIB). Last commits 2026-11-21;
+their commits carry Claude co-authorship — an agent-maintained
+recipe like ours.
+
+**Every perf lever they name is already IN our promoted tree** —
+most through upstream absorption, some through our own store:
+
+- The #2257 32-row verify windows: IN ours (their 0115 was a
+  PORT of upstream #2257; upstream landed it at our pin's line).
+- L2PF: IN ours (built into TensorFold 1.3.0+, upstream-side;
+  our production boot line already prints `L2PF: 176 rows`).
+- PREFILL_SHARE (their `PREFILL_SHARE=0.68` mixed-traffic
+  fairness): IN ours natively (`TENSORFOLD_PREFILL_SHARE`,
+  lane_host_env.zig) — our line can set it without a patch.
+- The #2257-class wide verify: our store's 012 carries the
+  32-row tile machinery on the EXL3 path directly.
+- Their 0014/0015/0016 DFlash2 + KV-shard fixes: ported FROM
+  the same upstream commits ours absorbed at v1.3.0-1.3.6; our
+  pin's dflash.zig carries the vocabulary check (their 0014's
+  fix) via upstream's `checkTokenIds` (`927e5d2bb`).
+
+**Nothing actionable for the perf plan** — their speed work rides
+a different engine lineage (1.1.9 + 121 patches vs our v1.3.6 +
+17 members) and every lever they measured is already present on
+ours through upstream or our own store. Their KV_SHARD (their
+0114) is a genuine exception: upstream #1431, NOT in our tree —
+but their own measurement on the pair (their 2026-11-07 entry)
+was DECODE NEGATIVE (-1.6% at one stream, -3.6% aggregate at
+eight) with the gain being pool TOKENS (2x) rather than speed.
+Our line's 512k windows and the round-160 evidence on the KV
+pool make it a memory-lever, not a speed lever — watch if a
+long-context load-out (more streams at depth) becomes the
+user-visible need; then it is a port from upstream #1431's
+direction, not from their recipe.
+
+**The agent-traffic surface is their genuine gap vs us** — items
+we do NOT carry and they do: the tool-call guard (0111/0116),
+EXTRA_EOS (0120), THINK_OFF_SPLIT (0121), the effort-line
+template discipline (their QA 79.3% -> 86.0% measured), and
+CONTEXT=auto / PROMPT_CACHE_MIN_GIB start-time guards. These are
+SERVING-QUALITY items (agent-loop robustness), not engine-perf
+items: the value gate for any of them would be agent-loop
+failure rate, and the round-163 discipline says name the
+user-visible number first. WATCH TRIGGER: if agent-loop
+malformed-tool-call or double-turn failures appear on OUR line,
+their 0111/0116/0120/0121 patch set is the first place to look —
+the port cost is small (each is opt-in, byte-identical when off)
+and each carries its own host tests.
+
+**Their correctness-fix discipline is the transferable practice**
+(not their patches): three crash fixes (0014-0016) were found,
+verified on the sibling kit, and shipped with byte-identical
+off-state guarantees and host tests — the same shape as our
+store's round-trip + compile gates. Their CHANGELOG's
+"measured, traps and retractions included" record (RESULTS.md)
+is the same discipline as our DELTAS/LAUNCH chain.
+
 ## Watch history
 
 The dated release reviews, community sweeps and upstream-watch entries moved to
