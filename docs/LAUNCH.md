@@ -5346,3 +5346,38 @@ agent-traffic direction CLOSES with one window spent — no port
 code written for classes that are not live here. The watch
 triggers stay in the brief: agent-loop tool-call or double-turn
 failures on our line reopen it.
+
+## (round 166 cont. 2) THE THIRTEENTH BUMP'S TWO VOID RECEIPTS: THE PIN
+## TYPO AND THE SELF-REFERENTIAL STORE PASS — THE CORRECTED BATTERY
+## RELAUNCHED (2026-11-28)
+
+**Void #1** (campaign-20261127-231948): the pin in local.sh carried a
+41-character typo'd hash (…aebf1c — one char past the real
+b33665493…aebf1); git read it as a path argument and the build's
+checkout died rc=128 before any compile. The error text named the
+shape (a checkout argument git cannot resolve as a rev reads as a
+path). The pin corrected; the length check added to the manual
+sweep.
+
+**Void #2** (campaign-20261127-234129): the build's patch overlay
+refused 003-fp8-pages at registry_joins.zig — the store's 003/008/012
+bodies were pre-rebase. THE ROOT CAUSE IS THE DISCIPLINE LESSON: the
+convergent replay loop's first run passed its byte-exact check
+SELF-REFERENTIALLY — it verified the in-flight tree against the
+compose while the re-cut bodies lived only in that tree, never
+persisted to the store. The independent replay (a fresh checkout, no
+writes) exposed the gap: the store could not replay.
+
+**The repair**: the convergent loop re-run with PERSISTENCE — each
+re-cut body written to the store in the same pass (003, 008, 012
+carry the REGEN-NOTE bodies; the empty-body members skip per the
+build's own rule). The INDEPENDENT verify then passed: pristine
+v1.3.7 + the store = the composed tree, zero diffs, no writes in
+flight. The rule is now receipted: a round-trip check that runs
+against state the check itself created is not a check — the fresh
+replay is the gate.
+
+**The battery relaunched** on the sound store: the witness 80cc3802
+must stay IDENTICAL across the thirteenth bump; the §2 gates,
+hardmode, the vision suite, the walls, the bracket. All green => the
+thirteenth promotion; any FAIL => the pin holds at v1.3.6.
