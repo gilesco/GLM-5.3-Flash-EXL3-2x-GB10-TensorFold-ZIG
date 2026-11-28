@@ -5381,3 +5381,16 @@ replay is the gate.
 must stay IDENTICAL across the thirteenth bump; the §2 gates,
 hardmode, the vision suite, the walls, the bracket. All green => the
 thirteenth promotion; any FAIL => the pin holds at v1.3.6.
+
+**Void #3** (campaign-20261128-000446): the patch overlay applied
+clean this time but the COMPILE failed — `exl3_experts.fatbin`:
+`warp_tiles` at exl3_grouped.cuh(369): the fork's `grouped_body_v2`
+passes scalars where v1.3.7's MT-templated signature wants 1-length
+arrays (the fork's RR body is one member tile per g-block — MT=1 is
+its own semantics). The compose fixed in place (a9c005d2a: both call
+sites wrap to the MT=1 form; the shfl variant's scalar signature
+unchanged), the store's 012 re-folded, the independent replay
+verified byte-exact AGAIN. The relaunch is the third: the compile
+gate is the layer the patch-level round-trip cannot see — the skill's
+"git apply passes what the compiler rejects" lesson, now receipted at
+the release-rebase scale too.
