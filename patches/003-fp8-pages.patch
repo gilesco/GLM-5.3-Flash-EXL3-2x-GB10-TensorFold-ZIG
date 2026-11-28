@@ -96,6 +96,11 @@ the composed tree (branch compose-v136 at 810ccf65a) — the before-state
 anchors at the tree the earlier members left; the round-trip verifies
 byte-exact (pristine v1.3.7 + the store = the composed tree, zero diffs).
 
+REGEN-NOTE (2026-11-27, the v1.3.7 rebase): the body re-cut against the
+composed tree at the v1.3.7 merge (810ccf65a) — the before-state is the
+replay state at this member's stack position; the byte-exact round-trip
+(pristine v1.3.7 + the store = the composed tree) is the gate.
+
 diff --git a/zig/build/glm_family_host.zig b/zig/build/glm_family_host.zig
 index 210a0270b..4e13b2e1d 100644
 --- a/zig/build/glm_family_host.zig
@@ -502,37 +507,10 @@ index 000000000..f86953ac5
 +    for (cuda) |r| _ = try twin(r);
 +}
 diff --git a/zig/src/core/contract/measurements/pending_133.zig b/zig/src/core/contract/measurements/pending_133.zig
-index 56af8cdf4..263bdd84c 100644
+index 91d122315..263bdd84c 100644
 --- a/zig/src/core/contract/measurements/pending_133.zig
 +++ b/zig/src/core/contract/measurements/pending_133.zig
-@@ -5,13 +5,21 @@ pub const records = [_]Override{
-     .{ .name = "exl3_experts tf_exl3_grouped_0", .usage = .{ .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 158, .static = 32832, .bound = 0 }, .{ .regs = 158, .static = 32832, .bound = 0 } } },
-     .{ .name = "exl3_experts tf_exl3_grouped_1", .usage = .{ .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 158, .static = 32832, .bound = 0 }, .{ .regs = 158, .static = 32832, .bound = 0 } } },
-     .{ .name = "exl3_experts tf_exl3_grouped_2", .usage = .{ .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 148, .static = 32832, .bound = 0 }, .{ .regs = 148, .static = 32832, .bound = 0 } } },
--    .{ .name = "inkling2_experts tf_ink2x_group", .usage = .{ .{ .regs = 28, .static = 144, .bound = 1024 }, .{ .regs = 36, .static = 144, .bound = 1024 }, .{ .regs = 36, .static = 144, .bound = 1024 }, .{ .regs = 35, .static = 144, .bound = 1024 }, .{ .regs = 35, .static = 144, .bound = 1024 } } },
--    .{ .name = "inkling2_experts tf_ink2x_rows", .usage = .{ .{ .regs = 156, .static = 32832, .bound = 128 }, .{ .regs = 156, .static = 32832, .bound = 128 }, .{ .regs = 156, .static = 32832, .bound = 128 }, .{ .regs = 144, .static = 32832, .bound = 128 }, .{ .regs = 144, .static = 32832, .bound = 128 } } },
--    .{ .name = "inkling2_experts tf_ink2x_wide", .usage = .{ .{ .regs = 167, .static = 4224, .bound = 128 }, .{ .regs = 165, .static = 4224, .bound = 128 }, .{ .regs = 165, .static = 4224, .bound = 128 }, .{ .regs = 128, .static = 4224, .bound = 128 }, .{ .regs = 128, .static = 4224, .bound = 128 } } },
--    .{ .name = "inkling2_vision tf_ink2v_attention", .usage = .{ .{ .regs = 132, .static = 0, .bound = 256 }, .{ .regs = 132, .static = 0, .bound = 256 }, .{ .regs = 132, .static = 0, .bound = 256 }, .{ .regs = 128, .static = 0, .bound = 256 }, .{ .regs = 128, .static = 0, .bound = 256 } } },
-+    .{ .name = "exl3_experts tf_exl3_grouped_wide_2 (Inkling 2)", .usage = .{ .{ .regs = 128, .static = 32896, .bound = 0 }, .{ .regs = 128, .static = 32896, .bound = 0 }, .{ .regs = 128, .static = 32896, .bound = 0 }, .{ .regs = 128, .static = 32896, .bound = 0 }, .{ .regs = 128, .static = 32896, .bound = 0 } } },
-+    .{ .name = "exl3_experts tf_exl3_gateup_capped (Inkling 2)", .usage = .{ .{ .regs = 38, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 } } },
-     .{ .name = "inkling2_vision tf_ink2v_embed", .usage = .{ .{ .regs = 32, .static = 0, .bound = 256 }, .{ .regs = 39, .static = 0, .bound = 256 }, .{ .regs = 39, .static = 0, .bound = 256 }, .{ .regs = 30, .static = 0, .bound = 256 }, .{ .regs = 30, .static = 0, .bound = 256 } } },
-     .{ .name = "inkling2_vision tf_ink2v_rope", .usage = .{ .{ .regs = 20, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 }, .{ .regs = 14, .static = 0, .bound = 256 }, .{ .regs = 14, .static = 0, .bound = 256 } } },
--    .{ .name = "inkling2_vision tf_ink2v_scale_add", .usage = .{ .{ .regs = 11, .static = 0, .bound = 256 }, .{ .regs = 11, .static = 0, .bound = 256 }, .{ .regs = 11, .static = 0, .bound = 256 }, .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 12, .static = 0, .bound = 256 } } },
-+    .{ .name = "vit tf_vit_pointwise_gamma (Inkling 2)", .usage = .{ .{ .regs = 18, .static = 0, .bound = 256 }, .{ .regs = 18, .static = 0, .bound = 256 }, .{ .regs = 18, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_mix", .usage = .{ .{ .regs = 32, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_addnorm", .usage = .{ .{ .regs = 32, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 }, .{ .regs = 40, .static = 128, .bound = 512 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_qk", .usage = .{ .{ .regs = 28, .static = 128, .bound = 64 }, .{ .regs = 28, .static = 128, .bound = 64 }, .{ .regs = 28, .static = 128, .bound = 64 }, .{ .regs = 24, .static = 128, .bound = 64 }, .{ .regs = 24, .static = 128, .bound = 64 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_attn", .usage = .{ .{ .regs = 67, .static = 48192, .bound = 256 }, .{ .regs = 69, .static = 48192, .bound = 256 }, .{ .regs = 69, .static = 48192, .bound = 256 }, .{ .regs = 48, .static = 48192, .bound = 256 }, .{ .regs = 48, .static = 48192, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_merge", .usage = .{ .{ .regs = 32, .static = 0, .bound = 128 }, .{ .regs = 39, .static = 0, .bound = 128 }, .{ .regs = 39, .static = 0, .bound = 128 }, .{ .regs = 33, .static = 0, .bound = 128 }, .{ .regs = 33, .static = 0, .bound = 128 } } },
-+    .{ .name = "act_rows tf_swiglu_rows_expf (Inkling 2 DSpark)", .usage = .{ .{ .regs = 32, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_ctx", .usage = .{ .{ .regs = 32, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_rnn", .usage = .{ .{ .regs = 32, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_vocab", .usage = .{ .{ .regs = 21, .static = 0, .bound = 256 }, .{ .regs = 22, .static = 0, .bound = 256 }, .{ .regs = 22, .static = 0, .bound = 256 }, .{ .regs = 15, .static = 0, .bound = 256 }, .{ .regs = 15, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_pick_merge", .usage = .{ .{ .regs = 22, .static = 0, .bound = 0 }, .{ .regs = 22, .static = 0, .bound = 0 }, .{ .regs = 22, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 } } },
-     .{ .name = "exl3_grouped tf_ctl_exl3_grouped_old_0", .usage = .{ .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 127, .static = 32832, .bound = 0 }, .{ .regs = 127, .static = 32832, .bound = 0 } } },
-     .{ .name = "exl3_grouped tf_ctl_exl3_grouped_old_1", .usage = .{ .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 } } },
-     .{ .name = "exl3_grouped tf_ctl_exl3_grouped_old_2", .usage = .{ .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 }, .{ .regs = 128, .static = 32832, .bound = 0 } } },
-@@ -42,8 +50,11 @@ pub const records = [_]Override{
+@@ -50,8 +50,11 @@ pub const records = [_]Override{
      .{ .name = "gdn_prep tf_gdn_prep_64", .usage = .{ .{ .regs = 44, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 }, .{ .regs = 46, .static = 0, .bound = 128 }, .{ .regs = 46, .static = 0, .bound = 128 } } },
      .{ .name = "gdn_prep tf_gdn_prep_64, 16 rows or fewer", .usage = .{ .{ .regs = 44, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 }, .{ .regs = 46, .static = 0, .bound = 128 }, .{ .regs = 46, .static = 0, .bound = 128 } } },
      .{ .name = "glm_glue tf_glm_chunks_16_fp8", .usage = .{ .{ .regs = 64, .static = 0, .bound = 256 }, .{ .regs = 64, .static = 0, .bound = 256 }, .{ .regs = 64, .static = 0, .bound = 256 }, .{ .regs = 64, .static = 0, .bound = 256 }, .{ .regs = 64, .static = 0, .bound = 256 } } },
@@ -544,34 +522,10 @@ index 56af8cdf4..263bdd84c 100644
      .{ .name = "norms tf_l2_rows", .usage = .{ .{ .regs = 48, .static = 32, .bound = 256 }, .{ .regs = 48, .static = 32, .bound = 256 }, .{ .regs = 48, .static = 32, .bound = 256 }, .{ .regs = 64, .static = 32, .bound = 256 }, .{ .regs = 64, .static = 32, .bound = 256 } } },
      .{ .name = "norms tf_slerp_rows", .usage = .{ .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 }, .{ .regs = 113, .static = 32, .bound = 256 } } },
      .{ .name = "qk_rows tf_qk_rows at dim 256", .usage = .{ .{ .regs = 30, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 36, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 }, .{ .regs = 29, .static = 32, .bound = 256 } } },
-@@ -83,4 +94,12 @@ pub const records = [_]Override{
-     .{ .name = "ricursive_prep tf_rc_prep_rows", .usage = .{ .{ .regs = 38, .static = 0, .bound = 256 }, .{ .regs = 38, .static = 0, .bound = 256 }, .{ .regs = 38, .static = 0, .bound = 256 }, .{ .regs = 38, .static = 0, .bound = 256 }, .{ .regs = 38, .static = 0, .bound = 256 } } },
-     .{ .name = "window attention wattn_kernel<128, 8, 2, 8>", .usage = .{ .{ .regs = 222, .static = 0, .bound = 256 }, .{ .regs = 222, .static = 0, .bound = 256 }, .{ .regs = 222, .static = 0, .bound = 256 }, .{ .regs = 218, .static = 0, .bound = 256 }, .{ .regs = 218, .static = 0, .bound = 256 } } },
-     .{ .name = "window attention tf_window_prompt_h2_pg", .usage = .{ .{ .regs = 222, .static = 0, .bound = 256 }, .{ .regs = 222, .static = 0, .bound = 256 }, .{ .regs = 222, .static = 0, .bound = 256 }, .{ .regs = 231, .static = 0, .bound = 256 }, .{ .regs = 231, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_qk_many", .usage = .{ .{ .regs = 32, .static = 128, .bound = 64 }, .{ .regs = 30, .static = 128, .bound = 64 }, .{ .regs = 30, .static = 128, .bound = 64 }, .{ .regs = 32, .static = 128, .bound = 64 }, .{ .regs = 32, .static = 128, .bound = 64 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_attn_many", .usage = .{ .{ .regs = 75, .static = 48192, .bound = 256 }, .{ .regs = 76, .static = 48192, .bound = 256 }, .{ .regs = 76, .static = 48192, .bound = 256 }, .{ .regs = 58, .static = 48192, .bound = 256 }, .{ .regs = 58, .static = 48192, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_merge_many", .usage = .{ .{ .regs = 32, .static = 0, .bound = 128 }, .{ .regs = 36, .static = 0, .bound = 128 }, .{ .regs = 36, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_ctx_many", .usage = .{ .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 48, .static = 0, .bound = 256 }, .{ .regs = 48, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_rnn_many", .usage = .{ .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 }, .{ .regs = 39, .static = 5120, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_pick_many", .usage = .{ .{ .regs = 23, .static = 256, .bound = 1024 }, .{ .regs = 24, .static = 256, .bound = 1024 }, .{ .regs = 24, .static = 256, .bound = 1024 }, .{ .regs = 25, .static = 256, .bound = 1024 }, .{ .regs = 25, .static = 256, .bound = 1024 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_vocab_rows", .usage = .{ .{ .regs = 32, .static = 0, .bound = 256 }, .{ .regs = 34, .static = 0, .bound = 256 }, .{ .regs = 34, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 } } },
-+    .{ .name = "inkling2 dspark tf_ink2_dsp_pick_rows", .usage = .{ .{ .regs = 22, .static = 0, .bound = 0 }, .{ .regs = 22, .static = 0, .bound = 0 }, .{ .regs = 22, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 }, .{ .regs = 40, .static = 0, .bound = 0 } } },
- };
 diff --git a/zig/src/core/contract/registry.zig b/zig/src/core/contract/registry.zig
-index f57bfe270..40092f854 100644
+index 0aec815fe..40092f854 100644
 --- a/zig/src/core/contract/registry.zig
 +++ b/zig/src/core/contract/registry.zig
-@@ -107,8 +107,8 @@ pub const cuda = @import("flashnext_cuda_records.zig").cuda ++ [_]CudaRecord{
-     .{ .launch = .{ .name = "qwen_vision tf_qv_embed", .symbol = "tf_qv_embed", .image = "qwen_vision", .threads = 256 }, .usage = .{ .{ .regs = 32, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 }, .{ .regs = 33, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 }, .{ .regs = 40, .static = 0, .bound = 256 } } },
-     .{ .launch = .{ .name = "qwen_vision tf_qv_layernorm", .symbol = "tf_qv_layernorm", .image = "qwen_vision", .threads = 256 }, .usage = .{ .{ .regs = 23, .static = 132, .bound = 256 }, .{ .regs = 26, .static = 132, .bound = 256 }, .{ .regs = 26, .static = 132, .bound = 256 }, .{ .regs = 23, .static = 132, .bound = 256 }, .{ .regs = 23, .static = 132, .bound = 256 } } },
-     .{ .launch = .{ .name = "qwen_vision tf_qv_qkv_rope", .symbol = "tf_qv_qkv_rope", .image = "qwen_vision", .threads = 128 }, .usage = .{ .{ .regs = 32, .static = 0, .bound = 128 }, .{ .regs = 36, .static = 0, .bound = 128 }, .{ .regs = 36, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 }, .{ .regs = 40, .static = 0, .bound = 128 } } },
--    .{ .launch = .{ .name = "qwen_vision tf_qv_attention72", .symbol = "tf_qv_attention72", .image = "qwen_vision", .threads = 64 }, .usage = .{ .{ .regs = 180, .static = 36864, .bound = 64 }, .{ .regs = 180, .static = 36864, .bound = 64 }, .{ .regs = 180, .static = 36864, .bound = 64 }, .{ .regs = 186, .static = 36864, .bound = 64 }, .{ .regs = 186, .static = 36864, .bound = 64 } } },
--    .{ .launch = .{ .name = "qwen_vision tf_qv_attention64", .symbol = "tf_qv_attention64", .image = "qwen_vision", .threads = 64 }, .usage = .{ .{ .regs = 164, .static = 32768, .bound = 64 }, .{ .regs = 164, .static = 32768, .bound = 64 }, .{ .regs = 164, .static = 32768, .bound = 64 }, .{ .regs = 167, .static = 32768, .bound = 64 }, .{ .regs = 167, .static = 32768, .bound = 64 } } },
-+    .{ .launch = .{ .name = "qwen_vision tf_qv_attention72", .symbol = "tf_qv_attention72", .image = "qwen_vision", .threads = 64 }, .usage = .{ .{ .regs = 180, .static = 18432, .bound = 64 }, .{ .regs = 180, .static = 18432, .bound = 64 }, .{ .regs = 180, .static = 18432, .bound = 64 }, .{ .regs = 186, .static = 18432, .bound = 64 }, .{ .regs = 186, .static = 18432, .bound = 64 } } },
-+    .{ .launch = .{ .name = "qwen_vision tf_qv_attention64", .symbol = "tf_qv_attention64", .image = "qwen_vision", .threads = 64 }, .usage = .{ .{ .regs = 164, .static = 16384, .bound = 64 }, .{ .regs = 164, .static = 16384, .bound = 64 }, .{ .regs = 164, .static = 16384, .bound = 64 }, .{ .regs = 167, .static = 16384, .bound = 64 }, .{ .regs = 167, .static = 16384, .bound = 64 } } },
-     .{ .launch = .{ .name = "qwen_vision tf_qv_bias_gelu", .symbol = "tf_qv_bias_gelu", .image = "qwen_vision", .threads = 256 }, .usage = .{ .{ .regs = 16, .static = 0, .bound = 256 }, .{ .regs = 16, .static = 0, .bound = 256 }, .{ .regs = 16, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 } } },
-     .{ .launch = .{ .name = "qwen_vision tf_qv_bias_residual", .symbol = "tf_qv_bias_residual", .image = "qwen_vision", .threads = 256 }, .usage = .{ .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 }, .{ .regs = 20, .static = 0, .bound = 256 } } },
-     .{ .launch = .{ .name = "qwen_vision tf_qv_bias_cast", .symbol = "tf_qv_bias_cast", .image = "qwen_vision", .threads = 256 }, .usage = .{ .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 12, .static = 0, .bound = 256 }, .{ .regs = 18, .static = 0, .bound = 256 }, .{ .regs = 18, .static = 0, .bound = 256 } } },
 @@ -489,6 +489,7 @@ test {
      _ = @import("exl3_prompt_pending.zig");
      _ = @import("registry_pending_test.zig");
@@ -580,70 +534,11 @@ index f57bfe270..40092f854 100644
      _ = @import("flashnext_attn_lanes_pending.zig");
  }
  test "unmeasured CUDA records cannot pass a compiled resource check" {
-@@ -497,3 +498,22 @@ test "unmeasured CUDA records cannot pass a compiled resource check" {
-         try std.testing.expectEqual(limits.sms.len, try checkCuda(std.testing.allocator, &.{r}, true));
-     }
- }
-+
-+fn expectQvVisionTile(name: []const u8, usage: []const U) !void {
-+    const head_dim: u32 = if (std.mem.endsWith(u8, name, "64")) 64 else 72;
-+    const expected = 2 * 64 * head_dim * @sizeOf(u16);
-+    for (usage) |u| try std.testing.expectEqual(expected, u.static);
-+}
-+
-+test "Qwen CUDA vision tiles halve shared storage without changing BF16 values" {
-+    for (cuda) |r| if (std.mem.startsWith(u8, r.launch.name, "qwen_vision tf_qv_attention"))
-+        try expectQvVisionTile(r.launch.name, &r.usage);
-+    for (cuda_sets) |set| for (set.usage) |o| if (std.mem.startsWith(u8, o.name, "qwen_vision tf_qv_attention"))
-+        try expectQvVisionTile(o.name, &o.usage);
-+    for (0..1 << 16) |bits| {
-+        const narrow: u16 = @intCast(bits);
-+        const wide: f32 = @bitCast(@as(u32, narrow) << 16);
-+        const stored: u16 = @truncate(@as(u32, @bitCast(wide)) >> 16);
-+        try std.testing.expectEqual(narrow, stored);
-+    }
-+}
 diff --git a/zig/src/core/contract/registry_joins.zig b/zig/src/core/contract/registry_joins.zig
-index 796370336..364ea8624 100644
+index c9ab985f1..364ea8624 100644
 --- a/zig/src/core/contract/registry_joins.zig
 +++ b/zig/src/core/contract/registry_joins.zig
-@@ -23,18 +23,21 @@ pub const cuda_after = @import("registry_media.zig").cuda ++
-     @import("pocket_records.zig").cuda ++
-     @import("minimax_cuda_records.zig").cuda ++
-     @import("inkling2_cuda_records.zig").cuda ++
-+    @import("ernie5_5_records.zig").cuda ++
-     @import("moss_image_cuda_records.zig").cuda ++
-     @import("nemo_audio_cuda_records.zig").cuda ++
-     @import("idol_cuda_sets.zig").cuda ++
-     @import("qwen3_asr_cuda_records.zig").cuda ++
-     @import("zonos3_cuda_records.zig").cuda ++
-+    @import("hy4_engram_fp8_records.zig").cuda ++
-     @import("exl3_dense_records.zig").cuda ++
-     @import("exl3_finish_records.zig").cuda ++
-     @import("lfm2_moe_cuda_records.zig").cuda ++
-     @import("lfm3_cuda_records.zig").cuda ++
-     @import("dense_attention_records.zig").cuda ++
-     @import("dots_mocr_cuda_records.zig").cuda ++
--    @import("hy4_ihc_hc_records.zig").cuda;
-+    @import("hy4_ihc_hc_records.zig").cuda ++
-+    @import("hy4_route_rows_records.zig").cuda;
- pub const nvcc_132_after = @import("registry_learning.zig").cuda_132 ++
-     @import("paging_pending.zig").cuda_132 ++
-     @import("lfm2_moe_cuda_records.zig").cuda_132 ++
-@@ -55,9 +58,11 @@ pub const nvcc_133_after = @import("flashnext_tile_records.zig").cuda_133 ++
-     @import("inkling2_cuda_records.zig").cuda_133 ++
-     @import("nvfp4_experts32_records.zig").cuda_133 ++
-     @import("paging_pending.zig").cuda_133 ++
--    @import("experts_bf16_records.zig").cuda_133;
-+    @import("experts_bf16_records.zig").cuda_133 ++
-+    @import("int4_records.zig").cuda_133;
- pub const cuda_pending = @import("qwen_whole_records.zig").records ++
-     @import("flashnext_tile_records.zig").pending ++
-+    @import("int4_records.zig").records ++
-     @import("exl3_prompt_pending.zig").records ++
-     @import("nemotron_draw_records.zig").records ++
-     @import("cuda_lane_pending.zig").records ++
-@@ -66,6 +71,7 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
+@@ -71,6 +71,7 @@ pub const cuda_pending = @import("qwen_whole_records.zig").records ++
      @import("weight_only_records.zig").cuda ++
      @import("hc_activation_records.zig").cuda ++
      @import("qwen4_records.zig").cuda ++
@@ -651,48 +546,6 @@ index 796370336..364ea8624 100644
      @import("ricursive_cuda_records.zig").cuda ++
      @import("ricursive_prep_records.zig").cuda ++
      @import("ricursive_attn_records.zig").cuda ++
-@@ -117,11 +123,14 @@ pub const all_metal = @import("penalties_records.zig").records ++
-     @import("inkling2_glue_metal_records.zig").records ++
-     @import("inkling2_experts_metal_records.zig").records ++
-     @import("inkling2_mma_metal_records.zig").records ++
-+    @import("inkling2_dense_metal_records.zig").records ++
-     @import("inkling2_loop_metal_records.zig").records ++
-     @import("inkling2_runtime_metal_records.zig").records ++
-     @import("inkling2_tree_metal_records.zig").records ++
-     @import("inkling2_dspark_metal_records.zig").records ++
-     @import("inkling2_vision_metal_records.zig").records ++
-+    @import("inkling2_dflash2_metal_records.zig").records ++
-+    @import("inkling2_sample_metal_records.zig").records ++
-     @import("flint_records.zig").records ++
-     @import("hy4_records.zig").metal ++
-     @import("uocr_records.zig").records ++
-@@ -150,6 +159,7 @@ pub const landed_cuda = registry.cuda ++ @import("muse_cuda_records.zig").cuda +
-     @import("glm_l2pf_pending.zig").records;
- pub const all_cuda = @import("qmmf_prompt_records.zig").records ++
-     @import("moetile_records.zig").records ++
-+    @import("qmmf_many_records.zig").records ++
-     @import("gb10_many_records.zig").records ++
-     @import("nvfp4_tile_pending.zig").records ++
-     landed_cuda ++
-@@ -170,12 +180,18 @@ test {
-     _ = @import("inkling2_glue_metal_records.zig");
-     _ = @import("inkling2_experts_metal_records.zig");
-     _ = @import("inkling2_mma_metal_records.zig");
-+    _ = @import("inkling2_dense_metal_records.zig");
-     _ = @import("inkling2_loop_metal_records.zig");
-     _ = @import("inkling2_runtime_metal_records.zig");
-     _ = @import("inkling2_tree_metal_records.zig");
-     _ = @import("inkling2_dspark_metal_records.zig");
-+    _ = @import("inkling2_sample_metal_records.zig");
-     _ = @import("h3_image_cuda_records.zig");
-     _ = @import("inkling2_vision_metal_records.zig");
-+    _ = @import("inkling2_dflash2_metal_records.zig");
-     _ = @import("zonos3_cuda_records.zig");
-     _ = @import("hy4_ihc_hc_records.zig");
-+    _ = @import("qmmf_many_records.zig");
-+    _ = @import("hy4_route_rows_records.zig");
-+    _ = @import("hy4_engram_fp8_records.zig");
- }
 diff --git a/zig/src/families/glm/cuda.zig b/zig/src/families/glm/cuda.zig
 index 23b5f9689..418672111 100644
 --- a/zig/src/families/glm/cuda.zig
@@ -1390,3 +1243,4 @@ index 1bd875aaa..729b99d16 100644
      }
  
      pub fn deinit(st: *State) void {
+

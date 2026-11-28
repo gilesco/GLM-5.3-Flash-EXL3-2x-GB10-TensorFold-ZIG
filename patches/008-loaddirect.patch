@@ -22,7 +22,13 @@ REGEN-NOTE (2026-11-15, the v1.2.9 rebase): the body regenerated state-machine s
 
 
 REGEN-NOTE (2026-11-22, the v1.3.4 rebase): the body regenerated from the composed tree (branch compose-v134) — v1.3.4's the loader work moved this member's hunks; the round-trip verifies byte-exact (pristine v1.3.4 + the store = the composed tree, zero diffs).
+REGEN-NOTE (2026-11-27, the v1.3.7 rebase): the body re-cut against the
+composed tree at the v1.3.7 merge (810ccf65a) — the before-state is the
+replay state at this member's stack position; the byte-exact round-trip
+(pristine v1.3.7 + the store = the composed tree) is the gate.
+
 diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cuda_load_ahead.zig
+index 08e514d3c..29eeddc69 100644
 --- a/zig/src/families/glm/cuda_load_ahead.zig
 +++ b/zig/src/families/glm/cuda_load_ahead.zig
 @@ -1,4 +1,4 @@
@@ -31,9 +37,9 @@ diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cud
  
  const std = @import("std");
  const core = @import("core");
-@@ -15,17 +15,29 @@
+@@ -14,17 +14,35 @@ pub fn layers(L: anytype, prefix: []const u8, ids: []const u32, out: anytype) !v
  
- pub fn layersWithCount(L: anytype, ids: []const u32, out: anytype, count: usize) !void {
+ pub fn layersWithCount(L: anytype, prefix: []const u8, ids: []const u32, out: anytype, count: usize) !void {
      var ahead: u64 = 0;
 -    for (ids, out) |i, *l| {
 +    // each layer read past the page cache, the next one while it packs (TF_LOAD_DIRECT=0: the read-ahead below)
@@ -42,18 +48,21 @@ diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cud
 +    var pb: [2][64]u8 = undefined;
 +    for (ids, out, 0..) |i, *l, j| {
          if (i >= L.w.config.layers) return error.BadLayer;
--        {
--            var reading = try @import("cuda_load_prefetch.zig").begin(L.ck, i, count);
--            defer reading.deinit();
++<<<<<<< HEAD
 +        if (direct.on()) {
-+            const p = try std.fmt.bufPrint(&pb[0], "model.language_model.layers.{d}.", .{i});
-+            const np: ?[]const u8 = if (j + 1 < ids.len) try std.fmt.bufPrint(&pb[1], "model.language_model.layers.{d}.", .{ids[j + 1]}) else null;
++            const p = try std.fmt.bufPrint(&pb[0], "{s}layers.{d}.", .{ prefix, i });
++            const np: ?[]const u8 = if (j + 1 < ids.len) try std.fmt.bufPrint(&pb[1], "{s}layers.{d}.", .{ prefix, ids[j + 1] }) else null;
 +            try direct.enter(p, np);
++=======
+         {
+             var reading = try @import("cuda_load_prefetch.zig").begin(L.ck, prefix, i, count);
+             defer reading.deinit();
++>>>>>>> v1.3.7
              l.* = try L.layer(i);
 -            ahead += try reading.check();
 +        } else {
 +            {
-+                var reading = try @import("cuda_load_prefetch.zig").begin(L.ck, i, count);
++                var reading = try @import("cuda_load_prefetch.zig").begin(L.ck, prefix, i, count);
 +                defer reading.deinit();
 +                l.* = try L.layer(i);
 +                ahead += try reading.check();
@@ -68,3 +77,4 @@ diff --git a/zig/src/families/glm/cuda_load_ahead.zig b/zig/src/families/glm/cud
  }
  
  /// Readers when TF_GLM_LOAD_PREFETCH is unset.
+
