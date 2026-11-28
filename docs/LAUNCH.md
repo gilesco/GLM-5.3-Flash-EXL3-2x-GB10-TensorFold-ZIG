@@ -5410,3 +5410,31 @@ re-proven byte-exact on the pinned ground. The lesson stacked: a
 ground reference must be pinned BEFORE any cut, and never moved
 while cuts are in flight — the round-163 class again, at rebase
 depth.
+
+**Void #5** (campaign-20261128-004855): the compile failed with the
+OPPOSITE error — `exl3_group.cuh: No such file or directory`. THE
+ROOT CAUSE IS A FALSE SIGNAL THAT POISONED THE PREVIOUS FOLD: the
+untracked leftover on my scratch tree masked the "does not exist"
+check (`git show v1.3.7:path` returned the disk-masking fatal once,
+then a genuine "does not exist" once the tree was clean — and the
+first read was the one I acted on). The strip removed 012's five
+file-creation sections; the build then had no provider for the
+include 002's hunk adds. THE TRUTH TABLE, desk-verified against a
+CLEAN tag checkout with the HEAD store: the v1.3.7 base does NOT
+have exl3_group.cuh; the store's 012 body MUST create it; the
+compose carries it ONLY through those sections (the fork side
+created it in the v1.3.6 tree — my "byte-identical to base" check
+had compared against the merge tree's copy, not the tag's).
+
+The repair: the replay state at 012's position measured against the
+TAG base (tree 0393474efa — the tree I had misread as the tag
+COMMIT earlier: `0393474e…` is a tree hash; the `^{commit}` peel
+rule saved the pin but not this check); the body re-cut as ONE diff
+from there to the compose at a9c005d2a — the v2 body AND the MT=1
+compile fix both ride it, one section per file. The INDEPENDENT
+verify ran against the TAG itself — the same base the build uses —
+and is CLEAN AND BYTE-EXACT. The rule receipted: the replay verify
+must use the BUILD'S base, not a base where the target state
+pre-exists; and a false "missing/exists" read from a dirty scratch
+tree has burned two folds now — the clean-tree rule is mandatory
+before any existence check.
