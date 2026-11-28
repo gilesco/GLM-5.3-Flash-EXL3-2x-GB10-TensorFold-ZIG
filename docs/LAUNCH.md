@@ -5394,3 +5394,19 @@ verified byte-exact AGAIN. The relaunch is the third: the compile
 gate is the layer the patch-level round-trip cannot see — the skill's
 "git apply passes what the compiler rejects" lesson, now receipted at
 the release-rebase scale too.
+
+**Void #4** (campaign-20261128-002741): the compile failed again —
+the SAME warp_tiles error. THE ROOT CAUSE: my compile-fix commit
+(a9c005d2a) was made on a DETACHED HEAD at the tag, and the compose-
+v136 branch ref was later MOVED UNDER THE LOOP (`git branch -f`) —
+so the store's 012 body captured in the fold loop was cut against
+the WRONG ground, AND the branch pointer churn meant no single
+ground ever held. The sweep: the branch pinned at a9c005d2a (the
+merge tree + the MT=1 fix), every member re-cut against it in ONE
+pass, 012's five stale exl3_group.cuh file-creation sections
+stripped (the v1.3.7 base creates the file upstream-side — byte-
+identical to what the body carried), and the INDEPENDENT verify
+re-proven byte-exact on the pinned ground. The lesson stacked: a
+ground reference must be pinned BEFORE any cut, and never moved
+while cuts are in flight — the round-163 class again, at rebase
+depth.
